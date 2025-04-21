@@ -1,0 +1,238 @@
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Scrollbars } from "react-custom-scrollbars";
+
+const OxyloansAdminSidebar = () => {
+  const [isSideMenu, setSideMenu] = useState("");
+  const [dealsOpen, setDealsOpen] = useState(false);
+  // const pathName = useLocation().pathname;
+  const [openSubmenus, setOpenSubmenus] = useState({});
+  const { pathname } = useLocation();
+  const primaryType=localStorage.getItem("primaryType")
+  const userId=sessionStorage.getItem("userId")
+
+  // console.log({primaryType})
+
+  const toggleSubmenu = (key) => {
+    setOpenSubmenus((prev) => {
+      const newSubmenus = {};
+  
+      // Close all other submenus, open only the clicked one
+      Object.keys(prev).forEach((k) => {
+        newSubmenus[k] = false;
+      });
+  
+      // Toggle current key
+      newSubmenus[key] = !prev[key];
+  
+      return newSubmenus;
+    });
+  };
+  
+
+  const toggleSidebar = (value) => {
+    setSideMenu(value === isSideMenu ? "" : value);
+  };
+
+  useEffect(() => {
+    function handleMouseOver(e) {
+      e.stopPropagation();
+      if (
+        document.body.classList.contains("mini-sidebar") &&
+        document.querySelector("#toggle_btn")?.offsetParent !== null
+      ) {
+        const targ = e.target.closest(".sidebar");
+        if (targ) {
+          document.body.classList.add("expand-menu");
+          document
+            .querySelectorAll(".subdrop + ul")
+            .forEach((ul) => (ul.style.display = "block"));
+        } else {
+          document.body.classList.remove("expand-menu");
+          document
+            .querySelectorAll(".subdrop + ul")
+            .forEach((ul) => (ul.style.display = "none"));
+        }
+      }
+    }
+
+    document.addEventListener("mouseover", handleMouseOver);
+    return () => document.removeEventListener("mouseover", handleMouseOver);
+  }, []);
+
+
+  const menuItems = [
+    {
+      key: "OxyloansAdminDashboard",
+      label: "Dashboard",
+      link: "/OxyloansAdminDashboard",
+      icon: "fa-solid fa-gauge",
+      type: ["6680", "40016"], // Show to all roles
+    },
+    {
+      key: "emi",
+      label: "Borrower Details",
+      link: "/Emi",
+      icon: "fa-solid fa-person",
+      type: ["6680"],
+    },
+    {
+      key: "cicReports",
+      label: "CIC Reports",
+      link: "/cicReports",
+      icon: "fa-solid fa-file-lines",
+      type: ["6680"],
+    },
+    {
+      key: "helpdesk",
+      label: "Help Desk",
+      icon: "fa-solid fa-headset",
+      children: [
+        { key: "lenderqueries", label: "Lender Queries", link: "/lenderqueries" },
+        { key: "borrowerqueries", label: "Borrower Queries", link: "/borrowerqueries" },
+        { key: "resolvedlender", label: "Resolved Lender Queries", link: "/resolvedlender" },
+        { key: "resolvedborrower", label: "Resolved Borrower Queries", link: "/resolvedborrower" },
+      ],
+      type: ["40016"],
+    },
+    {
+      key: "lenderLoanApplications",
+      label: "Lender Loan Applications",
+      link: "/lenderLoanApplications",
+      icon: "fa-solid fa-file-lines",
+      type: ["40016"],
+    },
+    {
+      key: "registerlender",
+      label: "Register Lender",
+      icon: "fa-solid fa-users",
+      children: [
+        { key: "participatedsixmothsago", label: "Participated 6 months ago", link: "/participatedsixmothsago" },
+        { key: "walletloadednotpatcipated", label: "Wallet Loaded not participated", link: "/walletloadednotpatcipated" },
+        { key: "notparticipatedlendersindeal", label: "Not participated", link: "/notparticipatedlendersindeal" },
+        { key: "onlyonceparticipatedlenders", label: "Only once participated lenders", link: "/onlyonceparticipatedlenders" },
+        { key: "onlytwiceparticipatedlenders", label: "Only Twice participated Lenders", link: "/onlytwiceparticipatedlenders" },
+        { key: "Morethanhundredlenders", label: "More than hundred deals", link: "/Morethanhundredlenders" },
+        { key: "Emailwhatsappverified", label: "Email whatsapp not verified", link: "/Emailwhatsappverified" },
+        { key: "morethantenlakhs", label: "More than ten lakhs", link: "/morethantenlakhs" },
+
+      ],
+      type: ["40016"],
+    },
+  ];
+  
+
+
+  return (
+    <div className="sidebar" id="sidebar">
+      {/* <Scrollbars
+        autoHide
+        autoHideTimeout={1000}
+        autoHideDuration={200}
+        autoHeight
+        autoHeightMin={0}
+        autoHeightMax="95vh"
+        thumbSize={300}
+        hideTracksWhenNotNeeded
+      > */}
+      <Scrollbars
+  autoHide
+  autoHideTimeout={1000}
+  autoHideDuration={200}
+  style={{ height: "100vh" }}
+  thumbSize={300}
+  hideTracksWhenNotNeeded
+>
+
+        <div className="sidebar-inner slimscroll">
+          <div id="sidebar-menu" className="sidebar-menu">
+            {/* <ul>
+              <li className={pathName === "/OxyloansAdminDashboard" ? "active" : ""}>
+                <Link to="/OxyloansAdminDashboard">
+                  <i className="fa-solid fa-gauge"></i> <span>Dashboard</span>
+                </Link>
+              </li>
+
+              <li className={pathName === "/Emi" ? "active" : ""}>
+                <Link to="/Emi">
+                  <i className="fa-solid fa-person"></i> <span>Borrower Details</span>
+                </Link>
+              </li>
+
+              <li className={pathName === "/cicReports" ? "active" : ""}>
+                <Link to="/cicReports">
+                  <i className="fa-solid fa-file-lines"></i> <span>CIC Report</span>
+                </Link>
+              </li>
+
+          
+            </ul> */}
+
+<ul>
+  {menuItems.map((item) => {
+    const isSubmenuOpen = openSubmenus[item.key];
+    const isActive = pathname === item.link;
+
+    return (
+      <>
+        {item.type.includes(userId) ? (
+          <li
+            key={item.key}
+            className={`${item.children ? "submenu" : ""} ${
+              isSubmenuOpen || isActive ? "active" : ""
+            }`}
+          >
+            {item.children ? (
+              <a
+                href="#!"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleSubmenu(item.key);
+                }}
+                className="d-flex justify-between items-center"
+              >
+                <div>
+                  <i className={item.icon}></i>
+                  <span style={{ marginLeft: "18px" }}> {item.label} </span>
+                </div>
+                <i
+                  className={`fa-solid ${
+                    isSubmenuOpen ? "fa-chevron-up" : "fa-chevron-down"
+                  }`}
+                  style={{ marginLeft: "18px" }}
+                ></i>
+              </a>
+            ) : (
+              <Link to={item.link}>
+                <i className={item.icon}></i>
+                <span style={{ marginLeft: "18px", fontSize: "15px" }}> {item.label} </span>
+                </Link>
+            )}
+
+            {item.children && isSubmenuOpen && (
+              <ul className="sub-menu" style={{ display: "block" }}>
+                {item.children.map((child) => (
+                  <li key={child.key}>
+                    <Link to={child.link}>{child.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ) : null}
+      </>
+    );
+  })}
+
+  {/* Extra space at the bottom */}
+  <div style={{ height: "8rem" }}></div>
+</ul>
+
+          </div>
+        </div>
+      </Scrollbars>
+    </div>
+  );
+};
+
+export default OxyloansAdminSidebar;

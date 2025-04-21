@@ -1,0 +1,264 @@
+.card11 {
+  display: grid;
+  grid-template-columns: 24% 18.4% 18.4% 16% auto;
+  gap: 2px;
+  padding: 11px 0px;
+}
+
+.pangnation {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+}
+.card10 {
+  display: grid;
+  grid-template-columns: 24% 14% 17% 14% 16% auto;
+  gap: 2px;
+  padding: 11px 0px;
+}
+.card-body1 {
+  padding: 0.7rem 0px;
+  margin-top: 10px;
+}
+.card-body11 {
+  display: flex;
+  flex-direction: column;
+}
+.card-title {
+  font-size: 15px !important;
+}
+.card-text {
+  font-size: 12px !important;
+  margin: 4px 2px;
+}
+.buttn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  margin: 3px 0px;
+}
+.statusbutton2 {
+  background-color: #00c3ff !important;
+}
+.statusbutton3 {
+  background-color: #77b0fb !important;
+}
+
+.tablerowevent {
+  background-color: rgb(230, 229, 229);
+}
+.tablerowodd {
+  background-color: white;
+}
+.statusbutton4 {
+  background-color: #f8c25e !important;
+}
+.statusbutton {
+  height: auto;
+  color: white;
+  width: 6rem;
+  font-weight: 500;
+  text-align: center;
+  border: none !important;
+  font-size: 11px;
+  padding: 2px !important;
+}
+
+.align-items-center1 {
+  gap: 4px;
+}
+.badgedat {
+  display: flex;
+  flex-direction: row !important;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.btn-1 {
+  height: 1.8rem;
+  padding: auto;
+  width: auto;
+  background-color: green;
+  color: white;
+  border-radius: 5px;
+  font-size: 14px;
+  box-shadow: none;
+  border: none;
+}
+.datarender {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 1rem;
+}
+.star-student.table-striped tbody tr:nth-of-type(even) {
+  background-color: #f9f9f9;
+}
+
+.btn-2 {
+  height: 1.8rem;
+  padding: auto;
+  width: auto;
+  background-color: rgb(35, 184, 35);
+  color: white;
+  border-radius: 5px;
+  font-size: 13px;
+  box-shadow: none;
+  border: none;
+}
+.centerdiv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.form-control-lg1 {
+  width: 15rem;
+  padding: 0.3rem 1rem;
+  font-size: 1rem !important;
+  border-radius: 1px soild gray !important;
+  border: 1px solid gray !important;
+}
+@media screen and (max-width: 780px) {
+  /* . */
+  .card11 {
+    display: flex;
+    flex-direction: column;
+  }
+}
+.cardheader {
+  padding: 8px 10px;
+}
+.card-header {
+  border-bottom: none !important;
+  /* display: flex; */
+}
+
+.card12 {
+  display: grid;
+  grid-template-columns: 12% 12% 10% 10% auto auto auto auto auto;
+  gap: 2px;
+  /* padding: 11px 4px; */
+  padding: 1rem 4px !important;
+}
+
+
+.ant-table-tbody{
+  width: 100% !important;
+    background: white !important;
+}
+.bi-whatsapp {
+  font-size: 14px;
+  color: white;
+}
+.card-data {
+  color: #000000;
+  font-weight: 500;
+}
+.card-des {
+  color: gray;
+}
+/* .form-control{
+    height: 3.3rem;
+    font-size: 20px;
+} */
+/* form-control */
+.button-qr {
+  height: auto;
+  width: auto;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center;
+}
+.btn-primary-1 {
+  height: 3rem;
+  width: 8rem;
+  margin-top: 1rem !important;
+  /* background: transparent;
+    border: 2px solid rgb(32, 32, 233);
+    color:rgb(32, 32, 233) ; */
+}
+.statuscolor {
+  color: rgb(12, 172, 12);
+  padding: 2px;
+  border: 1px solid rgb(5, 176, 5);
+  background-color: rgb(212, 252, 212);
+  border-radius: 3px;
+}
+.statuscolorpending {
+  color: #dc3545;
+  padding: 2px;
+  border: 1px solid #dc3545;
+  background-color: rgb(254 192 181 / 32%);
+  border-radius: 3px;
+}
+
+
+
+.wordbrak {
+  width: 100px !important;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* .modelaa{
+  width: 80vw !important;
+ } */
+.intestdata {
+  display: flex;
+  position: relative;
+  right: 0 !important;
+  flex-direction: row;
+  gap: 2rem;
+  margin: 10px 1px;
+}
+
+.displaycenter {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.displaycenter > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+  gap: 1rem;
+}
+
+@media screen and (min-width: 290px) and (max-width: 500px) {
+  .displaycenter {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 0px !important;
+  }
+  
+  .displaycenter > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0rem;
+    gap: 1rem !important;
+  }
+
+  .notepoint {
+    margin: 0px !important;
+  }
+
+  .textquery{
+    text-align: start  !important;
+  }
+}
+
+
+.spantext{
+  font-weight: 200 !important;
+}

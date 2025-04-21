@@ -1,0 +1,142 @@
+.errormessage {
+  font-size: 13px;
+  /* color: green; */
+  color: red;
+}
+/* .error {
+  color: grey;
+  font-size: 12px;
+} */
+.error {
+  color:red;
+  font-size: 12px;
+}
+
+.phoneinput {
+  /* border: 1px solid rgb(184, 183, 183); */
+  display: flex;
+  flex-direction: row !important;
+}
+
+.PhoneInputInput {
+  flex: 1;
+  border-radius: 5% !important;
+  min-width: 0;
+  height: 2.8rem !important;
+  border: none !important;
+}
+.otp-field {
+  display: flex;
+}
+.otp-field input {
+  width: 2.8rem;
+  height: 2.8rem;
+  font-size: 32px;
+  padding: 10px;
+  text-align: center;
+  border-radius: 5px;
+  margin: 2px;
+  border: 2px solid #55525c;
+  background: transparent;
+  font-weight: bold;
+  color: gray;
+  outline: none;
+  transition: all 0.1s;
+}
+.texts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.otp-field input:focus {
+  border: 2px solid #5632e7;
+  box-shadow: 0 0 2px 2px #1a39b56a;
+}
+
+.disabled {
+  opacity: 0.5;
+}
+
+.space {
+  margin-right: 1rem !important;
+}
+.reffertext {
+  font-size: 12px;
+}
+.otpfiled {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.circle {
+  height: 4.6rem;
+  width: 4.6rem;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  color: white;
+  align-items: center;
+  background-color: #3d5ee1b5;
+  font-size: 24px;
+}
+
+
+.maincircle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.cend {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}/* .logincard{
+  height: auto;
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+} */.logincard {
+  height: 100vh;
+  width: auto;
+  display: flex;
+  align-items: center;
+  /* justify-content: space-between; */
+
+  justify-content: center;
+  flex-wrap: wrap !important;
+  gap: 0.9rem;
+
+}
+.textcenter {
+  /* display: flex; */
+  text-align: center;
+}
+
+
+.profileiame{ 
+  height: 4rem;
+  width: 4rem;
+  object-fit: cover;
+
+}
+
+.profileimagediv{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.imagelo11{
+  height: 4rem;
+  width: auto;
+  object-fit: contain;
+}
+.textcent {
+  text-align: center;
+}
+
+
+.PhoneInputInput{
+      background: transparent;
+}

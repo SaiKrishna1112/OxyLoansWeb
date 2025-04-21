@@ -1,0 +1,10 @@
+.tablepara > p {
+  margin-bottom: 4px !important;
+}
+
+.buttongroupline {
+  display: flex;
+  flex-direction: column;
+  /* margin: 3px; */
+  gap: 4px !important;
+}

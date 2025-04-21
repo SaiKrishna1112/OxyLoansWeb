@@ -1,0 +1,94 @@
+/* CSS code for your breakpoints */
+.my-element {
+  width: 100%;
+  padding: 10px;
+}
+
+/* For screens smaller than 320px */
+@media (max-width: 319px) {
+  .element {
+    min-width: 100%; /* Forces full width for ultra-small screens */
+  }
+  .mobileView {
+    padding-top: 20px !important;
+    margin-top: 4rem !important;
+  }
+}
+
+/* For screens smaller than 376px */
+@media (max-width: 375px) {
+  .element {
+    min-width: 100%; /* Ensures full width on very small screens */
+  }
+
+  .mobileView {
+    padding-top: 20px !important;
+    margin-top: 4rem !important;
+  }
+  .querybtn {
+    margin-top: 4rem !important;
+  }
+}
+
+/* For screens smaller than 376px */
+@media (min-width: 375px) {
+  .element {
+    min-width: 100%; /* Ensures full width on very small screens */
+  }
+
+  .mobileView {
+    padding-top: 15px !important;
+    margin-top: 3.6rem !important;
+  }
+}
+
+@media (min-width: 576px) {
+  /* Styles applied when screen width is equal to or greater than 576px (sm breakpoint) */
+  .my-element {
+    width: 60%;
+  }
+
+  .querybtn {
+    margin-top: 4rem;
+  }
+}
+
+@media (min-width: 768px) {
+  /* Styles applied when screen width is equal to or greater than 768px (md breakpoint) */
+  .my-element {
+    width: 75%;
+  }
+  .querybtn {
+    margin-top: 3rem;
+  }
+}
+
+@media (min-width: 992px) {
+  /* Styles applied when screen width is equal to or greater than 992px (lg breakpoint) */
+  .my-element {
+    width: 80%;
+  }
+  .querybtn {
+    margin-top: 3rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  /* Styles applied when screen width is equal to or greater than 1200px (xl breakpoint) */
+  .my-element {
+    width: 90%;
+  }
+  .querybtn {
+    margin-top: 3rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  /* Styles applied when screen width is equal to or greater than 1400px (xxl breakpoint) */
+  .my-element {
+    width: 95%;
+  }
+  .querybtn {
+    margin-top: 3rem;
+  }
+}

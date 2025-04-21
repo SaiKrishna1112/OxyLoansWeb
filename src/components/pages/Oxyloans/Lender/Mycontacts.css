@@ -1,0 +1,8 @@
+.imagecard {
+  position: relative !important;
+  /* right: -8rem !important; */
+  display: flex;
+  align-items: center;
+  justify-content: flex-end !important;
+  text-align: end !important;
+}
