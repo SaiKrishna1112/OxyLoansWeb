@@ -55,18 +55,15 @@ export default function BorrowerQueries() {
       const formattedData = data.map((item, index) => ({
         key: index,
         sNo: (currentPage - 1) * 10 + index + 1,
-        // userInfo: `${item.name?.trim()} (${item.userNewId})\n${item.mobileNumber}\n${item.email}\n`,
-        userNewId :item.userNewId,
-        mobileNumber:item.mobileNumber,
-        email:item.email,
-        name:item.name?.trim(),
+        userNewId: item.userNewId,
+        mobileNumber: item.mobileNumber,
+        email: item.email,
+        name: item.name?.trim(),
         query: item.query,
-        queryStatus: item.listOfPendingQueries?.[0]?.pendingQuereis
-        ? `${item.listOfPendingQueries[0].pendingQuereis}, Status: ${item.status}`
-        : `Status: ${item.status || "Unknown"}`,
         status: item.status,
-        ticketId:item.ticketId,
-        receivedOn:item.receivedOn
+        ticketId: item.ticketId,
+        receivedOn: item.receivedOn,
+        listOfPendingQueries: item.listOfPendingQueries || [], // Important
       }));
 
       setQueryData(formattedData);
@@ -138,10 +135,24 @@ export default function BorrowerQueries() {
       ),
     },
     {
-      title: "Query Status",
-      dataIndex: "queryStatus",
+      title: "User & Admin Comments",
       key: "queryStatus",
       width: 150,
+      render: (_, text) => (
+        <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>
+          {text.listOfPendingQueries && text.listOfPendingQueries.length > 0 ? (
+            text.listOfPendingQueries.map((item, idx) => (
+              <div key={idx}>
+                <strong>{item.respondedBy} :</strong> {item.pendingQuereis || 'N/A'}<br />
+                {/* <strong>Responded By:</strong> {item.respondedBy || 'N/A'} */}
+                <hr style={{ margin: '5px 0' }} />
+              </div>
+            ))
+          ) : (
+            <div>No Comments</div>
+          )}
+        </div>
+      ),
     },
     {
       title: "Status",
@@ -150,7 +161,6 @@ export default function BorrowerQueries() {
       width: 150,
       render: (text) => (
         <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>
-          <div><strong>Status:</strong>{text.status}</div>
           <div><strong>RecievedOn:</strong>{text.receivedOn}</div>
         </div>
       ),

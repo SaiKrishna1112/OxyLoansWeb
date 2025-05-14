@@ -15,6 +15,8 @@ const OxyloansAdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [dots, setDots] = useState('');
 const primaryType=sessionStorage.getItem('primaryType')
+const email=sessionStorage.getItem('email')
+
 console.log("primaryType",primaryType)
   const navigate = useNavigate();
 
@@ -118,6 +120,11 @@ useEffect(()=>{
     { title: "Today's Registrations", value: `${userData?.todayRegisteredUsersCount}`, icon: <FaCalendarDay size={40} color="#e74a3b" /> },
   ];
 
+  const capitalize = (text) => {
+    if (!text) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  };
+
   return (
     <div className="main-wrapper">
       <OxyloansAdminHeader />
@@ -128,7 +135,8 @@ useEffect(()=>{
           <div className="page-header">
             <div className="row">
               <div className="col-sm-12">
-                <h3 className="page-title text-primary">Welcome Admin</h3>
+                <h3 className="page-title text-primary">  Welcome {primaryType === "Admin" ? capitalize(primaryType) : capitalize(email.split("@")[0])}
+                </h3>
               </div>
             </div>
           </div>

@@ -48,7 +48,7 @@ const Participatedsixmonthsago = () => {
   const fetchDownloadReport = async () => {
     setLoading(true);
     const response = await handlefetchDownloadReport();
-    console.log("handlefetchDownloadReport", response.status);
+    console.log("handlefetchDownloadReport", response.response.status);
     setLoading(false);
     if (response.status === 200) {
       setDownload(response.data.downloadUrl);
@@ -106,7 +106,7 @@ const Participatedsixmonthsago = () => {
 
              
             </div>
-            {loading==false ? (
+            {loading ? (
                 <Button
                   variant="primary"
                   size="sm"

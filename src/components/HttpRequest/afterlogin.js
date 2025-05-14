@@ -631,10 +631,12 @@ export const regular_Api = async (dealType, urldealname, pageNo = 1) => {
 export const verifyBankAccountAndIfsc = async (bankaccountprofile) => {
   const token = getToken();
   const userId = getUserId();
+
   const data = {
     bankAccount: bankaccountprofile.accountNumber,
-    ifscCode: bankaccountprofile.ifscCode,
+    ifscCode: bankaccountprofile.ifscCode.toUpperCase(),
   };
+  
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     "verifyBankAccountAndIfsc",
@@ -642,7 +644,7 @@ export const verifyBankAccountAndIfsc = async (bankaccountprofile) => {
     token,
     data
   );
-  return response;
+  return response;
 };
 
 export const feeApicall = async (calculatedfee, choosenmembership) => {

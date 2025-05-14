@@ -67,21 +67,21 @@ const OxyloansAdminSidebar = () => {
       label: "Dashboard",
       link: "/OxyloansAdminDashboard",
       icon: "fa-solid fa-gauge",
-      type: ["6680", "40016"], // Show to all roles
+      type: ["ADMIN", "HELPDESKADMIN"], // Show to all roles
     },
     {
       key: "emi",
       label: "Borrower Details",
       link: "/Emi",
       icon: "fa-solid fa-person",
-      type: ["6680"],
+      type: ["ADMIN"],
     },
     {
       key: "cicReports",
       label: "CIC Reports",
       link: "/cicReports",
       icon: "fa-solid fa-file-lines",
-      type: ["6680"],
+      type: ["ADMIN"],
     },
     {
       key: "helpdesk",
@@ -93,14 +93,21 @@ const OxyloansAdminSidebar = () => {
         { key: "resolvedlender", label: "Resolved Lender Queries", link: "/resolvedlender" },
         { key: "resolvedborrower", label: "Resolved Borrower Queries", link: "/resolvedborrower" },
       ],
-      type: ["40016"],
+      type: ["HELPDESKADMIN"],
     },
     {
       key: "lenderLoanApplications",
       label: "Lender Loan Applications",
       link: "/lenderLoanApplications",
       icon: "fa-solid fa-file-lines",
-      type: ["40016"],
+      type: ["HELPDESKADMIN"],
+    },
+    {
+      key: "borrowerLoanApplications",
+      label: "Borrower Loan Applications",
+      link: "/borrowerLoanApplications",
+      icon: "fa-solid fa-file-lines",
+      type: ["HELPDESKADMIN"],
     },
     {
       key: "registerlender",
@@ -108,7 +115,7 @@ const OxyloansAdminSidebar = () => {
       icon: "fa-solid fa-users",
       children: [
         { key: "participatedsixmothsago", label: "Participated 6 months ago", link: "/participatedsixmothsago" },
-        { key: "walletloadednotpatcipated", label: "Wallet Loaded not participated", link: "/walletloadednotpatcipated" },
+        // { key: "walletloadednotpatcipated", label: "Wallet Loaded not participated", link: "/walletloadednotpatcipated" },
         { key: "notparticipatedlendersindeal", label: "Not participated", link: "/notparticipatedlendersindeal" },
         { key: "onlyonceparticipatedlenders", label: "Only once participated lenders", link: "/onlyonceparticipatedlenders" },
         { key: "onlytwiceparticipatedlenders", label: "Only Twice participated Lenders", link: "/onlytwiceparticipatedlenders" },
@@ -117,7 +124,36 @@ const OxyloansAdminSidebar = () => {
         { key: "morethantenlakhs", label: "More than ten lakhs", link: "/morethantenlakhs" },
 
       ],
-      type: ["40016"],
+      type: ["HELPDESKADMIN"],
+    },
+    {
+      key: "deals",
+      label: "Deals",
+      icon: "fas fa-user",
+      children: [
+        { key: "viewstudentdeals", label: "View Student Deals", link: "/viewstudentdeals" },
+        { key: "viewequitydeals", label: "View Equity Deals", link: "/viewequitydeals" },
+        { key: "viewescrowsdeals", label: "View Escrow Deals", link: "/viewescrowsdeals" },
+        { key: "viewsalarieddeals", label: "View Salaried Deals", link: "/viewsalarieddeals" },
+        { key: "viewtestsdeals", label: "View Test Deals", link: "/viewtestsdeals" }
+      ],
+      type: ["HELPDESKADMIN"],
+    },
+    {
+      key: "superAdmin",
+      label: "Super Admin",
+      icon: "fa-solid fa-shield",
+      children: [
+        { key: "updateUserDetails", label: "Update User Details", link: "/updateUserDetails" },
+        // { key: "walletloadednotpatcipated", label: "Wallet Loaded not participated", link: "/walletloadednotpatcipated" },
+        // { key: "notparticipatedlendersindeal", label: "Not participated", link: "/notparticipatedlendersindeal" },
+        // { key: "onlyonceparticipatedlenders", label: "Only once participated lenders", link: "/onlyonceparticipatedlenders" },
+        // { key: "onlytwiceparticipatedlenders", label: "Only Twice participated Lenders", link: "/onlytwiceparticipatedlenders" },
+        // { key: "Morethanhundredlenders", label: "More than hundred deals", link: "/Morethanhundredlenders" },
+        // { key: "Emailwhatsappverified", label: "Email whatsapp not verified", link: "/Emailwhatsappverified" },
+        // { key: "morethantenlakhs", label: "More than ten lakhs", link: "/morethantenlakhs" },
+      ],
+      type: ["ADMIN","HELPDESKADMIN"],
     },
   ];
   
@@ -175,7 +211,7 @@ const OxyloansAdminSidebar = () => {
 
     return (
       <>
-        {item.type.includes(userId) ? (
+        {item.type.includes(primaryType) ? (
           <li
             key={item.key}
             className={`${item.children ? "submenu" : ""} ${

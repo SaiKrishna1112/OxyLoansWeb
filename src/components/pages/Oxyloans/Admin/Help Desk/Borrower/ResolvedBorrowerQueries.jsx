@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from "react-router-dom";
 
-import { Table, Spin, message } from 'antd';
+import { Table, Spin, message,Modal } from 'antd';
 import Sidebar from '../../../../../SideBar/OxyloansAdminSidebar';
 import Header from '../../../../../Header/OxyloansAdminHeader';
 import Swal from 'sweetalert2';
@@ -13,6 +13,8 @@ export default function ResolvedBorrowerQueries() {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [imageUrl, setImageUrl] = useState("");
   const navigate = useNavigate();
 
   const fetchBorrowerQueries = async () => {
@@ -70,6 +72,7 @@ export default function ResolvedBorrowerQueries() {
         status: item.status,
         ticketId:item.ticketId,
         resolvedBy:item.resolvedBy,
+        screenshotUrl: item.screenshotUrl,
         comments: item.comments,
         respondedOn:item.respondedOn,
       }));
@@ -141,14 +144,20 @@ export default function ResolvedBorrowerQueries() {
       ),
     },
     {
-      title: "Query Status",
+      title: "Admin Comments & User Replies",
       key: "queryStatus",
       width: 150,
       render: (text) => (
         <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>
-    
-            <div><strong>Admin Comments:</strong>{text.comments}</div>
-            <div><strong>Resolved By:</strong>{text.resolvedBy}</div>
+
+            <div><strong>{text.resolvedBy} :</strong>{text.comments}</div>
+            {/* <div><strong>Resolved By:</strong>{text.resolvedBy}</div> */}
+            {text.screenshotUrl !== ""? <div><strong>Document :</strong> <p 
+        style={{ color: "blue", cursor: "pointer", textDecoration: "underline" }}
+        onClick={() => showModal(text.screenshotUrl)}
+      >
+        View File
+      </p></div>:null}
         </div>
       ),
     },
@@ -159,12 +168,23 @@ export default function ResolvedBorrowerQueries() {
       width: 150,
       render: (text) => (
         <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>
-          <div><strong>Status:</strong>{text.status}</div>
+          {/* <div><strong>Status:</strong>{text.status}</div> */}
           <div><strong>Responded On:</strong>{text.respondedOn}</div>
         </div>
       ),
     },
   ];
+  const showModal = (url) => {
+    console.log({url})
+    setImageUrl(url);
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setImageUrl("");
+  };
+
 
   return (
       <>
@@ -218,7 +238,60 @@ export default function ResolvedBorrowerQueries() {
               </div>
             </div>
     
-         
+            <Modal
+  open={isModalOpen}
+  footer={null}
+  onCancel={handleCancel}
+  closable={false} // no default close button unless you want it
+  centered
+  style={{
+    top: 0,
+    padding: 0,
+    height: '100vh',
+    // width: '100vw',
+    // maxWidth: '100vw',
+  }}
+  bodyStyle={{
+    height: '100vh',
+    // width: '100vw',
+    padding: 0,
+    overflow: 'hidden',
+    backgroundColor: 'black', // optional, looks better
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+  maskStyle={{
+    backgroundColor: 'rgba(0, 0, 0, 0.8)', // darken background
+  }}
+  zIndex={2000} // make sure it comes above header/sidebar
+>
+<div style={{ position: "absolute", top: 20, right: 20, zIndex: 1000 }}>
+  <button
+    onClick={handleCancel}
+    style={{
+      background: "transparent",
+      border: "none",
+      fontSize: "24px",
+      color: "#fff",
+      cursor: "pointer",
+    }}
+  >
+    ✖
+  </button>
+</div>
+
+  <img
+    src={imageUrl}
+    alt="Preview"
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain', // keeps aspect ratio
+      borderRadius: 0,
+    }}
+  />
+</Modal> 
           </div>
         </>
   );

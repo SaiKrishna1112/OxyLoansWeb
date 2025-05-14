@@ -12,6 +12,9 @@ export const getUserId = () => {
   return sessionStorage.getItem("userId");
 };
 
+export const getEmail = () => {
+  return sessionStorage.getItem("email");
+};
 export const getUserSessionTime = () => {
   return sessionStorage.getItem("tokenTime");
 };
@@ -50,13 +53,17 @@ export const handleBorrowerEmiRequest = async (value) => {
     // Get token and user ID from session storage
     const token = getToken();
     const userId = getUserId();
-
+    let data;
+    data={
+      inputType: "all"   
+    }
     // Perform API request using a generic request handler
     const response = await handleApiRequestAfterLoginService(
       API_BASE_URL,
-      `${value}/getAndSentPendingUsersDetails`,
-      "GET",
-      token
+      `getAndSentPendingUsersDetails`,
+      "post",
+      token,
+      data
     );
 
     return response;
@@ -65,6 +72,34 @@ export const handleBorrowerEmiRequest = async (value) => {
     throw error;
   }
 };
+
+
+export const handleSendMessageNotification=async(value)=>{
+  try {
+    // Get token and user ID from session storage
+    const token = getToken();
+    const userId = getUserId();
+    let data;
+    data={
+      inputType: "message",
+      pendingUsersDto:value
+    }
+    console.log({data})
+    // Perform API request using a generic request handler
+    const response = await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `getAndSentPendingUsersDetails`,
+      "post",
+      token,
+      data
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Error fetching borrower EMI requests:", error);
+    throw error;
+  }
+}
 
 
 
@@ -197,7 +232,7 @@ export const fetchActiveLendersData = async () => {
 export const handleGetCICReports = async (value,month,year) => {
   console.log("Fetching CIC reports...",value,month,year);
   let data
-  if(value=="all"){
+  if(value=="All"){
   data={
     reportsType:value,
   }  
@@ -224,33 +259,52 @@ export const handleGetCICReports = async (value,month,year) => {
 export const searchCallLender = async (data) => {
   const token = getToken();
   const userId = getUserId();
-  const postdatastring = JSON.stringify(
-    {"leftOperand":
-      {
-        "fieldName":"userPrimaryType",
-        "fieldValue":"LENDER",
-        "operator":"EQUALS"
-      },
-      "logicalOperator":"AND",
-      "rightOperand":
-        {
-          "fieldName":"user.status",
-          "fieldValue":"REGISTERED",
-          "operator":"EQUALS"
-        },
-      "page":{"pageNo":1,"pageSize":10},
-      "sortBy":"loanRequestedDate","sortOrder":"DESC"
-    });
-  const response = await handleApiRequestAfterLoginService(
+  // console.log("data",data)
+   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `6680/loan/ADMIN/request/search`,
     "POST",
     token,
-    postdatastring
+    data
   );
 
   return response;
 };
+
+export const commentsAdminApiCall = async (data) => {
+  const admincomment  = localStorage.getItem("admincomment")
+  const token = getToken();
+  const userId = getUserId();
+  // console.log(data)
+  const patchdatastring = data
+  //JSON.stringify({"location":"","locationResidence":"","companyName":"","companyResidence":"","role":"","loanRequirement":"","emi":"","salary":"","eligibility":"","cibilPassword":"","comments":"Test","commentedBy":"","aadharPassword":"","panPassword":"","bankPassword":"","payslipsPassword":""});
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/ADMIN/request/${admincomment}/comment`, // updated
+    "PATCH",
+    token,
+    patchdatastring
+  );
+  
+  return response;
+}
+
+export const searchCall = async (data) => {
+  const token = getToken();
+  const userId = getUserId();
+  console.log("data",data)
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/ADMIN/request/search`,
+    "POST",
+    token,
+    data
+  );
+
+  return response;
+};
+
 
 export const handleLenderLoanApplication=async()=>{
   const token = getToken();
@@ -266,14 +320,14 @@ export const handleLenderLoanApplication=async()=>{
   return response;
 }
 
-export const handleChangeToBorrower=async(value)=>{
+export const handleChangePrimaryType=async(value,type)=>{
   const token = getToken();
   const userId = getUserId();
-  console.log("value",value.userDisplayId)
+  console.log("value",value.userDisplayId,type)
 
    const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${value.userDisplayId}/changeprimarytype/BORROWER`,
+    `${value.userDisplayId}/changeprimarytype/${type}`,
     "PATCH",
     token,
     // postdatastring
@@ -323,23 +377,47 @@ export const handleInterestStatus=async(value)=>{
 export const handleComments=async(value1,value2)=>{
   const token = getToken();
   const userId = getUserId();
-  // console.log("value",value.userDisplayId)
+  const email=getEmail()
+  console.log("handleComments value",value1)
+  console.log({value2})
+  console.log(email.split("@")[0])
 
   let data={
-    comments: value2
+    // comments: value2
+    loanRequestId: value1.loanRequestId,
+    updatedByUserId: Number(value1.userDisplayId),
+    updatedByName: email.split("@")[0],
+    comment: value2
   }
   console.log({data})
 
    const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `6680/loan/ADMIN/request/${value1.id}/comment`,
-    "PATCH",
+    `commentshistory`,
+    "POST",
     token,
     data
     // postdatastring
   );
 
    return response;
+}
+
+export const handlegetComments=async(value)=>{
+  const token = getToken();
+  const userId = getUserId();
+console.log("value",value.userDisplayId )
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `commentshistorygetting/${value.userDisplayId}`,
+    "get",
+    token,
+    // data
+    // postdatastring
+  );
+
+   return response;
+
 }
 
 
@@ -540,6 +618,66 @@ export const handleMorethantenlakhs=async()=>{
     API_BASE_URL,
     `more-than-ten-lakhs-interest-earned-lenders`,
     "POST",
+    token,
+    data
+  );
+
+  return response;
+}
+
+export const handleHelpDeskTestDeals=async(dealType, pageNo, pageSize)=>{
+  const token = getToken();
+  const userId = getUserId();
+  let data={
+    "pageNo":pageNo,
+    "pageSize":pageSize,
+    "dealType":dealType,
+    "dealName":"TEST"
+  }
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/listOfDealsInformationForEquityDeals`,
+    "POST",
+    token,
+    data
+  );
+
+  return response;
+}
+
+export const handleHelpDeskSalariedDeals=async(dealType, pageNo, pageSize)=>{
+  const token = getToken();
+  const userId = getUserId();
+  let data={
+    "pageNo":pageNo,
+    "pageSize":pageSize,
+    "dealType":dealType,
+    "dealName":"PERSONAL"
+  }
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/listOfDealsInformationForEquityDeals`,
+    "POST",
+    token,
+    data
+  );
+
+  return response;
+}
+
+export const updateUserDetails=async(valueId,email,mobileNumber)=>{
+  const token = getToken();
+  const userId = getUserId();
+  let data={
+    "email":email,
+    "id":valueId,
+    "mobileNumber":mobileNumber,
+  }
+  console.log({data})
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateMobileNumberAndEmail`,
+    "PATCH",
     token,
     data
   );

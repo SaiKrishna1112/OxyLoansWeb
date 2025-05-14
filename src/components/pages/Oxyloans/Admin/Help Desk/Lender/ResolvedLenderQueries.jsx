@@ -69,6 +69,7 @@ const ResolvedLenderQueries = () => {
   : `Status: ${item.status || "Unknown"}`,
          status:item.status,
         comments: item.comments,
+        screenshotUrl: item.screenshotUrl,
         ticketId:item.ticketId,
         respondedOn:item.respondedOn,
        pendingQuereis: item.listOfPendingQueries?.[0]?.pendingQuereis || "No pending queries",
@@ -118,9 +119,10 @@ const ResolvedLenderQueries = () => {
   }, [currentPage]);
 
   const columns = [
-    
+    { title: "S.No", dataIndex: "sNo", key: "sNo", width: 20 },
+
     {
-      title: "Mobile Number& Email",
+      title: "Mobile Number & Email",
       //dataIndex: "queryData",
       key: "userInfo",
       width: 230,
@@ -138,26 +140,28 @@ const ResolvedLenderQueries = () => {
       title: "Query",
       dataIndex: "query",
       key: "query",
-      width: 200,
+      width: 230,
       render: (text) => (
         <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>{text}</div>
       ),
     },
     {
-      title: "Admin Comments",
+      title: "Admin Comments & User Replies",
       // dataIndex: "queryStatus",
       key: "queryStatus",
-      width: 150,
+      width: 230,
       render: (_,text) => (
         <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>
-         <div><strong>Admin Comments:</strong>{text.comments}</div>
-        <div><strong>Resolved By:</strong>{text.resolvedBy} </div>
-       {/* {text.documentId !== 0? <div><strong>Screenshot:{text.screenshotUrl}</strong> <p 
+         <div><strong>{text.resolvedBy} : </strong>{text.comments}</div>
+        {/* <div><strong>Resolved By:</strong>{text.resolvedBy} </div> */}
+        {/* <div><strong>Document:</strong><p>Click here </p> </div> */}
+
+       {text.screenshotUrl !== ""? <div><strong>Document :</strong> <p 
         style={{ color: "blue", cursor: "pointer", textDecoration: "underline" }}
         onClick={() => showModal(text.screenshotUrl)}
       >
         View File
-      </p></div>:null} */}
+      </p></div>:null}
 
         </div>
       ),
@@ -169,7 +173,7 @@ const ResolvedLenderQueries = () => {
       width: 150,
       render: (_,text) => (
         <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: 300 }}>
-          <div><strong>Status:</strong>{text.status}</div>
+          {/* <div><strong>Status:</strong>{text.status}</div> */}
           <div><strong>Responded On:</strong>{text.respondedOn}</div>
         </div>
       ),
@@ -242,18 +246,60 @@ const ResolvedLenderQueries = () => {
       </div>
 
       <Modal
-        title="Image Preview"
-        open={isModalOpen}
-        footer={null}
-        onCancel={handleCancel}
-        centered
-      >
-        <img
-          src={imageUrl}
-          alt="Preview"
-          style={{ width: "100%", height: "auto", borderRadius: "8px" }}
-        />
-      </Modal>
+  open={isModalOpen}
+  footer={null}
+  onCancel={handleCancel}
+  closable={false} // no default close button unless you want it
+  centered
+  style={{
+    top: 0,
+    padding: 0,
+    height: '100vh',
+    // width: '100vw',
+    // maxWidth: '100vw',
+  }}
+  bodyStyle={{
+    height: '100vh',
+    // width: '100vw',
+    padding: 0,
+    overflow: 'hidden',
+    backgroundColor: 'black', // optional, looks better
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+  maskStyle={{
+    backgroundColor: 'rgba(0, 0, 0, 0.8)', // darken background
+  }}
+  zIndex={2000} // make sure it comes above header/sidebar
+>
+<div style={{ position: "absolute", top: 20, right: 20, zIndex: 1000 }}>
+  <button
+    onClick={handleCancel}
+    style={{
+      background: "transparent",
+      border: "none",
+      fontSize: "24px",
+      color: "#fff",
+      cursor: "pointer",
+    }}
+  >
+    ✖
+  </button>
+</div>
+
+  <img
+    src={imageUrl}
+    alt="Preview"
+    style={{
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain', // keeps aspect ratio
+      borderRadius: 0,
+    }}
+  />
+</Modal>
+
 
 
     </div>

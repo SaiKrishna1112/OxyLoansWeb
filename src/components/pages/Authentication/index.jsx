@@ -71,6 +71,7 @@ const Login = () => {
         // dispatch(getProfile({ res: retriveresponse.data }));
         console.log(retriveresponse.data)
         localStorage.setItem("primaryType", retriveresponse.data.primaryType)
+        sessionStorage.setItem("email", retriveresponse.data.email);
         // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
         // alert(retriveresponse.data.accessToken)
         if (retriveresponse.data.primaryType == "LENDER") {

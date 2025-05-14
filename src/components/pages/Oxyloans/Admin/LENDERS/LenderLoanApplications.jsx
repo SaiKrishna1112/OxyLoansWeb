@@ -16,15 +16,18 @@ import {
   UserSwitchOutlined,
   CommentOutlined,
 } from "@ant-design/icons";
-import { searchCallLender } from "../../../../HttpRequest/admin";
+import {  Spinner } from 'react-bootstrap';
+
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import { Modal } from "react-bootstrap";
 import {
-  handleChangeToBorrower,
+  searchCallLender,
+  handleChangePrimaryType,
   handleChangeToTestUser,
   handleInterestStatus,
   handleComments,
+  handlegetComments,
   handleupdatedob,
   handleSendStatement,
   handleEmiUpdateComments,
@@ -36,24 +39,33 @@ const { Option } = Select;
 const { Title, Text } = Typography;
 
 const LenderLoanApplications = () => {
-  const [dropdownValue, setDropdownValue] = useState("Name");
+  const [dropdownValue, setDropdownValue] = useState("Choose");
   const [inputValue, setInputValue] = useState("");
   const [inputValue2, setInputValue2] = useState("");
   const [showInput, setShowInput] = useState(false);
   const [loanData, setLoanData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
 
+  // Initialize pagination with fixed settings
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
     total: 0,
+    showSizeChanger: true,
+    pageSizeOptions: ['10', '20', '50', '100'],
   });
+  
   const [show, setShow] = useState(false);
   const [changeToTest, setChangeToTest] = useState(false);
   const [interestStatus, setInterestStatus] = useState(false);
   const [comments, setComments] = useState("");
+  const[getComments,setGetComments]=useState([])
   const [showComments, setShowComments] = useState(false);
   const [dobModal, setDobModal] = useState(false);
   const [userDob, setUserDob] = useState("");
@@ -66,24 +78,61 @@ const LenderLoanApplications = () => {
       setShowComments(false),
       setDobModal(false);
   };
-  // const handleShow = () => setShow(true);
 
   const accessToken = sessionStorage.getItem("accessToken");
-  const userId = sessionStorage.getItem("userId") || "9652";
+  const userId = sessionStorage.getItem("userId");
 
   useEffect(() => {
     fetchLoanData();
-  }, []);
+  }, [pagination.current, pagination.pageSize]); // Trigger fetch when pagination changes
 
   const fetchLoanData = async () => {
+    console.log("pagination",pagination.pageSize,pagination.current)
     try {
       setLoading(true);
-      const response = await searchCallLender();
-      console.log("response", response.data.results);
-      setLoading(false);
-
+      // Create the payload with pagination parameters
+      const payload = {
+        leftOperand: {
+          fieldName: "userPrimaryType",
+          fieldValue: "LENDER",
+          operator: "EQUALS",
+        },
+        logicalOperator: "AND",
+        rightOperand: {
+          leftOperand: {
+            fieldName: "parentRequestId",
+            operator: "NULL",
+          },
+          logicalOperator: "AND",
+          rightOperand: {
+            leftOperand: {
+              fieldName: "loanStatus",
+              fieldValue: "Requested",
+              operator: "EQUALS",
+            },
+            logicalOperator: "OR",
+            rightOperand: {
+              fieldName: "loanStatus",
+              fieldValue: "Edit",
+              operator: "EQUALS",
+            },
+          },
+        },
+        page: {
+          pageNo: pagination.current,
+          pageSize: pagination.pageSize,
+        },
+        sortBy: "loanRequestedDate",
+        sortOrder: "DESC",
+      };
+      
+      const response = await searchCallLender(payload);
+      // console.log("response", response.data.results);
+      
       if (response.status == 200) {
         setLoanData(response.data.results || []);
+        setTotalCount(response.data?.totalCount || 0);
+
         // Update pagination if available in response
         if (response.data.totalElements) {
           setPagination((prev) => ({
@@ -91,14 +140,14 @@ const LenderLoanApplications = () => {
             total: response.data.totalElements,
           }));
         }
-      } else {
+      } 
+      else {
         if (response.response.status == 401) {
           Swal.fire({
             icon: "error",
             title: "Oops...",
             text: response.response.data.errorMessage,
             confirmButtonText: "Go to Login",
-            // denyButtonText: 'Regenerated',
           }).then((result) => {
             if (result.isConfirmed) {
               navigate("/");
@@ -128,71 +177,103 @@ const LenderLoanApplications = () => {
     setInputValue2("");
   };
 
+  // const buildFilter = () => {
+  //   switch (dropdownValue) {
+  //     case "Name":
+  //       return {
+  //         leftOperand: {
+  //           fieldName: "user.personalDetails.firstName",
+  //           fieldValue: inputValue,
+  //           operator: "LIKE",
+  //         },
+  //         logicalOperator: "OR",
+  //         rightOperand: {
+  //           fieldName: "user.personalDetails.lastName",
+  //           fieldValue: inputValue,
+  //           operator: "LIKE",
+            
+  //         },
+  //       };
+  //     case "LenderId":
+  //       return {
+  //         fieldName: "user.id",
+  //         fieldValue: inputValue,
+  //         operator: "EQUALS",
+  //       };
+
+  //       case "MobileNumber":
+  //       return {
+  //         fieldName: "user.mobileNumber",
+  //         fieldValue: inputValue,
+  //         operator: "EQUALS",
+  //       };
+    
+  //     default:
+  //       return {};
+  //   }
+  // };
+
   const buildFilter = () => {
+    const baseFilter = {
+      leftOperand: {
+        fieldName: "userPrimaryType",
+        fieldValue: "LENDER", // changed from BORROWER to LENDER
+        operator: "EQUALS",
+      },
+      logicalOperator: "AND",
+      rightOperand: {
+        fieldName: "parentRequestId",
+        operator: "NULL",
+      },
+    };
+  
     switch (dropdownValue) {
       case "Name":
         return {
-          fieldName: "name",
-          fieldValue: inputValue,
-          operator: "EQUALS",
-        };
-      case "LenderId":
-        return {
-          fieldName: "lenderId",
-          fieldValue: inputValue,
-          operator: "EQUALS",
-        };
-      case "ROI":
-        return {
-          leftOperand: {
-            fieldName: "roi",
-            fieldValue: inputValue,
-            operator: "GREATER_THAN_EQUAL_TO",
-          },
+          leftOperand: baseFilter,
           logicalOperator: "AND",
           rightOperand: {
-            fieldName: "roi",
-            fieldValue: inputValue2,
-            operator: "LESS_THAN_EQUAL_TO",
+            leftOperand: {
+              fieldName: "user.personalDetails.firstName",
+              fieldValue: inputValue,
+              operator: "LIKE",
+            },
+            logicalOperator: "OR",
+            rightOperand: {
+              fieldName: "user.personalDetails.lastName",
+              fieldValue: inputValue,
+              operator: "LIKE",
+            },
           },
         };
-      case "Amount":
+  
+      case "LenderId": // you can rename this in dropdown to match
         return {
-          fieldName: "amount",
-          fieldValue: inputValue,
-          operator: "EQUALS",
-        };
-      case "AmountCity":
-        return {
-          leftOperand: {
-            fieldName: "amount",
-            fieldValue: inputValue,
-            operator: "EQUALS",
-          },
+          leftOperand: baseFilter,
           logicalOperator: "AND",
           rightOperand: {
-            fieldName: "city",
-            fieldValue: inputValue2,
+            fieldName: "user.id",
+            fieldValue: inputValue.replace(/\D/g, ""),
             operator: "EQUALS",
           },
         };
-      case "City":
-        return {
-          fieldName: "city",
-          fieldValue: inputValue,
-          operator: "EQUALS",
-        };
+  
       case "MobileNumber":
         return {
-          fieldName: "mobileNumber",
-          fieldValue: inputValue,
-          operator: "EQUALS",
+          leftOperand: baseFilter,
+          logicalOperator: "AND",
+          rightOperand: {
+            fieldName: "user.mobileNumber",
+            fieldValue: inputValue,
+            operator: "EQUALS",
+          },
         };
-      // Add other cases as needed
+  
       default:
-        return {};
+        return baseFilter;
     }
   };
+  
   const handleSearch = async () => {
     if (!accessToken) {
       message.error("Missing access token");
@@ -201,6 +282,12 @@ const LenderLoanApplications = () => {
 
     setLoading(true);
     const filter = buildFilter();
+
+    // Reset pagination to first page when searching
+    setPagination(prev => ({
+      ...prev,
+      current: 1
+    }));
 
     const payload = {
       leftOperand: {
@@ -230,8 +317,8 @@ const LenderLoanApplications = () => {
         },
       },
       page: {
-        pageNo: pagination.current,
-        pageSize: pagination.pageSize,
+        pageNo: pagination.current, // Starting from first page on new search
+        pageSize: 10,
       },
       sortBy: "loanRequestedDate",
       sortOrder: "DESC",
@@ -256,6 +343,7 @@ const LenderLoanApplications = () => {
         setPagination((prev) => ({
           ...prev,
           total: response.data.totalElements,
+          current: 1, // Reset to first page
         }));
       }
     } catch (error) {
@@ -266,9 +354,14 @@ const LenderLoanApplications = () => {
     }
   };
 
-  const handleTableChange = (pagination) => {
-    setPagination(pagination);
-    // You can trigger a new search here with updated pagination
+  const handleTableChange = (paginationInfo) => {
+    console.log("Pagination changed:", paginationInfo);
+    setPagination({
+      ...pagination,
+      current: paginationInfo.current,
+      pageSize: paginationInfo.pageSize,
+    });
+    // fetchLoanData will be triggered by the useEffect hook
   };
 
   const viewDetails = async (record) => {
@@ -296,6 +389,7 @@ const LenderLoanApplications = () => {
     console.log("View comments for:", record);
     // Implement comments view functionality
     setSelectedRecord(record);
+    getCommentsfun(record)
     setShowComments(true);
   };
 
@@ -309,10 +403,22 @@ const LenderLoanApplications = () => {
   const changetoBorrower = async () => {
     if (selectedRecord) {
       try {
-        const response = await handleChangeToBorrower(selectedRecord);
+        setIsLoading(true);
+
+        const response = await handleChangePrimaryType(selectedRecord,"BORROWER");
         console.log("response", response);
+        setIsLoading(false);
         setShow(false);
+        Swal.fire(
+          "Success!",
+          `The user has been successfully changed to a BORROWER`,
+          "success"
+        );
+        
+        // Refresh data after action
+        fetchLoanData();
       } catch (error) {
+        setIsLoading(false);
         console.error("Error in changing to borrower:", error);
       }
     }
@@ -329,6 +435,9 @@ const LenderLoanApplications = () => {
           `The user has been successfully converted to a test user`,
           "success"
         );
+        
+        // Refresh data after action
+        fetchLoanData();
       } catch (error) {
         console.error("Error in changing to borrower:", error);
         setChangeToTest(false);
@@ -341,11 +450,13 @@ const LenderLoanApplications = () => {
       try {
         const response = await handleInterestStatus(selectedRecord);
         console.log("response", response);
-        // setChangeToTest(false);
-        // Swal.fire("Success!", `The user has been successfully converted to a test user`, "success");
+        setInterestStatus(false);
+        
+        // Refresh data after action
+        fetchLoanData();
       } catch (error) {
-        console.error("Error in changing to borrower:", error);
-        setChangeToTest(false);
+        console.error("Error in changing interest status:", error);
+        setInterestStatus(false);
       }
     }
   };
@@ -357,14 +468,16 @@ const LenderLoanApplications = () => {
         const response = await handleComments(selectedRecord, comments);
         console.log("response", response);
         setShowComments(false);
-        // setChangeToTest(false);
-        // Swal.fire("Success!", `The user has been successfully converted to a test user`, "success");
+        setComments('')
         if (response.status == 200) {
           Swal.fire(
             "Success!",
             `The comments has been successfully added`,
             "success"
           );
+          
+          // Refresh data after action
+          fetchLoanData();
         } else {
           if (response.response.status == 401) {
             Swal.fire({
@@ -372,7 +485,6 @@ const LenderLoanApplications = () => {
               title: "Oops...",
               text: response.response.data.errorMessage,
               confirmButtonText: "Go to Login",
-              // denyButtonText: 'Regenerated',
             }).then((result) => {
               if (result.isConfirmed) {
                 navigate("/");
@@ -388,12 +500,46 @@ const LenderLoanApplications = () => {
           }
         }
       } catch (error) {
-        console.error("Error in changing to borrower:", error);
+        // console.error("Error in adding comments:", error.data);
         setShowComments(false);
       }
     }
   };
 
+//Function to get Comments
+const getCommentsfun=async(record)=>{
+  const response =await handlegetComments(record)
+  console.log(response.data)
+  if(response.status==200){
+    setGetComments(response.data)
+  }
+  else{
+    if (response.response.status == 401) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: response.response.data.errorMessage,
+        confirmButtonText: "Go to Login",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/");
+        }
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: response.response.data.errorMessage,
+        confirmButtonText: "OK",
+      });
+    }
+  }
+
+}
+
+
+
+  // Function to handle the update of DOB
   const updatedobfunc = async () => {
     console.log("comments", actualDob);
     if (selectedRecord) {
@@ -401,10 +547,12 @@ const LenderLoanApplications = () => {
         const response = await handleupdatedob(selectedRecord, actualDob);
         console.log("response", response);
         setDobModal(false);
-        // setChangeToTest(false);
-        // Swal.fire("Success!", `The user has been successfully converted to a test user`, "success");
+        setActualDob('')
         if (response.status == 200) {
           Swal.fire("Success!", `DOB updated successfully`, "success");
+          
+          // Refresh data after action
+          fetchLoanData();
         } else {
           if (response.response.status == 401) {
             Swal.fire({
@@ -412,7 +560,6 @@ const LenderLoanApplications = () => {
               title: "Oops...",
               text: response.response.data.errorMessage,
               confirmButtonText: "Go to Login",
-              // denyButtonText: 'Regenerated',
             }).then((result) => {
               if (result.isConfirmed) {
                 navigate("/");
@@ -433,7 +580,7 @@ const LenderLoanApplications = () => {
       }
     }
   };
-
+ 
   const sendLoanStatement = async (record) => {
     const response = await handleSendStatement(record);
     console.log("handleSendStatement", response);
@@ -450,10 +597,21 @@ const LenderLoanApplications = () => {
       key: "lenderInfo",
       render: (_, record) => (
         <div>
-          <div>LR{record.lenderUser?.id || "N/A"}</div>
+          <div>LR{record?.lenderUser?.id || "N/A"}</div>
           <div>
-            <strong>Loan Process:</strong> {record.loanProcessType || "N/A"}
+            <strong>Loan Process:</strong> {record?.loanProcessType || "N/A"}
           </div>
+          <div>
+            <strong>Lender Group ID:</strong> {record?.groupId || "0"}
+          </div>
+          <div>
+            <strong>Lender Group:</strong> {record?.groupName || "N/A"}
+          </div>
+          {record?.referredBy!=0?
+          <div>
+            <strong>Referred By :</strong> {record?.referredBy || "N/A"}
+          </div>
+          :null}
         </div>
       ),
     },
@@ -470,10 +628,16 @@ const LenderLoanApplications = () => {
             <strong>Exp Date:</strong> {record.expectedDate || "N/A"}
           </div>
           <div>
+            <strong>Wallet Value:</strong> {record?.walletAmount}
+          </div>
+          <div>
             <strong>PAN:</strong> {record.user?.panNumber}
           </div>
           <div>
             <strong>DOB:</strong> {record.user?.dob}
+          </div>
+          <div>
+          <strong>Actual DOB:</strong> {record.user.originalDob}
           </div>
         </div>
       ),
@@ -489,11 +653,13 @@ const LenderLoanApplications = () => {
             </strong>
           </div>
           <div>
-            <strong>Mob:</strong>
+            <strong>Phone :</strong>
             {record.user?.mobileNumber || "N/A"}
           </div>
 
           <div>
+            INR {record?.loanRequestAmount} <br/>
+            {record?.rateOfInterest} % PA <br/>
             <strong>UTM SOURCE:</strong> {record.user?.utmSource}
           </div>
         </div>
@@ -514,8 +680,12 @@ const LenderLoanApplications = () => {
             {record.user?.address || "N/A"}
           </div>
           <div>
-            <strong>Bank Account:</strong>{" "}
-            {record.bankAccount ? "Available" : "Not Available"}
+            <strong>Bank Account Details:</strong><br/>
+            {record?.user.userNameAccordingToBank}<br />
+            {record?.user.accountNumber}<br />
+            {record?.user.ifscCode}<br />
+            {record?.user.branchName}
+
           </div>
         </div>
       ),
@@ -524,31 +694,6 @@ const LenderLoanApplications = () => {
       title: "View Documents",
       key: "viewdocs",
       render: (_, record) => (
-        //         <Space
-        //           size="small"
-        //           style={{ display: "flex", flexDirection: "column" }}
-        //         >
-        //           <Button
-        //   variant="primary"
-        //   size="sm"
-        //   type="button"
-        //   onClick={() => sendLoanStatement(record)}
-        //   style={{ backgroundColor: '#28a745',color:"white" }} // Custom green
-        // >
-        //   Send Loan Statements
-        // </Button>
-
-        // <Button
-        //   variant="primary"
-        //   size="sm"
-        //   type="button"
-        //   onClick={() => updateEmiComments(record)}
-        //   style={{ backgroundColor: 'orange',color:"white" }} // Custom green
-        // >
-        //   Update EMI Comments
-        // </Button>
-
-        //         </Space>
         <></>
       ),
     },
@@ -599,16 +744,16 @@ const LenderLoanApplications = () => {
     { value: "Choose", label: "Choose" },
     { value: "Name", label: "Name" },
     { value: "LenderId", label: "Lender Id" },
-    { value: "ROI", label: "ROI" },
-    { value: "Amount", label: "Amount" },
-    { value: "AmountCity", label: "Amount & City" },
-    { value: "City", label: "City" },
+    // { value: "ROI", label: "ROI" },
+    // { value: "Amount", label: "Amount" },
+    // { value: "AmountCity", label: "Amount & City" },
+    // { value: "City", label: "City" },
     { value: "MobileNumber", label: "Mobile Number" },
-    { value: "OxyScore", label: "OxyScore" },
-    { value: "UTM", label: "UTM" },
-    { value: "UTMAmount", label: "UTM & Amount" },
-    { value: "UTMCity", label: "UTM & City" },
-    { value: "PanNumber", label: "Pan Number" },
+    // { value: "OxyScore", label: "OxyScore" },
+    // { value: "UTM", label: "UTM" },
+    // { value: "UTMAmount", label: "UTM & Amount" },
+    // { value: "UTMCity", label: "UTM & City" },
+    // { value: "PanNumber", label: "Pan Number" },
   ];
 
   return (
@@ -727,7 +872,15 @@ const LenderLoanApplications = () => {
               columns={columns}
               dataSource={loanData}
               rowKey={(record) => record.id || Math.random().toString()}
-              pagination={pagination}
+              // pagination={pagination}
+              pagination={{
+                current: currentPage,
+                pageSize :10,
+                total: totalCount,
+                onChange:(page)=> setCurrentPage(page),
+                showSizeChanger: false,
+                showLessItems: true, 
+              }}
               loading={loading}
               onChange={handleTableChange}
               bordered
@@ -757,7 +910,14 @@ const LenderLoanApplications = () => {
                 // Perform some action
               }}
             >
-              Yes
+              {/* Yes */}
+              {isLoading ? (
+            <>
+              <Spinner animation="border" size="sm" /> Processing...
+            </>
+          ) : (
+            'Yes'
+          )}
             </Button>
           </Modal.Footer>
         </Modal>
@@ -819,26 +979,56 @@ const LenderLoanApplications = () => {
           <Modal.Header closeButton>
             <Modal.Title>Comments</Modal.Title>
           </Modal.Header>
-
+        
           <Modal.Body>
-            {/* <p>Are you sure?</p> */}
-            <div className="col-12 col-sm-12 ">
-              <div className="form-group local-forms">
-                <label>
-                  Comments <span className="login-danger">*</span>
-                </label>
-                <textarea
-                  type="text"
-                  name="withdrawFeedback"
-                  className="form-control"
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  placeholder="Enter the Comments"
-                  // placeholder="Enther the Borrower Id "
-                />
-              </div>
-            </div>
-          </Modal.Body>
+  <div className="col-12 col-sm-12">
+    {/* Display Comments Section */}
+    {getComments?.length > 0 && (
+      <div
+        className={`comment-section ${getComments.length > 2 ? 'scrollable-comments' : ''}`}
+        style={{
+          margin: '20px 0',
+          border: '1px solid #dee2e6',
+          borderRadius: '8px',
+          padding: '10px',
+        }}
+      >
+       {getComments.map((comment, index) => {
+  const isLast = index === getComments.length - 1;
+  const showBorder = getComments.length > 1 && !isLast;
+
+  return (
+    <div
+      key={index}
+      className={`single-comment mb-3 pb-2 ${showBorder ? 'border-bottom' : ''}`}
+    >
+      <p className="comment-user fw-bold mb-1">{comment.updatedByName}</p>
+      <p className="comment-text mb-1">{comment.comment}</p>
+      {/* <p className="comment-date text-muted small">{new Date(comment.commentedDate).toLocaleString()}</p> */}
+    </div>
+  );
+})}
+
+      </div>
+    )}
+
+    {/* Input Comment Box */}
+    <div className="form-group local-forms">
+      <label>
+        Comments <span className="login-danger">*</span>
+      </label>
+      <textarea
+        type="text"
+        name="withdrawFeedback"
+        className="form-control"
+        value={comments}
+        onChange={(e) => setComments(e.target.value)}
+        placeholder="Enter Comments"
+      />
+    </div>
+  </div>
+</Modal.Body>
+
 
           <Modal.Footer>
             <Button variant="secondary" onClick={handleClose}>
@@ -877,8 +1067,9 @@ const LenderLoanApplications = () => {
                 <input
                   type="text"
                   className="form-control"
-                  value={selectedRecord?.user.dob}
-                  editable={false}
+                  value=
+                  {selectedRecord?.user.originalDob==null?selectedRecord?.user?.dob:selectedRecord?.user.originalDob}
+                  readOnly
                   // onChange={(e) => setUserDob(e.target.value)}
                 />
               </div>
@@ -910,4 +1101,3 @@ const LenderLoanApplications = () => {
 };
 
 export default LenderLoanApplications;
- 

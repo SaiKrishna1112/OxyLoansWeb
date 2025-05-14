@@ -104,8 +104,8 @@ import BorrowerQueries from "../src/components/pages/Oxyloans/Admin/Help Desk/Bo
 import ResolvedLenderQueries from "../src/components/pages/Oxyloans/Admin/Help Desk/Lender/ResolvedLenderQueries.jsx";
 import ResolvedBorrowerQueries from "../src/components/pages/Oxyloans/Admin/Help Desk/Borrower/ResolvedBorrowerQueries.jsx";
 
-
 import LenderLoanApplications from "../src/components/pages/Oxyloans/Admin/LENDERS/LenderLoanApplications.jsx";
+import BorrowerLoanApplications from "../src/components/pages/Oxyloans/Admin/borrowersapplications/BorrowerLoanApplications.jsx";
 
 import Participatedsixmonthsago from "../src/components/pages/Oxyloans/Admin/Register Lender/Participatedsixmonthsago.jsx";
 import Walletloadednotpatcipated from "../src/components/pages/Oxyloans/Admin/Register Lender/Walletloadednotpatcipated.jsx";
@@ -115,7 +115,17 @@ import Onlytwiceparticpated from "./components/pages/Oxyloans/Admin/Register Len
 import Morethanhundredlenders from "./components/pages/Oxyloans/Admin/Register Lender/Morethanhundredlenders.jsx";
 import Emailwhatsappverified from "./components/pages/Oxyloans/Admin/Register Lender/Emailwhatsappverified.jsx";
 import Morethantenlakhs from "./components/pages/Oxyloans/Admin/Register Lender/Morethantenlakhs.jsx";
-// ********************BORROWER MODULE    ROUTES END ************************** //
+
+// import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
+// import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";
+import StudentDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/StudentDeals.jsx";
+import EquityDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EquityDeals.jsx";
+import EscrowsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EscrowsDeals.jsx";
+import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
+import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";// ********************BORROWER MODULE    ROUTES END ************************** //
+
+import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -288,7 +298,6 @@ const AppRouter = () => {
         <Route path="/resolvedlender" element={<ResolvedLenderQueries />} />
         <Route path="/resolvedborrower" element={<ResolvedBorrowerQueries />} />
 
-
         <Route path="/participatedsixmothsago" element={<Participatedsixmonthsago />} />
         <Route path="/walletloadednotpatcipated" element={<Walletloadednotpatcipated />} />
         <Route path="/notparticipatedlendersindeal" element={<Notparticipatedlendersindeal />} />
@@ -298,7 +307,19 @@ const AppRouter = () => {
         <Route path="/emailwhatsappverified" element={<Emailwhatsappverified />} />
         <Route path="/morethantenlakhs" element={<Morethantenlakhs />} />
 
-        <Route path="/lenderLoanApplications" element={<LenderLoanApplications />} />
+        {/* <Route path="/testsDeals" element={<TestsDeals />} />
+        <Route path="/salariedDeals" element={<SalariedDeals />} /> */}
+
+<Route path ="/viewstudentdeals" element={<StudentDeals />} />
+        <Route path ="/viewequitydeals" element={<EquityDeals />} />
+        <Route path ="/viewescrowsdeals" element={<EscrowsDeals  />} />
+        <Route path="/viewtestsDeals" element={<TestsDeals />} />
+        <Route path="/viewsalariedDeals" element={<SalariedDeals />} />
+
+        <Route path="/lenderLoanApplications" element={<LenderLoanApplications />} />
+        <Route path="/borrowerLoanApplications" element={<BorrowerLoanApplications />} />
+
+        <Route path="/updateUserDetails" element={<RemoveCredentials />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

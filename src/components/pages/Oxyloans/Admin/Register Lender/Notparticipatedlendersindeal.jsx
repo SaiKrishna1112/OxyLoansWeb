@@ -129,10 +129,12 @@ else {
                 Here Displaying Validity expired and stopped participating.
                 </span>
               </div>
-  
-            </div>
 
             
+
+           
+  
+            </div>
             <div style={{ marginTop: 20 }}>
   <div className="d-flex flex-wrap gap-2 align-items-start">
     <div className="d-flex flex-column me-2" style={{ flex: '1 1 200px', minWidth: '150px' }}>

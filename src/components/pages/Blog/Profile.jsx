@@ -61,11 +61,6 @@ const Profile = () => {
     otperror: "",
   });
 
-
-
-
-
-
   const [value, setValue] = useState("");
 
   const [userProfile, setUserProfile] = useState({
@@ -175,7 +170,7 @@ const Profile = () => {
     isValid: true,
   });
 
-
+  const [error, setError] = useState('');
   const history = useNavigate();
   const handlebankchange = (event) => {
     const { value, name } = event.target;
@@ -368,7 +363,8 @@ const Profile = () => {
 
   const handleKeyPressNumberCapital = (event) => {
     const inputChar = event.key;
-    const regex = /^[A-Z0-9]*$/;
+    // const regex = /^[A-Z0-9]*$/;
+     const regex = /^[a-zA-Z0-9]$/;
 
     if (!regex.test(inputChar) && inputChar !== "Backspace") {
       event.preventDefault();
@@ -1790,7 +1786,11 @@ const Profile = () => {
                                   placeholder=" Enter your IFSC Code"
                                   maxLength={11}
                                   value={bankaccountprofile.ifscCode}
+                                  
                                 />
+                               {/* <p className="text-gray-700 text-sm mt-1">* Use capital letters for the IFSC code.</p>
+                    {error && <p className="text-red-500 text-lg mt-2">{error}</p>} */}
+
                                 {bankaccountprofile.ifscCodeerror && (
                                   <div className="text-danger">
                                     {bankaccountprofile.ifscCodeerror}
