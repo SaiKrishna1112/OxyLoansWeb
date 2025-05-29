@@ -83,6 +83,7 @@ import BorrowerTicketHistory from "./components/pages/Oxyloans/Borrower/ViewTick
 
 import LoanRequest from "./components/pages/Oxyloans/Borrower/LoanRequest.jsx";
 import ForgotPassword from "./components/pages/Authentication/ForgotPassword.jsx";
+import OxyIntro from "./components/pages/Authentication/OxyIntro.jsx";
 import Mycontacts1 from "./components/pages/Oxyloans/Lender/Mycontacts1.jsx";
 import Todaydeal from "./components/pages/Oxyloans/Lender/Todaydeal.jsx";
 import Testdeal1 from "./components/pages/Oxyloans/Lender/Testdeal1.jsx";
@@ -125,7 +126,12 @@ import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDea
 import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";// ********************BORROWER MODULE    ROUTES END ************************** //
 
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
+import AssignedUsersforCallers from "./components/pages/Oxyloans/Admin/AssignedUsersforCallers.jsx";
 
+import RadhaDashboard from "./components/pages/Oxyloans/Radha Admin/RadhaDashboard.jsx"
+import UserCommentDetails from "./components/pages/Oxyloans/Radha Admin/UserCommentDetails.jsx";
+
+import CallsDataBasedOnID from "./components/pages/Oxyloans/Admin/Callers Data/CallsDataBasedOnID.jsx";
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -141,6 +147,7 @@ const AppRouter = () => {
           path="/register_active_proceed"
           element={<Register_active_proceed />}
         />
+        <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/testdeals" element={<UserTestdeals />} />
         <Route path="/forgotpassword" element={<ForgotPassword3 />} />
@@ -320,6 +327,12 @@ const AppRouter = () => {
         <Route path="/borrowerLoanApplications" element={<BorrowerLoanApplications />} />
 
         <Route path="/updateUserDetails" element={<RemoveCredentials />} />
+        <Route path="/assignedUsersforCallers" element={<AssignedUsersforCallers/>}/>
+
+        <Route path="/radhaDashboard" element={<RadhaDashboard/>}/>
+        <Route path="/userCommentDetails" element={<UserCommentDetails/>}/>
+
+        <Route path="/myCalls" element={<CallsDataBasedOnID/>}/>
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

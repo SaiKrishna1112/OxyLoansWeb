@@ -70,6 +70,13 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN", "HELPDESKADMIN"], // Show to all roles
     },
     {
+      key: "RadhaDashboard",
+      label: "Radha Dashboard",
+      link: "/radhaDashboard",
+      icon: "fa-solid fa-gauge",
+      type: ["ADMIN"], // Show to all roles
+    },
+    {
       key: "emi",
       label: "Borrower Details",
       link: "/Emi",
@@ -93,29 +100,33 @@ const OxyloansAdminSidebar = () => {
         { key: "resolvedlender", label: "Resolved Lender Queries", link: "/resolvedlender" },
         { key: "resolvedborrower", label: "Resolved Borrower Queries", link: "/resolvedborrower" },
       ],
-      type: ["HELPDESKADMIN"],
+      type: ["HELPDESKADMIN"]    
     },
+    // {
+    //   key: "assignedUsers",
+    //   label: "Assigned Users",
+    //   link: "/assignedUsersforCallers",
+    //   icon: "fa-solid fa-file-lines",
+    //   type: ["ADMIN", "HELPDESKADMIN"]    },
     {
       key: "lenderLoanApplications",
       label: "Lender Loan Applications",
       link: "/lenderLoanApplications",
       icon: "fa-solid fa-file-lines",
-      type: ["HELPDESKADMIN"],
-    },
+      type: [ "HELPDESKADMIN"]    },
     {
       key: "borrowerLoanApplications",
       label: "Borrower Loan Applications",
       link: "/borrowerLoanApplications",
       icon: "fa-solid fa-file-lines",
-      type: ["HELPDESKADMIN"],
-    },
+      type: [ "HELPDESKADMIN"]    },
     {
       key: "registerlender",
       label: "Register Lender",
       icon: "fa-solid fa-users",
       children: [
         { key: "participatedsixmothsago", label: "Participated 6 months ago", link: "/participatedsixmothsago" },
-        // { key: "walletloadednotpatcipated", label: "Wallet Loaded not participated", link: "/walletloadednotpatcipated" },
+        { key: "walletloadednotpatcipated", label: "Wallet Loaded not participated", link: "/walletloadednotpatcipated" },
         { key: "notparticipatedlendersindeal", label: "Not participated", link: "/notparticipatedlendersindeal" },
         { key: "onlyonceparticipatedlenders", label: "Only once participated lenders", link: "/onlyonceparticipatedlenders" },
         { key: "onlytwiceparticipatedlenders", label: "Only Twice participated Lenders", link: "/onlytwiceparticipatedlenders" },
@@ -124,8 +135,7 @@ const OxyloansAdminSidebar = () => {
         { key: "morethantenlakhs", label: "More than ten lakhs", link: "/morethantenlakhs" },
 
       ],
-      type: ["HELPDESKADMIN"],
-    },
+      type: ["HELPDESKADMIN"]    },
     {
       key: "deals",
       label: "Deals",
@@ -137,8 +147,7 @@ const OxyloansAdminSidebar = () => {
         { key: "viewsalarieddeals", label: "View Salaried Deals", link: "/viewsalarieddeals" },
         { key: "viewtestsdeals", label: "View Test Deals", link: "/viewtestsdeals" }
       ],
-      type: ["HELPDESKADMIN"],
-    },
+      type: ["HELPDESKADMIN"]    },
     {
       key: "superAdmin",
       label: "Super Admin",
@@ -153,8 +162,14 @@ const OxyloansAdminSidebar = () => {
         // { key: "Emailwhatsappverified", label: "Email whatsapp not verified", link: "/Emailwhatsappverified" },
         // { key: "morethantenlakhs", label: "More than ten lakhs", link: "/morethantenlakhs" },
       ],
-      type: ["ADMIN","HELPDESKADMIN"],
+      type: ["ADMIN","SUPERADMIN"],
     },
+    {
+      key: "myCalls",
+      label: "My Calls",
+      link: "/myCalls",
+      icon: "fa-solid fa-phone",
+      type: [ "HELPDESKADMIN"]    },
   ];
   
 

@@ -1,13 +1,17 @@
 import axios from "axios";
-const userisIn = "prod";
+const userisIn = "local";
 const API_BASE_URL =
   userisIn == "local"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/"
     : "https://fintech.oxyloans.com/oxyloans/v1/user/"; 
 
+
+
 const getToken = () => {
   return sessionStorage.getItem("accessToken");
 };
+
+export const base_url=API_BASE_URL;
 export const getUserId = () => {
   return sessionStorage.getItem("userId");
 };
@@ -103,6 +107,7 @@ export const handleSendMessageNotification=async(value)=>{
 
 
 
+
 export const handleAddBorrowerRequest = async (submissionData) => {
   const token = getToken();
   const userId = getUserId();
@@ -174,6 +179,28 @@ export const handleDashboardUsersData = async () => {
   }
 };
 
+export const AssignedDataforUser = async (pageValue) => {
+  // console.log("Handle Dashboard Data...",value);
+  try {
+    // Get token and user ID from session storage
+    const token = getToken();
+    const userId = getUserId();
+// console.log({pageValue})
+    // Perform API request using a generic request handler
+    const response = await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `assigned-users/${userId}`,
+      "POST",
+      token,
+      pageValue
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching dashboard count1:", error.response);
+    throw error;
+  }
+};
+
 export const fetchActiveLendersData = async () => {
   // console.log("Handle Dashboard Data...",value);
   try {
@@ -232,17 +259,21 @@ export const fetchActiveLendersData = async () => {
 export const handleGetCICReports = async (value,month,year) => {
   console.log("Fetching CIC reports...",value,month,year);
   let data
-  if(value=="All"){
+  if(value=="all"){
   data={
     reportsType:value,
   }  
-}else{
-  data={
-    setNo:Number(value),
-    monthName:month,
-    year:year,
-  }  
 }
+else{
+  console.log("sreeja")
+}
+// else{
+//   data={
+//     setNo:Number(value),
+//     monthName:month,
+//     year:year,
+//   }  
+// }
   const token = getToken();
   const userId = getUserId();
  
@@ -259,10 +290,10 @@ export const handleGetCICReports = async (value,month,year) => {
 export const searchCallLender = async (data) => {
   const token = getToken();
   const userId = getUserId();
-  // console.log("data",data)
+  console.log("data",data)
    const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `6680/loan/ADMIN/request/search`,
+    `${userisIn=="local"?1:6680}/loan/ADMIN/request/search`,
     "POST",
     token,
     data
@@ -311,7 +342,7 @@ export const handleLenderLoanApplication=async()=>{
   const userId = getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `6680/loan/ADMIN/request/search`,
+    `${userisIn=="local"?1:6680}/loan/ADMIN/request/search`,
     "POST",
     token,
     // postdatastring
@@ -364,7 +395,7 @@ export const handleInterestStatus=async(value)=>{
 
    const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `6680/loan/ADMIN/updateuserstatus`,
+    `${userisIn=="local"?1:6680}/loan/ADMIN/updateuserstatus`,
     "PATCH",
     token,
     data
@@ -374,20 +405,25 @@ export const handleInterestStatus=async(value)=>{
    return response;
 }
 
-export const handleComments=async(value1,value2)=>{
+export const handleComments=async(value1,value2,formattedDate)=>{
   const token = getToken();
   const userId = getUserId();
   const email=getEmail()
   console.log("handleComments value",value1)
-  console.log({value2})
-  console.log(email.split("@")[0])
+  console.log(value1.lenderUser.mobileNumber)
+  // console.log(email.split("@")[0])
 
   let data={
     // comments: value2
     loanRequestId: value1.loanRequestId,
     updatedByUserId: Number(value1.userDisplayId),
     updatedByName: email.split("@")[0],
-    comment: value2
+    comment: value2,
+    created_at:formattedDate,
+    telecallinguserid:userId,
+    userName:value1.user.firstName,
+    userMobileNumber:value1.lenderUser.mobileNumber,
+
   }
   console.log({data})
 
@@ -507,7 +543,7 @@ export const handleWalletloadednotpaticipatedDownloadReport=async()=>{
   const userId = getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `paticipatedsixmothsago`,
+    `walletloadednotpatcipated`,
     "POST",
     token,
     // postdatastring

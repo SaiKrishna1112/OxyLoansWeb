@@ -95,7 +95,9 @@ const UserType = () => {
         </div>
         <div className="ut-sections">
           <div>
-            <Link to="/borrower_register">
+            {/* <Link to="/borrower_register"> */}
+            <Link to="/oxyIntro">
+
               <h5 className="section-title">
                 <i className="fa-regular fa-money-bill-1"></i>{' '}
                 Are You Looking for a Loan?

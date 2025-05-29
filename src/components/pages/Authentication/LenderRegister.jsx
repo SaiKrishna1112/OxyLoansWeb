@@ -299,7 +299,7 @@ export default function LenderRegister() {
                             type="text"
                             name="pancard"
                             maxLength={30}
-                            onKeyPress={handleKeyPressNumberCapital}
+                            // onKeyPress={handleKeyPressNumberCapital}
                             onChange={handlechange}
                           />
                           <span className="profile-views">

@@ -11,6 +11,8 @@ import {
   toastrSuccess,
   toastrWarning,
 } from "../../Base UI Elements/Toast";
+import axios from "axios";
+
 
 import {
   profileupadate,
@@ -43,7 +45,12 @@ const BorrowerProfile = () => {
   const reduxStoreDataDashboard = useSelector(
     (data) => data.dashboard.fetchDashboard
   );
-
+  const userisIn = "prod";
+  const BASE_URL =
+    userisIn == "local"
+      ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user"
+      : "https://fintech.oxyloans.com/oxyloans/v1/user";
+  
   const [dashboarddata, setdashboarddata] = useState({
     sendotpbtn: true,
     sendotpbtnText: "Send OTP",
@@ -64,10 +71,6 @@ const BorrowerProfile = () => {
   });
 
 
-
-
-
-
   const [value, setValue] = useState("");
 
   const [userProfile, setUserProfile] = useState({
@@ -82,6 +85,7 @@ const BorrowerProfile = () => {
     locality: "",
     middleName: "",
     panNumber: "",
+    residenceAddress:"",
     permanentAddress: "",
     pinCode: "",
     state: "",
@@ -98,8 +102,10 @@ const BorrowerProfile = () => {
     firstNamrror: "",
     lastNamerror: "",
     panNumbererror: "",
+    residenceAddresserror:"",
     permanentAddresserror: "",
     pinCodeerror: "",
+    localityerror:"",
     stateerror: "",
     whatsAppNumbererror: "",
     aadhaarNumbererror: "",
@@ -107,7 +113,7 @@ const BorrowerProfile = () => {
     mobileNumbererror: "",
     emailerror: "",
   });
-
+  const [localityOptions, setLocalityOptions] = useState([]);
   const [bankaccountprofile, setBankaccountProfile] = useState({
     sendMobileOtp: "",
     moblieNumber: "",
@@ -179,6 +185,33 @@ const BorrowerProfile = () => {
 
   const [uploddata, setuploaddata] = useState([]);
   const [viewdocment, setviewdocment] = useState(false);
+  const [category, setCategory] = useState("");
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    totalExperience: "",
+    company: "",
+    salary: "",
+    // occupation: "",
+    // income: "",
+    country: "",
+    universityName: "",
+    universityLocation: "",
+  });
+
+  const handleCategoryChange = (e) => {
+    setCategory(e.target.value);
+    // console.log({category})
+    setError(""); // clear error on select
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handlebankchange = (event) => {
     const { value, name } = event.target;
     setBankaccountProfile({
@@ -345,7 +378,7 @@ const BorrowerProfile = () => {
 
   const handleKeyPress = (event) => {
     const inputChar = event.key;
-    const regex = /^[a-zA-Z]*$/;
+    const regex = /^[a-zA-Z\s]*$/;
 
     if (!regex.test(inputChar) && inputChar !== "Backspace") {
       event.preventDefault();
@@ -690,6 +723,12 @@ const BorrowerProfile = () => {
         lastNamerror: "",
       }));
     }
+    if (userProfile.sameAsResidence) {
+    setUserProfile((prev) => ({
+      ...prev,
+      permanentAddress: prev.residenceAddress,
+    }));
+  }
 
     if (
       /^\d+$/.test(userProfile.mobileNumber) ||
@@ -876,6 +915,7 @@ const BorrowerProfile = () => {
     nomineeDetails.relation,
     bankaccountprofile.moblieNumber,
     userProfile.whatsAppNumber,
+    userProfile.address,
     nomineeDetails.accountNo,
     nomineeDetails.bank,
     nomineeDetails.nomineecity,
@@ -883,29 +923,51 @@ const BorrowerProfile = () => {
     userProfile.city,
     nomineeDetails.nomineeMobile,
     nomineeDetails.branch,
-    nomineeDetails.accountN,
+    nomineeDetails.accountNo,
     bankaccountprofile.bankCity,
   ]);
 
-  const handlechange = (event) => {
+  const handlechange = async(event) => {
     const { name, value } = event.target;
 
-    if (name === "pinCode") {
-      // Validate input to allow only numeric characters
-      const numericValue = value.replace(/\D/g, ""); // Remove non-numeric characters
-      // Limit the input to 6 digits
-      const updatedValue = numericValue.slice(0, 6);
-      if (updatedValue.length !== 6) {
-        // Check against the expected length of 6 digits
-        setUserProfile({
-          ...userProfile,
-          pinCodeError: "PIN code must be exactly 6 digits long",
-          [name]: updatedValue,
-        });
-        return; // Exit the function early to prevent setting state again
-      }
+    // if (name === "pinCode") {
+    //   // Validate input to allow only numeric characters
+    //   const numericValue = value.replace(/\D/g, ""); // Remove non-numeric characters
+    //   // Limit the input to 6 digits
+    //   const updatedValue = numericValue.slice(0, 6);
+    //   if (updatedValue.length !== 6) {
+    //     // Check against the expected length of 6 digits
+    //     setUserProfile({
+    //       ...userProfile,
+    //       pinCodeError: "PIN code must be exactly 6 digits long",
+    //       [name]: updatedValue,
+    //     });
+    //     return; // Exit the function early to prevent setting state again
+    //   }
 
-      // Only proceed with API call if pin code is exactly 6 digits long
+    //   // Only proceed with API call if pin code is exactly 6 digits long
+    // }
+
+
+
+    if (name === "pinCode" && value.length === 6) {
+      try {
+        const res = await axios.get(BASE_URL+`/${value}/pincode`);
+
+        const blocks = res.data.pinresults
+          .map((item) => item.block)
+          .filter((block, index, self) => block && self.indexOf(block) === index); // get unique non-null blocks
+
+        setLocalityOptions(blocks);
+
+        // clear existing selected address if not in list
+        if (!blocks.includes(userProfile.locality)) {
+          setUserProfile((prev) => ({ ...prev, locality: "" }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch pincode info", error);
+        setLocalityOptions([]);
+      }
     }
 
     // Calculate today's date
@@ -960,7 +1022,19 @@ const BorrowerProfile = () => {
     });
   };
 
+
+  const handleKeyPressNumber = (event) => {
+    const inputChar = event.key;
+    const regex = /^[0-9]*$/;
+
+    if (!regex.test(inputChar) && inputChar !== "Backspace") {
+      event.preventDefault();
+    }
+  };
+
+
   const handleprofileUpdate = () => {
+
     setUserProfile({
       ...userProfile,
       addresserror:
@@ -975,11 +1049,8 @@ const BorrowerProfile = () => {
         userProfile.panNumber === "" ? "Please enter the panNumber" : "",
       panNumbererror:
         userProfile.panNumber.length !== 10 ? "Invalid panNumber" : "",
-
-      permanentAddresserror:
-        userProfile.permanentAddress === ""
-          ? "Please Enter The Residence Address"
-          : "",
+residenceAddresserror: userProfile.address === "" ? "Please enter Residence Address" : "",
+  permanentAddresserror: userProfile.permanentAddress === "" ? "Please Enter The Permenant Address" : "",
       cityer: userProfile.city === "" ? "Please Enter The city" : "",
       pinCodeerror:
         userProfile.pinCode === "" ? "Please Enter The Pincode" : "",
@@ -998,6 +1069,31 @@ const BorrowerProfile = () => {
       emailerror: userProfile.email === "" ? "Please Enter The Email" : "",
     });
 
+    if (!category) {
+      setError("Please select a category.");
+      return;
+    }
+  
+    // Step 2: Validate based on category
+    if (category === "SALARIED" || category === "SELFEMPLOYED") {
+      if (!formData.totalExperience || !formData.company || !formData.salary) {
+        setError("Please fill all the fields for " + category.toLowerCase() + " category.");
+        return;
+      }
+    }
+  
+    if (category === "STUDENT") {
+      if (!formData.country || !formData.universityName || !formData.universityLocation) {
+        setError("Please fill all the fields for student category.");
+        return;
+      }
+    }
+  
+    // If everything is valid
+    setError("");
+    // Proceed with API call or other logic
+    console.log("Submitting form:", category, formData);
+
     if (
       userProfile.email !== null &&
       userProfile.email !== "" &&
@@ -1012,6 +1108,10 @@ const BorrowerProfile = () => {
       userProfile.pinCode !== null &&
       userProfile.pinCode !== "" &&
       userProfile.fatherName !== null &&
+      userProfile.residenceAddress !== null &&
+      userProfile.residenceAddress !== "" &&
+       userProfile.address !== null &&
+      userProfile.address !== "" &&
       userProfile.permanentAddress !== null &&
       userProfile.permanentAddress !== "" &&
       userProfile.whatsAppNumber.length >= 10 &&
@@ -1026,7 +1126,7 @@ const BorrowerProfile = () => {
       userProfile.city !== null &&
       userProfile.city !== ""
     ) {
-      const response = profileupadate(userProfile);
+      const response = profileupadate(userProfile,formData,category);
       response.then((data) => {
         if (data.request.status == 200) {
           Success("success", "Personal Details Saved Successfully");
@@ -1236,6 +1336,7 @@ const BorrowerProfile = () => {
       setUserProfile({
         ...userProfile,
         address: data.data.address,
+        residenceAddress: data.data.address,
         city: data.data.city,
         dob: data.data.dob,
         facebookUrl: data.data.urlsDto.faceBookUrl,
@@ -1246,6 +1347,7 @@ const BorrowerProfile = () => {
         locality: data.data.locality,
         middleName: data.data.middleName,
         panNumber: data.data.panNumber,
+        // residenceAddress:data.data.residenceAddress,
         permanentAddress: data.data.permanentAddress,
         pinCode: data.data.pinCode,
         state: data.data.state,
@@ -1644,6 +1746,7 @@ const BorrowerProfile = () => {
                                   className="form-control"
                                   name="accountNumber"
                                   onChange={handlebankchange}
+                                  onKeyPress={handleKeyPressNumber}
                                   placeholder=" Enter your Account Number"
                                   maxLength={16}
                                   value={bankaccountprofile.accountNumber}
@@ -1665,6 +1768,7 @@ const BorrowerProfile = () => {
                                   className="form-control"
                                   name="confirmAccountNumber"
                                   onChange={handlebankchange}
+                                  onKeyPress={handleKeyPressNumber}
                                   placeholder="Enter Confirm Account Number"
                                   onPaste={handlePaste}
                                   maxLength={16}
@@ -1788,6 +1892,7 @@ const BorrowerProfile = () => {
                                   placeholder=" Enter your Mobile Number"
                                   onChange={handlebankchange}
                                   maxLength={10}
+                                  onKeyPress={handleKeyPressNumber}
                                   value={bankaccountprofile.moblieNumber}
                                 />
                                 {bankaccountprofile.moblieNumbererror && (
@@ -1936,6 +2041,7 @@ const BorrowerProfile = () => {
                                     placeholder=" Enter  Nominee mobile no "
                                     value={nomineeDetails.nomineeMobile}
                                     name="nomineeMobile"
+                                    onKeyPress={handleKeyPressNumber}
                                     onChange={handlerNominee}
                                   />
 
@@ -1957,6 +2063,7 @@ const BorrowerProfile = () => {
                                     placeholder="  Nominee Name Account No"
                                     value={nomineeDetails.accountNo}
                                     name="accountNo"
+                                    onKeyPress={handleKeyPressNumber}
                                     maxLength={18}
                                     onChange={handlerNominee}
                                   />
@@ -2219,6 +2326,7 @@ const BorrowerProfile = () => {
                                   className="form-control"
                                   placeholder="Enter Mobile Name"
                                   // onChange={handlechange}
+                                  onKeyPress={handleKeyPressNumber}
                                   value={userProfile.mobileNumber}
                                   name="mobileNumber"
                                 />
@@ -2239,6 +2347,7 @@ const BorrowerProfile = () => {
                                   className="form-control"
                                   placeholder="Enter WhatsApp "
                                   onChange={handlechange}
+                                  onKeyPress={handleKeyPressNumber}
                                   value={userProfile.whatsAppNumber}
                                   name="whatsAppNumber"
                                 />
@@ -2270,25 +2379,67 @@ const BorrowerProfile = () => {
                               </div>
 
                               <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>
-                                  Residence Address
-                                  <span className="login-danger">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Enter Residence Address"
-                                  onChange={handlechange}
-                                  value={userProfile.permanentAddress}
-                                  name="permanentAddress"
-                                />
-                                {userProfile.permanentAddresserror && (
-                                  <div className="text-danger">
-                                    {userProfile.permanentAddresserror}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="form-group col-12 col-sm-4 local-forms">
+  <label>
+    Residence Address
+    <span className="login-danger"> *</span>
+  </label>
+  <textarea
+    type="text"
+    className="form-control"
+    placeholder="Enter Residence Address"
+    onChange={handlechange}
+    value={userProfile.residenceAddress}
+    name="residenceAddress"
+  />
+  {userProfile.residenceAddresserror && (
+    <div className="text-danger">
+      {userProfile.residenceAddresserror}
+    </div>
+  )}
+
+  {/* ✅ Checkbox */}
+  <div className="form-check mt-2">
+    <input
+      type="checkbox"
+      className="form-check-input"
+      id="sameAddress"
+      checked={userProfile.sameAsResidence}
+      onChange={(e) => {
+        const isChecked = e.target.checked;
+        setUserProfile((prev) => ({
+          ...prev,
+          sameAsResidence: isChecked,
+          permanentAddress: isChecked ? prev.residenceAddress : "",
+        }));
+      }}
+    />
+     same as Residence address
+  </div>
+</div>
+
+<div className="form-group col-12 col-sm-4 local-forms">
+  <label>
+    Permanent Address
+    <span className="login-danger">*</span>
+  </label>
+  <textarea
+    type="text"
+    className="form-control"
+    placeholder="Enter Permanent Address"
+    onChange={handlechange}
+    value={userProfile.permanentAddress}
+    name="permanentAddress"
+    disabled={userProfile.sameAsResidence} // Disable if checkbox is checked
+  />
+  {userProfile.permanentAddresserror && (
+    <div className="text-danger">
+      {userProfile.permanentAddresserror}
+    </div>
+  )}
+</div>
+
+
+                              {/* <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
                                   Pin Code
                                   <span className="login-danger">*</span>
@@ -2326,7 +2477,49 @@ const BorrowerProfile = () => {
                                     {userProfile.addresserror}
                                   </div>
                                 )}
-                              </div>
+                              </div> */}
+
+<div className="form-group col-12 col-sm-4 local-forms">
+        <label>
+          Pin Code <span className="login-danger">*</span>
+        </label>
+        <input
+          type="number"
+          className="form-control"
+          placeholder="Enter Pincode"
+          maxLength={6}
+          onKeyPress={handleKeyPressNumber}
+          onChange={handlechange}
+          value={userProfile.pinCode}
+          name="pinCode"
+        />
+        {userProfile.pinCodeerror && (
+          <div className="text-danger">{userProfile.pinCodeerror}</div>
+        )}
+      </div>
+
+      {/* Locality Dropdown */}
+      <div className="form-group col-12 col-sm-4 local-forms">
+        <label>
+          Locality <span className="login-danger">*</span>
+        </label>
+        <select
+          className="form-control"
+          name="address"
+          value={userProfile.locality}
+          onChange={handlechange}
+        >
+          <option value="">Select Locality</option>
+          {localityOptions.map((loc, index) => (
+            <option key={index} value={loc}>
+              {loc}
+            </option>
+          ))}
+        </select>
+        {userProfile.localityerror && (
+          <div className="text-danger">{userProfile.localityerror}</div>
+        )}
+      </div>
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
                                   City <span className="login-danger">*</span>
@@ -2410,6 +2603,100 @@ const BorrowerProfile = () => {
                                   name="linkedinUrl"
                                 />
                               </div>
+
+                              <div className="form-group">
+      <label><strong>Borrower Category</strong></label>
+
+      {/* Radio Buttons Row */}
+      <div className="d-flex gap-4 mb-3">
+        <div className="form-check">
+          <input
+            type="radio"
+            name="category"
+            value="SALARIED"
+            className="form-check-input"
+            id="salaried"
+            onChange={handleCategoryChange}
+            checked={category === "SALARIED"}
+          />
+          <label className="form-check-label" htmlFor="salaried">Salaried</label>
+        </div>
+        <div className="form-check">
+          <input
+            type="radio"
+            name="category"
+            value="SELFEMPLOYED"
+            className="form-check-input"
+            id="selfEmployed"
+            onChange={handleCategoryChange}
+            checked={category === "SELFEMPLOYED"}
+          />
+          <label className="form-check-label" htmlFor="selfEmployed">Self Employed</label>
+        </div>
+        <div className="form-check">
+          <input
+            type="radio"
+            name="category"
+            value="STUDENT"
+            className="form-check-input"
+            id="student"
+            onChange={handleCategoryChange}
+            checked={category === "STUDENT"}
+          />
+          <label className="form-check-label" htmlFor="student">Student</label>
+        </div>
+      </div>
+
+      {/* Error Message */}
+      {error && <div className="text-danger mb-3">{error}</div>}
+
+      {/* Conditional Input Fields in a Row */}
+      <div className="row">
+        {category === "SALARIED" && (
+          <>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} />
+            </div>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="company" placeholder="Company" className="form-control" onChange={handleChange} />
+            </div>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="salary" placeholder="Salary" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} />
+            </div>
+          </>
+        )}
+
+        {category === "SELFEMPLOYED" && (
+          <>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber}/>
+            </div>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="company" placeholder="Organization" className="form-control" onChange={handleChange} />
+            </div>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="salary" placeholder="Income" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber}/>
+            </div>
+          </>
+        )}
+
+        {category === "STUDENT" && (
+          <>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="country" placeholder="Country" className="form-control" onChange={handleChange} />
+            </div>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="universityName" placeholder="University Name" className="form-control" onChange={handleChange} />
+            </div>
+            <div className="col-md-4 mb-2">
+              <input type="text" name="universityLocation" placeholder="University Location" className="form-control" onChange={handleChange} />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* <button className="btn btn-primary mt-3" onClick={handleSubmit}>Submit</button> */}
+    </div>
                               <div className="col-12 ">
                                 <button
                                   className="btn btn-primary col-md-4 col-12"
@@ -2677,9 +2964,6 @@ const BorrowerProfile = () => {
                                 <h6>Document Password : <span style={{ fontWeight: '300' }}> {uploddata.password}</span></h6>
                                 <h6>Risk Category : <span style={{ fontWeight: '300' }}> {uploddata.riskCategory != null ? uploddata.riskCategory : "D"}</span></h6>
                               </>}
-
-
-
 
                             </div>
                           </div>

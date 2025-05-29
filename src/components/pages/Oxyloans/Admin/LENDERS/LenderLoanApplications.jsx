@@ -65,6 +65,7 @@ const LenderLoanApplications = () => {
   const [changeToTest, setChangeToTest] = useState(false);
   const [interestStatus, setInterestStatus] = useState(false);
   const [comments, setComments] = useState("");
+  const [commentsError, setCommentsError] = useState('');
   const[getComments,setGetComments]=useState([])
   const [showComments, setShowComments] = useState(false);
   const [dobModal, setDobModal] = useState(false);
@@ -92,39 +93,23 @@ const LenderLoanApplications = () => {
       setLoading(true);
       // Create the payload with pagination parameters
       const payload = {
-        leftOperand: {
-          fieldName: "userPrimaryType",
-          fieldValue: "LENDER",
-          operator: "EQUALS",
-        },
-        logicalOperator: "AND",
-        rightOperand: {
-          leftOperand: {
-            fieldName: "parentRequestId",
-            operator: "NULL",
-          },
-          logicalOperator: "AND",
-          rightOperand: {
-            leftOperand: {
-              fieldName: "loanStatus",
-              fieldValue: "Requested",
-              operator: "EQUALS",
+        "leftOperand":
+            {
+              "fieldName":"userPrimaryType",
+              "fieldValue":"LENDER",
+              "operator":"EQUALS"
             },
-            logicalOperator: "OR",
-            rightOperand: {
-              fieldName: "loanStatus",
-              fieldValue: "Edit",
-              operator: "EQUALS",
+            "logicalOperator":"AND",
+            "rightOperand":
+            {
+               "fieldName":"user.status",
+               "fieldValue":"REGISTERED",
+               "operator":"EQUALS"
             },
-          },
-        },
-        page: {
-          pageNo: pagination.current,
-          pageSize: pagination.pageSize,
-        },
-        sortBy: "loanRequestedDate",
-        sortOrder: "DESC",
-      };
+            "page":{"pageNo":pagination.current,"pageSize":10},
+            "sortBy":"loanRequestedDate",
+            "sortOrder":"DESC"
+        }
       
       const response = await searchCallLender(payload);
       // console.log("response", response.data.results);
@@ -461,11 +446,21 @@ const LenderLoanApplications = () => {
     }
   };
 
+  const today = new Date();
+  const formattedDate = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()} ${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}:${String(today.getSeconds()).padStart(2, '0')}`;
+  console.log({formattedDate})
+
+
+
   const commentsFunc = async () => {
     console.log("comments", comments);
+    if (!comments.trim()) {
+      setCommentsError('Comments are required');
+      return
+    } 
     if (selectedRecord) {
       try {
-        const response = await handleComments(selectedRecord, comments);
+        const response = await handleComments(selectedRecord, comments,formattedDate);
         console.log("response", response);
         setShowComments(false);
         setComments('')
@@ -1022,10 +1017,16 @@ const getCommentsfun=async(record)=>{
         name="withdrawFeedback"
         className="form-control"
         value={comments}
-        onChange={(e) => setComments(e.target.value)}
+        onChange={(e) => {setComments(e.target.value);
+                 if (commentsError) setCommentsError('');
+        }}
         placeholder="Enter Comments"
       />
+        {commentsError && (
+        <small className="text-danger">{commentsError}</small>
+      )}
     </div>
+  
   </div>
 </Modal.Body>
 

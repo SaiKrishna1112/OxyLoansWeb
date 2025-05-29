@@ -396,29 +396,32 @@ export const sendMoblieOtp = async (bankaccountprofile) => {
   );
   return response;
 };
-export const profileupadate = async (userProfile) => {
+export const profileupadate = async (userProfile, formData, category) => {
   const token = getToken();
   const userId = getUserId();
 
-  var dateComponents = userProfile.dob.split("-");
-  let formattedDate =
-    dateComponents[2] + "/" + dateComponents[1] + "/" + dateComponents[0];
-
-  if (formattedDate.includes("undefined/undefined/")) {
-    let startIndex =
-      formattedDate.indexOf("undefined/undefined/") +
-      "undefined/undefined/".length;
-    formattedDate = formattedDate.substring(startIndex);
+  // Format date
+  let formattedDate = userProfile.dob;
+  if (userProfile.dob.includes("-")) {
+    const dateComponents = userProfile.dob.split("-");
+    formattedDate = `${dateComponents[2]}/${dateComponents[1]}/${dateComponents[0]}`;
+    if (formattedDate.includes("undefined/undefined/")) {
+      const startIndex =
+        formattedDate.indexOf("undefined/undefined/") +
+        "undefined/undefined/".length;
+      formattedDate = formattedDate.substring(startIndex);
+    }
   }
 
-  const data = JSON.stringify({
+  // Prepare personal API payload
+  const personalData = JSON.stringify({
     firstName: userProfile.firstName,
     lastName: userProfile.lastName,
     middleName: userProfile.middleName,
     fatherName: userProfile.fatherName,
     dob: formattedDate,
     panNumber: userProfile.panNumber,
-    address: userProfile.city,
+    address: userProfile.residenceAddress,
     permanentAddress: userProfile.permanentAddress,
     pinCode: userProfile.pinCode,
     city: userProfile.city,
@@ -429,20 +432,47 @@ export const profileupadate = async (userProfile) => {
     twitterUrl: userProfile.twitterUrl,
     whatsAppNumber: userProfile.whatsAppNumber,
     aadharNumber: userProfile.aadharNumber,
+    employment: category === "SELFEMPLOYED" ? "SELFEMPLOYED" : "SALARIED",
+    ...(category !== "STUDENT" && {
+      workExperience: formData.totalExperience,
+      salary: formData.salary,
+      companyName: formData.company,
+    }),
+    studentOrNot: category === "STUDENT",
   });
 
-  console.log(token);
-  const response = await handleApiRequestAfterLoginService(
+  // Always call personal API first
+  const personalResponse = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `personal/${userId}`,
     "PATCH",
     token,
-    data
+    personalData
   );
 
-  return response;
-};
+  // Conditionally call student_info API (no need to return its response)
+  if (category === "STUDENT") {
+    const studentBody = JSON.stringify({
+      userId: userId,
+      country: formData.country,
+      universityName: formData.universityName,
+      location: formData.universityLocation,
+    });
 
+    handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `student_info`,
+      "PATCH",
+      token,
+      studentBody
+    ).catch((err) => {
+      console.error("Student info update failed:", err);
+    });
+  }
+
+  // Return only personal API response
+  return personalResponse;
+};
 export const getLendersInterestsDateWiseapi = async (date) => {
   const token = getToken();
   const userId = getUserId();

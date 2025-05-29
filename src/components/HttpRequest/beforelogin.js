@@ -1,5 +1,5 @@
 import axios from "axios";
-const userisIn = "prod";
+const userisIn = "local";
 let API_BASE_URL =
   userisIn == "local"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/"
