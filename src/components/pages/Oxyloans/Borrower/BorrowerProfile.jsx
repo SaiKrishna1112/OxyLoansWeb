@@ -12,6 +12,7 @@ import {
   toastrWarning,
 } from "../../Base UI Elements/Toast";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 
 import {
@@ -33,6 +34,14 @@ import {
   sendWhatsappOtpapi,
   verifyWhatsappOtpapi,
   getuploadCredit,
+  getdataBankStatement,
+  getdatatenth,
+  getdataintermediate,
+  getdatagraduation,
+  getdataofferletter,
+  getdatafeereceipt,
+  getdatapayslips,
+
 } from "../../../HttpRequest/afterlogin";
 
 import { useSelector } from "react-redux";
@@ -112,6 +121,7 @@ const BorrowerProfile = () => {
     aadhaarNumbererror: "",
     mobileNumbererror: "",
     emailerror: "",
+    studentOrNot: "",
   });
   const [localityOptions, setLocalityOptions] = useState([]);
   const [bankaccountprofile, setBankaccountProfile] = useState({
@@ -179,6 +189,13 @@ const BorrowerProfile = () => {
     CHEQUELEAF: "",
     DRIVINGLICENCE: "",
     VOTERID: "",
+    bankStatement: "",
+    paySlips:'',
+    tenth:'',
+    intermediate:'',
+    graduation:'',
+    offerletter:'',
+    feereceipt:'',
     isValid: true,
   });
 
@@ -1178,9 +1195,6 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       bankaccountprofile.moblieNumber !== null &&
       bankaccountprofile.moblieNumber !== "" &&
       bankaccountprofile.moblieNumber.length == 10 &&
-
-
-
       bankaccountprofile.moblieNumber !== null &&
       bankaccountprofile.moblieNumber !== "" &&
       bankaccountprofile.accountNumber !== null &&
@@ -1328,11 +1342,15 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
 
   useEffect(() => {
     getUserDetails().then((data) => {
+
+      if (data.status == 200) {
       localStorage.setItem("userType", data.data.userDisplayId);
       setdashboarddata({
         ...dashboarddata,
         profileData: data,
       });
+      
+      // console.log("data",data.status);
       setUserProfile({
         ...userProfile,
         address: data.data.address,
@@ -1356,6 +1374,20 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
         aadharNumber: data.data.aadharNumber,
         mobileNumber: data.data.mobileNumber,
         email: data.data.email,
+        studentOrNot: data.data.studentOrNot,
+      
+
+      });
+      setCategory(data.data.employment);
+      setFormData
+({
+        totalExperience: data.data.workExperience,
+        company: data.data.companyName,
+        salary: data.data.salary,
+        country: data.data.country,
+        universityName: data.data.universityName,
+        universityLocation: data.data.location,
+        // degree: data.data.degree,
       });
       setBankaccountProfile({
         ...bankaccountprofile,
@@ -1369,6 +1401,29 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
         bankCity: data.data.bankAddress,
         moblieNumber: data.data.mobileNumber,
       });
+    }
+    else{
+
+ if (data.status == 401) {
+            Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: response.response.data.errorMessage,
+              confirmButtonText: "Go to Login",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                navigate("/");
+              }
+            });
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Oops...",
+              text: response.response.data.errorMessage,
+              confirmButtonText: "OK",
+            });
+          }
+    }
     });
   }, []);
 
@@ -1391,6 +1446,28 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
     const fetchApiData6 = () => {
       return getdataAadhar();
     };
+    const fetchApiData7=()=>{
+      return getdataBankStatement();
+    }
+
+     const fetchApiData8=()=>{
+      return getdatatenth();
+    }
+ const fetchApiData9=()=>{
+      return getdataintermediate();
+    }
+     const fetchApiData10=()=>{
+      return getdatagraduation();
+    }
+     const fetchApiData11=()=>{
+      return getdataofferletter();
+    }
+     const fetchApiData12=()=>{
+      return getdatafeereceipt();
+    }
+      const fetchApiData13=()=>{
+      return getdatapayslips();
+    }
 
     Promise.allSettled([
       fetchApiData1(),
@@ -1399,9 +1476,17 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       fetchApiData4(),
       fetchApiData5(),
       fetchApiData6(),
+      fetchApiData7(),
+      fetchApiData8(),
+      fetchApiData9(),
+      fetchApiData10(),
+      fetchApiData11(),
+      fetchApiData12(),
+      fetchApiData13(),
+
     ])
       .then((responses) => {
-        console.log(responses[0].value.data);
+        console.log(responses[11].value.data);
         setKyc({
           ...kyc,
           PanCard: responses[0].value.data,
@@ -1410,6 +1495,13 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
           DRIVINGLICENCE: responses[3].value.data,
           VOTERID: responses[4].value.data,
           aadhar: responses[5].value.data,
+          bankStatement: responses[6].value.data,
+          tenth: responses[7].value.data,
+          intermediate: responses[8].value.data,
+          graduation: responses[9].value.data,
+          offerletter: responses[10].value.data,
+          feereceipt: responses[11].value.data,
+          paySlips: responses[12].value.data,
         });
       })
       .catch((error) => { });
@@ -2652,16 +2744,16 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
 
       {/* Conditional Input Fields in a Row */}
       <div className="row">
-        {category === "SALARIED" && (
+        {category === "SALARIED"  && (
           <>
             <div className="col-md-4 mb-2">
-              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} />
+              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.totalExperience}/>
             </div>
             <div className="col-md-4 mb-2">
-              <input type="text" name="company" placeholder="Company" className="form-control" onChange={handleChange} />
+              <input type="text" name="company" placeholder="Company" className="form-control" onChange={handleChange} value={formData.company} />
             </div>
             <div className="col-md-4 mb-2">
-              <input type="text" name="salary" placeholder="Salary" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} />
+              <input type="text" name="salary" placeholder="Salary" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.salary} />
             </div>
           </>
         )}
@@ -2669,13 +2761,13 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
         {category === "SELFEMPLOYED" && (
           <>
             <div className="col-md-4 mb-2">
-              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber}/>
+              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.totalExperience}/>
             </div>
             <div className="col-md-4 mb-2">
-              <input type="text" name="company" placeholder="Organization" className="form-control" onChange={handleChange} />
+              <input type="text" name="company" placeholder="Organization" className="form-control" onChange={handleChange} value={formData.company} />
             </div>
             <div className="col-md-4 mb-2">
-              <input type="text" name="salary" placeholder="Income" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber}/>
+              <input type="text" name="salary" placeholder="Income" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.salary}/>
             </div>
           </>
         )}
@@ -2683,13 +2775,13 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
         {category === "STUDENT" && (
           <>
             <div className="col-md-4 mb-2">
-              <input type="text" name="country" placeholder="Country" className="form-control" onChange={handleChange} />
+              <input type="text" name="country" placeholder="Country" className="form-control" onChange={handleChange} value={formData.country}/>
             </div>
             <div className="col-md-4 mb-2">
-              <input type="text" name="universityName" placeholder="University Name" className="form-control" onChange={handleChange} />
+              <input type="text" name="universityName" placeholder="University Name" className="form-control" onChange={handleChange} value={formData.universityName}/>
             </div>
             <div className="col-md-4 mb-2">
-              <input type="text" name="universityLocation" placeholder="University Location" className="form-control" onChange={handleChange} />
+              <input type="text" name="universityLocation" placeholder="University Location" className="form-control" onChange={handleChange} value={formData.universityLocation}/>
             </div>
           </>
         )}
@@ -2743,7 +2835,6 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
 
                                 </div>
 
-                                {console.log(kyc)}
                                 {kyc.PanCard != undefined &&
                                   kyc.PanCard != "" ? (
                                   <h6 className="settings-size text-success">
@@ -2794,59 +2885,119 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
                                   </h6>
                                 )}
                               </div>
-                              <div className="form-group col-12 col-md-6">
+                           
+                           <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Aadhaar
-                                  <span className="star-red">*</span>
+                                  Bank Statement (6 Months)<span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
                                     type="file"
-                                    accept="image/*"
-                                    name="aadhar"
-                                    id="aadhar"
+                                    name="BANKSTATEMENT"
+                                    id="bankStatment"
                                     className="hide-input"
                                     onChange={handlefileupload}
                                   />
-                                  <label htmlFor="aadhar" className="upload">
+                                  <label htmlFor="bankStatment" className="upload">
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
+
                                 </div>
 
-                                {kyc.aadhar != undefined && kyc.aadhar != "" ? (
+                                {kyc.bankStatement != undefined &&
+                                  <kyc className="bankStatement"></kyc> != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.aadhar.fileName}</small>
+                                    <small>{kyc.bankStatement.fileName}</small>
                                   </h6>
                                 ) : (
                                   <h6 className="settings-size text-warning">
                                     <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Aadhaar</small>
+                                    <small>Upload Bank Statment</small>
                                   </h6>
                                 )}
                               </div>
-                              <div className="form-group col-12 col-md-6">
+                            
+                            <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Driving License
-                                  {/* <span className="star-red">*</span> */}
+                                  Latest Pay slips (latest payslips 6 months)<span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
                                     type="file"
-                                    accept="image/*"
-                                    name="DRIVINGLICENCE"
-                                    id="license"
+                                    name="PAYSLIPS"
+                                    id="paySlips"
                                     className="hide-input"
                                     onChange={handlefileupload}
                                   />
-                                  <label htmlFor="license" className="upload">
+                                  <label htmlFor="paySlips" className="upload">
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
+
                                 </div>
+                                {kyc.paySlips != undefined &&
+                                  kyc.paySlips != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.paySlips.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Pay Slips</small>
+                                  </h6>
+                                )}
+                              </div>
+
+                             
+                              {/* <div className="form-group col-12 col-md-3">
+                                <button className="btn btn-success" onClick={() => handleviewCredit()}>View Credit Report</button>
+                              </div>
+                              {viewdocment && <>
+
+                                <h6>OxyScore : <span style={{ fontWeight: '300' }}> {uploddata.oxyScore}</span></h6>
+                                <h6>Credit Report Link : <a href={uploddata.experianFilePath}  ><span className="badge btn-primary" style={{ fontWeight: '300' }}>Download Credit Report</span></a></h6>
+                                <h6>Review Comments : <span style={{ fontWeight: '300' }}> {uploddata.comments}</span></h6>
+                                <h6>Document Password : <span style={{ fontWeight: '300' }}> {uploddata.password}</span></h6>
+                                <h6>Risk Category : <span style={{ fontWeight: '300' }}> {uploddata.riskCategory != null ? uploddata.riskCategory : "D"}</span></h6>
+                              </>} */}
+
+                            </div>
+                          </div>
+                        </div>
+
+
+
+<h5 className="card-title">Address Proof Documents</h5>
+<span className="settings-label">(NOTE: Upload any one of the documents given below)</span>
+
+                        <div className="row">
+                          <div className="col-md-12 col-lg-12 row">
+                            <div className="row mt-3">
+                              <div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Driving Licence <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="DRIVINGLICENCE"
+                                    id="drivingLicence"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="drivingLicence" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+
+                                </div>
+
                                 {kyc.DRIVINGLICENCE != undefined &&
                                   kyc.DRIVINGLICENCE != "" ? (
                                   <h6 className="settings-size text-success">
@@ -2856,28 +3007,34 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
                                 ) : (
                                   <h6 className="settings-size text-warning">
                                     <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Driving License</small>
+                                    <small>Upload Driving Licence</small>
                                   </h6>
                                 )}
                               </div>
+
                               <div className="form-group col-12 col-md-6">
-                                <p className="settings-label">Voter ID</p>
+                                <p className="settings-label">
+                                  Voter Id
+                                  <span className="star-red">*</span>
+                                </p>
                                 <div className="settings-btn">
                                   <input
                                     type="file"
+                                    name="VOTERID"
                                     accept="image/*"
                                     id="VOTERID"
-                                    name="VOTERID"
-                                    onChange={handlefileupload}
                                     className="hide-input"
+                                    onChange={handlefileupload}
                                   />
-                                  <label htmlFor="VOTERID" className="upload">
+                                  <label
+                                    htmlFor="VOTERID"
+                                    className="upload"
+                                  >
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
                                 </div>
-
                                 {kyc.VOTERID != undefined &&
                                   kyc.VOTERID != "" ? (
                                   <h6 className="settings-size text-success">
@@ -2887,29 +3044,72 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
                                 ) : (
                                   <h6 className="settings-size text-warning">
                                     <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Voter Id</small>
+                                    <small>Upload VoterId</small>
                                   </h6>
                                 )}
                               </div>
+
+                            {userProfile.studentOrNot==true?
+                            <>
+<h5 className="card-title">Educational and University Documents</h5>
+<span className="settings-label">(NOTE: All the documents are mandotary and are in pdf only.)</span>
+</>
+:null}
+
+
                               <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Passport
-                                  {/* <span className="star-red">*</span> */}
+                                  Aadhar Card <span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
                                     type="file"
-                                    id="Passport"
-                                    accept="image/*"
-                                    name="Passport"
-                                    onChange={handlefileupload}
+                                    name="AADHAR"
+                                    id="AADHAR"
                                     className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="AADHAR" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+
+                                </div>
+
+                                {kyc.aadhar != undefined &&
+                                  kyc.aadhar != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.aadhar.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Aadhar</small>
+                                  </h6>
+                                )}
+                                </div>
+
+
+<div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Passport <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="PASSPORT"
+                                    id="Passport"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
                                   />
                                   <label htmlFor="Passport" className="upload">
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
+
                                 </div>
 
                                 {kyc.Passport != undefined &&
@@ -2924,50 +3124,286 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
                                     <small>Upload Passport</small>
                                   </h6>
                                 )}
-
-                              </div>
-
-                              {/* {
-                                "borrowerId": 13,
-                              "oxyScore": 800,
-                              "experianFilePath": "https://oxyloanstestv1.s3.ap-south-1.amazonaws.com/1/CREDITREPORT_WhatsApp Image 2024-08-21 at 17.32.06.jpeg",
-                              "riskCategory": null,
-                              "fileName": "WhatsApp Image 2024-08-21 at 17.32.06.jpeg",
-                              "comments": "No Comments",
-                              "borrowerDocumentsIdsList": [
-                              {
-                                "filePath": null,
-                              "panNumber": null,
-                              "aadharNumber": null,
-                              "file": null,
-                              "creditReport": null,
-                              "panFilePath": "S3://oxyloanstestv1/13/PAN_WhatsApp Image 2024-05-20 at 3.39.17 PM.jpeg",
-                              "aadharFilePath": "S3://oxyloanstestv1/13/AADHAR_WhatsApp Image 2024-04-15 at 6.26.16 PM.jpeg",
-                              "passPort": null
-        }
-                              ]
-} */}
+                                </div>
 
 
-                              {/* <h5 className="card-title">Credit Report</h5>
-                              {uploddata.oxyScore}
-                              <h6>oxyScore : 800</h6> */}
+{userProfile.studentOrNot==true?
+<>
 
-                              <div className="form-group col-12 col-md-3">
-                                <button className="btn btn-success" onClick={() => handleviewCredit()}>View Credit Report</button>
-                              </div>
-                              {viewdocment && <>
+<div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Tenth <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="TENTH"
+                                    id="tenth"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="tenth" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
 
-                                <h6>OxyScore : <span style={{ fontWeight: '300' }}> {uploddata.oxyScore}</span></h6>
-                                <h6>Credit Report Link : <a href={uploddata.experianFilePath}  ><span className="badge btn-primary" style={{ fontWeight: '300' }}>Download Credit Report</span></a></h6>
-                                <h6>Review Comments : <span style={{ fontWeight: '300' }}> {uploddata.comments}</span></h6>
-                                <h6>Document Password : <span style={{ fontWeight: '300' }}> {uploddata.password}</span></h6>
-                                <h6>Risk Category : <span style={{ fontWeight: '300' }}> {uploddata.riskCategory != null ? uploddata.riskCategory : "D"}</span></h6>
-                              </>}
+                                </div>
 
+
+                                {kyc.tenth != undefined &&
+                                  kyc.tenth != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.tenth.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Tenth</small>
+                                  </h6>
+                                )}
+                                </div>
+
+<div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Intermediate <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="INTER"
+                                    id="inter"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="inter" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+
+                                </div>
+
+                                {kyc.intermediate != undefined &&
+                                  kyc.intermediate != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.intermediate.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Intermediate</small>
+                                  </h6>
+                                )}
+                                </div>
+
+<div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Graduation <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="GRADUATION"
+                                    id="graduation"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="graduation" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+
+                                </div>
+
+                                {kyc.graduation != undefined &&
+                                  kyc.graduation != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.graduation.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Graduation</small>
+                                  </h6>
+                                )}
+                                </div>
+
+<div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  University of Offer letter <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="UNIVERSITYOFFERLETTER"
+                                    id="offerletter"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="offerletter" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+
+                                </div>
+
+                                {kyc.offerletter != undefined &&
+                                  kyc.offerletter != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.offerletter.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload University of Offer letter</small>
+                                  </h6>
+                                )}
+                                </div>
+
+
+<div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  University of fee receipt <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="FEE"
+                                    id="feereceipt"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="feereceipt" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+
+                                </div>
+
+                                {kyc.feereceipt != undefined &&
+                                  kyc.feereceipt != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.feereceipt.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload University of Fee receipt</small>
+                                  </h6>
+                                )}
+                                </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</>
+:null}
+
+
+
+
+
+
+
+
+
+                             
                             </div>
                           </div>
                         </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        
                       </div>
                     </div>
                   </div>

@@ -413,8 +413,10 @@ export const profileupadate = async (userProfile, formData, category) => {
     }
   }
 
-  // Prepare personal API payload
-  const personalData = JSON.stringify({
+  console.log("Primary Type :", localStorage.getItem("primaryType"));
+  if(localStorage.getItem("primaryType")=="BORROWER"){
+ // Prepare personal API payload
+   var personalData = JSON.stringify({
     firstName: userProfile.firstName,
     lastName: userProfile.lastName,
     middleName: userProfile.middleName,
@@ -440,7 +442,30 @@ export const profileupadate = async (userProfile, formData, category) => {
     }),
     studentOrNot: category === "STUDENT",
   });
-
+  }
+  else{
+      var personalData = JSON.stringify ({
+    firstName: userProfile.firstName,
+    lastName: userProfile.lastName,
+    middleName: userProfile.middleName,
+    fatherName: userProfile.fatherName,
+    dob: formattedDate,
+    panNumber: userProfile.panNumber,
+    address: userProfile.residenceAddress,
+    permanentAddress: userProfile.permanentAddress,
+    pinCode: userProfile.pinCode,
+    city: userProfile.city,
+    state: userProfile.state,
+    locality: userProfile.locality,
+    facebookUrl: userProfile.facebookUrl,
+    linkedinUrl: userProfile.linkedinUrl,
+    twitterUrl: userProfile.twitterUrl,
+    whatsAppNumber: userProfile.whatsAppNumber,
+    aadharNumber: userProfile.aadharNumber,
+   
+  });
+  }
+ 
   // Always call personal API first
   const personalResponse = await handleApiRequestAfterLoginService(
     API_BASE_URL,
@@ -461,7 +486,7 @@ export const profileupadate = async (userProfile, formData, category) => {
 
     handleApiRequestAfterLoginService(
       API_BASE_URL,
-      `student_info`,
+      student_info,
       "PATCH",
       token,
       studentBody
@@ -473,6 +498,7 @@ export const profileupadate = async (userProfile, formData, category) => {
   // Return only personal API response
   return personalResponse;
 };
+
 export const getLendersInterestsDateWiseapi = async (date) => {
   const token = getToken();
   const userId = getUserId();
@@ -2076,6 +2102,92 @@ export const getdatachequeLeaf = async () => {
   const res = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `${userId}/download/CHEQUELEAF`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const getdataBankStatement = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/BANKSTATEMENT`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const getdatatenth = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/TENTH`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const getdataintermediate = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/INTER`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const getdatagraduation = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/GRADUATION`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+
+export const getdataofferletter = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/UNIVERSITYOFFERLETTER`,-
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const getdatafeereceipt = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/FEE`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+
+export const getdatapayslips = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/PAYSLIPS`,
     "GET",
     token
   );

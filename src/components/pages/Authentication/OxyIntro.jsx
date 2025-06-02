@@ -115,6 +115,7 @@ function OxyIntro() {
               <ul className="list-unstyled">
                 <li className="mb-3"><span className="text-success me-2">✓</span><strong>RBI approved P2P NBFC</strong></li>
                 <li className="mb-3"><span className="text-success me-2">✓</span><strong>Connects borrowers directly with lenders</strong></li>
+                <li className="mb-3"><span className="text-success me-2">✓</span><strong>We are currently targeting borrowers from Hyderabad.</strong></li>
               </ul>
               <div className="mb-3">
                 <label className="form-label">Mobile Number *</label>
