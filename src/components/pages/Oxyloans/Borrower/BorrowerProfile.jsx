@@ -944,6 +944,43 @@ const BorrowerProfile = () => {
     bankaccountprofile.bankCity,
   ]);
 
+
+
+  const handlePinCodeChange = async (name, value) => {
+  if (name === "pinCode" && value.length === 6) {
+    try {
+      const res = await axios.get(`${BASE_URL}/${value}/pincode`);
+      const blocks = res.data.pinresults
+        .map((item) => item.block)
+        .filter((block, index, self) => block && self.indexOf(block) === index); // Get unique non-null blocks
+
+      setLocalityOptions(blocks);
+
+      // Set the first locality as default if blocks are available
+      setUserProfile((prev) => ({
+        ...prev,
+        locality: blocks.length > 0 ? blocks[0] : "", // Select first option or empty string
+        localityerror: blocks.length > 0 ? "" : "No localities found for this pin code",
+      }));
+    } catch (error) {
+      console.error("Failed to fetch pincode info", error);
+      setLocalityOptions([]);
+      setUserProfile((prev) => ({
+        ...prev,
+        locality: "",
+        localityerror: "Failed to fetch localities",
+      }));
+    }
+  } else if (name === "pinCode" && value.length < 6) {
+    // Clear locality options and reset locality if pin code is invalid
+    setLocalityOptions([]);
+    setUserProfile((prev) => ({
+      ...prev,
+      locality: "",
+      localityerror: "",
+    }));
+  }
+};
   const handlechange = async(event) => {
     const { name, value } = event.target;
 
@@ -967,25 +1004,27 @@ const BorrowerProfile = () => {
 
 
 
-    if (name === "pinCode" && value.length === 6) {
-      try {
-        const res = await axios.get(BASE_URL+`/${value}/pincode`);
+    // if (name === "pinCode" && value.length === 6) {
+    //   try {
+    //     const res = await axios.get(BASE_URL+`/${value}/pincode`);
 
-        const blocks = res.data.pinresults
-          .map((item) => item.block)
-          .filter((block, index, self) => block && self.indexOf(block) === index); // get unique non-null blocks
+    //     const blocks = res.data.pinresults
+    //       .map((item) => item.block)
+    //       .filter((block, index, self) => block && self.indexOf(block) === index); // get unique non-null blocks
 
-        setLocalityOptions(blocks);
+    //     setLocalityOptions(blocks);
 
-        // clear existing selected address if not in list
-        if (!blocks.includes(userProfile.locality)) {
-          setUserProfile((prev) => ({ ...prev, locality: "" }));
-        }
-      } catch (error) {
-        console.error("Failed to fetch pincode info", error);
-        setLocalityOptions([]);
-      }
-    }
+    //     // clear existing selected address if not in list
+    //     if (!blocks.includes(userProfile.locality)) {
+    //       setUserProfile((prev) => ({ ...prev, locality: "" }));
+    //     }
+    //   } catch (error) {
+    //     console.error("Failed to fetch pincode info", error);
+    //     setLocalityOptions([]);
+    //   }
+    // }
+
+   
 
     // Calculate today's date
     const today = new Date();
@@ -1019,6 +1058,17 @@ const BorrowerProfile = () => {
       ...userProfile,
       [name]: value,
     });
+
+    setUserProfile((prev) => ({
+    ...prev,
+    [name]: value,
+    ...(name === "locality" && { localityerror: "" }), // Clear locality error on selection
+  }));
+
+  // Handle pin code changes to fetch localities
+  if (name === "pinCode") {
+    handlePinCodeChange(name, value);
+  }
   };
 
   const handlePaste = (event) => {
@@ -1145,8 +1195,10 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
     ) {
       const response = profileupadate(userProfile,formData,category);
       response.then((data) => {
+        console.log({data})
         if (data.request.status == 200) {
           Success("success", "Personal Details Saved Successfully");
+            window.location.reload();
         } else if (data.response.data.errorCode != "200") {
           WarningBackendApi("warning", data.response.data.errorMessage);
         }
@@ -1378,7 +1430,8 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       
 
       });
-      setCategory(data.data.employment);
+      console.log("Employemnt",data.data.employment)
+      setCategory(data.data.studentOrNot==true?"STUDENT":data.data.employment);
       setFormData
 ({
         totalExperience: data.data.workExperience,
@@ -1403,7 +1456,7 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       });
     }
     else{
-
+console.log("data",data.status);
  if (data.status == 401) {
             Swal.fire({
               icon: "error",
@@ -2597,7 +2650,7 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
         </label>
         <select
           className="form-control"
-          name="address"
+          name="locality"
           value={userProfile.locality}
           onChange={handlechange}
         >

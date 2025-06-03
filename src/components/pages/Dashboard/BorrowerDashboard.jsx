@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState ,useEffect} from "react";
 import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
@@ -7,9 +7,13 @@ import ReactApexChart from "react-apexcharts";
 import { Link } from "react-router-dom";
 import "../Oxyloans/Lender/table.css";
 import { invoicesicon5 } from "../../imagepath";
-
+import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import axios from "axios";
+import { base_url } from "../../HttpRequest/afterlogin";
+import Swal from "sweetalert2";
 import {
   dashboard1,
   dashboard2,
@@ -24,7 +28,11 @@ const BorrowerDashboard = () => {
   const dispatch = useDispatch();
   const getdashboardData = useSelector((data) => data.dashboard.fetchDashboard);
   const getreducerprofiledata = useSelector((data) => data.counter.userProfile);
-
+  const [show, setShow] = useState(false);
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCityerror, setSelectedCityerror] = useState(false);
+  const[profileDetails,setProfileDetails]=useState();
+  const navigate = useNavigate();
   const [treemap, Settreemap] = useState({
     series: [
       {
@@ -103,6 +111,8 @@ const BorrowerDashboard = () => {
     },
   });
 
+
+
   const [data, setdata] = useState({
     series: [
       {
@@ -139,6 +149,95 @@ const BorrowerDashboard = () => {
       },
     },
   });
+useEffect(() => {
+  getCall();   
+},[])
+  const getCall=()=>{
+axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
+  headers:{
+    accessToken: sessionStorage.getItem('accessToken'),
+  }
+})
+.then((response) => {
+  console.log("response", response);
+   setProfileDetails(response.data);
+   if(response.data.city == null || response.data.city == ""){
+    setShow(true);
+   }
+
+})
+.catch((error) => {
+  console.log("error",error)
+})
+  }
+
+
+  const handleCityChange = (event) => {
+    if (event.target.value === "") {
+      setSelectedCityerror(true);
+      return false;
+    }
+    setSelectedCityerror(false);
+
+    setSelectedCity(event.target.value);
+  };
+
+  const handleSave = () => {
+    console.log("Selected city:", selectedCity);
+    const userId = sessionStorage.getItem("userId");
+    console.log("User ID:", userId);
+    // handleClose();
+    axios
+      .post(
+        `${base_url}${userId}/city`,
+        {
+          city: selectedCity,
+        },
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        }
+      )
+      .then(function (response) {
+        console.log("City saved successfully:", response.data);
+        setShow(false);
+        if (response.status === 200) {
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: "City updated successfully.",
+            confirmButtonText: "OK",
+          });
+          handleClose();
+        }
+        window.location.reload(); // Reload the page to reflect changes
+        // Close the modal after saving
+        setSelectedCity(""); // Reset the selected city
+      })
+      .catch(function (error) {
+        console.error("Error saving city:", error.response);
+        if (error.response.status == 401) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: error.response.data.errorMessage,
+            confirmButtonText: "Go to Login",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              navigate("/");
+            }
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: error.response.data.errorMessage,
+            confirmButtonText: "OK",
+          });
+        }
+      });
+  };
 
   return (
     <>
@@ -383,6 +482,51 @@ const BorrowerDashboard = () => {
           {/* Footer */}
           <Footer />
         </div>
+        <Modal show={show}>
+          <Modal.Header closeButton>
+            <Modal.Title>Select City</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div className="mb-3">
+              <label htmlFor="citySelect" className="form-label">
+                City
+              </label>
+              <select
+                id="citySelect"
+                className="form-select"
+                value={selectedCity}
+                onChange={handleCityChange}
+              >
+                <option value="">Select a city</option>
+                <option value="Mumbai">Mumbai</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Bangalore">Bangalore</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Ahmedabad">Ahmedabad</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Kolkata">Kolkata</option>
+                <option value="Pune">Pune</option>
+                <option value="Jaipur">Jaipur</option>
+                <option value="Lucknow">Lucknow</option>
+              </select>
+            </div>
+            {selectedCityerror && (
+              <p className="text-danger">Please select a city.</p>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            {/* <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button> */}
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={!selectedCity}
+            >
+              Save
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
       {/* /Main Wrapper */}
     </>

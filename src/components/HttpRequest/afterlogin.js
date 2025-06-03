@@ -8,6 +8,8 @@ const API_BASE_URL =
 const getToken = () => {
   return sessionStorage.getItem("accessToken");
 };
+export const base_url=API_BASE_URL;
+
 export const getUserId = () => {
   return sessionStorage.getItem("userId");
 };
@@ -486,7 +488,7 @@ export const profileupadate = async (userProfile, formData, category) => {
 
     handleApiRequestAfterLoginService(
       API_BASE_URL,
-      student_info,
+      `student_info`,
       "PATCH",
       token,
       studentBody

@@ -11,7 +11,10 @@ import {
   regular_Api,
   getNoDealsParticipated,
   handelexcelsForNewLenderDashboard,
+
 } from "../../HttpRequest/afterlogin";
+import { useNavigate } from "react-router-dom";
+
 import { Table, Tag } from "antd";
 import { onShowSizeChange } from "../../Pagination";
 import { fetchData } from "../../Redux/Slice";
@@ -34,11 +37,21 @@ import {
   getactivityApisData,
 } from "../../HttpRequest/afterlogin";
 import { personalDetails } from "../Base UI Elements/SweetAlert";
+import Modal from 'react-bootstrap/Modal';
+import Button from 'react-bootstrap/Button';
+import axios from "axios";
+import { base_url } from "../../HttpRequest/afterlogin";
+import Swal from "sweetalert2";
+
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
   const getdashboardData = useSelector((data) => data.dashboard.fetchDashboard);
   const getreducerprofiledata = useSelector((data) => data.counter.userProfile);
+ const [show, setShow] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('');
+const[selectedCityerror,setSelectedCityerror]=useState(false)
+const navigate = useNavigate();
 
   const [dashboarddata, setdashboarddata] = useState({
     profileData: "",
@@ -237,9 +250,82 @@ const AdminDashboard = () => {
           profileData: data,
         });
       }
+      console.log("profileData", data.request.status);
+      if( data.data.city == null || data.data.city == undefined || data.data.city == "") {
+        setShow(true);
+      }
     });
     return () => { };
   }, []);
+ 
+  
+
+
+    const handleCityChange = (event) => {
+      if( event.target.value === "") {
+        setSelectedCityerror(true);
+        return false
+      }
+         setSelectedCityerror(false);
+
+    setSelectedCity(event.target.value);
+  };
+
+
+
+    const handleSave = () => {
+    console.log('Selected city:', selectedCity);
+    const userId=sessionStorage.getItem('userId')
+    console.log('User ID:', userId);
+    // handleClose();
+    axios.post(`${base_url}${userId}/city`,{
+      city: selectedCity
+    },{headers:{
+      accessToken: sessionStorage.getItem('accessToken'),
+    }})
+    .then(function(response) {
+      console.log('City saved successfully:', response.data);
+        if (response.status === 200) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'City updated successfully.',
+        confirmButtonText: 'OK',
+      });
+      handleClose();
+    }
+      window.location.reload(); // Reload the page to reflect changes
+            setShow(false); // Close the modal after saving
+setSelectedCity(''); // Reset the selected city
+       
+    })
+    .catch(function(error) {
+      console.error('Error saving city:', error.response);
+       if (error.response.status == 401) {
+                  Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: error.response.data.errorMessage,
+                    confirmButtonText: "Go to Login",
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      navigate("/");
+                    }
+                  });
+                } 
+                else {
+                  Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text:  error.response.data.errorMessage,
+                    confirmButtonText: "OK",
+                  });
+                }
+          
+        
+       
+    });
+  };
 
   useEffect(() => {
     const activeres = getactivityApisData();
@@ -412,7 +498,7 @@ const AdminDashboard = () => {
 
                     <div className="mebershipbutton" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', }} >
                       <h3 className="page-title">
-                        Welcome {""}
+                        Welcome  {""}
                         {getreducerprofiledata?.length !== 0
                           ? getreducerprofiledata?.firstName
                             .charAt(0)
@@ -820,6 +906,46 @@ const AdminDashboard = () => {
               )}
             </div>
           </div>
+
+           <Modal show={show} >
+        <Modal.Header closeButton>
+          <Modal.Title>Select City</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="mb-3">
+            <label htmlFor="citySelect" className="form-label">City</label>
+            <select
+              id="citySelect"
+              className="form-select"
+              value={selectedCity}
+              onChange={handleCityChange}
+            >
+              <option value="">Select a city</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Bangalore">Bangalore</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="Ahmedabad">Ahmedabad</option>
+              <option value="Chennai">Chennai</option>
+              <option value="Kolkata">Kolkata</option>
+              <option value="Pune">Pune</option>
+              <option value="Jaipur">Jaipur</option>
+              <option value="Lucknow">Lucknow</option>
+            </select>
+          </div>
+          {selectedCityerror && <p className="text-danger">Please select a city.</p>}
+        </Modal.Body>
+        <Modal.Footer>
+          {/* <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button> */}
+          <Button variant="primary" 
+          onClick={handleSave}
+           disabled={!selectedCity}>
+            Save
+          </Button>
+        </Modal.Footer>
+      </Modal>
           {/* Footer */}
           <Footer />
         </div>
