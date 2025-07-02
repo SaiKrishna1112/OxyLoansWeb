@@ -113,13 +113,13 @@ const OxyloansAdminSidebar = () => {
       label: "Lender Loan Applications",
       link: "/lenderLoanApplications",
       icon: "fa-solid fa-file-lines",
-      type: [ "HELPDESKADMIN"]    },
+      type: [ "HELPDESKADMIN","ADMIN"]    },
     {
       key: "borrowerLoanApplications",
       label: "Borrower Loan Applications",
       link: "/borrowerLoanApplications",
       icon: "fa-solid fa-file-lines",
-      type: [ "HELPDESKADMIN"]    },
+      type: [ "HELPDESKADMIN","ADMIN"]    },
     {
       key: "registerlender",
       label: "Register Lender",

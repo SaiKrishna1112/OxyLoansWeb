@@ -482,7 +482,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           {/* Footer */}
           <Footer />
         </div>
-        <Modal show={show}>
+        <Modal show={show} onHide={() => setShow(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Select City</Modal.Title>
           </Modal.Header>
@@ -495,7 +495,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                 id="citySelect"
                 className="form-select"
                 value={selectedCity}
-                onChange={handleCityChange}
+                onChange={()=>handleCityChange(event)}
               >
                 <option value="">Select a city</option>
                 <option value="Mumbai">Mumbai</option>
@@ -515,12 +515,12 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
             )}
           </Modal.Body>
           <Modal.Footer>
-            {/* <Button variant="secondary" onClick={handleClose}>
+            {/* <Button variant="secondary" onClick={() => setShow(false)}>
             Close
           </Button> */}
             <Button
               variant="primary"
-              onClick={handleSave}
+              onClick={()=>handleSave()}
               disabled={!selectedCity}
             >
               Save

@@ -907,7 +907,7 @@ setSelectedCity(''); // Reset the selected city
             </div>
           </div>
 
-           <Modal show={show} >
+           <Modal show={show} onHide={()=> setShow(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Select City</Modal.Title>
         </Modal.Header>

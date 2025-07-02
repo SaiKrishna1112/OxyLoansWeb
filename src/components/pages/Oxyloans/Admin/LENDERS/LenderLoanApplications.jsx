@@ -651,11 +651,15 @@ const getCommentsfun=async(record)=>{
             <strong>Phone :</strong>
             {record.user?.mobileNumber || "N/A"}
           </div>
+          <div>
+            <strong>City :</strong>
+            {record.user?.city || "N/A"}
+          </div>
 
           <div>
             INR {record?.loanRequestAmount} <br/>
             {record?.rateOfInterest} % PA <br/>
-            <strong>UTM SOURCE:</strong> {record.user?.utmSource}
+            <strong>UTM From:</strong> {record.user?.utmSource}
           </div>
         </div>
       ),
