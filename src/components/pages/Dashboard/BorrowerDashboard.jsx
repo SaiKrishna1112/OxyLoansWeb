@@ -32,6 +32,8 @@ const BorrowerDashboard = () => {
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
   const[profileDetails,setProfileDetails]=useState();
+    const [customCity, setCustomCity] = useState('');
+  
   const navigate = useNavigate();
   const [treemap, Settreemap] = useState({
     series: [
@@ -187,12 +189,19 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
     // handleClose();
+      if(selectedCity!="Others"){
+    var data={
+          city: selectedCity,
+        }
+      }else{
+        var data={
+          city:customCity
+        }
+      }
     axios
       .post(
         `${base_url}${userId}/city`,
-        {
-          city: selectedCity,
-        },
+        data,
         {
           headers: {
             accessToken: sessionStorage.getItem("accessToken"),
@@ -482,51 +491,80 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           {/* Footer */}
           <Footer />
         </div>
-        <Modal show={show} onHide={() => setShow(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Select City</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <div className="mb-3">
-              <label htmlFor="citySelect" className="form-label">
-                City
-              </label>
-              <select
-                id="citySelect"
-                className="form-select"
-                value={selectedCity}
-                onChange={()=>handleCityChange(event)}
-              >
-                <option value="">Select a city</option>
-                <option value="Mumbai">Mumbai</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Bangalore">Bangalore</option>
-                <option value="Hyderabad">Hyderabad</option>
-                <option value="Ahmedabad">Ahmedabad</option>
-                <option value="Chennai">Chennai</option>
-                <option value="Kolkata">Kolkata</option>
-                <option value="Pune">Pune</option>
-                <option value="Jaipur">Jaipur</option>
-                <option value="Lucknow">Lucknow</option>
-              </select>
-            </div>
-            {selectedCityerror && (
-              <p className="text-danger">Please select a city.</p>
-            )}
-          </Modal.Body>
-          <Modal.Footer>
-            {/* <Button variant="secondary" onClick={() => setShow(false)}>
-            Close
-          </Button> */}
-            <Button
-              variant="primary"
-              onClick={()=>handleSave()}
-              disabled={!selectedCity}
-            >
-              Save
-            </Button>
-          </Modal.Footer>
-        </Modal>
+          <Modal
+            show={show}
+            onHide={() => setShow(false)}
+            dialogClassName="custom-small-modal"
+          >
+            <Modal.Header closeButton className="py-2 px-3">
+              <Modal.Title className="h6">Select City</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Body className="py-2 px-3">
+              <div className="mb-2">
+                <label htmlFor="citySelect" className="form-label small mb-1">
+                  City
+                </label>
+                <select
+                  id="citySelect"
+                  className="form-select form-select-sm"
+                  value={selectedCity}
+                  onChange={handleCityChange}
+                >
+                  <option value="">Select a city</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Bangalore">Bangalore</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Ahmedabad">Ahmedabad</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Pune">Pune</option>
+                  <option value="Jaipur">Jaipur</option>
+                  <option value="Lucknow">Lucknow</option>
+                  <option value="Secunderabad">Secunderabad</option>
+                  <option value="Vishakapatnam">Vishakapatnam</option>
+                  <option value="Vijayawada">Vijayawada</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Others">Other</option>
+                </select>
+
+                {selectedCity === "Others" && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="Enter City"
+                      className="form-control form-control-sm"
+                      name="customCity"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {selectedCityerror && (
+                  <p className="text-danger small mt-1">
+                    Please select a city.
+                  </p>
+                )}
+              </div>
+            </Modal.Body>
+
+          <Modal.Footer className="py-2 px-3">
+  <Button
+    variant="primary"
+    onClick={handleSave}
+    size="sm"
+    disabled={
+      !selectedCity || (selectedCity === "Others" && customCity.trim() === "")
+    }
+  >
+    Save
+  </Button>
+</Modal.Footer>
+
+          </Modal>
       </div>
       {/* /Main Wrapper */}
     </>

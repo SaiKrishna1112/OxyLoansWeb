@@ -11,7 +11,6 @@ import {
   regular_Api,
   getNoDealsParticipated,
   handelexcelsForNewLenderDashboard,
-
 } from "../../HttpRequest/afterlogin";
 import { useNavigate } from "react-router-dom";
 
@@ -37,21 +36,21 @@ import {
   getactivityApisData,
 } from "../../HttpRequest/afterlogin";
 import { personalDetails } from "../Base UI Elements/SweetAlert";
-import Modal from 'react-bootstrap/Modal';
-import Button from 'react-bootstrap/Button';
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
 import axios from "axios";
 import { base_url } from "../../HttpRequest/afterlogin";
 import Swal from "sweetalert2";
-
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
   const getdashboardData = useSelector((data) => data.dashboard.fetchDashboard);
   const getreducerprofiledata = useSelector((data) => data.counter.userProfile);
- const [show, setShow] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('');
-const[selectedCityerror,setSelectedCityerror]=useState(false)
-const navigate = useNavigate();
+  const [show, setShow] = useState(false);
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCityerror, setSelectedCityerror] = useState(false);
+  const [customCity, setCustomCity] = useState('');
+  const navigate = useNavigate();
 
   const [dashboarddata, setdashboarddata] = useState({
     profileData: "",
@@ -83,10 +82,10 @@ const navigate = useNavigate();
     defaultPageSize: 4,
   });
 
-
-  const [excelsForNewLenderDashboardLink, setexcelsForNewLenderDashboardLink] = useState({
-    excelDownloadUrl: ""
-  })
+  const [excelsForNewLenderDashboardLink, setexcelsForNewLenderDashboardLink] =
+    useState({
+      excelDownloadUrl: "",
+    });
   const investmentdashboardPagination = (dats) => {
     setdashboardInvestment({
       ...dashboardInvestment,
@@ -100,19 +99,19 @@ const navigate = useNavigate();
   {
     dashboardInvestment.apiData != ""
       ? dashboardInvestment.apiData.lenderWalletHistoryResponseDto.map(
-        (data) => {
-          datasource.push({
-            key: Math.random(),
-            Date: data.walletLoaded,
-            Description: data.remarks,
-            Amount: data.amount,
-          });
-        }
-      )
+          (data) => {
+            datasource.push({
+              key: Math.random(),
+              Date: data.walletLoaded,
+              Description: data.remarks,
+              Amount: data.amount,
+            });
+          }
+        )
       : "";
   }
 
-  const [dashboardcarddata, setdashboardcarddata] = useState({})
+  const [dashboardcarddata, setdashboardcarddata] = useState({});
 
   const [dealsProgressed, setdealsProgressed] = useState({
     totalDeals: 0,
@@ -251,88 +250,96 @@ const navigate = useNavigate();
         });
       }
       console.log("profileData", data.request.status);
-      if( data.data.city == null || data.data.city == undefined || data.data.city == "") {
+      if (
+        data.data.city == null ||
+        data.data.city == undefined ||
+        data.data.city == ""
+      ) {
         setShow(true);
       }
     });
-    return () => { };
+    return () => {};
   }, []);
- 
-  
 
-
-    const handleCityChange = (event) => {
-      if( event.target.value === "") {
-        setSelectedCityerror(true);
-        return false
-      }
-         setSelectedCityerror(false);
+  const handleCityChange = (event) => {
+    if (event.target.value === "") {
+      setSelectedCityerror(true);
+      return false;
+    }
+    setSelectedCityerror(false);
 
     setSelectedCity(event.target.value);
   };
 
-
-
-    const handleSave = () => {
-    console.log('Selected city:', selectedCity);
-    const userId=sessionStorage.getItem('userId')
-    console.log('User ID:', userId);
+  const handleSave = () => {
+    console.log("Selected city:", selectedCity);
+    const userId = sessionStorage.getItem("userId");
+    console.log("User ID:", userId);
+    if(selectedCity!="Others"){
+    var data={
+          city: selectedCity,
+        }
+      }else{
+        var data={
+          city:customCity
+        }
+      }
     // handleClose();
-    axios.post(`${base_url}${userId}/city`,{
-      city: selectedCity
-    },{headers:{
-      accessToken: sessionStorage.getItem('accessToken'),
-    }})
-    .then(function(response) {
-      console.log('City saved successfully:', response.data);
+    axios
+      .post(
+        `${base_url}${userId}/city`,
+        data,
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        }
+      )
+      .then(function (response) {
+        console.log("City saved successfully:", response.data);
+         setShow(false); // Close the modal after saving
+        setSelectedCity(""); // Reset the selected city
         if (response.status === 200) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'City updated successfully.',
-        confirmButtonText: 'OK',
+          Swal.fire({
+            icon: "success",
+            title: "Success!",
+            text: "City updated successfully.",
+            confirmButtonText: "OK",
+          });
+          handleClose();
+        }
+        window.location.reload(); // Reload the page to reflect changes
+       
+      })
+      .catch(function (error) {
+        console.error("Error saving city:", error.response);
+        if (error.response.status == 401) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: error.response.data.errorMessage,
+            confirmButtonText: "Go to Login",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              navigate("/");
+            }
+          });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: error.response.data.errorMessage,
+            confirmButtonText: "OK",
+          });
+        }
       });
-      handleClose();
-    }
-      window.location.reload(); // Reload the page to reflect changes
-            setShow(false); // Close the modal after saving
-setSelectedCity(''); // Reset the selected city
-       
-    })
-    .catch(function(error) {
-      console.error('Error saving city:', error.response);
-       if (error.response.status == 401) {
-                  Swal.fire({
-                    icon: "error",
-                    title: "Oops...",
-                    text: error.response.data.errorMessage,
-                    confirmButtonText: "Go to Login",
-                  }).then((result) => {
-                    if (result.isConfirmed) {
-                      navigate("/");
-                    }
-                  });
-                } 
-                else {
-                  Swal.fire({
-                    icon: "error",
-                    title: "Oops...",
-                    text:  error.response.data.errorMessage,
-                    confirmButtonText: "OK",
-                  });
-                }
-          
-        
-       
-    });
   };
 
   useEffect(() => {
     const activeres = getactivityApisData();
     activeres.then((data) => {
       if (data.request.status == 200) {
-
-        setdashboardcarddata(data.data)
+        setdashboardcarddata(data.data);
         Settreemap({
           ...treemap,
           series: [
@@ -349,7 +356,7 @@ setSelectedCity(''); // Reset the selected city
         });
       }
     });
-    return () => { };
+    return () => {};
   }, []);
 
   useEffect(() => {
@@ -368,7 +375,7 @@ setSelectedCity(''); // Reset the selected city
         });
       }
     });
-    return () => { };
+    return () => {};
   }, [dashboardInvestment.pageNo, dashboardInvestment.pageSize]);
 
   useEffect(() => {
@@ -384,7 +391,7 @@ setSelectedCity(''); // Reset the selected city
         });
       }
     });
-    return () => { };
+    return () => {};
   }, []);
 
   useEffect(() => {
@@ -447,10 +454,8 @@ setSelectedCity(''); // Reset the selected city
         }
       }
     }
-    return () => { };
+    return () => {};
   }, [dashboarddata.profileData, membershipdata.ismembershiptrue]);
-
-
 
   const handleClickGetLink = async (type) => {
     try {
@@ -459,24 +464,18 @@ setSelectedCity(''); // Reset the selected city
 
       if (response.status === 200) {
         const downloadUrl = response.data.excelDownloadUrl;
-        console.log(downloadUrl)
+        console.log(downloadUrl);
         // Set the state with the new download URL
         setexcelsForNewLenderDashboardLink({
           ...excelsForNewLenderDashboardLink,
-          excelDownloadUrl: downloadUrl
+          excelDownloadUrl: downloadUrl,
         });
         window.open(downloadUrl, "_blank");
-
       }
-
-
     } catch (error) {
-      console.error('Error fetching the Excel download link:', error);
+      console.error("Error fetching the Excel download link:", error);
     }
   };
-
-
-
 
   return (
     <>
@@ -495,33 +494,75 @@ setSelectedCity(''); // Reset the selected city
               <div className="row">
                 <div className="col-sm-12">
                   <div className="page-sub-header">
-
-                    <div className="mebershipbutton" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', }} >
+                    <div
+                      className="mebershipbutton"
+                      style={{
+                        display: "flex",
+                        flexDirection: "row",
+                        justifyContent: "space-around",
+                        alignItems: "center",
+                      }}
+                    >
                       <h3 className="page-title">
-                        Welcome  {""}
+                        Welcome {""}
                         {getreducerprofiledata?.length !== 0
                           ? getreducerprofiledata?.firstName
-                            .charAt(0)
-                            .toUpperCase() +
-                          getreducerprofiledata?.firstName
-                            .slice(1)
-                            .toLowerCase() ?? ""
+                              .charAt(0)
+                              .toUpperCase() +
+                              getreducerprofiledata?.firstName
+                                .slice(1)
+                                .toLowerCase() ?? ""
                           : ""}
                       </h3>
 
-
-                      <div className="button_class" style={{ display: 'flex', flexDirection: 'row', position: 'absolute', right: '1rem', flexWrap: 'wrap' }}>
+                      <div
+                        className="button_class"
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          position: "absolute",
+                          right: "1rem",
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <Link to="/todaydeal">
-                          <Tag style={{ height: '1.8rem', display: 'flex', alignItems: 'center' }} className="badge bg-info mx-2">Today
-                            Deals</Tag>
+                          <Tag
+                            style={{
+                              height: "1.8rem",
+                              display: "flex",
+                              alignItems: "center",
+                            }}
+                            className="badge bg-info mx-2"
+                          >
+                            Today Deals
+                          </Tag>
                         </Link>
                         <Link to="/myRunningDeals">
-                          <Tag style={{ height: '1.8rem', display: 'flex', alignItems: 'center', backgroundColor: '#008f64', }} className="badge bg-success-dark mx-2">My Participated Deals</Tag>
+                          <Tag
+                            style={{
+                              height: "1.8rem",
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: "#008f64",
+                            }}
+                            className="badge bg-success-dark mx-2"
+                          >
+                            My Participated Deals
+                          </Tag>
                         </Link>
                         <Link to="/membership">
-                          <Tag style={{ height: '1.8rem', display: 'flex', alignItems: 'center' }} className="badge bg-success mx-2">Get Membership</Tag>
-                        </Link></div>
-
+                          <Tag
+                            style={{
+                              height: "1.8rem",
+                              display: "flex",
+                              alignItems: "center",
+                            }}
+                            className="badge bg-success mx-2"
+                          >
+                            Get Membership
+                          </Tag>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -540,8 +581,8 @@ setSelectedCity(''); // Reset the selected city
                         <h3>
                           {getreducerprofiledata?.length !== 0
                             ? getreducerprofiledata?.lenderWalletAmount -
-                            getreducerprofiledata?.holdAmountInDealParticipation -
-                            getreducerprofiledata?.equityAmount
+                              getreducerprofiledata?.holdAmountInDealParticipation -
+                              getreducerprofiledata?.equityAmount
                             : ""}
                           {/* {getreducerprofiledata?.length != 0
                             ? getreducerprofiledata?.lenderWalletAmount : ""} */}
@@ -557,7 +598,15 @@ setSelectedCity(''); // Reset the selected city
                       </div>
                     </div>
                   </div>
-                  <Link to="/earningCertificate">  <div className="card-footer m-0 p-1 c-black" style={{ color: 'gray', textAlign: 'center' }}>Earnings FY :  24-25</div></Link>
+                  <Link to="/earningCertificate">
+                    {" "}
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{ color: "gray", textAlign: "center" }}
+                    >
+                      Earnings FY : 24-25
+                    </div>
+                  </Link>
                 </div>
               </div>
               <div className="col-xl-3 col-sm-6 col-12 d-flex">
@@ -586,9 +635,15 @@ setSelectedCity(''); // Reset the selected city
                         </div>
                       </div>
                     </div>
-                    <div className="card-footer m-0 p-1 c-black" style={{ color: 'gray', textAlign: 'center' }}><strong>INR </strong> {dashboardcarddata?.length !== 0
-                      ? dashboardcarddata?.activeDealsAmount ?? 0
-                      : ""}</div>
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{ color: "gray", textAlign: "center" }}
+                    >
+                      <strong>INR </strong>{" "}
+                      {dashboardcarddata?.length !== 0
+                        ? dashboardcarddata?.activeDealsAmount ?? 0
+                        : ""}
+                    </div>
                   </Link>
                 </div>
               </div>
@@ -618,9 +673,15 @@ setSelectedCity(''); // Reset the selected city
                         </div>
                       </div>
                     </div>
-                    <div className="card-footer m-0 p-1 c-black" style={{ color: 'gray', textAlign: 'center' }}><strong>INR :</strong> {dashboardcarddata?.length !== 0
-                      ? dashboardcarddata?.closedDealsAmount ?? 0
-                      : ""}</div>
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{ color: "gray", textAlign: "center" }}
+                    >
+                      <strong>INR :</strong>{" "}
+                      {dashboardcarddata?.length !== 0
+                        ? dashboardcarddata?.closedDealsAmount ?? 0
+                        : ""}
+                    </div>
                   </Link>
                 </div>
               </div>
@@ -633,7 +694,7 @@ setSelectedCity(''); // Reset the selected city
                         <h3>
                           {getdashboardData?.length !== 0
                             ? getdashboardData?.numberOfClosedDealsCount +
-                            getdashboardData?.numberOfActiveDealsCount
+                              getdashboardData?.numberOfActiveDealsCount
                             : ""}
                         </h3>
 
@@ -651,9 +712,15 @@ setSelectedCity(''); // Reset the selected city
                       </div>
                     </div>
                   </div>
-                  <div className="card-footer m-0 p-1 c-black" style={{ color: 'gray', textAlign: 'center' }}><strong>INR :</strong> {dashboardcarddata?.length !== 0
-                    ? dashboardcarddata?.disbursedDealsAmount ?? 0
-                    : ""}</div>
+                  <div
+                    className="card-footer m-0 p-1 c-black"
+                    style={{ color: "gray", textAlign: "center" }}
+                  >
+                    <strong>INR :</strong>{" "}
+                    {dashboardcarddata?.length !== 0
+                      ? dashboardcarddata?.disbursedDealsAmount ?? 0
+                      : ""}
+                  </div>
                 </div>
               </div>
             </div>
@@ -751,9 +818,10 @@ setSelectedCity(''); // Reset the selected city
                         <div className="circle-graph1" data-percent="50">
                           <div className="progress-less teacher-dashboard">
                             <h4>
-                              {`${getdashboardData?.numberOfClosedDealsCount +
+                              {`${
+                                getdashboardData?.numberOfClosedDealsCount +
                                 getdashboardData?.numberOfActiveDealsCount
-                                }/${dealsProgressed.totalDeals}`}
+                              }/${dealsProgressed.totalDeals}`}
                             </h4>
                             <p>Deals </p>
                           </div>
@@ -772,12 +840,15 @@ setSelectedCity(''); // Reset the selected city
                   <div className="card-header d-flex align-items-center">
                     <h5 className="card-title">Investment / Wallet</h5>
                     <ul className="chart-list-out student-ellips">
-                      <li className="star-menus"  >
+                      <li className="star-menus">
                         {/* <a href={excelsForNewLenderDashboardLink.excelDownloadUrl}>
                      
                         </a> */}
                         {
-                          <Link id="downloadLink" onClick={() => handleClickGetLink("WALLETCREDITED")}>
+                          <Link
+                            id="downloadLink"
+                            onClick={() => handleClickGetLink("WALLETCREDITED")}
+                          >
                             <i class="fa-solid fa-download"></i>
                           </Link>
                         }
@@ -830,72 +901,72 @@ setSelectedCity(''); // Reset the selected city
                       <div className="activity-groups">
                         {regular_runningDeal.apidata
                           .listOfDealsInformationToLender &&
-                          regular_runningDeal.apidata
-                            .listOfDealsInformationToLender.length > 0
+                        regular_runningDeal.apidata
+                          .listOfDealsInformationToLender.length > 0
                           ? regular_runningDeal.apidata.listOfDealsInformationToLender
-                            .slice(0, 4)
-                            .map((data, index) => (
-                              <div
-                                key={`listOfDealsInfo-${index}`}
-                                className="activity-awards"
-                              >
-                                <div className="award-boxs">
-                                  <img src={rightclickmark} alt="Award" />
+                              .slice(0, 4)
+                              .map((data, index) => (
+                                <div
+                                  key={`listOfDealsInfo-${index}`}
+                                  className="activity-awards"
+                                >
+                                  <div className="award-boxs">
+                                    <img src={rightclickmark} alt="Award" />
+                                  </div>
+                                  <div className="award-list-outs">
+                                    <h4> {data.dealName}</h4>
+                                    <h5>
+                                      Min: {data.minimumAmountInDeal}, Max:
+                                      {data.lenderPaticipationLimit}, RoI:
+                                      {data.rateOfInterest}%
+                                    </h5>
+                                  </div>
+                                  <div className="award-time-list">
+                                    <Link
+                                      to={`/participatedeal?dealId=${data.dealId}`}
+                                    >
+                                      <span>Participate</span>
+                                    </Link>
+                                  </div>
                                 </div>
-                                <div className="award-list-outs">
-                                  <h4> {data.dealName}</h4>
-                                  <h5>
-                                    Min: {data.minimumAmountInDeal}, Max:
-                                    {data.lenderPaticipationLimit}, RoI:
-                                    {data.rateOfInterest}%
-                                  </h5>
-                                </div>
-                                <div className="award-time-list">
-                                  <Link
-                                    to={`/participatedeal?dealId=${data.dealId}`}
-                                  >
-                                    <span>Participate</span>
-                                  </Link>
-                                </div>
-                              </div>
-                            ))
+                              ))
                           : regular_runningDeal.apidataESCROW &&
-                          regular_runningDeal.apidataESCROW
-                            .slice(0, 4)
-                            .map((data, index) => (
-                              <div
-                                key={`listOfDealsInfo-${index}`}
-                                className="activity-awards"
-                              >
-                                <div className="award-boxs">
-                                  <img src={awardicon01} alt="Award" />
+                            regular_runningDeal.apidataESCROW
+                              .slice(0, 4)
+                              .map((data, index) => (
+                                <div
+                                  key={`listOfDealsInfo-${index}`}
+                                  className="activity-awards"
+                                >
+                                  <div className="award-boxs">
+                                    <img src={awardicon01} alt="Award" />
+                                  </div>
+                                  <div className="award-list-outs">
+                                    <h4
+                                      style={{
+                                        fontWeight: "400",
+                                        inlineSize: "18rem",
+                                      }}
+                                      className="textwrap"
+                                    >
+                                      {data.dealName}
+                                    </h4>
+                                    <h5>
+                                      Min: {data.minimumPaticipationAmount},
+                                      Max:
+                                      {data.lenderPaticipationAmount}, RoI:
+                                      {data.rateOfInterest}%
+                                    </h5>
+                                  </div>
+                                  <div className="award-time-list">
+                                    <Link
+                                      to={`/participatedeal?dealId=${data.dealId}`}
+                                    >
+                                      <span>Participate</span>
+                                    </Link>
+                                  </div>
                                 </div>
-                                <div className="award-list-outs">
-                                  <h4
-                                    style={{
-                                      fontWeight: "400",
-                                      inlineSize: "18rem",
-                                    }}
-                                    className="textwrap"
-                                  >
-                                    {data.dealName}
-                                  </h4>
-                                  <h5>
-                                    Min: {data.minimumPaticipationAmount},
-                                    Max:
-                                    {data.lenderPaticipationAmount}, RoI:
-                                    {data.rateOfInterest}%
-                                  </h5>
-                                </div>
-                                <div className="award-time-list">
-                                  <Link
-                                    to={`/participatedeal?dealId=${data.dealId}`}
-                                  >
-                                    <span>Participate</span>
-                                  </Link>
-                                </div>
-                              </div>
-                            ))}
+                              ))}
                       </div>
                     </div>
                   </div>
@@ -907,45 +978,81 @@ setSelectedCity(''); // Reset the selected city
             </div>
           </div>
 
-           <Modal show={show} onHide={()=> setShow(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Select City</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <div className="mb-3">
-            <label htmlFor="citySelect" className="form-label">City</label>
-            <select
-              id="citySelect"
-              className="form-select"
-              value={selectedCity}
-              onChange={handleCityChange}
-            >
-              <option value="">Select a city</option>
-              <option value="Mumbai">Mumbai</option>
-              <option value="Delhi">Delhi</option>
-              <option value="Bangalore">Bangalore</option>
-              <option value="Hyderabad">Hyderabad</option>
-              <option value="Ahmedabad">Ahmedabad</option>
-              <option value="Chennai">Chennai</option>
-              <option value="Kolkata">Kolkata</option>
-              <option value="Pune">Pune</option>
-              <option value="Jaipur">Jaipur</option>
-              <option value="Lucknow">Lucknow</option>
-            </select>
-          </div>
-          {selectedCityerror && <p className="text-danger">Please select a city.</p>}
-        </Modal.Body>
-        <Modal.Footer>
-          {/* <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button> */}
-          <Button variant="primary" 
-          onClick={handleSave}
-           disabled={!selectedCity}>
-            Save
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          <Modal
+            show={show}
+            onHide={() => setShow(false)}
+            dialogClassName="custom-small-modal"
+          >
+            <Modal.Header closeButton className="py-2 px-3">
+              <Modal.Title className="h6">Select City</Modal.Title>
+            </Modal.Header>
+
+            <Modal.Body className="py-2 px-3">
+              <div className="mb-2">
+                <label htmlFor="citySelect" className="form-label small mb-1">
+                  City
+                </label>
+                <select
+                  id="citySelect"
+                  className="form-select form-select-sm"
+                  value={selectedCity}
+                  onChange={handleCityChange}
+                >
+                  <option value="">Select a city</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Bangalore">Bangalore</option>
+                  <option value="Hyderabad">Hyderabad</option>
+                  <option value="Ahmedabad">Ahmedabad</option>
+                  <option value="Chennai">Chennai</option>
+                  <option value="Kolkata">Kolkata</option>
+                  <option value="Pune">Pune</option>
+                  <option value="Jaipur">Jaipur</option>
+                  <option value="Lucknow">Lucknow</option>
+                  <option value="Secunderabad">Secunderabad</option>
+                  <option value="Vishakapatnam">Vishakapatnam</option>
+                  <option value="Vijayawada">Vijayawada</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Others">Other</option>
+                </select>
+
+                {selectedCity === "Others" && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="Enter City"
+                      className="form-control form-control-sm"
+                      name="customCity"
+                      value={customCity}
+                      onChange={(e) => setCustomCity(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                {selectedCityerror && (
+                  <p className="text-danger small mt-1">
+                    Please select a city.
+                  </p>
+                )}
+              </div>
+            </Modal.Body>
+
+          <Modal.Footer className="py-2 px-3">
+  <Button
+    variant="primary"
+    onClick={handleSave}
+    size="sm"
+    disabled={
+      !selectedCity || (selectedCity === "Others" && customCity.trim() === "")
+    }
+  >
+    Save
+  </Button>
+</Modal.Footer>
+
+          </Modal>
+
           {/* Footer */}
           <Footer />
         </div>
