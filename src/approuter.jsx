@@ -7,6 +7,7 @@ import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
 import MainAdminDashboard from "./components/pages/Oxyloans/Admin/MainAdminDashboard";
 import OxyloansAdminDashboard from "./components/pages/Dashboard/OxyloansAdminDashboard";
+import ParticipatedAmountInfo from "./components/pages/Oxyloans/Admin/ParticipatedAmountInfo/ParticipatedAmountInfo.js";
 
 import TestDeals from "./components/pages/Oxyloans/Admin/Deals/TestDeals/TestDeals";
 import ViewCurrentDayDeals from "./components/pages/Oxyloans/Lender/ViewCurrentDayDeals";
@@ -333,6 +334,7 @@ const AppRouter = () => {
         <Route path="/userCommentDetails" element={<UserCommentDetails/>}/>
 
         <Route path="/myCalls" element={<CallsDataBasedOnID/>}/>
+        <Route path="/participatedAmountInfo" element={<ParticipatedAmountInfo />}/>
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

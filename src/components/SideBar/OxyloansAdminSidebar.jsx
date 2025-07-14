@@ -77,6 +77,13 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"], // Show to all roles
     },
     {
+      key: "participationamountinfo",
+      label: " Participation Amount Info",
+      link: "/participatedAmountInfo",
+      icon: "fas fa-chart-line",
+      type: ["ADMIN"],
+    },
+    {
       key: "emi",
       label: "Borrower Details",
       link: "/Emi",
