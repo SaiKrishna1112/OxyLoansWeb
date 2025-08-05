@@ -171,9 +171,10 @@
 
 // export default MyParticipateStatementTable;
 
+
 import React, { useState } from "react";
 import { Table } from "antd";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const MyParticipateStatementTable = ({ data }) => {
   const [content, setContent] = useState([]);
@@ -185,9 +186,16 @@ const MyParticipateStatementTable = ({ data }) => {
   };
 
   const newData = [];
-
+  let breakupButtonShown = false;
   if (data?.data?.dealLevelLoanEmiCard) {
     data.data.dealLevelLoanEmiCard.forEach((dataItem, index) => {
+      const shouldShowBreakupButton =
+        index===0 && dataItem.listOfPaticipatedInfo !== null;
+
+      if (shouldShowBreakupButton) {
+        breakupButtonShown = true; // mark that we've shown the button
+      }
+
       newData.push({
         key: index,
         Sno: index + 1,
@@ -196,10 +204,12 @@ const MyParticipateStatementTable = ({ data }) => {
         InterestAmount: (
           <>
             {dataItem.interestAmount}
-            {dataItem.listOfPaticipatedInfo !== null && (
+            {shouldShowBreakupButton && (
               <button
                 className="btn btn-sm btn-outline-primary ms-2"
-                onClick={() => handleBreakupClick(dataItem.listOfPaticipatedInfo)}
+                onClick={() =>
+                  handleBreakupClick(dataItem.listOfPaticipatedInfo)
+                }
               >
                 Breakup View
               </button>
@@ -220,12 +230,14 @@ const MyParticipateStatementTable = ({ data }) => {
     {
       title: "Actual Payment Date",
       dataIndex: "ActualPaymentDate",
-      sorter: (a, b) => new Date(a.ActualPaymentDate) - new Date(b.ActualPaymentDate),
+      sorter: (a, b) =>
+        new Date(a.ActualPaymentDate) - new Date(b.ActualPaymentDate),
     },
     {
       title: "Interest Paid Date",
       dataIndex: "InterestPaidDate",
-      sorter: (a, b) => new Date(a.InterestPaidDate) - new Date(b.InterestPaidDate),
+      sorter: (a, b) =>
+        new Date(a.InterestPaidDate) - new Date(b.InterestPaidDate),
     },
     {
       title: "Interest Amount",
@@ -241,7 +253,10 @@ const MyParticipateStatementTable = ({ data }) => {
   const expandedRowRender = () => {
     if (!content || content.length === 0) return null;
 
-    const totalAmount = content.reduce((acc, item) => acc + item.interestAmount, 0);
+    const totalAmount = content.reduce(
+      (acc, item) => acc + item.interestAmount,
+      0
+    );
 
     return (
       <div className="table-responsive mt-3">
@@ -268,7 +283,9 @@ const MyParticipateStatementTable = ({ data }) => {
               </tr>
             ))}
             <tr>
-              <td colSpan="5" className="text-end fw-bold">Total Amount</td>
+              <td colSpan="5" className="text-end fw-bold">
+                Total Amount
+              </td>
               <td className="fw-bold">{totalAmount}</td>
             </tr>
           </tbody>
@@ -279,11 +296,7 @@ const MyParticipateStatementTable = ({ data }) => {
 
   return (
     <div>
-      <Table
-        columns={columns}
-        dataSource={newData}
-        pagination={false}
-      />
+      <Table columns={columns} dataSource={newData} pagination={false} />
       {!isCollapsed && expandedRowRender()}
     </div>
   );

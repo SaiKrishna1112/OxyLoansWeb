@@ -77,12 +77,60 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"], // Show to all roles
     },
     {
+      key: "lenderLoanApplications",
+      label: "Lender Loan Applications",
+      link: "/lenderLoanApplications",
+      icon: "fa-solid fa-file-lines",
+      type: [ "HELPDESKADMIN","ADMIN"]    },
+    {
+      key: "borrowerLoanApplications",
+      label: "Borrower Loan Applications",
+      link: "/borrowerLoanApplications",
+      icon: "fa-solid fa-file-lines",
+      type: [ "HELPDESKADMIN","ADMIN"]    },
+    {
       key: "participationamountinfo",
       label: " Participation Amount Info",
       link: "/participatedAmountInfo",
       icon: "fas fa-chart-line",
       type: ["ADMIN"],
     },
+    {
+      key: "uploadfile",
+      label: "Upload File",
+      link: "/uploadFile",
+      icon: "fa-solid fa-file-arrow-up",
+      type: ["ADMIN"],
+    },
+    {
+      key: "monthlyInterestLenders",
+      label: "Monthly Interest Lenders",
+      link: "/monthlyInterest",
+      icon: "fas fa-calendar-alt",
+      type: ["ADMIN"],
+    },
+    {
+      key: "interestDetailsTable",
+      label: "Interest Details Table",
+      link: "/interestDetailsTable",
+      icon: "fas fa-chart-bar",
+      type: ["ADMIN"],
+    },
+    
+    {
+      key: "ParticipationList",
+      label: "Offline Participation List",
+      link: "/participationList",
+      icon: "fas fa-file-invoice-dollar",
+      type: ["ADMIN"],
+    },
+     {
+      key: "userparticipationlist",
+      label: "User Participation List",
+      link: "/userParticipationlist",
+      icon: "fa-solid fa-users",
+      type: ["ADMIN"],
+    },
     {
       key: "emi",
       label: "Borrower Details",
@@ -115,18 +163,6 @@ const OxyloansAdminSidebar = () => {
     //   link: "/assignedUsersforCallers",
     //   icon: "fa-solid fa-file-lines",
     //   type: ["ADMIN", "HELPDESKADMIN"]    },
-    {
-      key: "lenderLoanApplications",
-      label: "Lender Loan Applications",
-      link: "/lenderLoanApplications",
-      icon: "fa-solid fa-file-lines",
-      type: [ "HELPDESKADMIN","ADMIN"]    },
-    {
-      key: "borrowerLoanApplications",
-      label: "Borrower Loan Applications",
-      link: "/borrowerLoanApplications",
-      icon: "fa-solid fa-file-lines",
-      type: [ "HELPDESKADMIN","ADMIN"]    },
     {
       key: "registerlender",
       label: "Register Lender",

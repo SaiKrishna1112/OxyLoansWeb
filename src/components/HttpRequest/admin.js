@@ -720,3 +720,60 @@ export const updateUserDetails=async(valueId,email,mobileNumber)=>{
 
   return response;
 }
+
+export const InterestDetailsTableApi = async (actualDate, status = "INITIATED") => {
+  const token = getToken();
+  const data = {
+    actualDate, 
+    status,      
+  };
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getAllInterestUsersDeatils",
+    "POST",
+    token,
+    data
+  );
+
+  return response;
+};
+
+
+export const ParticipationListApi = async (pageNo = 1, pageSize = 10, status = "ACTIVE") => {
+  const token = getToken();
+
+  const data = {
+    pageNo,
+    pageSize,
+    partcipationStatus: status, 
+  };
+
+  try {
+    return await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      "listOfPaticipations", 
+      "POST",
+      token,
+      data
+    );
+  } catch (error) {
+    console.error("API Call Failed:", error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+export const MonthlyInterestLendersapi = async (month, year, startDate) => {
+  const token = getToken();
+  const endpoint = `MonthlyLevelInterestPaymentsInfo/${month}/${year}?startDate=${startDate}`;
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    endpoint,
+    "GET",
+    token
+  );
+
+  return response;
+};

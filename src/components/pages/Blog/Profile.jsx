@@ -2628,42 +2628,7 @@ const Profile = () => {
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  Cheque Leaf
-                                  <span className="star-red">*</span>
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="CHEQUELEAF"
-                                    accept="image/*"
-                                    id="CHEQUELEAF"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label
-                                    htmlFor="CHEQUELEAF"
-                                    className="upload"
-                                  >
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
-                                </div>
-                                {kyc.CHEQUELEAF != undefined &&
-                                  kyc.CHEQUELEAF != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.CHEQUELEAF.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Cheque Leaf</small>
-                                  </h6>
-                                )}
-                              </div>
+                            
                               <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
                                   Aadhaar
@@ -2694,6 +2659,44 @@ const Profile = () => {
                                   <h6 className="settings-size text-warning">
                                     <i className="fa-solid fa-upload mx-lg-1 "></i>
                                     <small>Upload Aadhaar</small>
+                                  </h6>
+                                )}
+                              </div>
+
+
+                                <div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Cheque Leaf
+                                  {/* <span className="star-red">*</span> */}
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="CHEQUELEAF"
+                                    accept="image/*"
+                                    id="CHEQUELEAF"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label
+                                    htmlFor="CHEQUELEAF"
+                                    className="upload"
+                                  >
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+                                </div>
+                                {kyc.CHEQUELEAF != undefined &&
+                                  kyc.CHEQUELEAF != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.CHEQUELEAF.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Cheque Leaf</small>
                                   </h6>
                                 )}
                               </div>

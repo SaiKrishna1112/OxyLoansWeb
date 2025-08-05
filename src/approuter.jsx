@@ -7,7 +7,6 @@ import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
 import MainAdminDashboard from "./components/pages/Oxyloans/Admin/MainAdminDashboard";
 import OxyloansAdminDashboard from "./components/pages/Dashboard/OxyloansAdminDashboard";
-import ParticipatedAmountInfo from "./components/pages/Oxyloans/Admin/ParticipatedAmountInfo/ParticipatedAmountInfo.js";
 
 import TestDeals from "./components/pages/Oxyloans/Admin/Deals/TestDeals/TestDeals";
 import ViewCurrentDayDeals from "./components/pages/Oxyloans/Lender/ViewCurrentDayDeals";
@@ -124,15 +123,24 @@ import StudentDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/Studen
 import EquityDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EquityDeals.jsx";
 import EscrowsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EscrowsDeals.jsx";
 import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
-import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";// ********************BORROWER MODULE    ROUTES END ************************** //
+import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";
+// ********************BORROWER MODULE    ROUTES END ************************** //
 
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
 import AssignedUsersforCallers from "./components/pages/Oxyloans/Admin/AssignedUsersforCallers.jsx";
 
 import RadhaDashboard from "./components/pages/Oxyloans/Radha Admin/RadhaDashboard.jsx"
 import UserCommentDetails from "./components/pages/Oxyloans/Radha Admin/UserCommentDetails.jsx";
+import MonthlyInterest from "./components/pages/Oxyloans/Admin/Offlineinterest/MonthlyInterest.js";
+import InterestDetailsTable from "./components/pages/Oxyloans/Admin/InterestDetails/InterestDetailsTable.js";
+import ParticipationList from "./components/pages/Oxyloans/Admin/ParticipationList/ParticipationList.js";
+import UploadFile from "./components/pages/Oxyloans/Admin/UploadFile/UploadFile.js";
+import UserParticipationList from "./components/pages/Oxyloans/Admin/UserParticipationList/UserParticipationList.js";
+import ParticipatedAmountInfo from "./components/pages/Oxyloans/Admin/ParticipatedAmountInfo/ParticipatedAmountInfo.js";
 
 import CallsDataBasedOnID from "./components/pages/Oxyloans/Admin/Callers Data/CallsDataBasedOnID.jsx";
+
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -335,6 +343,11 @@ const AppRouter = () => {
 
         <Route path="/myCalls" element={<CallsDataBasedOnID/>}/>
         <Route path="/participatedAmountInfo" element={<ParticipatedAmountInfo />}/>
+        <Route path="/uploadFile" element={<UploadFile />}/>
+        <Route path="/MonthlyInterest" element={<MonthlyInterest/>}/>
+        <Route path="/interestDetailsTable" element={<InterestDetailsTable/>}/>
+        <Route path="/participationList" element={<ParticipationList/>}/>
+        <Route path="/userParticipationlist" element={<UserParticipationList />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

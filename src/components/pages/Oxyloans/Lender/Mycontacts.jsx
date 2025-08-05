@@ -12,6 +12,7 @@ import Footer from "../../../Footer/Footer";
 import "./Mycontacts.css";
 import { Button, Table } from "antd";
 import Result1 from "./Result1";
+import Swal from "sweetalert2";
 
 const Mycontacts = () => {
   const urlparam = new URLSearchParams(window.location.search);
@@ -178,7 +179,15 @@ const Mycontacts = () => {
       message.emailcontent,
       message.emailsubject
     );
-    response.then((data) => {});
+    response.then((data) => {
+      if (data.request.status == 200) {
+        setcontactData({
+          ...contactdata,
+          setsuccessMessage: data.data.status,
+        });
+        Swal.fire("Success!", data.data.status, "success");
+      }
+    });
   };
 
   return (
@@ -257,9 +266,9 @@ const Mycontacts = () => {
                     </div>
                     {/* /Page Header */}
                     <div className="table-responsive">
-                      {contactdata.setsuccessMessage && (
+                      {/* {contactdata.setsuccessMessage && (
                         <Result1 message={contactdata.setsuccessMessage} />
-                      )}
+                      )} */}
                       <Table
                         className="table border-0 star-student table-hover table-center mb-0 datatable table-striped dataTable no-footer"
                         pagination={{
