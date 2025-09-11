@@ -789,6 +789,33 @@ export const handeldisplayMonthlyReferrersAmountapi = async (data) => {
   );
   return response;
 };
+
+export const fetchFinancialEarnings = async (body) => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/fyFeePaidPdfs`,
+    "POST",
+    token,
+    body
+  );
+  return response;
+};
+
+export const summaryFinancialEarnings = async (body) => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/fyPdfForLenders`,
+    "POST",
+    token,
+    body
+  );
+  return response;
+};
+
 export const uploadkyc = async (event) => {
   const token = getToken();
   const userId = getUserId();

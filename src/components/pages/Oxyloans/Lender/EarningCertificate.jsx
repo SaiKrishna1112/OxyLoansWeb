@@ -2,12 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
-import { Table } from "antd";
-
-import { getMyfinancialEarnings } from "../../../HttpRequest/afterlogin";
+import { DatePicker, Button, message, Table } from "antd";
+import { getMyfinancialEarnings, summaryFinancialEarnings } from "../../../HttpRequest/afterlogin";
 import { confirmationAlertFyYear } from "../../Base UI Elements/SweetAlert";
 
+const { RangePicker } = DatePicker;
+
 const EarningCertificate = () => {
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const [myfyearnings, setmyfyearnings] = useState({
     apiData: "",
     hasdata: false,
@@ -18,81 +22,133 @@ const EarningCertificate = () => {
     confirmationAlertFyYear(startdate, enddate, downloadType, status);
   };
 
+  const handleDownloadSummaryPdf = async () => {
+    try {
+      if (!dateRange || !dateRange[0] || !dateRange[1]) {
+        message.warning("Please select a valid date range before searching.");
+        return;
+      }
+
+      setIsLoading(true);
+
+      const payload = {
+        startDate: dateRange[0].format("YYYY-MM-DD"),
+        endDate: dateRange[1].format("YYYY-MM-DD"),
+      };
+
+      const response = await summaryFinancialEarnings({
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        inputType: "DOWNLOAD",
+        status: "dealsum",
+      });
+
+      if (response!=null) {
+        const url = response.data;
+
+        if (url && url.length > 0) {
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "");
+          link.setAttribute("target", "_blank");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          message.success("PDF downloaded successfully!");
+        }
+         
+      } 
+      
+      else {
+        message.success("No data found for Summary PDF.");
+      } 
+
+    } catch (error) {
+      console.error("Error fetching financial earnings:", error);
+      message.error("An error occurred while fetching the Summary PDF.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDateChange = (dates) => {
+    setDateRange(dates);
+  };
+
   useEffect(() => {
     const response = getMyfinancialEarnings();
     response.then((data) => {
-      if (data.request.status == 200) {
+      if (data.request.status === 200) {
         setmyfyearnings({
           ...myfyearnings,
           apiData: data.data,
           loading: false,
-          hasdata: data.data.length == 0 ? false : true,
+          hasdata: data.data.length !== 0,
         });
       }
     });
-    return () => { };
+    return () => {};
   }, []);
 
   const datasource = [];
-  {
-    myfyearnings.apiData != ""
-      ? myfyearnings.apiData.map((data) => {
-        datasource.push({
-          key: Math.random(),
-          SO: data.sNo,
-          FY: data.financialYear,
-          EARNINGS: data.incomeEarned,
-          DOWNLOADFYREPORT: (
-            <span
-              className="badge bg-success"
-              type="button"
-              onClick={() => {
-                profitearnedCertificate(
-                  data.startDate,
-                  data.endDate,
-                  "DOWNLOAD",
-                  "dealsum"
-                );
-              }}
-            >
-              <i className="fa-solid fa-download"></i> Download FY Report
-            </span>
-          ),
-          DOWNLOADMONTREPORT: (
-            <span
-              className="badge bg-warning"
-              type="button"
-              onClick={() => {
-                profitearnedCertificate(
-                  data.startDate,
-                  data.endDate,
-                  "DOWNLOAD",
-                  "dealsumMonthly"
-                );
-              }}
-            >
-              <i className="fa-solid fa-download"></i> Download MONTHLY Report
-            </span>
-          ),
 
-          EMAILFYREPORT: (
-            <span
-              className="badge bg-info"
-              type="button"
-              onClick={() => {
-                profitearnedCertificate(
-                  data.startDate,
-                  data.endDate,
-                  "EMAIL"
-                );
-              }}
-            >
-              <i className="fa-solid fa-envelope"></i> Get FY Email Report
-            </span>
-          ),
-        });
-      })
-      : "";
+  if (myfyearnings.apiData !== "") {
+    myfyearnings.apiData.map((data) => {
+      datasource.push({
+        key: Math.random(),
+        SO: data.sNo,
+        FY: data.financialYear,
+        EARNINGS: data.incomeEarned,
+        DOWNLOADFYREPORT: (
+          <span
+            className="badge bg-success"
+            type="button"
+            onClick={() =>
+              profitearnedCertificate(
+                data.startDate,
+                data.endDate,
+                "DOWNLOAD",
+                "dealsum"
+              )
+            }
+          >
+            <i className="fa-solid fa-download"></i> Download FY Report
+          </span>
+        ),
+        DOWNLOADMONTREPORT: (
+          <span
+            className="badge bg-warning"
+            type="button"
+            onClick={() =>
+              profitearnedCertificate(
+                data.startDate,
+                data.endDate,
+                "DOWNLOAD",
+                "dealsumMonthly"
+              )
+            }
+          >
+            <i className="fa-solid fa-download"></i> Download MONTHLY Report
+          </span>
+        ),
+        EMAILFYREPORT: (
+          <span
+            className="badge bg-info"
+            type="button"
+            onClick={() =>
+              profitearnedCertificate(
+                data.startDate,
+                data.endDate,
+                "EMAIL"
+              )
+            }
+          >
+            <i className="fa-solid fa-envelope"></i> Get FY Email Report
+          </span>
+        ),
+      });
+    });
   }
 
   const columns = [
@@ -119,7 +175,6 @@ const EarningCertificate = () => {
       title: "DOWNLOAD MONTHLY REPORT",
       dataIndex: "DOWNLOADMONTREPORT",
     },
-
     {
       title: "EMAIL FY REPORT",
       dataIndex: "EMAILFYREPORT",
@@ -131,10 +186,8 @@ const EarningCertificate = () => {
       <div className="main-wrapper">
         <Header />
         <SideBar />
-        {/*Page wrapper */}
         <div className="page-wrapper">
           <div className="content container-fluid">
-            {/*Page Header */}
             <div className="page-header">
               <div className="row">
                 <div className="col">
@@ -150,12 +203,27 @@ const EarningCertificate = () => {
                 </div>
               </div>
             </div>
-            {/* /Page Header */}
 
             <div className="row">
               <div className="col-sm-12">
                 <div className="card">
                   <div className="card-body">
+                    <div className="d-flex align-items-center">
+                      <RangePicker
+                        onChange={handleDateChange}
+                        format="YYYY-MM-DD"
+                        style={{ marginRight: 10 }}
+                        value={dateRange}
+                      />
+                      <Button 
+                        type="primary" 
+                        onClick={handleDownloadSummaryPdf}
+                        loading={isLoading}
+                      >
+                        Search
+                      </Button>
+                    </div>
+
                     <div>
                       <Table
                         className="table-responsive table-responsive-md table-responsive-lg table-responsive-xs"
@@ -175,9 +243,9 @@ const EarningCertificate = () => {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
-        {/*Page wrapper */}
       </div>
     </>
   );
