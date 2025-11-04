@@ -161,12 +161,13 @@ const Participatedeal = () => {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-
+       
     setDeal({
       ...deal,
       [name]: value,
     });
-
+      console.log(deal);
+      
     // const amountFromURL = amount; // Assuming 'amount' is defined or passed as a prop
     // const participateAmount = deal.participatedAmount;
 
@@ -502,8 +503,8 @@ const Participatedeal = () => {
                       name="participatedAmount"
                       onChange={handleChange}
                     />
-
                   </div>
+                  {deal.participatedAmount!==0 && deal.participatedAmount !== "" && deal.participatedAmount !== null && deal.dealfeestatus !== "OPTIONAL" && deal.uservalidity === true && <div className="error">This deal has a fee of ₹ {(deal.participatedAmount*0.01)+0.18}. </div>}
                   {console.log(typeof (withdrawriaseapi.amount), withdrawriaseapi.amount)}
                   {withdrawriaseapi.amount !== "" && withdrawriaseapi.amount !== null ? (
                     <div className="error">Actual wallet amount after withdrawal request: ₹ {withdrawriaseapi.amount}.</div>

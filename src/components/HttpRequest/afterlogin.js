@@ -1772,6 +1772,30 @@ export const handelsubmitdatafilter = async (inputserach) => {
   );
   return response;
 };
+
+export const handelsubmitcanceldatafilter = async (inputserach) => {
+  const token = getToken();
+  const userId = getUserId();
+  const isValidInput =
+    typeof inputserach === "string" && inputserach.length > 0;
+
+  const postdatastring = {
+    // dealId:
+    //   isValidInput && inputserach.length <= 3 ? parseInt(inputserach) : null,
+    userId: parseInt(userId),
+    dealName: isValidInput && inputserach.length > 3 ? inputserach : null,
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `search_based_closed_deals`,
+    "POST",
+    token,
+    postdatastring
+  );
+  return response;
+};
+
+
 export const referralEarningsInfoparam = async (
   pageNo = 1,
   pageSize = 10,
