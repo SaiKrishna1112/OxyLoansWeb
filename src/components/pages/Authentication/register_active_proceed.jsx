@@ -41,6 +41,9 @@ const Register_active_proceed = () => {
     addresserror: "",
   });
     const [isloading, setLoading] = useState(false)
+    const [errors, setErrors] = useState({
+  panNumber: "",
+});
   
   // useEffect(() => {
   //   // Calculate today's date
@@ -89,6 +92,12 @@ const Register_active_proceed = () => {
 
 
       if (data.pannumber.length >= 10) {
+
+        if (errors.panNumber) {
+        toastrWarning(errors.panNumber);
+        return; // prevent submission if there's a PAN error
+      }
+      
         setLoading(true)
 
         try {
@@ -122,13 +131,55 @@ const Register_active_proceed = () => {
     }
   };
 
+  // const handlechanges = (event) => {
+  //   const { name, value } = event.target;
+  //   setdata({
+  //     ...data,
+  //     [name]: value,
+  //   });
+  // };
   const handlechanges = (event) => {
-    const { name, value } = event.target;
-    setdata({
-      ...data,
-      [name]: value,
-    });
-  };
+  const { name, value } = event.target;
+
+  // PAN validation only for panNumber field
+  if (name === "pannumber") {
+    // Always store uppercase
+    const upperValue = value.toUpperCase().slice(0, 10); // ensure max 10 chars
+
+    // Allow only A–Z and 0–9
+    const cleanedValue = upperValue.replace(/[^A-Z0-9]/g, "");
+
+    // PAN pattern: 5 letters, 4 digits, 1 letter
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+    setdata((prev) => ({
+      ...prev,
+      [name]: cleanedValue,
+    }));
+
+    // Set error message only when length is 10 and pattern is wrong
+    if (cleanedValue.length === 10 && !panRegex.test(cleanedValue)) {
+      setErrors((prev) => ({
+        ...prev,
+        panNumber: "Invalid PAN format. Expected: ABCDE1234F",
+      }));
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        panNumber: "",
+      }));
+    }
+
+    return; // important: stop here so we don't fall through to generic logic
+  }
+
+  // default handler for all other fields
+  setdata((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
+
   // useEffect(() => {
   //   const id = localStorage.getItem("id");
   //   const time = localStorage.getItem("time");
@@ -239,6 +290,9 @@ const Register_active_proceed = () => {
                     {data.panerror && (
                       <div className="error">{data.panerror}</div>
                     )}
+                    {errors.panNumber && (
+                        <small style={{ color: "red" }}>{errors.panNumber}</small>
+                      )}
                   </div>
                   <div className="form-group">
                     <label>

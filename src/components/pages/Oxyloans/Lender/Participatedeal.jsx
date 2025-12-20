@@ -499,12 +499,12 @@ const Participatedeal = () => {
                       className="form-control-lg form-control-lg1"
                       type="number"
                       placeholder="Enter amount here..."
-
+                       onWheel={(e) => e.target.blur()} 
                       name="participatedAmount"
                       onChange={handleChange}
                     />
                   </div>
-                  {deal.participatedAmount!==0 && deal.participatedAmount !== "" && deal.participatedAmount !== null && deal.dealfeestatus !== "OPTIONAL" && deal.uservalidity === true && <div className="error">This deal has a fee of ₹ {(deal.participatedAmount*0.01)+0.18}. </div>}
+                  {deal.participatedAmount!==0 && deal.participatedAmount !== "" && deal.participatedAmount !== null && deal.dealfeestatus !== "OPTIONAL" && deal.uservalidity === true && <div className="error">This deal has a fee(1% + 18% GST) of ₹ {Math.round((deal.participatedAmount * 0.01) * 1.18)}. </div>}
                   {console.log(typeof (withdrawriaseapi.amount), withdrawriaseapi.amount)}
                   {withdrawriaseapi.amount !== "" && withdrawriaseapi.amount !== null ? (
                     <div className="error">Actual wallet amount after withdrawal request: ₹ {withdrawriaseapi.amount}.</div>
@@ -561,6 +561,40 @@ const Participatedeal = () => {
         </div>
       </div>
       {/* /Main Wrapper */}
+      <style>
+        {`
+        /* Remove arrow buttons */
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Remove scroll wheel changing the number */
+input[type=number] {
+  -moz-appearance: textfield; /* Firefox remove arrows */
+}
+
+input[type=number] {
+  appearance: textfield; /* Removes spinner behavior on Chrome/Safari as well */
+}
+
+/* Prevent scroll from changing values */
+input[type=number]:focus,
+input[type=number]:hover {
+  -moz-appearance: textfield;
+}
+
+input[type=number] {
+  pointer-events: auto;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  display: none;
+}
+`}
+      </style>
     </>
   );
 };

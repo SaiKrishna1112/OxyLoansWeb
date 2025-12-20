@@ -1,5 +1,5 @@
 import axios from "axios";
-const userisIn = "prod";
+const userisIn = "local"; //local or production
 const API_BASE_URL =
   userisIn == "local"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/"
@@ -777,3 +777,14 @@ export const MonthlyInterestLendersapi = async (month, year, startDate) => {
 
   return response;
 };
+
+export const fetchTopLenders = async ()=>{
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService (
+    API_BASE_URL,
+    `getTopLendersInfo`,
+    "GET",
+    token,
+  );
+  return response;
+}

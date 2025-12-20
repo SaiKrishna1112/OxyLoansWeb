@@ -4,7 +4,10 @@ import Header from "../../Header/Header";
 import SideBar from "../../SideBar/SideBar";
 import ProgressBar from "react-customizable-progressbar";
 import { Link } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../Oxyloans/Lender/table.css";
+import FloatingAssistant from "../../FloatingAssistant"
+import logo from "../../../assets/img/avtarimage.png"
 
 import {
   getDashboardInvestment,
@@ -19,7 +22,6 @@ import { onShowSizeChange } from "../../Pagination";
 import { fetchData } from "../../Redux/Slice";
 import { fetchDatadashboard } from "../../Redux/SliceDashboard";
 import { useSelector, useDispatch } from "react-redux";
-// import useDealActivity from "../../Hooks/useDealActivity";
 
 import {
   awardicon01,
@@ -40,16 +42,23 @@ import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import axios from "axios";
 import { base_url } from "../../HttpRequest/afterlogin";
+import { fetchTopLenders } from "../../HttpRequest/admin";
 import Swal from "sweetalert2";
 
 const AdminDashboard = () => {
-  const dispatch = useDispatch();
   const getdashboardData = useSelector((data) => data.dashboard.fetchDashboard);
   const getreducerprofiledata = useSelector((data) => data.counter.userProfile);
   const [show, setShow] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
-  const [customCity, setCustomCity] = useState('');
+  const [customCity, setCustomCity] = useState("");
+  const [showWallet, setShowWallet] = useState(false);
+  const [showActivityDeals, setShowActivityDeals] = useState(false);
+  const [ShowClosedDeal, setShowClosedDeal] = useState(false);
+  const [ShowTotalDeal, setShowTotalDeal] = useState(false);
+  const [showParticipatedDeals, setShowParticipatedDeals] = useState(false);
+  const [showChart, setShowChart] = useState(false);
+  const [showTable, setShowTable] = useState(false);
   const navigate = useNavigate();
 
   const [dashboarddata, setdashboarddata] = useState({
@@ -86,6 +95,7 @@ const AdminDashboard = () => {
     useState({
       excelDownloadUrl: "",
     });
+  
   const investmentdashboardPagination = (dats) => {
     setdashboardInvestment({
       ...dashboardInvestment,
@@ -96,19 +106,16 @@ const AdminDashboard = () => {
   };
 
   const datasource = [];
-  {
-    dashboardInvestment.apiData != ""
-      ? dashboardInvestment.apiData.lenderWalletHistoryResponseDto.map(
-          (data) => {
-            datasource.push({
-              key: Math.random(),
-              Date: data.walletLoaded,
-              Description: data.remarks,
-              Amount: data.amount,
-            });
-          }
-        )
-      : "";
+
+  if (dashboardInvestment.apiData !== "") {
+    dashboardInvestment.apiData.lenderWalletHistoryResponseDto.forEach((data) => {
+      datasource.push({
+        key: Math.random(),
+        Date: data.walletLoaded,
+        Description: data.remarks,
+        Amount: data.amount,
+      });
+    });
   }
 
   const [dashboardcarddata, setdashboardcarddata] = useState({});
@@ -150,7 +157,7 @@ const AdminDashboard = () => {
 
       grid: {
         row: {
-          colors: ["#f3f3f3", "transparent"], // takes an array which will be repeated on columns
+          colors: ["#f3f3f3", "transparent"],
           opacity: 0.5,
         },
       },
@@ -179,6 +186,37 @@ const AdminDashboard = () => {
     },
   ];
 
+  const handleClose = () => {
+    setShow(false);
+    setSelectedCity("");
+    setCustomCity("");
+    setSelectedCityerror(false);
+  };
+
+ const [topLender, setTopLender] = useState(null);
+
+  useEffect(() => {
+    const loadTopLender = async () => {
+      try {
+        const response = await fetchTopLenders();
+
+        // Extract list properly
+        const list = Array.isArray(response.data)
+          ? response.data
+          : response.data?.data || [];
+
+        if (list.length > 0) {
+          setTopLender(list[0]); 
+        }
+
+      } catch (error) {
+        console.error("Error fetching top lender:", error);
+      }
+    };
+
+    loadTopLender();
+  }, []);
+
   useEffect(() => {
     const urlparams = window.location.pathname;
     const urldealname = "regularRunningDeal";
@@ -196,54 +234,15 @@ const AdminDashboard = () => {
           apidata: data.data,
         });
       });
-    };
+    };   
 
     handleRegular();
   }, [regular_runningDeal.pageno]);
 
   useEffect(() => {
-    const urlparams = window.location.pathname;
-    const urldealname = "ESCROW";
-
-    const handleRegular = () => {
-      const response = regular_Api(
-        regular_runningDeal.dealtype,
-        urldealname,
-        regular_runningDeal.pageno
-      );
-
-      response.then((data) => {
-        setRegularRunningDeal({
-          ...regular_runningDeal,
-          apidataESCROW: data.data.listOfBorrowersDealsResponseDto,
-        });
-      });
-    };
-
-    handleRegular();
-  }, [regular_runningDeal.pageno]);
-  useEffect(() => {
-    dispatch(fetchDatadashboard());
-    dispatch(fetchData());
-    getuserMembershipValidity().then((data) => {
-      if (data.request.status == 200) {
-        const validitydate = new Date(data.data?.validityDate);
-        var next_date = new Date();
-        const diffTime = Math.abs(validitydate - next_date);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const validityDatecheck =
-          validitydate > next_date && data.data?.validityDate !== null;
-
-        setmembershipdata({
-          ...membershipdata,
-          dashboardData: data,
-          ismembershiptrue: validityDatecheck,
-        });
-      }
-    });
-
+    console.log("userData", getreducerprofiledata);
     getUserDetails().then((data) => {
-      if (data.request.status == 200) {
+      if (data.request.status === 200) {
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
@@ -251,15 +250,17 @@ const AdminDashboard = () => {
       }
       console.log("profileData", data.request.status);
       if (
-        data.data.city == null ||
-        data.data.city == undefined ||
-        data.data.city == ""
+        data.data.city === null ||
+        data.data.city === undefined ||
+        data.data.city === ""
       ) {
         setShow(true);
       }
     });
     return () => {};
   }, []);
+ 
+
 
   const handleCityChange = (event) => {
     if (event.target.value === "") {
@@ -267,7 +268,6 @@ const AdminDashboard = () => {
       return false;
     }
     setSelectedCityerror(false);
-
     setSelectedCity(event.target.value);
   };
 
@@ -275,30 +275,28 @@ const AdminDashboard = () => {
     console.log("Selected city:", selectedCity);
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
-    if(selectedCity!="Others"){
-    var data={
-          city: selectedCity,
-        }
-      }else{
-        var data={
-          city:customCity
-        }
-      }
-    // handleClose();
+    
+    let data;
+    if (selectedCity !== "Others") {
+      data = {
+        city: selectedCity,
+      };
+    } else {
+      data = {
+        city: customCity,
+      };
+    }
+    
     axios
-      .post(
-        `${base_url}${userId}/city`,
-        data,
-        {
-          headers: {
-            accessToken: sessionStorage.getItem("accessToken"),
-          },
-        }
-      )
+      .post(`${base_url}${userId}/city`, data, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
       .then(function (response) {
         console.log("City saved successfully:", response.data);
-         setShow(false); // Close the modal after saving
-        setSelectedCity(""); // Reset the selected city
+        setShow(false);
+        setSelectedCity("");
         if (response.status === 200) {
           Swal.fire({
             icon: "success",
@@ -308,12 +306,11 @@ const AdminDashboard = () => {
           });
           handleClose();
         }
-        window.location.reload(); // Reload the page to reflect changes
-       
+        window.location.reload();
       })
       .catch(function (error) {
         console.error("Error saving city:", error.response);
-        if (error.response.status == 401) {
+        if (error.response.status === 401) {
           Swal.fire({
             icon: "error",
             title: "Oops...",
@@ -336,63 +333,87 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    const activeres = getactivityApisData();
-    activeres.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardcarddata(data.data);
-        Settreemap({
-          ...treemap,
-          series: [
-            {
-              name: "",
-              data: [
-                data.data.activeDealsAmount,
-                data.data.closedDealsAmount,
-                data.data.disbursedDealsAmount,
-              ],
-              color: "#664DC9",
-            },
-          ],
-        });
+    const fetchActivityData = async () => {
+      try {
+        const activeres = await getactivityApisData();
+        if (activeres.request.status === 200) {
+          setdashboardcarddata(activeres.data);
+          Settreemap({
+            ...treemap,
+            series: [
+              {
+                name: "",
+                data: [
+                  activeres.data.activeDealsAmount,
+                  activeres.data.closedDealsAmount,
+                  activeres.data.disbursedDealsAmount,
+                ],
+                color: "#664DC9",
+              },
+            ],
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching activity data:", error);
       }
-    });
-    return () => {};
-  }, []);
+    };
+
+    if (showActivityDeals || ShowClosedDeal || ShowTotalDeal || showChart) {
+      fetchActivityData();
+    }
+  }, [showActivityDeals, ShowClosedDeal, ShowTotalDeal, showChart]);
 
   useEffect(() => {
-    const response = getDashboardInvestment(
-      dashboardInvestment.pageNo,
-      dashboardInvestment.pageSize
-    );
-    response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardInvestment({
-          ...dashboardInvestment,
-          apiData: data.data,
-          loading: false,
-          hasdata:
-            data.data.lenderWalletHistoryResponseDto.length == 0 ? false : true,
+    function getdashboardInvestment() {
+      try {
+        const response = getDashboardInvestment(
+          dashboardInvestment.pageNo,
+          dashboardInvestment.pageSize
+        );
+        response.then((data) => {
+          if (data.request.status === 200) {
+            setdashboardInvestment({
+              ...dashboardInvestment,
+              apiData: data.data,
+              loading: false,
+              hasdata:
+                data.data.lenderWalletHistoryResponseDto.length === 0 ? false : true,
+            });
+          }
         });
+      } catch (error) {
+        console.error("Error fetching dashboard investment data:", error);
       }
-    });
-    return () => {};
-  }, [dashboardInvestment.pageNo, dashboardInvestment.pageSize]);
+    }
+    if (showTable) {
+      getdashboardInvestment();
+    }
+  }, [showTable, dashboardInvestment.pageNo, dashboardInvestment.pageSize]);
 
   useEffect(() => {
-    const response = getNoDealsParticipated();
-    response.then((data) => {
-      if (data.request.status == 200) {
-        setdealsProgressed({
-          ...dealsProgressed,
-          totalDeals: data.data.dealCount,
-          participatedDeals: data.data.participationCount,
-          percentage:
-            (data.data.participationCount / data.data.dealCount) * 100,
+    function getdealsParticipated() {
+      try {
+        const response = getNoDealsParticipated();
+        response.then((data) => {
+          if (data.request.status === 200) {
+            setdealsProgressed({
+              ...dealsProgressed,
+              totalDeals: data.data.dealCount,
+              participatedDeals: data.data.participationCount,
+              percentage:
+                (data.data.participationCount / data.data.dealCount) * 100,
+            });
+          }
         });
+      } catch (error) {
+        console.error("Error fetching deals participated data:", error);
       }
-    });
+    }
+    if (showParticipatedDeals) {
+      getdealsParticipated();
+    }
     return () => {};
-  }, []);
+  }, [showParticipatedDeals]);
 
   useEffect(() => {
     const profileskip = localStorage.getItem("profileskip");
@@ -405,52 +426,48 @@ const AdminDashboard = () => {
         const isvalidity = membershipdata.ismembershiptrue;
 
         if (
-          kycStatus == false &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == true
+          kycStatus === false &&
+          bankDetailsInfo === true &&
+          personalDetailsInfo === true
         ) {
           personalDetails(
             "Attention: Update Your Personal Details for Enhanced Services and Security. ",
             "/profile"
           );
         } else if (
-          kycStatus == true &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == false
+          kycStatus === true &&
+          bankDetailsInfo === true &&
+          personalDetailsInfo === false
         ) {
           personalDetails(
             "Kindly provide/update your bank information,",
             "/profile"
           );
         } else if (
-          kycStatus == true &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == false
+          kycStatus === true &&
+          bankDetailsInfo === true &&
+          personalDetailsInfo === false
         ) {
           personalDetails(
             " Kindly provide/update your personal Information",
             "/profile"
           );
         } else if (
-          kycStatus == false &&
-          bankDetailsInfo == false &&
-          personalDetailsInfo == false
+          kycStatus === false &&
+          bankDetailsInfo === false &&
+          personalDetailsInfo === false
         ) {
           personalDetails(
             "Personal details are currently unavailable. Kindly provide/update your bank information, nominee details, and complete the KYC process ",
             "/profile"
           );
         } else if (
-          kycStatus == true &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == true &&
-          isvalidity == false
+          kycStatus === true &&
+          bankDetailsInfo === true &&
+          personalDetailsInfo === true &&
+          isvalidity === false
         ) {
           const skipbutton = localStorage.getItem("skip");
-          // if (skipbutton) {
-          // } else {
-          //   validityDatemodal(getdashboardData?.validityDate, groupName);
-          // }
         }
       }
     }
@@ -465,7 +482,6 @@ const AdminDashboard = () => {
       if (response.status === 200) {
         const downloadUrl = response.data.excelDownloadUrl;
         console.log(downloadUrl);
-        // Set the state with the new download URL
         setexcelsForNewLenderDashboardLink({
           ...excelsForNewLenderDashboardLink,
           excelDownloadUrl: downloadUrl,
@@ -477,19 +493,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const leftColClass = showChart ? "col-12 col-lg-8" : "col-12 col-lg-6";
+
   return (
     <>
+    <div>
       <div className="main-wrapper">
-        {/* Header */}
         <Header />
-
-        {/* Sidebar */}
         <SideBar />
 
-        {/* Page Wrapper */}
         <div className="page-wrapper">
           <div className="content container-fluid">
-            {/* Page Header */}
             <div className="page-header">
               <div className="row">
                 <div className="col-sm-12">
@@ -504,7 +518,7 @@ const AdminDashboard = () => {
                       }}
                     >
                       <h3 className="page-title">
-                        Welcome {""}
+                        Welcome{" "}
                         {getreducerprofiledata?.length !== 0
                           ? getreducerprofiledata?.firstName
                               .charAt(0)
@@ -569,25 +583,38 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* /Page Header */}
-            {/* Overview Section */}
             <div className="row">
               <div className="col-xl-3 col-sm-6 col-12 d-flex">
                 <div className="card bg-comman w-100">
                   <div className="card-body">
                     <div className="db-widgets d-flex justify-content-between align-items-center">
                       <div className="db-info">
-                        <h6>Wallet </h6>
-                        <h3>
-                          {getreducerprofiledata?.length !== 0
-                            ? getreducerprofiledata?.lenderWalletAmount -
-                              getreducerprofiledata?.holdAmountInDealParticipation -
-                              getreducerprofiledata?.equityAmount
-                            : ""}
-                          {/* {getreducerprofiledata?.length != 0
-                            ? getreducerprofiledata?.lenderWalletAmount : ""} */}
+                        <div className="d-flex align-items-center justify-content-between">
+                          <h6 className="m-0">Wallet</h6>
+                        </div>
+                        <h3 className="mt-2">
+                          {showWallet ? (
+                            <>
+                              {getreducerprofiledata?.length !== 0
+                                ? getreducerprofiledata?.lenderWalletAmount -
+                                  getreducerprofiledata?.holdAmountInDealParticipation -
+                                  getreducerprofiledata?.equityAmount
+                                : ""}
+                            </>
+                          ) : (
+                          <span
+                         style={{
+                       letterSpacing: "2px",
+                       fontSize: "18px",
+                       opacity: 0.4, 
+                       }}
+                         >
+                       ✱✱✱
+                      </span>
+                          )}
                         </h3>
                       </div>
+
                       <div className="db-icon">
                         <img
                           src={dashboard3}
@@ -598,132 +625,275 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
+{/* 
                   <Link to="/earningCertificate">
-                    {" "}
                     <div
                       className="card-footer m-0 p-1 c-black"
                       style={{ color: "gray", textAlign: "center" }}
                     >
                       Earnings FY : 24-25
-                    </div>
-                  </Link>
-                </div>
-              </div>
-              <div className="col-xl-3 col-sm-6 col-12 d-flex">
-                <div className="card bg-comman w-100">
-                  <Link to="/myRunningDeals">
-                    <div className="card-body">
-                      <div className="db-widgets d-flex justify-content-between align-items-center">
-                        <div className="db-info">
-                          <h6>Active Deals</h6>
-                          <h3>
-                            {getdashboardData?.length !== 0
-                              ? getdashboardData?.numberOfActiveDealsCount ?? 0
-                              : ""}
-                          </h3>
-                          {/* <span className="badge bg-success  mt-2">INR {dashboardcarddata?.length !== 0
-                              ? dashboardcarddata?.activeDealsAmount ?? 0
-                              : ""}</span> */}
-                        </div>
-                        <div className="db-icon">
-                          <img
-                            src={dashboard2}
-                            alt="Dashboard Icon"
-                            height={60}
-                            width={60}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className="card-footer m-0 p-1 c-black"
-                      style={{ color: "gray", textAlign: "center" }}
-                    >
-                      <strong>INR </strong>{" "}
-                      {dashboardcarddata?.length !== 0
-                        ? dashboardcarddata?.activeDealsAmount ?? 0
-                        : ""}
-                    </div>
-                  </Link>
-                </div>
-              </div>
-              <div className="col-xl-3 col-sm-6 col-12 d-flex">
-                <div className="card bg-comman w-100">
-                  <Link to="/myclosedDeals">
-                    <div className="card-body">
-                      <div className="db-widgets d-flex justify-content-between align-items-center">
-                        <div className="db-info">
-                          <h6>Closed Deals</h6>
-                          <h3>
-                            {getdashboardData?.length !== 0
-                              ? getdashboardData?.numberOfClosedDealsCount ?? 0
-                              : ""}
-                          </h3>
-                          {/* <span className="badge bg- mt-2" style={{backgroundColor: "rgb(245 116 89)",}}>INR  {dashboardcarddata?.length !== 0
-                              ? dashboardcarddata?.closedDealsAmount ?? 0
-                              : ""} </span>    */}
-                        </div>
-                        <div className="db-icon">
-                          <img
-                            src={dashboard1}
-                            alt="Dashboard Icon"
-                            height={60}
-                            width={60}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      className="card-footer m-0 p-1 c-black"
-                      style={{ color: "gray", textAlign: "center" }}
-                    >
-                      <strong>INR :</strong>{" "}
-                      {dashboardcarddata?.length !== 0
-                        ? dashboardcarddata?.closedDealsAmount ?? 0
-                        : ""}
-                    </div>
-                  </Link>
-                </div>
-              </div>
-              <div className="col-xl-3 col-sm-6 col-12 d-flex">
-                <div className="card bg-comman w-100">
-                  <div className="card-body">
-                    <div className="db-widgets d-flex justify-content-between align-items-center">
-                      <div className="db-info">
-                        <h6>Total Deals</h6>
-                        <h3>
-                          {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfClosedDealsCount +
-                              getdashboardData?.numberOfActiveDealsCount
-                            : ""}
-                        </h3>
+               <button
+                   className="btn btn-sm p-0 border-0 bg-transparent ms-5"
+                    onClick={() => setShowWallet(!showWallet)}>
+                   {showWallet ? (
+               <FaEye size={20} color="gray" title="Show data" />
+               ) : (
+              <FaEyeSlash size={20} color="gray" title="Hide data" />
+               )}
+              </button>
 
-                        {/* <span className="badge bg-warning mt-2">INR {dashboardcarddata?.length !== 0
-                              ? dashboardcarddata?.disbursedDealsAmount ?? 0
-                              : ""}</span> */}
-                      </div>
-                      <div className="db-icon">
-                        <img
-                          src={dashboard4}
-                          alt="Dashboard Icon"
-                          height={60}
-                          width={60}
-                        />
-                      </div>
                     </div>
-                  </div>
-                  <div
-                    className="card-footer m-0 p-1 c-black"
-                    style={{ color: "gray", textAlign: "center" }}
-                  >
-                    <strong>INR :</strong>{" "}
-                    {dashboardcarddata?.length !== 0
-                      ? dashboardcarddata?.disbursedDealsAmount ?? 0
-                      : ""}
-                  </div>
-                </div>
-              </div>
-            </div>
+                  </Link>
+                  
+                </div> */}
+              {/* </div> */}
+
+     <div className="card-footer m-0 p-1 c-black" style={{ color: "gray", textAlign: "center" }}>
+
+  <Link to="/earningCertificate" style={{ textDecoration: "none", color: "gray" }}>
+    Earnings FY : 24-25
+  </Link>
+  <button
+    className="btn btn-sm p-0 border-0 bg-transparent ms-5"
+    onClick={() => setShowWallet(!showWallet)}
+  >
+    {showWallet ? (
+      <FaEye size={20} color="gray" title="Show data" />
+    ) : (
+      <FaEyeSlash size={20} color="gray" title="Hide data" />
+    )}
+  </button>
+
+         </div>
+      </div>
+  </div>
+              
+
+              <div className="col-xl-3 col-sm-6 col-12 d-flex">
+              <div className="card bg-comman w-100" style={{ position: "relative" }}>
+             <Link to="/myRunningDeals">
+          <div className="card-body">
+        <div className="db-widgets d-flex justify-content-between align-items-center">
+          <div className="db-info">
+            <h6>Active Deals</h6>
+            <h3>
+              {showActivityDeals ? (
+                getdashboardData?.length !== 0 ? (
+                  getdashboardData?.numberOfActiveDealsCount ?? 0
+                ) : (
+                  ""
+                )
+              ) : (
+                <span style={{ letterSpacing: "2px",fontSize: "18px" ,   opacity: 0.4  }}>✱✱✱</span>
+              )}
+            </h3>
+          </div>
+          <div className="db-icon">
+            <img src={dashboard2} alt="Dashboard Icon" height={60} width={60} />
+          </div>
+        </div>
+      </div>
+    </Link>
+
+    
+    <div
+      className="card-footer m-0 p-1 c-black"
+      style={{
+        color: "gray",
+        textAlign: "center",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+     
+      <div style={{ flex: 1 }}>
+        {showActivityDeals ? (
+          <>
+            <strong>INR </strong>{" "}
+            {dashboardcarddata?.length !== 0
+              ? dashboardcarddata?.activeDealsAmount ?? 0
+              : ""}
+          </>
+        ) : (
+          <span style={{ letterSpacing: "2px"  }}>INR ✱✱✱</span>
+        )}
+      </div>
+
+      
+      <div
+        style={{
+          zIndex: 10,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+        }}
+        onClick={() => setShowActivityDeals(!showActivityDeals)}
+      >
+        {showActivityDeals ? (
+          <FaEye size={20} color="gray" title="Show Data" />
+        ) : (
+          <FaEyeSlash size={20} color="gray" title="Hide Data" />
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+              <div className="col-xl-3 col-sm-6 col-12 d-flex">
+            <div className="card bg-comman w-100">
+          <Link to="/myclosedDeals">
+      <div className="card-body">
+        <div className="db-widgets d-flex justify-content-between align-items-center">
+          <div className="db-info">
+            <h6>Closed Deals</h6>
+            <h3>
+              {ShowClosedDeal ? (
+                getdashboardData?.length !== 0 ? (
+                  getdashboardData?.numberOfClosedDealsCount ?? 0
+                ) : (
+                  ""
+                )
+              ) : (
+                <span style={{ letterSpacing: "2px", fontSize: "18px" ,    opacity: 0.4 }}>✱✱✱</span>
+              )}
+            </h3>
+          </div>
+          <div className="db-icon">
+            <img
+              src={dashboard1}
+              alt="Dashboard Icon"
+              height={60}
+              width={60}
+            />
+          </div>
+        </div>
+      </div>
+    </Link>
+
+
+    <div
+      className="card-footer m-0 p-1 c-black"
+      style={{
+        color: "gray",
+        textAlign: "center",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+     
+      <div style={{ flex: 1 }}>
+        {ShowClosedDeal ? (
+          <>
+            <strong>INR :</strong>{" "}
+            {dashboardcarddata?.length !== 0
+              ? dashboardcarddata?.closedDealsAmount ?? 0
+              : ""}
+          </>
+        ) : (
+          <span style={{ letterSpacing: "2px" }}>INR ✱✱✱</span>
+        )}
+      </div>
+
+      
+      <div
+        style={{
+          zIndex: 10,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+        }}
+        onClick={() => setShowClosedDeal(!ShowClosedDeal)}
+      >
+        {ShowClosedDeal ? (
+          <FaEye size={20} color="gray" title="Show Data" />  
+        ) : (
+          <FaEyeSlash size={20} color="gray" title="Hide Data" />
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+              
+
+<div className="col-xl-3 col-sm-6 col-12 d-flex">
+  <div className="card bg-comman w-100">
+    <div className="card-body">
+      <div className="db-widgets d-flex justify-content-between align-items-center">
+        <div className="db-info">
+          <h6>Total Deals</h6>
+          <h3>
+            {ShowTotalDeal ? (
+              getdashboardData?.length !== 0 ? (
+                getdashboardData?.numberOfClosedDealsCount +
+                getdashboardData?.numberOfActiveDealsCount
+              ) : (
+                ""
+              )
+            ) : (
+              <span style={{ letterSpacing: "2px",fontSize: "18px",    opacity: 0.4 }}>✱✱✱</span>
+            )}
+          </h3>
+        </div>
+        <div className="db-icon">
+          <img
+            src={dashboard4}
+            alt="Dashboard Icon"
+            height={60}
+            width={60}
+          />
+        </div>
+      </div>
+    </div>
+
+    {/* Footer Section */}
+    <div
+      className="card-footer m-0 p-1 c-black"
+      style={{
+        color: "gray",
+        textAlign: "center",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      {/* Amount Section */}
+      <div style={{ flex: 1 }}>
+        {ShowTotalDeal ? (
+          <>
+            <strong>INR :</strong>{" "}
+            {dashboardcarddata?.length !== 0
+              ? dashboardcarddata?.disbursedDealsAmount ?? 0
+              : ""}
+          </>
+        ) : (
+          <span style={{ letterSpacing: "2px" }}>INR ✱✱✱</span>
+        )}
+      </div>
+
+      {/* Eye Icon Section */}
+      <div
+        style={{
+          zIndex: 10,
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+        }}
+        onClick={() => setShowTotalDeal(!ShowTotalDeal)}
+      >
+        {ShowTotalDeal ? (
+          <FaEye size={20} color="gray" title="Hide Data" />
+        ) : (
+          <FaEyeSlash size={20} color="gray" title="Show Data" />
+        )}
+      </div>
+    </div>
+  </div>
+</div>
+
+            
 
             <div className="row">
               <div className="col-md-12 col-lg-12">
@@ -731,7 +901,7 @@ const AdminDashboard = () => {
                   <div className="card-body">
                     <span>
                       <span className="text-bold text-success mx-lg-1">
-                        Subscription Validity:
+                       <strong> Subscription Validity:</strong>
                       </span>
                       {getreducerprofiledata?.length !== 0 &&
                         (getreducerprofiledata?.groupName === "NewLender" ? (
@@ -760,140 +930,256 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </div>
-            {/* /Overview Section */}
+
+
+ <div className="row mt-3">
+   <div className="col-md-12 col-lg-12">
+     <div className="card">
+       <div className="card-body position-relative">
+
+        {/* Corner Badge */}
+        <span
+          className="badge bg-info"
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            cursor: "pointer",
+            padding: "8px 12px"
+          }}
+        >
+          <Link to="/top-lenders" className="text-white" style={{ textDecoration: "none" }}>
+            View More
+          </Link>
+        </span>
+
+       
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <span className="text-bold text-success">
+           <strong> Top Lender of Oxyloans:</strong>
+          </span>
+
+          {topLender ? (
+            <span className="d-flex align-items-center">
+              🏆 <strong className="mx-1">Total Cumulative Participation - LR{topLender.lenderId}</strong> 
+              
+            </span>
+          ) : (
+            <span>Loading top lender...</span>
+          )}
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
             <div className="row">
-              <div className="col-md-12 col-lg-6 ">
-                {/* Student Chart */}
+              <div className={leftColClass}>
                 <div className="card card-chart">
                   <div className="card-header">
                     <div className="row align-items-center">
                       <div className="col-8">
                         <h6 className="card-title">Deals Amount Monitor</h6>
                       </div>
-                    </div>
-                  </div>
-                  <div className="card-body">
-                    <div id="apexcharts-area"></div>
-                    <Chart
-                      options={treemap.options}
-                      series={treemap.series}
-                      type="bar"
-                      className="activechart"
-                    />
-                  </div>
-                </div>
+                      <div className="col-4 text-end">
+  <button
+    className="btn btn-sm p-0 border-0 bg-transparent"
+    onClick={() => setShowChart(!showChart)}
+  >
+    {!showChart ? (
+      <FaEyeSlash size={20} color="gray" title="Hide Chart" />
+    ) : (
+      <FaEye size={20} color="gray" title="Show Chart" />
+    )}
+  </button>
+</div>
 
-                {/* /Student Chart */}
-              </div>
+                    </div>
+                  </div>
 
-              <div className="col-12 col-lg-4 col-xl-6 d-flex">
-                <div className="card flex-fill comman-shadow">
-                  <div className="card-header">
-                    <div className="row align-items-center">
-                      <div className="col-12">
-                        <h5 className="card-title text-center">
-                          Participated vs Created In System
-                        </h5>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="dash-widget d-flex justify-content-center align-items-center">
-                    <div className="circle-bar circle-bar">
-                      <ProgressBar
-                        width={270}
-                        radius={75}
-                        progress={dealsProgressed.percentage}
-                        rotate={-180}
-                        strokeWidth={10}
-                        strokeColor="#70C4CF"
-                        strokeLinecap="square"
-                        trackStrokeWidth={8}
-                        trackStrokeColor="#e6e6e6"
-                        trackStrokeLinecap="square"
-                        pointerRadius={0}
-                        initialAnimation={true}
-                        transition="1.5s ease 0.5s"
-                        trackTransition="0s ease"
-                      >
-                        <div className="circle-graph1" data-percent="50">
-                          <div className="progress-less teacher-dashboard">
-                            <h4>
-                              {`${
-                                getdashboardData?.numberOfClosedDealsCount +
-                                getdashboardData?.numberOfActiveDealsCount
-                              }/${dealsProgressed.totalDeals}`}
-                            </h4>
-                            <p>Deals </p>
-                          </div>
-                        </div>
-                      </ProgressBar>
-                      {/* </div> */}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="row">
-              <div className="col-xl-12 d-flex">
-                {/* Star Students */}
-                <div className="card flex-fill student-space comman-shadow">
-                  <div className="card-header d-flex align-items-center">
-                    <h5 className="card-title">Investment / Wallet</h5>
-                    <ul className="chart-list-out student-ellips">
-                      <li className="star-menus">
-                        {/* <a href={excelsForNewLenderDashboardLink.excelDownloadUrl}>
-                     
-                        </a> */}
-                        {
-                          <Link
-                            id="downloadLink"
-                            onClick={() => handleClickGetLink("WALLETCREDITED")}
-                          >
-                            <i class="fa-solid fa-download"></i>
-                          </Link>
-                        }
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="card-body">
-                    <div>
-                      <Table
-                        className="table-responsive table-responsive-md table-responsive-lg table-responsive-xs"
-                        pagination={{
-                          total: dashboardInvestment.apiData.countValue,
-                          defaultPageSize: dashboardInvestment.defaultPageSize,
-                          position: ["topRight"],
-                          showSizeChanger: false,
-                          onShowSizeChange: onShowSizeChange,
-                          size: "default",
-                          showLessItems: true,
-                          responsive: true,
-                        }}
-                        columns={columns}
-                        expandable={true}
-                        dataSource={
-                          dashboardInvestment.hasdata ? datasource : []
-                        }
-                        loading={dashboardInvestment.loading}
-                        onChange={investmentdashboardPagination}
+                  {showChart && (
+                    <div className="card-body">
+                      <div id="apexcharts-area" />
+                      <Chart
+                        options={treemap.options}
+                        series={treemap.series}
+                        type="bar"
+                        className="activechart"
                       />
                     </div>
+                  )}
+                </div>
+              </div>
+
+              {showChart && (
+                <div className="col-12 col-lg-4 d-flex">
+                  <div className="card flex-fill comman-shadow">
+                    <div className="card-header">
+                      <div className="row align-items-center">
+                        <div className="col-12">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <h5 className="card-title">
+                              Participated vs Created In System
+                            </h5> 
+                             <div className="col-4 text-end">
+                   <button
+                 className="btn btn-sm p-0 border-0 bg-transparent"
+               onClick={() => setShowParticipatedDeals(!showParticipatedDeals)}
+        >
+    {!showParticipatedDeals ? (
+      <FaEyeSlash size={20} color="gray" title="Hide Chart" />
+    ) : (
+      <FaEye size={20} color="gray" title="Show Chart" />
+    )}
+  </button>
+</div>
                   </div>
                 </div>
-                {/* /Star Students */}
+            </div>
+         </div>
+
+                    {showParticipatedDeals ? (
+                      <div className="dash-widget d-flex justify-content-center align-items-center p-3">
+                        <div className="circle-bar">
+                          <ProgressBar
+                            width={270}
+                            radius={75}
+                            progress={dealsProgressed.percentage}
+                            rotate={-180}
+                            strokeWidth={10}
+                            strokeColor="#70C4CF"
+                            strokeLinecap="square"
+                            trackStrokeWidth={8}
+                            trackStrokeColor="#e6e6e6"
+                            trackStrokeLinecap="square"
+                            pointerRadius={0}
+                            initialAnimation={true}
+                            transition="1.5s ease 0.5s"
+                            trackTransition="0s ease"
+                          >
+                            <div className="circle-graph1" data-percent="50">
+                              <div className="progress-less teacher-dashboard text-center">
+                                <h4>
+                                  {`${
+                                    getdashboardData?.numberOfClosedDealsCount ?? 0
+                                  }/${
+                                    dealsProgressed?.totalDeals ?? "—"
+                                  }`}
+                                </h4>
+                                <p>Deals</p>
+                              </div>
+                            </div>
+                          </ProgressBar>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="dash-widget d-flex justify-content-center align-items-center p-3">
+                        <div className="circle-bar">
+                          <ProgressBar
+                            width={270}
+                            radius={75}
+                            progress={0}
+                            rotate={-180}
+                            strokeWidth={10}
+                            strokeColor="#70C4CF"
+                            strokeLinecap="square"
+                            trackStrokeWidth={8}
+                            trackStrokeColor="#e6e6e6"
+                            trackStrokeLinecap="square"
+                            pointerRadius={0}
+                            initialAnimation={true}
+                            transition="1.5s ease 0.5s"
+                            trackTransition="0s ease"
+                          >
+                            <div className="circle-graph1" data-percent="0">
+                              <div className="progress-less teacher-dashboard text-center">
+                                <h4>****/****</h4>
+                                <p>Deals</p>
+                              </div>
+                            </div>
+                          </ProgressBar>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="row">
+              <div className="col-xl-12 d-flex">
+                <div className="card flex-fill student-space comman-shadow">
+                  <div className="card-header d-flex align-items-center justify-content-between">
+                    <h5 className="card-title">Investment / Wallet</h5>
+                    <div className="d-flex align-items-center gap-3">
+                      {showTable && (
+                        <ul className="chart-list-out student-ellips">
+                          <li className="star-menus">
+                            {
+                              <Link
+                                id="downloadLink"
+                                onClick={() => handleClickGetLink("WALLETCREDITED")}
+                              >
+                                <i className="fa-solid fa-download"></i>
+                              </Link>
+                            }
+                          </li>
+                        </ul>
+                      )}
+           <div className="col-4 text-end">
+       <button
+       className="btn btn-sm p-0 border-0 bg-transparent"
+        onClick={() => setShowTable(!showTable)}
+  >
+    {!showTable ? (
+      <FaEyeSlash size={20} color="gray" title="Hide Chart" />
+    ) : (
+      <FaEye size={20} color="gray" title="Show Chart" />
+    )}
+  </button>
+</div>
+       </div>
+     </div>
+
+                  {showTable && (
+                    <div className="card-body">
+                      <div>
+                        <Table
+                          className="table-responsive table-responsive-md table-responsive-lg table-responsive-xs"
+                          pagination={{
+                            total: dashboardInvestment.apiData.countValue,
+                            defaultPageSize: dashboardInvestment.defaultPageSize,
+                            position: ["topRight"],
+                            showSizeChanger: false,
+                            onShowSizeChange: onShowSizeChange,
+                            size: "default",
+                            showLessItems: true,
+                            responsive: true,
+                          }}
+                          columns={columns}
+                          expandable={true}
+                          dataSource={
+                            dashboardInvestment.hasdata ? datasource : []
+                          }
+                          loading={dashboardInvestment.loading}
+                          onChange={investmentdashboardPagination}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
+              
               {regular_runningDeal.apidata?.listOfDealsInformationToLender
                 ?.length > 0 ? (
                 <div className="col-xl-12 d-flex">
-                  {/* Feed Activity */}
                   <div className="card flex-fill comman-shadow">
                     <div className="card-header d-flex align-items-center">
                       <h5 className="card-title ">Ongoing Deals</h5>
                       <ul className="chart-list-out student-ellips">
                         <li className="star-menus">
-                          {/* <Link to="#"> */}
-                          {/* <i className="fas fa-ellipsis-v" /> */}
-                          {/* </Link> */}
                         </li>
                       </ul>
                     </div>
@@ -970,7 +1256,6 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </div>
-                  {/* /Feed Activity */}
                 </div>
               ) : (
                 ""
@@ -980,7 +1265,7 @@ const AdminDashboard = () => {
 
           <Modal
             show={show}
-            onHide={() => setShow(false)}
+            onHide={handleClose}
             dialogClassName="custom-small-modal"
           >
             <Modal.Header closeButton className="py-2 px-3">
@@ -1038,26 +1323,52 @@ const AdminDashboard = () => {
               </div>
             </Modal.Body>
 
-          <Modal.Footer className="py-2 px-3">
-  <Button
-    variant="primary"
-    onClick={handleSave}
-    size="sm"
-    disabled={
-      !selectedCity || (selectedCity === "Others" && customCity.trim() === "")
-    }
-  >
-    Save
-  </Button>
-</Modal.Footer>
-
+            <Modal.Footer className="py-2 px-3">
+              <Button
+                variant="primary"
+                onClick={handleSave}
+                size="sm"
+                disabled={
+                  !selectedCity ||
+                  (selectedCity === "Others" && customCity.trim() === "")
+                }
+              >
+                Save
+              </Button>
+            </Modal.Footer>
           </Modal>
 
-          {/* Footer */}
           <Footer />
         </div>
       </div>
-      {/* /Main Wrapper */}
+
+      <FloatingAssistant
+        avatarSrc={logo}
+        onOpen={() => {
+          window.open("https://askdisha.com/oxyloans", "_blank", "noopener,noreferrer");
+        }}
+      />
+      
+        <style>
+          {`
+            .back-btn {
+              background-color: white;
+              color: #333;
+              border: 1px solid #ccc;
+              padding: 6px 12px;
+              font-size: 14px;
+              border-radius: 4px;
+              cursor: pointer;
+              transition: all 0.3s ease;
+            }
+
+            .back-btn:hover {
+              background-color: #f0f0f0;
+            }
+          `}
+        </style>
+      </div> 
+    </div>    
     </>
   );
 };

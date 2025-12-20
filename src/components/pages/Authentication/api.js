@@ -1,5 +1,5 @@
 import axios from "axios";
-const userisIn = "prod";
+const userisIn = "local"; //local or production
 const API_BASE_URL =
   userisIn == "local"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user"
@@ -25,6 +25,7 @@ export const loginUser = async (email, password, dataIpv4, dataIpv6) => {
       },
     });
     const accessTokenFromHeader = response.headers["accesstoken"];
+    console.log("Access Token API:", accessTokenFromHeader);
     localStorage.setItem("token", accessTokenFromHeader);
 
     if (!accessTokenFromHeader) {

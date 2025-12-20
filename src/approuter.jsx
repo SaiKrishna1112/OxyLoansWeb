@@ -61,6 +61,7 @@ import TicketHistory from "./components/pages/Oxyloans/Lender/TicketHistory";
 import MywithdrawalHistory from "./components/pages/Oxyloans/Lender/MywithdrawalHistory";
 import WalletToWalletTransactionHistory from "./components/pages/Oxyloans/Lender/WalletToWalletTransactionHistory";
 import RegularEscrowDeals from "./components/pages/Oxyloans/Lender/RegularEscrowDeals";
+import TopLendersPage from "./components/pages/Oxyloans/Lender/TopLendersPage.jsx";
 
 import Whatappuser from "./components/pages/Authentication/Whatappuser";
 import BorrowerDashboard from "./components/pages/Dashboard/BorrowerDashboard";
@@ -140,6 +141,10 @@ import ParticipatedAmountInfo from "./components/pages/Oxyloans/Admin/Participat
 
 import CallsDataBasedOnID from "./components/pages/Oxyloans/Admin/Callers Data/CallsDataBasedOnID.jsx";
 
+import TopLendersInfo from "./components/pages/Oxyloans/Admin/TopLendersList/TopLendersInfo.js";
+import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/AllReferreDetails.js";
+import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
+
 
 const AppRouter = () => {
   return (
@@ -165,6 +170,7 @@ const AppRouter = () => {
         <Route path="/whatsappuser" element={<Whatappuser />} />
         <Route path="/escrowDeals" element={<EscrowDeals />} />
         <Route path="/regularEscrowDeals" element={<RegularEscrowDeals />} />
+        <Route path="top-lenders" element={<TopLendersPage />} />
         <Route
           path="/loadwalletThroughVirtualAccount"
           element={<LoadwalletThroughVirtualAccount />}
@@ -348,6 +354,9 @@ const AppRouter = () => {
         <Route path="/interestDetailsTable" element={<InterestDetailsTable/>}/>
         <Route path="/participationList" element={<ParticipationList/>}/>
         <Route path="/userParticipationlist" element={<UserParticipationList />} />
+        <Route path="/topLendersInfo" element={<TopLendersInfo />}/>
+        <Route path="/allReferreDetails" element={<AllReferreDetails />} />
+        <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

@@ -200,6 +200,7 @@ export const membershipsuccessinfo = (message) => {
     showConfirmButton: true,
   });
 };
+
 export const WarningAlert = (errorMessage, redirectTo) => {
   Swal.fire({
     title: "Session Expiring",

@@ -212,7 +212,32 @@ const OxyloansAdminSidebar = () => {
       label: "My Calls",
       link: "/myCalls",
       icon: "fa-solid fa-phone",
-      type: [ "HELPDESKADMIN"]    },
+      type: [ "HELPDESKADMIN"]   
+     },
+     {
+      key: "toplendersinfo",
+      label: " Top Lenders Info",
+      link: "/topLendersInfo",
+      icon: "fas fa-chart-line",
+      type: ["ADMIN","SUPERADMIN"],
+    },
+
+ {
+      key: "allreferredetails",
+      label: "All Referre Details",
+      link: "/allReferreDetails",
+      icon: "fas fa-users",
+      type: ["ADMIN","SUPERADMIN"],
+    },
+
+  {
+      key: "monthlyreturnedinterest",
+      label: "Monthly Returned Interest",
+      link: "/monthlyReturnedInterest",
+      icon: "fas fa-hand-holding-usd",
+      type: ["ADMIN","SUPERADMIN"],
+    },
+
   ];
   
 
@@ -287,13 +312,13 @@ const OxyloansAdminSidebar = () => {
               >
                 <div>
                   <i className={item.icon}></i>
-                  <span style={{ marginLeft: "18px" }}> {item.label} </span>
+                  <span style={{ marginLeft: "16px" }}> {item.label} </span>
                 </div>
                 <i
                   className={`fa-solid ${
                     isSubmenuOpen ? "fa-chevron-up" : "fa-chevron-down"
                   }`}
-                  style={{ marginLeft: "18px" }}
+                  style={{ marginLeft: "16px" }}
                 ></i>
               </a>
             ) : (

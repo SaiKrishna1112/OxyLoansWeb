@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
-  getUserDetails,
   getSessionExpireTime,
   getUserDetails1,
 } from "../HttpRequest/afterlogin";

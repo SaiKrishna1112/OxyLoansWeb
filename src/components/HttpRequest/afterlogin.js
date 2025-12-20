@@ -1,5 +1,5 @@
 import axios from "axios";
-const userisIn = "prod";
+const userisIn = "local"; //local or production
 const API_BASE_URL =
   userisIn == "local"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/"
@@ -563,7 +563,7 @@ export const getLendersInterestsDateWiseapi = async (date) => {
 
 // Example usage:
 const dateObj = { date1: "2024-10-02" };
-getLendersInterestsDateWiseapi(dateObj);
+// getLendersInterestsDateWiseapi(dateObj);
 // .then((response) => console.log(response))
 // .catch((error) => console.error(error));
 
@@ -2588,3 +2588,22 @@ export const editloanNewRequestHold = async (status) => {
 
   return response;
 };
+
+export const chatbotapicall = async (messages) => {
+  const token = getToken();
+  const postdata = {
+    message: messages,
+  };
+  
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "chat",
+    "POST",
+    token,
+    // "eyJ1c2VySWQiOiIzNzIzNSIsImlhdCI6MTc2NjE0NTMzNjE2MywidHRsIjo3MjAwLCJ2ZXJzaW9uIjoidjEiLCJncmFudFR5cGUiOiJQV0QiLCJhbGdvcml0aG0iOiJSU0EifQ==.hEL8DKjDNQl2ZaSc/orNvou6BbejFa4tAZjJ/dnHccxG5tvn3kcEfuWCTE25UImkXL4twHtR+c/sN/NmfFRvr5+yP6yKPrfSiCWP218HIc+pf3TM+tkVVD28tXL6PqJlJFBJQKQGnEBhqtLlp/NVLwioJKZithRgC5icQRNGWdwIDDLkOtZ/P8p0xIZnNZxUHEyAUxlNkfPlmxu1xG4U+N48FwG6UzGSckfJhgjKJkptYOvjLJx9nIYLPoojfVVkycfNLJxux82QWU9p01Do6sN8kmfMsA3Hc/95p6oE+MHNhTFHobYOOV4zWxbWc6BCuOtjSGRcVeKVhOYO7CsBiQ==",
+    postdata
+  );
+  
+  return response;
+};
+
