@@ -145,6 +145,8 @@ import TopLendersInfo from "./components/pages/Oxyloans/Admin/TopLendersList/Top
 import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/AllReferreDetails.js";
 import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
 
+import ActiveLendersParticipationPage from "./components/pages/Oxyloans/Admin/ActiveLenders/ActiveLendersParticipationPage.jsx";
+
 
 const AppRouter = () => {
   return (
@@ -357,6 +359,8 @@ const AppRouter = () => {
         <Route path="/topLendersInfo" element={<TopLendersInfo />}/>
         <Route path="/allReferreDetails" element={<AllReferreDetails />} />
         <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
+
+        <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

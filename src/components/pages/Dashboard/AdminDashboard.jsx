@@ -980,10 +980,10 @@ const AdminDashboard = () => {
                 <div className="card card-chart">
                   <div className="card-header">
                     <div className="row align-items-center">
-                      <div className="col-8">
+                      <div className="col-10">
                         <h6 className="card-title">Deals Amount Monitor</h6>
                       </div>
-                      <div className="col-4 text-end">
+                      <div className="col-2 text-end">
   <button
     className="btn btn-sm p-0 border-0 bg-transparent"
     onClick={() => setShowChart(!showChart)}
@@ -1202,9 +1202,9 @@ const AdminDashboard = () => {
                                   <div className="award-list-outs">
                                     <h4> {data.dealName}</h4>
                                     <h5>
-                                      Min: {data.minimumAmountInDeal}, Max:
-                                      {data.lenderPaticipationLimit}, RoI:
-                                      {data.rateOfInterest}%
+                                      Min: ₹{data.minimumAmountInDeal.toLocaleString()}, Max:
+                                      ₹{data.lenderPaticipationLimit.toLocaleString()}, RoI:
+                                      {data.rateOfInterest.toFixed(2)}%
                                     </h5>
                                   </div>
                                   <div className="award-time-list">
@@ -1342,12 +1342,12 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <FloatingAssistant
+      {/* <FloatingAssistant
         avatarSrc={logo}
-        onOpen={() => {
-          window.open("https://askdisha.com/oxyloans", "_blank", "noopener,noreferrer");
-        }}
-      />
+        // onOpen={() => {
+        //   window.open("https://askdisha.com/oxyloans", "_blank", "noopener,noreferrer");
+        // }}
+      /> */}
       
         <style>
           {`

@@ -192,11 +192,17 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
         </div>
 
         <div className="chat-suggest finance-suggest">
-          <button className="suggest-btn" onClick={() => handleSend("How many deals can I join?")}>
-            📊 How many deals can I join?
+          <button className="suggest-btn" onClick={() => handleSend("How much interest did I earn this financial year?")}>
+            📊 How much interest did I earn this financial year?
           </button>
-          <button className="suggest-btn" onClick={() => handleSend("How much money can I keep in my wallet?")}>
-            💰 How much money can I keep in my wallet?
+          <button className="suggest-btn" onClick={() => handleSend("Show my wallet transactions?")}>
+            💰 Show my wallet transactions?
+          </button>
+          <button className="suggest-btn" onClick={() => handleSend("What are the best investment options available?")}>
+            📈 What are the best investment options available?
+          </button>
+          <button className="suggest-btn" onClick={() => handleSend("What is the latest deal today?")}>
+            📰 What is the latest deal today?
           </button>
         </div>
 

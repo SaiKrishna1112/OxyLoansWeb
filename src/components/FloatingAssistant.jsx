@@ -18,8 +18,9 @@ export default function FloatingAssistant({ avatarSrc }) {
   // Updated quick replies for investment & lending
   const quickReplies = [
     // "Check loan eligibility",
-    "How many deals can I join?",
-    "How much money can I keep in my wallet?"
+    "How much interest did I earn this financial year?",
+    "Show my wallet transactions?",
+    // "What is the latest deal today?"
   ];
 
   const openDrawerWith = (initialMessage) => {
