@@ -488,31 +488,48 @@
 
 /* Enhanced suggestion buttons */
 .chat-suggest {
-  padding: 16px 20px;
-  display: flex;
+  padding: 12px 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   border-top: 1px solid rgba(241, 245, 249, 0.8);
-  overflow-x: auto;
-  overflow-y: hidden;
-  justify-content: flex-start;
   background: rgba(248, 250, 252, 0.5);
-  flex-wrap: wrap;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.chat-suggest::-webkit-scrollbar {
+  height: 4px;
+}
+
+.chat-suggest::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 161, 0.3);
+  border-radius: 2px;
 }
 
 .suggest-btn {
   background: linear-gradient(135deg, #ffffff, #f8fafc);
   border: 1px solid rgba(14, 165, 161, 0.3);
   color: #0ea5a1;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 16px;
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   transition: all 0.3s ease;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  min-width: fit-content;
-  flex-shrink: 0;
+  text-align: center;
+}
+
+.suggest-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  color: #94a3b8;
+  border-color: #cbd5e1;
 }
 
 .suggest-btn:hover {
@@ -1014,4 +1031,88 @@
     text-align: left;
     font-size: 12px;
   }
+}
+
+/* Wallet Transactions Styling */
+.wallet-response {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.transactions-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.transactions-list::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 161, 0.3);
+  border-radius: 2px;
+}
+
+.transaction-card {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #0ea5a1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.transaction-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 3px 8px rgba(14, 165, 161, 0.15);
+  border-left-color: #0284c7;
+}
+
+.txn-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.txn-icon {
+  font-size: 16px;
+}
+
+.txn-date {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.txn-amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0ea5a1;
+  margin-bottom: 4px;
+}
+
+.txn-remarks {
+  font-size: 12px;
+  color: #475569;
+  font-style: italic;
+}
+
+.response-outro {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 8px;
+  padding: 10px;
+  background: linear-gradient(135deg, #fef7ff, #f3e8ff);
+  border-radius: 8px;
+  border-left: 3px solid #8b5cf6;
+  font-weight: 500;
 }

@@ -1342,12 +1342,12 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* <FloatingAssistant
+       <FloatingAssistant
         avatarSrc={logo}
         // onOpen={() => {
         //   window.open("https://askdisha.com/oxyloans", "_blank", "noopener,noreferrer");
         // }}
-      /> */}
+      /> 
       
         <style>
           {`

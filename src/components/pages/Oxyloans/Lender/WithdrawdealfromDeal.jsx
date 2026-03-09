@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
-import { Button, Popover, Table } from "antd";
+import { Button, Table } from "antd";
 import { onShowSizeChange, itemRender } from "../../../Pagination";
 import { getWithdrawaFromDeal } from "../../../HttpRequest/afterlogin";
+import Swal from "sweetalert2";
 
 const WithdrawdealfromDeal = () => {
+  const navigate = useNavigate();
   const [participatedDeals, setparticipatedDeals] = useState({
     apiData: "",
     hasdata: false,
@@ -66,15 +68,28 @@ const WithdrawdealfromDeal = () => {
     });
   };
 
-  const content = (
-    <div>
-      <small>
-
-        If you choose to withdraw from this deal, the ROI will be reduced to 0.5%.
-        <br></br>Please {" "} <Link to={`/writetous`}><strong>write to us</strong></Link> if you wish to proceed with the withdrawal
-      </small>
-    </div>
-  );
+  const handleWriteToUs = () => {
+    Swal.fire({
+      title: 'NO ATW (No Anytime Withdrawal)',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Withdrawal Terms – NOATW Deal</strong></p>
+          <p>If you withdraw from this NOATW deal, your ROI will be reduced to 0.5%.</p>
+          <p>If you withdraw within the first month (before the first interest payment date), no ROI will be applicable, and you will receive only the principal amount.</p>
+          <p>Please write to us if you wish to proceed with the withdrawal.</p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'OK',
+      cancelButtonText: 'Close',
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigate('/writetous');
+      }
+    });
+  };
   const datasource = [];
   if (participatedDeals.apiData !== "") {
     participatedDeals.apiData.lenderPaticipatedResponseDto.forEach((data) => {
@@ -94,9 +109,9 @@ const WithdrawdealfromDeal = () => {
         action: (
           <>{ }
 
-            {data.withdrawStatus == "NO" ? <>  <Link to="/writetous">
-              <Popover content={content} title="NO ATW (No Anytime Withdrawal):">
-                <Button type="primary">Write to us</Button> </Popover></Link></> : <>  <Link to={nextPageUrl}>
+            {data.withdrawStatus == "NO" ? <>
+              <Button type="primary" onClick={handleWriteToUs}>Write to us</Button>
+              </> : <>  <Link to={nextPageUrl}>
                   <button type="submit" className="btn w-100 btn-outline-success">
                     <i className="fa-solid fa-business-time"></i> Withdraw
                   </button>

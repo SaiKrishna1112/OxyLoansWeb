@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import PhoneInput from "react-phone-number-input";
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { Success, WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import {
   notifications1,
@@ -14,7 +13,7 @@ import {
   toastrSuccess,
   toastrWarning,
 } from "../Base UI Elements/Toast";
-import { base_url } from "../../HttpRequest/afterlogin";
+
 import {
   profileupadate,
   getUserDetails,
@@ -62,6 +61,11 @@ const Profile = () => {
     otperror: "",
   });
 
+
+
+
+
+
   const [value, setValue] = useState("");
 
   const [userProfile, setUserProfile] = useState({
@@ -74,7 +78,6 @@ const Profile = () => {
     lastName: "",
     linkedinUrl: "",
     locality: "",
-        localityerror:"",
     middleName: "",
     panNumber: "",
     permanentAddress: "",
@@ -138,8 +141,6 @@ const Profile = () => {
 
 
   const [valid, setvalid] = useState(true)
-    const [localityOptions, setLocalityOptions] = useState([]);
-  
   const [nomineeDetails, setnomineeDetails] = useState({
     nomineeName: "",
     relation: "",
@@ -174,7 +175,7 @@ const Profile = () => {
     isValid: true,
   });
 
-  const [error, setError] = useState('');
+
   const history = useNavigate();
   const handlebankchange = (event) => {
     const { value, name } = event.target;
@@ -227,7 +228,9 @@ const Profile = () => {
           });
           notificationssucces();
         } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+toastrSuccess(data.response.data.errorMessage, "top-right")
+
         }
       });
     } else {
@@ -255,7 +258,9 @@ const Profile = () => {
         if (data.request.status == 200) {
           notificationssucces();
         } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+          toastrSuccess(data.response.data.errorMessage, "top-right")
+
         }
       });
     } else {
@@ -280,7 +285,9 @@ const Profile = () => {
           Success("Sucess", "WhatsApp OTP verified successfully")
           history("/dashboard")
         } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+          toastrSuccess(data.response.data.errorMessage, "top-right")
+
         }
       });
     } else {
@@ -348,7 +355,7 @@ const Profile = () => {
 
   const handleKeyPress = (event) => {
     const inputChar = event.key;
-    const regex = /^[a-zA-Z\s]*$/;
+    const regex = /^[a-zA-Z]*$/;
 
     if (!regex.test(inputChar) && inputChar !== "Backspace") {
       event.preventDefault();
@@ -367,8 +374,7 @@ const Profile = () => {
 
   const handleKeyPressNumberCapital = (event) => {
     const inputChar = event.key;
-    // const regex = /^[A-Z0-9]*$/;
-     const regex = /^[a-zA-Z0-9]$/;
+    const regex = /^[A-Z0-9]*$/;
 
     if (!regex.test(inputChar) && inputChar !== "Backspace") {
       event.preventDefault();
@@ -411,7 +417,9 @@ const Profile = () => {
           if (data.request.status == 200) {
             Success("success", "Bank Details Saved Successfully");
           } else if (data.response.data.errorCode != "200") {
-            WarningBackendApi("warning", data.response.data.errorMessage);
+            // WarningBackendApi("warning", data.response.data.errorMessage);
+            toastrSuccess(data.response.data.errorMessage, "top-right")
+
           }
         });
       }
@@ -486,7 +494,9 @@ const Profile = () => {
         if (data.request.status == 200) {
           Success("success", "Nominee Details Save Successfully");
         } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+          toastrSuccess(data.response.data.errorMessage, "top-right")
+
         }
       });
     } else {
@@ -500,11 +510,15 @@ const Profile = () => {
         if (data.request.status == 200) {
           Success("success", "Nominee Details Save Successfully");
         } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+          toastrSuccess(data.response.data.errorMessage, "top-right")
+
         }
       });
     } else {
-      WarningBackendApi("warning");
+      // WarningBackendApi("warning");
+      toastrSuccess(data.response.data.errorMessage, "top-right")
+
     }
   };
 
@@ -601,31 +615,45 @@ const Profile = () => {
   const verifyBankAccountAndIfscapi = async () => {
     try {
       const data = await verifyBankAccountAndIfsc(bankaccountprofile);
-
+        console.log(data.data);
       if (data.request.status === 200) {
-        if (data.data.status === "SUCCESS" && data.data.accountStatusCode === "ACCOUNT_IS_VALID") {
+        if (data.data.accountStatus === "VALID" && data.data.accountStatusCode === "ACCOUNT_IS_VALID") {
           console.log("Success");
-          console.log(data.data.data.nameAtBank);
-          toastrSuccess(data.data.message)
+          console.log(data.data.nameAtBank);
+          // toastrSuccess("Account details verified successfully", "top-righ t")
+        
           setBankaccountProfile((prevProfile) => ({
             ...prevProfile,
-            nameAtBank: data.data.data.nameAtBank,
-            bankCity: data.data.data.city,
-            bankName: data.data.data.bankName,
-            branchName: data.data.data.branch,
+            nameAtBank: data.data.nameAtBank,
+            bankCity: data.data.city,
+            bankName: data.data.bankName,
+            branchName: data.data.branch,
             accountStatusCode: data.data.accountStatusCode,
             ifscCodeerror: "", // Clear the error on success
           }));
+            Success("Success", "Bank Details Verified Successfully");
+
         } else if (data.data.accountStatusCode === "INVALID_IFSC") {
           console.log("Invalid IFSC:", data.data.accountStatusCode);
           setBankaccountProfile((prevProfile) => ({
             ...prevProfile,
             ifscCodeerror: data.data.message, // Set the error on failure
           }));
+          //  WarningBackendApi("Warning", data.response.data.errorMessage);
+toastrSuccess(data.response.data.errorMessage, "top-right")
         }
+      }
+      else{
+                  // WarningBackendApi("warning", data.response.data.errorMessage);
+                  toastrSuccess(data.response.data.errorMessage, "top-right")
+
+
       }
     } catch (error) {
       console.error("Error verifying bank account and IFSC:", error);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+toastrSuccess(data.response.data.errorMessage, "top-right")
+
     }
   };
 
@@ -675,7 +703,9 @@ const Profile = () => {
           data.response.data &&
           data.response.data.errorCode !== "200"
         ) {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+          toastrSuccess(data.response.data.errorMessage, "top-right")
+
         } else {
         }
       })
@@ -963,69 +993,30 @@ const Profile = () => {
     userProfile.city,
     nomineeDetails.nomineeMobile,
     nomineeDetails.branch,
-    // nomineeDetails.accountNo,
+    nomineeDetails.accountN,
     bankaccountprofile.bankCity,
   ]);
 
-
-   const handlePinCodeChange = async (name, value) => {
-    if (name === "pinCode" && value.length === 6) {
-      try {
-        const res = await axios.get(`${base_url}${value}/pincode`);
-        const blocks = res.data.pinresults
-          .map((item) => item.block)
-          .filter((block, index, self) => block && self.indexOf(block) === index); // Get unique non-null blocks
-  
-        setLocalityOptions(blocks);
-  
-        // Set the first locality as default if blocks are available
-        setUserProfile((prev) => ({
-          ...prev,
-          locality: blocks.length > 0 ? blocks[0] : "", // Select first option or empty string
-          localityerror: blocks.length > 0 ? "" : "No localities found for this pin code",
-        }));
-      } catch (error) {
-        console.error("Failed to fetch pincode info", error);
-        setLocalityOptions([]);
-        setUserProfile((prev) => ({
-          ...prev,
-          locality: "",
-          localityerror: "Failed to fetch localities",
-        }));
-      }
-    } else if (name === "pinCode" && value.length < 6) {
-      // Clear locality options and reset locality if pin code is invalid
-      setLocalityOptions([]);
-      setUserProfile((prev) => ({
-        ...prev,
-        locality: "",
-        localityerror: "",
-      }));
-    }
-  };
-
-  const handlechange = async(event) => {
+  const handlechange = (event) => {
     const { name, value } = event.target;
 
-    //   if (name === "pinCode" && value.length === 6) {
-    //   try {
-    //     const res = await axios.get(base_url +`/${value}/pincode`);
+    if (name === "pinCode") {
+      // Validate input to allow only numeric characters
+      const numericValue = value.replace(/\D/g, ""); // Remove non-numeric characters
+      // Limit the input to 6 digits
+      const updatedValue = numericValue.slice(0, 6);
+      if (updatedValue.length !== 6) {
+        // Check against the expected length of 6 digits
+        setUserProfile({
+          ...userProfile,
+          pinCodeError: "PIN code must be exactly 6 digits long",
+          [name]: updatedValue,
+        });
+        return; // Exit the function early to prevent setting state again
+      }
 
-    //     const blocks = res.data.pinresults
-    //       .map((item) => item.block)
-    //       .filter((block, index, self) => block && self.indexOf(block) === index); // get unique non-null blocks
-
-    //     setLocalityOptions(blocks);
-
-    //     // clear existing selected address if not in list
-    //     if (!blocks.includes(userProfile.locality)) {
-    //       setUserProfile((prev) => ({ ...prev, locality: "" }));
-    //     }
-    //   } catch (error) {
-    //     console.error("Failed to fetch pincode info", error);
-    //     setLocalityOptions([]);
-    //   }
-    // }
+      // Only proceed with API call if pin code is exactly 6 digits long
+    }
 
     // Calculate today's date
     const today = new Date();
@@ -1059,17 +1050,6 @@ const Profile = () => {
       ...userProfile,
       [name]: value,
     });
-
-       setUserProfile((prev) => ({
-    ...prev,
-    [name]: value,
-    ...(name === "locality" && { localityerror: "" }), // Clear locality error on selection
-  }));
-
-  // Handle pin code changes to fetch localities
-  if (name === "pinCode") {
-    handlePinCodeChange(name, value);
-  }
   };
 
   const handlePaste = (event) => {
@@ -1160,7 +1140,9 @@ const Profile = () => {
         if (data.request.status == 200) {
           Success("success", "Personal Details Saved Successfully");
         } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
+          // WarningBackendApi("warning", data.response.data.errorMessage);
+          toastrSuccess(data.response.data.errorMessage, "top-right")
+
         }
       });
     } else {
@@ -1360,7 +1342,6 @@ const Profile = () => {
   useEffect(() => {
     getUserDetails().then((data) => {
       localStorage.setItem("userType", data.data.userDisplayId);
-      // console.log(data.data.locality)
       setdashboarddata({
         ...dashboarddata,
         profileData: data,
@@ -1431,7 +1412,7 @@ const Profile = () => {
       fetchApiData6(),
     ])
       .then((responses) => {
-        // console.log(responses[0].value.data);
+        console.log(responses[0].value.data);
         setKyc({
           ...kyc,
           PanCard: responses[0].value.data,
@@ -1841,11 +1822,7 @@ const Profile = () => {
                                   placeholder=" Enter your IFSC Code"
                                   maxLength={11}
                                   value={bankaccountprofile.ifscCode}
-                                  
                                 />
-                               {/* <p className="text-gray-700 text-sm mt-1">* Use capital letters for the IFSC code.</p>
-                    {error && <p className="text-red-500 text-lg mt-2">{error}</p>} */}
-
                                 {bankaccountprofile.ifscCodeerror && (
                                   <div className="text-danger">
                                     {bankaccountprofile.ifscCodeerror}
@@ -2443,47 +2420,45 @@ const Profile = () => {
                                   </div>
                                 )}
                               </div>
-                       <div className="form-group col-12 col-sm-4 local-forms">
-        <label>
-          Pin Code <span className="login-danger">*</span>
-        </label>
-        <input
-          type="number"
-          className="form-control"
-          placeholder="Enter Pincode"
-          maxLength={6}
-          onKeyPress={handleKeyPressNumber}
-          onChange={handlechange}
-          value={userProfile.pinCode}
-          name="pinCode"
-        />
-        {userProfile.pinCodeerror && (
-          <div className="text-danger">{userProfile.pinCodeerror}</div>
-        )}
-      </div>
-
-      {/* Locality Dropdown */}
-      <div className="form-group col-12 col-sm-4 local-forms">
-        <label>
-          Locality <span className="login-danger">*</span>
-        </label>
-        <select
-          className="form-control"
-          name="locality"
-          value={userProfile.locality}
-          onChange={handlechange}
-        >
-          <option value="">Select Locality</option>
-          {localityOptions.map((loc, index) => (
-            <option key={index} value={loc}>
-              {loc}
-            </option>
-          ))}
-        </select>
-        {userProfile.localityerror && (
-          <div className="text-danger">{userProfile.localityerror}</div>
-        )}
-      </div>
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Pin Code
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="Enter Pincode"
+                                  maxLength={6}
+                                  onChange={handlechange}
+                                  value={userProfile.pinCode}
+                                  name="pinCode"
+                                />
+                                {userProfile.pinCodeerror && (
+                                  <div className="text-danger">
+                                    {userProfile.pinCodeerror}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Locality
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Enter Locality "
+                                  onChange={handlechange}
+                                  value={userProfile.address}
+                                  name="address"
+                                />
+                                {userProfile.addresserror && (
+                                  <div className="text-danger">
+                                    {userProfile.addresserror}
+                                  </div>
+                                )}
+                              </div>
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
                                   City <span className="login-danger">*</span>
@@ -2613,7 +2588,7 @@ const Profile = () => {
 
                                 </div>
 
-                                {/* {console.log(kyc)} */}
+                                {console.log(kyc)}
                                 {kyc.PanCard != undefined &&
                                   kyc.PanCard != "" ? (
                                   <h6 className="settings-size text-success">
@@ -2628,7 +2603,42 @@ const Profile = () => {
                                 )}
                               </div>
 
-                            
+                              <div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Cheque Leaf
+                                  <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="CHEQUELEAF"
+                                    accept="image/*"
+                                    id="CHEQUELEAF"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label
+                                    htmlFor="CHEQUELEAF"
+                                    className="upload"
+                                  >
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+                                </div>
+                                {kyc.CHEQUELEAF != undefined &&
+                                  kyc.CHEQUELEAF != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.CHEQUELEAF.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Cheque Leaf</small>
+                                  </h6>
+                                )}
+                              </div>
                               <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
                                   Aadhaar
@@ -2659,44 +2669,6 @@ const Profile = () => {
                                   <h6 className="settings-size text-warning">
                                     <i className="fa-solid fa-upload mx-lg-1 "></i>
                                     <small>Upload Aadhaar</small>
-                                  </h6>
-                                )}
-                              </div>
-
-
-                                <div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  Cheque Leaf
-                                  {/* <span className="star-red">*</span> */}
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="CHEQUELEAF"
-                                    accept="image/*"
-                                    id="CHEQUELEAF"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label
-                                    htmlFor="CHEQUELEAF"
-                                    className="upload"
-                                  >
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
-                                </div>
-                                {kyc.CHEQUELEAF != undefined &&
-                                  kyc.CHEQUELEAF != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.CHEQUELEAF.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Cheque Leaf</small>
                                   </h6>
                                 )}
                               </div>

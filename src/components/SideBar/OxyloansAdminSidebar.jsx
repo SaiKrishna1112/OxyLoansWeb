@@ -99,7 +99,7 @@ const OxyloansAdminSidebar = () => {
       label: " Participation Amount Info",
       link: "/participatedAmountInfo",
       icon: "fas fa-chart-line",
-      type: ["ADMIN"],
+      type: ["ADMIN","HELPDESKADMIN"],
     },
     {
       key: "uploadfile",
@@ -225,7 +225,7 @@ const OxyloansAdminSidebar = () => {
       label: " Top Lenders Info",
       link: "/topLendersInfo",
       icon: "fas fa-chart-line",
-      type: ["ADMIN","SUPERADMIN"],
+      type: ["ADMIN","SUPERADMIN","HELPDESKADMIN"],
     },
 
  {
@@ -233,7 +233,7 @@ const OxyloansAdminSidebar = () => {
       label: "All Referre Details",
       link: "/allReferreDetails",
       icon: "fas fa-users",
-      type: ["ADMIN","SUPERADMIN"],
+      type: ["ADMIN","SUPERADMIN","HELPDESKADMIN"],
     },
 
   {

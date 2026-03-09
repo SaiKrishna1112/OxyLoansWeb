@@ -348,6 +348,44 @@ const EarningCertificate = () => {
     }
   };
 
+async function handleDownloadFYReportPDF(startDate, endDate) {
+  console.log("Start date",startDate,"end date",endDate);
+  
+  try{
+
+      const response = await summaryFinancialEarnings({
+        startDate: startDate,
+        endDate: endDate,
+        inputType: "DOWNLOAD",
+        status: "dealsum",
+      });
+
+      if (response != null) {
+        const url = response.data;
+
+        if (url && url.length > 0) {
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "");
+          link.setAttribute("target", "_blank");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          message.success("PDF downloaded successfully!");
+        }
+      } else {
+        message.success("No data found for Summary PDF.");
+      }
+    } catch (error) {
+      console.error("Error fetching financial earnings:", error);
+      message.error("An error occurred while fetching the Summary PDF.");
+    } finally {
+      setIsLoading(false);
+    }
+}
+
+
   const handleDateChange = (dates) => {
     setDateRange(dates);
   };
@@ -395,11 +433,29 @@ const EarningCertificate = () => {
         EARNINGS: data.incomeEarned,
 
         DOWNLOADFYREPORT: (
-          <Tooltip title={`Report up to: ${upToDate}`}>
+          <div style={{justifyContent:"center",alignSelf:"center",display:"flex"}}>
+          <Tooltip title={`Download PDF report up to: ${upToDate}`}>
+            <span
+              className="badge bg-info"
+              type="button"
+              style={{ cursor: "pointer",marginRight:"8px"}}
+              onClick={() =>
+                handleDownloadFYReportPDF(   
+               data.startDate,
+                data.endDate
+                )
+              }
+            >
+             <i className="fa-solid fa-download" style={{fontSize: "14px",marginRight:"5px"}}></i>{" "} <i className="fa-solid fa-file-pdf" style={{fontSize: "14px"}}></i> 
+            </span>
+          </Tooltip>
+          {" "}
+          <Tooltip title={`Download excel report up to: ${upToDate}`}>
             <span
               className="badge bg-success"
               type="button"
-              onClick={() =>
+              onClick={() =>{
+                console.log("Downloading FY Report Excel for:", data.startDate, "with up to date:", data.endDate);
                 profitearnedCertificate(
                   data.startDate,
                   data.endDate,
@@ -407,17 +463,21 @@ const EarningCertificate = () => {
                   "dealsum"
                 )
               }
+              }
             >
-              <i className="fa-solid fa-download"></i> Download FY Report
+             <i className="fa-solid fa-download" style={{fontSize: "14px",marginRight:"5px"}}></i>{" "} <i className="fa-solid fa-file-excel" style={{fontSize: "14px"}}></i>
             </span>
           </Tooltip>
+          </div>
         ),
 
         DOWNLOADMONTREPORT: (
-          <Tooltip title={`Monthly report up to: ${upToDate}`}>
+           <div style={{justifyContent:"center",alignSelf:"center",display:"flex"}}>
+          <Tooltip title={`Monthwise report up to: ${upToDate}`}>
             <span
-              className="badge bg-warning"
+              className="badge bg-warning justify-content-center"
               type="button"
+              style={{alignSelf:"center"}}
               onClick={() =>
                 profitearnedCertificate(
                   data.startDate,
@@ -427,23 +487,26 @@ const EarningCertificate = () => {
                 )
               }
             >
-              <i className="fa-solid fa-download"></i> Download MONTHLY Report
+              <i className="fa-solid fa-download" style={{fontSize: "14px"}}></i> MonthWise
             </span>
           </Tooltip>
+          </div>
         ),
 
         EMAILFYREPORT: (
+           <div style={{justifyContent:"center",alignSelf:"center",display:"flex"}}>
           <Tooltip title={`Email report generated up to: ${upToDate}`}>
             <span
-              className="badge bg-info"
+              className="badge bg-info align-items-center justify-content-center"
               type="button"
               onClick={() =>
                 profitearnedCertificate(data.startDate, data.endDate, "EMAIL")
               }
             >
-              <i className="fa-solid fa-envelope"></i> Get FY Email Report
+              <i className="fa-solid fa-envelope" style={{fontSize: "14px"}}></i>
             </span>
           </Tooltip>
+          </div>
         ),
       });
     });
@@ -454,7 +517,7 @@ const EarningCertificate = () => {
     { title: "FY", dataIndex: "FY" },
     { title: "EARNINGS", dataIndex: "EARNINGS", sorter: (a, b) => a.EARNINGS - b.EARNINGS },
     { title: "DOWNLOAD FY REPORT", dataIndex: "DOWNLOADFYREPORT" },
-    { title: "DOWNLOAD MONTHLY REPORT", dataIndex: "DOWNLOADMONTREPORT" },
+    { title: "DOWNLOAD MONTHWISE REPORT", dataIndex: "DOWNLOADMONTREPORT" },
     { title: "EMAIL FY REPORT", dataIndex: "EMAILFYREPORT" },
   ];
 
@@ -484,21 +547,30 @@ const EarningCertificate = () => {
                 <div className="card">
                   <div className="card-body">
 
-                    <div className="d-flex align-items-center">
-                      <RangePicker
-                        onChange={handleDateChange}
-                        format="YYYY-MM-DD"
-                        style={{ marginRight: 10 }}
-                        value={dateRange}
-                      />
-                      <Button
-                        type="primary"
-                        onClick={handleDownloadSummaryPdf}
-                        loading={isLoading}
-                      >
-                        Search
-                      </Button>
-                    </div>
+                    <div className="report-download-section">
+                        <h5 style={{ marginBottom: 8 }}>Generate Financial Report</h5>
+                        <p style={{ marginBottom: 12, color: "#6c757d", fontSize: 13 }}>
+                          Select the reporting period to generate and download the financial report in PDF format.
+                        </p>
+
+                        <div className="d-flex align-items-center">
+                          <RangePicker
+                            onChange={handleDateChange}
+                            format="YYYY-MM-DD"
+                            value={dateRange}
+                            placeholder={["Start Date", "End Date"]}
+                            style={{ marginRight: 12, minWidth: 260 }}
+                          />
+
+                          <Button
+                            type="primary"
+                            onClick={handleDownloadSummaryPdf}
+                            loading={isLoading}
+                          >
+                            Download Financial Report (PDF)
+                          </Button>
+                        </div>
+                      </div>
 
                     <Table
                       className="table-responsive"

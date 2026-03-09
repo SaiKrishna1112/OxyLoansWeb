@@ -2595,14 +2595,16 @@ export const chatbotapicall = async (messages) => {
     message: messages,
   };
   
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    "chat",
-    "POST",
-    token,
-    // "eyJ1c2VySWQiOiIzNzIzNSIsImlhdCI6MTc2NjE0NTMzNjE2MywidHRsIjo3MjAwLCJ2ZXJzaW9uIjoidjEiLCJncmFudFR5cGUiOiJQV0QiLCJhbGdvcml0aG0iOiJSU0EifQ==.hEL8DKjDNQl2ZaSc/orNvou6BbejFa4tAZjJ/dnHccxG5tvn3kcEfuWCTE25UImkXL4twHtR+c/sN/NmfFRvr5+yP6yKPrfSiCWP218HIc+pf3TM+tkVVD28tXL6PqJlJFBJQKQGnEBhqtLlp/NVLwioJKZithRgC5icQRNGWdwIDDLkOtZ/P8p0xIZnNZxUHEyAUxlNkfPlmxu1xG4U+N48FwG6UzGSckfJhgjKJkptYOvjLJx9nIYLPoojfVVkycfNLJxux82QWU9p01Do6sN8kmfMsA3Hc/95p6oE+MHNhTFHobYOOV4zWxbWc6BCuOtjSGRcVeKVhOYO7CsBiQ==",
-    postdata
-  );
+  const response = await axios({
+    url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
+    method: "POST",
+    headers: {
+      accessToken: `${token}`,
+      "X-API-KEY": "oxy-ai-prod-key",
+    },
+    data: postdata,
+    responseType: 'text',
+  });
   
   return response;
 };
