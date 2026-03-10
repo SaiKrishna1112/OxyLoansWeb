@@ -295,8 +295,14 @@ const MyParticipateStatementTable = ({ data }) => {
   };
 
   return (
-    <div>
-      <Table columns={columns} dataSource={newData} pagination={false} />
+    <div style={{maxHeight: '80vh', overflowY: 'auto'}}>
+      <Table 
+        columns={columns} 
+        dataSource={newData} 
+        pagination={false}
+        scroll={{ x: true }}
+        sticky
+      />
       {!isCollapsed && expandedRowRender()}
     </div>
   );

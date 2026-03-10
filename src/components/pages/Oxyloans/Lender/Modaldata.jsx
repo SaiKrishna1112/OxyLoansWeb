@@ -2,8 +2,10 @@ import { useState } from "react";
 
 import Modal from "react-bootstrap/Modal";
 import Table1 from "./Table1";
+import { Table, Pagination, Spin, Tag } from "antd";
 
-function Modaldata({ data, open, hidingStatement }) {
+
+function Modaldata({ data, open, hidingStatement,loading }) {
   const [lgShow, setLgShow] = useState(open);
   const [donloadlink, setdownloadlink] = useState(data.downloadStatement);
   const [statementDeal, setstatementDeal] = useState(data.dealName);
@@ -11,6 +13,9 @@ function Modaldata({ data, open, hidingStatement }) {
   const hidingStatementModal = () => {
     setLgShow(!lgShow);
     hidingStatement();
+    // setModelStatement(false);
+  // setLoading(false);
+
   };
 
   return (
@@ -31,7 +36,17 @@ function Modaldata({ data, open, hidingStatement }) {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+           {loading ==true? (
+ <div className="row d-flex justify-content-center">
+                      <Spin
+                        tip="Loading..."
+                        className="text-center"
+                        large="large"
+                      ></Spin>
+                    </div>
+                        ) : (
           <Table1 data={data} />
+                        )}
         </Modal.Body>
       </Modal>
     </>

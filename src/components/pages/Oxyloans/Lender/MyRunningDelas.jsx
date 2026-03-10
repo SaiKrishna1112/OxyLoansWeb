@@ -24,7 +24,6 @@ import Borrowermodel from "../Utills/Modals/Borrowermodel";
 
 
 const MyRunningDeals = () => {
-  const [modelopen, setOpen] = useState(false);
   const [runningdeals, setrunningdeals] = useState({
     data: "",
     modelopen: false,
@@ -39,8 +38,8 @@ const MyRunningDeals = () => {
     pageNo: 1,
     pageSize: 10,
     loader: true,
+    modalLoader: false,
   });
-
 
   const [withdrawriaseapi, setwithdrawriaseapi] = useState({
     message: "",
@@ -87,14 +86,18 @@ const MyRunningDeals = () => {
     withdrawriase();
   }, [])
   const handlemodalopen = (dealId) => {
+    setrunningdeals(prev => ({
+      ...prev,
+      modelopen: !prev.modelopen,
+      modalLoader: true,
+    }));
     const response = viewdealamountemi(dealId);
     response.then((data) => {
-      setrunningdeals({
-        ...runningdeals,
+      setrunningdeals(prev => ({
+        ...prev,
         dealLevelLoanEmiCard: data,
-      });
-      setOpen(!modelopen);
-
+        modalLoader: false,
+      }));
     });
   };
 
@@ -186,16 +189,17 @@ const MyRunningDeals = () => {
   };
 
   const handleDataFromStatement = (data) => {
-    setrunningdeals({
-      ...runningdeals,
-      model2: !runningdeals.model2,
-    });
+    setrunningdeals(prev => ({
+      ...prev,
+      model2: !prev.model2,
+    }));
   };
 
   const changepagination = (pros) => {
     setrunningdeals({
       ...runningdeals,
       pageNo: pros,
+      loader: true,
     });
   };
 
@@ -321,11 +325,12 @@ const MyRunningDeals = () => {
                     </li>
                     <li className="breadcrumb-item active">My running deals</li>
 
-                    {modelopen && (
+                    {runningdeals.modelopen && (
                       <MyParticipatedStatement
                         data={runningdeals.dealLevelLoanEmiCard}
-                        open={modelopen}
-                        hidefun={statementHideProps}
+                        open={runningdeals.modelopen}
+                        hidefun={() => setrunningdeals(prev => ({...prev, modelopen: false}))}
+                        loading={runningdeals.modalLoader}
                       />
                     )}
 
@@ -356,21 +361,22 @@ const MyRunningDeals = () => {
             {borrowermodelopen && (<>
 
               <Borrowermodel data={borrowerview} hidefun={statementHideProps1} /></>)}
-            <div className="page-body">
-              <div className="pangnation">
-                <Pagination
-                  defaultCurrent={1}
-                  total={runningdeals.paginationCount}
-                  className="pull-right"
-                  onChange={changepagination}
-                />
-              </div>
+            <div className="pangnation">
+              <Pagination
+                defaultCurrent={1}
+                total={runningdeals.paginationCount}
+                className="pull-right"
+                onChange={changepagination}
+              />
+            </div>
 
-              <div class="col-md-3"><div class="input-group mb-3">
-                <input type="text" class="form-control" id="inputPassword6" aria-describedby="passwordHelpInline" name="inputserach" placeholder="Enter the Deal Name..." fdprocessedid="dn1e6b" onChange={handlechange} />
-                <button class="btn btn-outline-secondary" type="button" id="button-addon2" fdprocessedid="duzd9h" onClick={() => handlesubmitfilterdeal(searchinput)}> Search</button></div></div>
+            <div class="col-md-3"><div class="input-group mb-3">
+              <input type="text" class="form-control" id="inputPassword6" aria-describedby="passwordHelpInline" name="inputserach" placeholder="Enter the Deal Name..." fdprocessedid="dn1e6b" onChange={handlechange} />
+              <button class="btn btn-outline-secondary" type="button" id="button-addon2" fdprocessedid="duzd9h" onClick={() => handlesubmitfilterdeal(searchinput)}> Search</button></div></div>
 
-              <br />
+            <br />
+
+            <div className="page-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
 
 
               {filterdata !== "" && filterdata.length > 0 ?
@@ -512,8 +518,7 @@ const MyRunningDeals = () => {
                                     className="badge bg-primary-dark"
                                     onClick={() => handlemodalopen(data.dealId)}
                                   >
-                                    <i className="fa fa-eye"></i> Interest
-                                    Statement
+                                    <i className="fa fa-eye"></i> Interest Statement
                                   </span>
                                 </div>
 
@@ -874,7 +879,6 @@ const MyRunningDeals = () => {
                     </div>
                   )}
                 </>}
-
 
             </div>
           </div>

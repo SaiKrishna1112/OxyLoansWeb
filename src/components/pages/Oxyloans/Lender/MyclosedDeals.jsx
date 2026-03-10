@@ -73,19 +73,24 @@ const MyclosedDeals = () => {
 
   // Handle statement view
   const handelSatement = async (dealId, dealName) => {
+     setmyclosedDeals((prev) => ({
+        ...prev, 
+        // statement: response.data,
+        modelStatement: true,
+      }));
     try {
       const response = await handelapi(dealId, dealName);
       setmyclosedDeals((prev) => ({
-        ...prev,
+        ...prev, 
         statement: response.data,
-        modelStatement: true,
+        // modelStatement: false,
       }));
     } catch (err) {
       console.error(err);
     }
   };
 
-  // 🔍 Handle input change
+  // 🔍 Handle input change 
   const handleChange = (event) => {
     setSearchInput(event.target.value);
   };
@@ -229,6 +234,7 @@ const MyclosedDeals = () => {
                   data={myclosedDeals.statement}
                   open={myclosedDeals.modelStatement}
                   hidingStatement={hidingStatement}
+                  loading={myclosedDeals.loading}
                 />
               )}
 

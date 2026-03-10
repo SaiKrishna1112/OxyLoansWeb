@@ -1758,8 +1758,7 @@ export const handelsubmitdatafilter = async (inputserach) => {
     typeof inputserach === "string" && inputserach.length > 0;
 
   const postdatastring = {
-    dealId:
-      isValidInput && inputserach.length <= 3 ? parseInt(inputserach) : null,
+    dealId: isValidInput && inputserach.length <= 3 ? parseInt(inputserach) : null,
     userId: parseInt(userId),
     dealName: isValidInput && inputserach.length > 3 ? inputserach : null,
   };

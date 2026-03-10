@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import Modal from "react-bootstrap/Modal";
 import MyParticipateStatementTable from "../Tables/MyParticipateStatementTable";
+import { Spin, Tag } from "antd";
 
-const MyParticipatedStatement = ({ data, open, hidefun }) => {
+const MyParticipatedStatement = ({ data, open, hidefun,loading }) => {
   const [lgShow, setLgShow] = useState(open);
 
   const hidingStatementModal = () => {
@@ -23,8 +24,18 @@ const MyParticipatedStatement = ({ data, open, hidefun }) => {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <MyParticipateStatementTable data={data} />
-      </Modal.Body>
+ {loading ==true? (
+ <div className="row d-flex justify-content-center">
+                      <Spin
+                        tip="Loading..."
+                        className="text-center"
+                        large="large"
+                      ></Spin>
+                    </div>
+                        ) : (
+      <MyParticipateStatementTable data={data} />
+    )}      
+    </Modal.Body>
     </Modal>
   );
 };
