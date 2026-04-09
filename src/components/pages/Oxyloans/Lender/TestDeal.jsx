@@ -347,7 +347,7 @@ const RegularRunningDeal = () => {
                                 {data.repaymentType === "MONTHLY" && <> ROI : {data.rateOfInterest} %</>}
                               </div>
                               <div className="col-sm-12 col-lg-2">
-                                Tenure : {data.duration} Months
+                                Tenure : {data.duration} {data.durationType == "DAYS"? data.duration > 1 ? "Days" : "Day" : data.duration > 1 ? "Months" : "Month"}
                               </div>
                               <div className="col-auto col-lg-3">
                                 Deal Value : INR {data.dealAmount}
@@ -427,13 +427,13 @@ const RegularRunningDeal = () => {
                                 <div className="col-sm-6 col-lg-2">
                                   <span>Min Amount</span>
                                   <h6 className="mb-0">
-                                    INR {data.minimumAmountInDeal}
+                                    INR {data.minimumPaticipationAmount}
                                   </h6>
                                 </div>
                                 <div className="col-sm-6 col-lg-2">
                                   <span>Max Amount</span>
                                   <h6 className="mb-0">
-                                    INR {data.lenderPaticipationLimit}
+                                    INR {data.paticipationLimitToLenders}
                                   </h6>
                                 </div>
                                 <div className="col-sm-6 col-lg-2">

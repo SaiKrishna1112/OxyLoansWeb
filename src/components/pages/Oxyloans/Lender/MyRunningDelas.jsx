@@ -410,9 +410,10 @@ const MyRunningDeals = () => {
                                 {data.lederReturnType === "QUARTERLY" && <>ROI : {(data.rateOfInterest * 3).toFixed(2)} % P.Q</>}
                                 {data.lederReturnType === "HALFYEARLY" && <> ROI : {(data.rateOfInterest * 6).toFixed(2)} % P.H</>}
                                 {data.lederReturnType === "MONTHLY" && <> ROI : {(data.rateOfInterest).toFixed(2)} % P.M</>}
+                                {data.lederReturnType === "PERDAY" && <> ROI : {(data.rateOfInterest).toFixed(2)} % P.D</>}
                               </div>
-                              <div className="col-sm-12 col-lg-3">
-                                Tenure : {data.dealDuration} M
+                              <div className="col-sm-12 col-lg-3" title="DS-days & MS-Months">
+                                Tenure : {data.dealDuration} {data.lederReturnType == "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
                               </div>
                               <div className="col-auto col-lg-3">
                                 Participated Amount: INR {data.paticipatedAmount}
@@ -650,9 +651,10 @@ const MyRunningDeals = () => {
                                 {data.lederReturnType === "QUARTERLY" && <>ROI : {(data.rateOfInterest * 3).toFixed(2)} % P.Q</>}
                                 {data.lederReturnType === "HALFYEARLY" && <> ROI : {(data.rateOfInterest * 6).toFixed(2)} % P.H</>}
                                 {data.lederReturnType === "MONTHLY" && <> ROI : {(data.rateOfInterest).toFixed(2)} % P.M</>}
+                                {data.lederReturnType === "PERDAY" && <> ROI : {(data.rateOfInterest).toFixed(2)} % P.D</>}
                                 </div>
-                                <div className="col-sm-12 col-lg-3">
-                                  Tenure : {data.dealDuration} M
+                                <div className="col-sm-12 col-lg-3" title="DS-days & MS-Months">
+                                  Tenure : {data.dealDuration} {data.lederReturnType == "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
                                 </div>
                                 <div className="col-auto col-lg-3">
                                   Participated Amount: INR {data.paticipatedAmount}
@@ -752,7 +754,8 @@ const MyRunningDeals = () => {
                                       Participation Info
                                     </span>
                                   </div>
-
+                              
+                              { data.lederReturnType !== "PERDAY" ?(
                                   <div className="col-auto">
                                     <span
                                       type="button"
@@ -763,6 +766,7 @@ const MyRunningDeals = () => {
                                       Statement
                                     </span>
                                   </div>
+                              ):null}
 
                                   <div className="col-auto">
                                     <a

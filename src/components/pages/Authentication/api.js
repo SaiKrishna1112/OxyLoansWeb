@@ -1,14 +1,14 @@
 import axios from "axios";
-const userisIn = "prod"; //local or production
+const userisIn = "production"; //local or production
 const API_BASE_URL =
   userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user"
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
     : "https://fintech.oxyloans.com/oxyloans/v1/user";
 
 const API_URL =
-  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/login?grantType=PWD";
+  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/login?grantType=PWD";
 const API_URL_otp =
-  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/sendOtp";
+  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/sendOtp";
 // Function to perform the login API request
 export const loginUser = async (email, password, dataIpv4, dataIpv6) => {
   var data = {

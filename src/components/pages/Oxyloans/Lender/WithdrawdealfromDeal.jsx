@@ -103,7 +103,7 @@ const WithdrawdealfromDeal = () => {
         dealtype: data.dealType,
         currentStatus: data.currentStatus,
         RoI: data.rateOfInterest + " % ",
-        Duration: data.dealDuration + " M ",
+        Duration: data.dealDuration + " " + (data.lederReturnType === "PERDAY" ? (data.dealDuration > 1 ? "DS" : "D") : (data.dealDuration > 1 ? "MS" : "M")),
         DealStatus: data.currentStatus,
         RequestedAmount: data.requestedAmount,
         action: (

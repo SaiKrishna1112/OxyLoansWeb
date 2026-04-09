@@ -186,19 +186,24 @@ const Todaydeal = () => {
                               Deal Name: {data.dealName}
                             </Link>
 
-                            <div className="col-sm-12 col-lg-2">
-                              ROI : {data.rateOfInterest} %
-                            </div>
+                             <div className="col-sm-12 col-lg-2">
+
+                                {data?.repaymentType === "YEARLY" && (
+                                  <>ROI: {(data?.rateOfInterest * 12).toFixed(2)} % P.A</>
+                                )}
+                                {data?.repaymentType === "MONTHLY" && <> ROI : {data?.rateOfInterest} % P.M</>}
+                                {data?.repaymentType === "PERDAY" && <> ROI : {(data?.rateOfInterest).toFixed(2)} % P.D</>}
+                              </div>
 
 
                             <div className="col-sm-12 col-lg-2">
                               Deal Id : {data.dealId}
                             </div>
                             <div className="col-sm-12 col-lg-3">
-                              Tenure : {data.duration} Months
+                              Tenure : {data?.duration} {data?.repaymentType == "PERDAY" ? data?.duration > 1 ? "Days" : "Day" : data?.duration > 1 ? "Months" : "Month"}
                             </div>
                             <div className="col-sm-12 col-lg-3">
-                              Borrower Name : {data.borrowerName}
+                              Borrower Name : {data?.borrowerName}
                             </div>
                             {/* <div className="col-auto col-lg-3">
                                 Deal Value : {data.dealAmount}

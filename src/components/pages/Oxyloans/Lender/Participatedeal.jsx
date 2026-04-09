@@ -5,7 +5,7 @@ import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import "./InvoiceGrid.css";
 import { handledetail, withdrawriaseapipay } from "../../../HttpRequest/afterlogin";
-import { Button, Table } from "antd";
+import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
 import { participatedapi } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
@@ -74,6 +74,10 @@ const Participatedeal = () => {
         newObj.rateOfInterest = newObj.endofthedealInterest * 12 + " %  PA ";
         newObj["payout"] = "ENDOFTHEDEAL";
         localStorage.setItem("choosenPayOutOption", "ENDOFTHEDEAL");
+      } else if (newObj.perDayInterestRoi != 0 || newObj.perDayInterestAmount != null) {
+        newObj.rateOfInterest = newObj.perDayInterestRoi ==0.0 ? newObj.perDayInterestAmount + " PD " : newObj.perDayInterestRoi + " % PD ";
+        newObj["payout"] = "PERDAY";
+        localStorage.setItem("choosenPayOutOption", "PERDAY");
       }
       if (response.request.status == 500) {
         setDeal({
@@ -333,6 +337,16 @@ const Participatedeal = () => {
       title: "Tenure",
       dataIndex: "tenureinmonths",
       key: "tenureinmonths",
+       render: (value, data) => (
+        <Tooltip title="DS - Days, MS - Months">
+          <span>
+            {value}{" "}
+            {localStorage.getItem("choosenPayOutOption") === "PERDAY"
+              ? data.value > 1 ? "DS" : "D"
+              : data.value > 1 ? "MS" : "M"}
+          </span>
+        </Tooltip>
+       )
     },
 
     {
@@ -357,7 +371,7 @@ const Participatedeal = () => {
       loanamount: deal.apidata.dealAmount,
       rateOfInterest: rateOfInterest,
       availablelimit: deal.apidata.remainingAmountInDeal,
-      tenureinmonths: deal.apidata.duration + "M",
+      tenureinmonths: deal.apidata.duration + " " ,
       funding: deal.apidata.fundStartDate,
       fundingdate: deal.apidata.fundEndDate,
       minimumparticipation: deal.apidata.minimumPaticipationAmount,
