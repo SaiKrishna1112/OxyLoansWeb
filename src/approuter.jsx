@@ -125,6 +125,27 @@ import EquityDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EquityD
 import EscrowsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EscrowsDeals.jsx";
 import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
 import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";
+// =================== MARKETPLACE MODULE IMPORTS ===================
+import PostLoanRequest from "./components/pages/Oxyloans/Borrower/PostLoanRequest";
+import OpenMarketLoanListings from "./components/pages/Oxyloans/Lender/OpenMarketLoanListings";
+import InterestRateNegotiation from "./components/pages/Oxyloans/Lender/InterestRateNegotiation";
+import BorrowerMarketplaceConsent from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceConsent";
+import LenderMarketplaceConsent from "./components/pages/Oxyloans/Lender/LenderMarketplaceConsent";
+import EscalationDashboard from "./components/pages/Oxyloans/Lender/EscalationDashboard";
+import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings";
+import MyOffers from "./components/pages/Oxyloans/Lender/MyOffers";
+import NearbyBorrowers from "./components/pages/Oxyloans/Lender/NearbyBorrowers";
+import LenderEmiDashboard from "./components/pages/Oxyloans/Lender/LenderEmiDashboard";
+import BorrowerEmiSchedule from "./components/pages/Oxyloans/Borrower/BorrowerEmiSchedule";
+import MyOxyScore from "./components/pages/Oxyloans/Borrower/MyOxyScore";
+import MarketplaceEsign from "./components/pages/Oxyloans/Borrower/MarketplaceEsign";
+import MarketplaceEnach from "./components/pages/Oxyloans/Borrower/MarketplaceEnach";
+import MarketplaceAdminDashboard from "./components/pages/Oxyloans/Admin/MarketplaceAdminDashboard";
+import SmartLoanMatch from "./components/pages/Oxyloans/Lender/SmartLoanMatch";
+import NotificationsPage from "./components/pages/NotificationsPage";
+import AdminDisbursalControl from "./components/pages/Oxyloans/Admin/AdminDisbursalControl";
+import MyLoans from "./components/pages/Oxyloans/Borrower/MyLoans";
+import LenderPortfolio from "./components/pages/Oxyloans/Lender/LenderPortfolio";
 // ********************BORROWER MODULE    ROUTES END ************************** //
 
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
@@ -361,6 +382,29 @@ const AppRouter = () => {
         <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
 
         <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
+        {/* =================== MARKETPLACE ROUTES =================== */}
+        <Route path="/post-loan-request" element={<PostLoanRequest />} />
+        <Route path="/marketplace-loans" element={<OpenMarketLoanListings />} />
+        <Route path="/negotiation/:loanRequestId" element={<InterestRateNegotiation />} />
+        <Route path="/borrower-consent/:loanRequestId" element={<BorrowerMarketplaceConsent />} />
+        <Route path="/lender-consent/:loanRequestId" element={<LenderMarketplaceConsent />} />
+        <Route path="/escalation-dashboard" element={<EscalationDashboard />} />
+        <Route path="/my-marketplace-loans" element={<BorrowerMarketplaceListings />} />
+        <Route path="/my-offers" element={<MyOffers />} />
+        <Route path="/nearby-borrowers" element={<NearbyBorrowers />} />
+        <Route path="/lender-emi-dashboard" element={<LenderEmiDashboard />} />
+        <Route path="/borrower-emi-schedule" element={<BorrowerEmiSchedule />} />
+        <Route path="/my-oxyscore" element={<MyOxyScore />} />
+        <Route path="/esign/:loanRequestId" element={<MarketplaceEsign />} />
+        <Route path="/enach/:loanRequestId" element={<MarketplaceEnach />} />
+        <Route path="/marketplace-admin-dashboard" element={<MarketplaceAdminDashboard />} />
+        <Route path="/smart-match" element={<SmartLoanMatch />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        {/* =================== NEW ROUTES =================== */}
+        <Route path="/admin/disbursal-control" element={<AdminDisbursalControl />} />
+        <Route path="/my-loans" element={<MyLoans />} />
+        <Route path="/lender-portfolio" element={<LenderPortfolio />} />
+        {/* =================== MARKETPLACE ROUTES END =================== */}
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

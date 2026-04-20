@@ -1,17 +1,14 @@
 import axios from "axios";
-const userisIn = "production"; //local or production
-const API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+import { ENV as userisIn, API_USER_URL as API_BASE_URL, MARKETPLACE_URL as MARKETPLACE_BASE } from "../../config";
 
+// Check both sessionStorage (main login flow) and localStorage (admin/alternate login flow)
 const getToken = () => {
-  return sessionStorage.getItem("accessToken");
+  return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken") || null;
 };
 export const base_url=API_BASE_URL;
 
 export const getUserId = () => {
-  return sessionStorage.getItem("userId");
+  return sessionStorage.getItem("userId") || localStorage.getItem("userId");
 };
 
 export const getUserSessionTime = () => {
@@ -2606,5 +2603,363 @@ export const chatbotapicall = async (messages) => {
   });
   
   return response;
+};
+
+
+
+// ============================================================
+// MARKETPLACE APIs
+// ============================================================
+
+const MARKETPLACE_BASE_URL = MARKETPLACE_BASE;
+
+const marketplaceHeaders = () => ({
+  "Content-Type": "application/json",
+  accessToken: getToken(),
+  userId: getUserId(),
+});
+
+export const getMarketplaceLoans = async (lat, lng, radiusKm = 50, page = 0, size = 20) => {
+  const params = new URLSearchParams({ page, size });
+  if (lat != null) params.append("lat", lat);
+  if (lng != null) params.append("lng", lng);
+  if (radiusKm != null) params.append("radiusKm", radiusKm);
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loans?${params.toString()}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const postMarketplaceLoanRequest = async (data) => {
+  return axios.post(`${MARKETPLACE_BASE}/v1/marketplace/loans`, data, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getMyMarketplaceLoans = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loans/my`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const withdrawMarketplaceLoan = async (loanRequestId) => {
+  return axios.delete(`${MARKETPLACE_BASE}/v1/marketplace/loans/${loanRequestId}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getMarketplaceLoanDetail = async (loanRequestId) => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loans/${loanRequestId}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// NEGOTIATION APIs
+// ============================================================
+
+export const makeNegotiationOffer = async (data) => {
+  return axios.post(`${MARKETPLACE_BASE}/v1/negotiation/offer`, data, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const counterNegotiationOffer = async (offerId, counterRate) => {
+  return axios.put(`${MARKETPLACE_BASE}/v1/negotiation/${offerId}/counter`, { counterRate }, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const acceptNegotiationOffer = async (offerId) => {
+  return axios.put(`${MARKETPLACE_BASE}/v1/negotiation/${offerId}/accept`, {}, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const rejectNegotiationOffer = async (offerId) => {
+  return axios.put(`${MARKETPLACE_BASE}/v1/negotiation/${offerId}/reject`, {}, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getNegotiationOffers = async (loanRequestId) => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/negotiation/loan/${loanRequestId}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// CONSENT APIs
+// ============================================================
+
+export const submitBorrowerConsent = async (loanRequestId, checkedBoxes) => {
+  return axios.post(`${MARKETPLACE_BASE}/v1/consent/borrower`, { loanRequestId, checkedBoxes }, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const submitLenderConsent = async (loanRequestId, checkedBoxes) => {
+  return axios.post(`${MARKETPLACE_BASE}/v1/consent/lender`, { loanRequestId, checkedBoxes }, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getConsentStatus = async (loanRequestId, lenderUserId) => {
+  const params = lenderUserId ? `?lenderUserId=${lenderUserId}` : "";
+  return axios.get(`${MARKETPLACE_BASE}/v1/consent/${loanRequestId}/status${params}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// FEE APIs
+// ============================================================
+
+export const calculateFees = async (loanAmount, loanType = "MARKETPLACE") => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/fees/calculate?loanAmount=${loanAmount}&loanType=${loanType}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getMyLenderOffers = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/negotiation/my-offers`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// PROXIMITY APIs
+// ============================================================
+
+export const getNearbyBorrowers = async (lat, lng, radiusKm = 50) => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/nearby-borrowers?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getNearbyLenders = async (lat, lng, radiusKm = 50) => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/nearby-lenders?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// ESCALATION APIs
+// ============================================================
+
+export const getMyEscalationLoans = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/escalation/my-loans`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getLoanEscalationStatus = async (loanId) => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/escalation/loan/${loanId}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// EMI DASHBOARD APIs  (Phase 5)
+// ============================================================
+
+export const getLenderEmiDashboard = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/lender`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getBorrowerEmiSchedule = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/borrower`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// MARKETPLACE ADMIN STATS APIs  (Phase 6)
+// ============================================================
+
+export const getMarketplaceAdminStats = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/admin/stats`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getMarketplaceAdminLoans = async (status = "", page = 0, size = 20) => {
+  const params = new URLSearchParams({ page, size });
+  if (status) params.append("status", status);
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/admin/loans?${params.toString()}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getMarketplacePendingApproval = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/admin/pending-approval`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const approveMarketplaceLoan = async (loanRequestId, remarks = "") => {
+  return axios.put(
+    `${MARKETPLACE_BASE}/v1/marketplace/admin/${loanRequestId}/approve?remarks=${encodeURIComponent(remarks)}`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+};
+
+export const rejectMarketplaceLoan = async (loanRequestId, remarks = "") => {
+  return axios.put(
+    `${MARKETPLACE_BASE}/v1/marketplace/admin/${loanRequestId}/reject?remarks=${encodeURIComponent(remarks)}`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+};
+
+// ============================================================
+// CIBIL / OxyScore APIs  (Phase 4)
+// ============================================================
+
+export const uploadCibilPdf = async (formData) => {
+  // Do NOT set Content-Type here — let the browser auto-set multipart/form-data with boundary
+  return axios.post(`${MARKETPLACE_BASE}/v1/cibil/upload`, formData, {
+    headers: {
+      accessToken: getToken(),
+      userId: getUserId(),
+    },
+  });
+};
+
+export const getMyOxyScore = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/cibil/my-score`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const registerMarketplaceEnach = async (data) => {
+  return axios.post(`${MARKETPLACE_BASE}/v1/marketplace/enach/register`, data, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// AI SMART LOAN MATCHING  (Phase 7)
+// ============================================================
+
+export const getSmartLoanMatches = async (preferences = {}) => {
+  return axios.post(`${MARKETPLACE_BASE}/v1/ai/smart-match`, preferences, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+// ============================================================
+// NOTIFICATIONS APIs  (Phase 7)
+// ============================================================
+
+export const getMyNotifications = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/notifications/my`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getNotificationCount = async () => {
+  return axios.get(`${MARKETPLACE_BASE}/v1/notifications/count`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const markNotificationRead = async (id) => {
+  return axios.put(
+    `${MARKETPLACE_BASE}/v1/notifications/${id}/read`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+};
+
+export const markAllNotificationsRead = async () => {
+  return axios.put(
+    `${MARKETPLACE_BASE}/v1/notifications/read-all`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+};
+
+// ============================================================
+// EMI PAYMENT API
+// ============================================================
+
+export const payMarketplaceEmi = async (loanRequestId, emiNo) => {
+  return axios.post(
+    `${MARKETPLACE_BASE}/v1/marketplace/emi/pay`,
+    { loanRequestId, emiNo },
+    { headers: marketplaceHeaders() }
+  );
+};
+
+// ============================================================
+// ADMIN DISBURSAL CONTROL APIs  (Task 3)
+// ============================================================
+
+export const getAdminPendingDisbursalLoans = async () =>
+  axios.get(`${MARKETPLACE_BASE}/v1/admin/disbursal/pending-disbursal`, {
+    headers: marketplaceHeaders(),
+  });
+
+export const setDisbursalDate = async (loanId, disbursalDate, remarks = "") =>
+  axios.put(
+    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/disbursal-date`,
+    { disbursalDate, remarks },
+    { headers: marketplaceHeaders() }
+  );
+
+export const setRepaymentDate = async (loanId, data) =>
+  axios.put(
+    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/repayment-date`,
+    data,
+    { headers: marketplaceHeaders() }
+  );
+
+export const triggerDisbursal = async (loanId, remarks = "") =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/trigger-disbursal`,
+    { remarks },
+    { headers: marketplaceHeaders() }
+  );
+
+export const bulkUpdateDisbursalDates = async (loanIds, disbursalDate, firstRepaymentDate) =>
+  axios.put(
+    `${MARKETPLACE_BASE}/v1/admin/disbursal/bulk-update-dates`,
+    { loanIds, disbursalDate, firstRepaymentDate },
+    { headers: marketplaceHeaders() }
+  );
+
+export const getDisbursalAuditLog = async (loanId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/audit-log`, {
+    headers: marketplaceHeaders(),
+  });
+
+// ============================================================
+// BORROWER MY-LOANS APIs  (Task 6)
+// ============================================================
+
+export const getBorrowerActiveLoans = async () => {
+  const userId = getUserId();
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/borrower/${userId}/active-loans`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const getBorrowerEmiScheduleForLoan = async (loanId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/${loanId}/schedule`, {
+    headers: marketplaceHeaders(),
+  });
+
+// ============================================================
+// LENDER PORTFOLIO APIs  (Task 7)
+// ============================================================
+
+export const getLenderPortfolio = async () => {
+  const userId = getUserId();
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/lender/${userId}/portfolio`, {
+    headers: marketplaceHeaders(),
+  });
 };
 
