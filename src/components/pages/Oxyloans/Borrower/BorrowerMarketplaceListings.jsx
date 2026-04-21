@@ -13,11 +13,19 @@ import {
 import Swal from "sweetalert2";
 
 const STATUS_LABELS = {
+  POSTED: { label: "Posted", color: "info" },
+  OFFER_MADE: { label: "Offer Received", color: "warning" },
   MARKET_LISTED: { label: "Listed", color: "primary" },
   NEGOTIATING: { label: "Negotiating", color: "warning" },
   CONSENT_PENDING: { label: "Consent Pending", color: "info" },
   CONSENTED: { label: "Consented — eSign Required", color: "success" },
-  ESIGN_DONE: { label: "eSigned — Pending Disbursement", color: "success" },
+  ESIGN_PENDING: { label: "Fee Disclosure Pending", color: "warning" },
+  ESIGN_DONE: { label: "eSigned — eNACH Pending", color: "success" },
+  ENACH_INITIATED: { label: "eNACH Initiated", color: "info" },
+  ENACH_APPROVED: { label: "eNACH Approved — Awaiting Disbursal", color: "success" },
+  DISBURSAL_PENDING: { label: "Disbursal Pending", color: "warning" },
+  DISBURSED: { label: "Disbursed — Repayment Due", color: "success" },
+  DEFAULTED: { label: "Defaulted", color: "danger" },
   DISBURSED_MARKETPLACE: { label: "Disbursed", color: "success" },
   WITHDRAWN: { label: "Withdrawn", color: "secondary" },
 };
@@ -319,6 +327,31 @@ export default function BorrowerMarketplaceListings() {
                       >
                         <i className="fa-solid fa-file-signature me-1"></i>
                         eSign Agreement
+                      </button>
+                    )}
+                    {loan.loanStatus === "ESIGN_PENDING" && (
+                      <button
+                        className="btn btn-sm btn-warning"
+                        onClick={() => navigate(`/borrower/fee-disclosure/${loan.loanRequestId}`)}
+                      >
+                        Fee Disclosure
+                      </button>
+                    )}
+                    {(loan.loanStatus === "ESIGN_DONE" || loan.loanStatus === "ENACH_INITIATED" ||
+                      loan.loanStatus === "ENACH_APPROVED" || loan.loanStatus === "DISBURSAL_PENDING") && (
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => navigate(`/agreement/${loan.loanRequestId}`)}
+                      >
+                        View Agreement
+                      </button>
+                    )}
+                    {loan.loanStatus === "DISBURSED" && (
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => navigate(`/borrower/repayment/${loan.loanRequestId}`)}
+                      >
+                        Repay Loan
                       </button>
                     )}
                   </div>

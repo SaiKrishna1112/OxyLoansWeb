@@ -50,7 +50,21 @@ export default function BorrowerMarketplaceConsent() {
     ])
       .then(([loanRes, offersRes]) => {
         if (loanRes?.data) {
-          setLoan(loanRes.data);
+          const loanData = loanRes.data;
+          setLoan(loanData);
+          // If consent already done, redirect to fee disclosure (next step)
+          const alreadyConsented =
+            loanData.borrowerConsentDone === true ||
+            loanData.loanStatus === "ESIGN_PENDING" ||
+            loanData.loanStatus === "ESIGN_DONE" ||
+            loanData.loanStatus === "ENACH_INITIATED" ||
+            loanData.loanStatus === "ENACH_APPROVED" ||
+            loanData.loanStatus === "DISBURSAL_PENDING" ||
+            loanData.loanStatus === "DISBURSED";
+          if (alreadyConsented) {
+            navigate(`/borrower/fee-disclosure/${loanRequestId}`, { replace: true });
+            return;
+          }
         } else {
           setLoadError("Could not load loan details.");
         }

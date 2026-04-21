@@ -75,12 +75,26 @@ function getNotificationRoute(n) {
     return isBorrower ? "/my-marketplace-loans" : "/my-offers";
   }
   if (type.includes("CONSENT")) {
+    // CONSENT_SUBMITTED means consent is already done — go to fee disclosure (next step)
+    if (type.includes("SUBMITTED") || type.includes("DONE")) {
+      return lrqId ? `/borrower/fee-disclosure/${lrqId}` : "/my-marketplace-loans";
+    }
+    // CONSENT_PENDING means the user still needs to consent
     if (lrqId) {
       return isBorrower
         ? `/borrower-consent/${lrqId}`
         : `/lender-consent/${lrqId}`;
     }
     return isBorrower ? "/my-marketplace-loans" : "/marketplace-loans";
+  }
+  if (type.includes("AGREEMENT") || type.includes("ESIGN")) {
+    return lrqId ? `/agreement/${lrqId}` : (isBorrower ? "/my-marketplace-loans" : "/lender-portfolio");
+  }
+  if (type.includes("REPAYMENT") || type.includes("BOUNCE")) {
+    return lrqId ? `/borrower/repayment/${lrqId}` : "/my-marketplace-loans";
+  }
+  if (type.includes("FUNDED") || type.includes("FUNDING")) {
+    return lrqId ? `/borrower/fee-disclosure/${lrqId}` : "/my-marketplace-loans";
   }
   if (type.includes("EMI") || type.includes("LOAN")) {
     return isBorrower ? "/borrower-emi-schedule" : "/lender-emi-dashboard";

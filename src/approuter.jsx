@@ -147,6 +147,7 @@ import AdminDisbursalControl from "./components/pages/Oxyloans/Admin/AdminDisbur
 import AdminSettings from "./components/pages/Oxyloans/Admin/AdminSettings";
 import FeeDisclosure from "./components/pages/Oxyloans/Borrower/FeeDisclosure";
 import RepaymentView from "./components/pages/Oxyloans/Borrower/RepaymentView";
+import AgreementPage from "./components/pages/Oxyloans/Borrower/AgreementPage";
 import MyLoans from "./components/pages/Oxyloans/Borrower/MyLoans";
 import LenderPortfolio from "./components/pages/Oxyloans/Lender/LenderPortfolio";
 // ********************BORROWER MODULE    ROUTES END ************************** //
@@ -408,6 +409,7 @@ const AppRouter = () => {
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/borrower/fee-disclosure/:loanRequestId" element={<FeeDisclosure />} />
         <Route path="/borrower/repayment/:loanRequestId" element={<RepaymentView />} />
+        <Route path="/agreement/:loanRequestId" element={<AgreementPage />} />
         <Route path="/my-loans" element={<MyLoans />} />
         <Route path="/lender-portfolio" element={<LenderPortfolio />} />
         {/* =================== MARKETPLACE ROUTES END =================== */}

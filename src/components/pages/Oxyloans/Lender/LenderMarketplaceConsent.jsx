@@ -45,7 +45,20 @@ export default function LenderMarketplaceConsent() {
     ])
       .then(([loanRes, offersRes]) => {
         if (loanRes?.data) {
-          setLoan(loanRes.data);
+          const loanData = loanRes.data;
+          setLoan(loanData);
+          // If consent already done, redirect to lender portfolio (next step)
+          const alreadyConsented =
+            loanData.lenderConsentDone === true ||
+            loanData.loanStatus === "ESIGN_DONE" ||
+            loanData.loanStatus === "ENACH_INITIATED" ||
+            loanData.loanStatus === "ENACH_APPROVED" ||
+            loanData.loanStatus === "DISBURSAL_PENDING" ||
+            loanData.loanStatus === "DISBURSED";
+          if (alreadyConsented) {
+            navigate("/lender-portfolio", { replace: true });
+            return;
+          }
         } else {
           setLoadError("Could not load loan details.");
         }
