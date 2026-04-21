@@ -244,6 +244,14 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN","SUPERADMIN"],
     },
 
+  {
+      key: "marketplaceAdminDashboard",
+      label: "Marketplace Dashboard",
+      link: "/marketplace-admin-dashboard",
+      icon: "fa-solid fa-store",
+      type: ["ADMIN","SUPERADMIN","HELPDESKADMIN"],
+    },
+
   ];
   
 

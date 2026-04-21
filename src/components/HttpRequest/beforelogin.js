@@ -1,9 +1,5 @@
 import axios from "axios";
-const userisIn = "production"; //local or production
-let API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+import { ENV as userisIn, API_USER_URL as API_BASE_URL } from "../../config";
 
 const handleApiRequestBeforeLogin = async (
   method,
@@ -16,6 +12,7 @@ const handleApiRequestBeforeLogin = async (
       method,
       url: `${BASE_URL}${End_Url}`,
       data: POSTDATA,
+      timeout: 5000, // 5-second timeout so local mock kicks in quickly
       headers: {
         "Content-Type": "application/json",
       },
@@ -25,6 +22,15 @@ const handleApiRequestBeforeLogin = async (
       return response;
     }
   } catch (error) {
+    // Ensure callers can always safely read error.response.data
+    if (!error.response) {
+      error.response = {
+        data: {
+          errorCode: "NETWORK_ERROR",
+          errorMessage: "Unable to reach server. Please check your connection.",
+        },
+      };
+    }
     return error;
   }
 };
@@ -123,7 +129,7 @@ export const sendwhatappotp = async (value1) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "whatsapp-login-otp",
+    "sendWhatsappOtp",
     data
   );
   return response;
@@ -160,6 +166,15 @@ export const handlesenOtp = async (moblie) => {
     `sendOtp`,
     data
   );
+  // Local dev fallback: if API is unreachable, simulate OTP sent successfully
+  if (userisIn === "local" && response && !response.status) {
+    console.warn("LOCAL MODE: sendOtp API unreachable — using mock. OTP is: 1234");
+    return {
+      status: 200,
+      data: { id: "LOCAL_TEST_USER_001" },
+      request: { status: 200 },
+    };
+  }
   return response;
 };
 
@@ -171,9 +186,34 @@ export const usersubmitotp = async (email, password) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    `login?grantType=PWD `,
+    `login?grantType=PWD`,
     data
   );
+  // Local dev fallback: if API is unreachable and OTP is 1234, simulate login success
+  if (userisIn === "local" && response && !response.status) {
+    if (password === "1234") {
+      console.warn("LOCAL MODE: login API unreachable — using mock login for OTP 1234");
+      return {
+        status: 200,
+        data: {
+          id: "LOCAL_TEST_USER_001",
+          primaryType: "BORROWER",
+          tokenGeneratedTime: Date.now(),
+        },
+        headers: { accesstoken: "LOCAL_MOCK_TOKEN_" + Date.now() },
+        request: { status: 200 },
+      };
+    }
+    // Wrong OTP in local mock
+    if (!response.response) {
+      response.response = {
+        data: {
+          errorCode: "INVALID_OTP",
+          errorMessage: "Invalid OTP. In local mode use: 1234",
+        },
+      };
+    }
+  }
   return response;
 };
 
@@ -203,7 +243,7 @@ export const verifywhatappotp = async (api, whatsapploginotp) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "whatsapp-login-otp-verification",
+    "verifyWhatsappOtp",
     data
   );
   return response;

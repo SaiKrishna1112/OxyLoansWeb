@@ -144,6 +144,9 @@ import MarketplaceAdminDashboard from "./components/pages/Oxyloans/Admin/Marketp
 import SmartLoanMatch from "./components/pages/Oxyloans/Lender/SmartLoanMatch";
 import NotificationsPage from "./components/pages/NotificationsPage";
 import AdminDisbursalControl from "./components/pages/Oxyloans/Admin/AdminDisbursalControl";
+import AdminSettings from "./components/pages/Oxyloans/Admin/AdminSettings";
+import FeeDisclosure from "./components/pages/Oxyloans/Borrower/FeeDisclosure";
+import RepaymentView from "./components/pages/Oxyloans/Borrower/RepaymentView";
 import MyLoans from "./components/pages/Oxyloans/Borrower/MyLoans";
 import LenderPortfolio from "./components/pages/Oxyloans/Lender/LenderPortfolio";
 // ********************BORROWER MODULE    ROUTES END ************************** //
@@ -402,6 +405,9 @@ const AppRouter = () => {
         <Route path="/notifications" element={<NotificationsPage />} />
         {/* =================== NEW ROUTES =================== */}
         <Route path="/admin/disbursal-control" element={<AdminDisbursalControl />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/borrower/fee-disclosure/:loanRequestId" element={<FeeDisclosure />} />
+        <Route path="/borrower/repayment/:loanRequestId" element={<RepaymentView />} />
         <Route path="/my-loans" element={<MyLoans />} />
         <Route path="/lender-portfolio" element={<LenderPortfolio />} />
         {/* =================== MARKETPLACE ROUTES END =================== */}

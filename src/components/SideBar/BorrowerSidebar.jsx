@@ -375,6 +375,39 @@ const BorrowerSidebar = (props) => {
                   )}
                 </li>
 
+                {/* Marketplace Menu Items */}
+                <li className={`${"/post-loan-request" === pathName ? "active" : ""}`}>
+                  <Link to="/post-loan-request">
+                    <i className="fa-solid fa-store"></i>
+                    <span>Post Loan Request</span>
+                  </Link>
+                </li>
+                <li className={`${"/my-marketplace-loans" === pathName ? "active" : ""}`}>
+                  <Link to="/my-marketplace-loans">
+                    <i className="fa-solid fa-list"></i>
+                    <span>My Marketplace Loans</span>
+                  </Link>
+                </li>
+                <li className={`${pathName.startsWith("/borrower-consent") ? "active" : ""}`}>
+                  <Link to="/my-marketplace-loans">
+                    <i className="fa-solid fa-file-signature"></i>
+                    <span>Consent Status</span>
+                  </Link>
+                </li>
+                <li className={`${"/borrower-emi-schedule" === pathName ? "active" : ""}`}>
+                  <Link to="/borrower-emi-schedule">
+                    <i className="fa-solid fa-calendar-check"></i>
+                    <span>EMI Schedule</span>
+                  </Link>
+                </li>
+                <li className={`${"/my-oxyscore" === pathName ? "active" : ""}`}>
+                  <Link to="/my-oxyscore">
+                    <i className="fa-solid fa-chart-line"></i>
+                    <span>My OxyScore</span>
+                  </Link>
+                </li>
+                {/* End Marketplace Menu Items */}
+
                 <li className={`${"/" === pathName ? "active" : ""}`}>
                   <Link to="/">
                     <i className="fa-solid fa-right-from-bracket"></i>

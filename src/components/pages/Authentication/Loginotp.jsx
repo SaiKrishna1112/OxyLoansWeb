@@ -78,7 +78,6 @@ const Loginotp = () => {
           "accessToken",
           retriveresponse.headers.accesstoken
         );
-        // dispatch(getProfile({ res: retriveresponse.data }));
         localStorage.setItem("primaryType", retriveresponse.data.primaryType)
 
         if (retriveresponse.data.primaryType == "LENDER") {
@@ -90,7 +89,9 @@ const Loginotp = () => {
         }
       } else {
         setLoading(false)
-        toastrWarning(retriveresponse.response.data.errorMessage);
+        toastrWarning(
+          retriveresponse.response?.data?.errorMessage || "Invalid OTP. Please try again."
+        );
       }
     }
   };
@@ -103,15 +104,15 @@ const Loginotp = () => {
           userLogInInfo.email === "" ? "Please enter the Mobile Number" : "",
       }));
     } else {
-      if (userLogInInfo.email.length === 10) {
+      const mobileDigits = userLogInInfo.email.replace(/\D/g, "");
+      if (mobileDigits.length === 10) {
         setLoading(true)
-        const response = await handlesenOtp(userLogInInfo.email);
+        const response = await handlesenOtp(mobileDigits);
 
         if (response.request.status == 200) {
           setLoading(false)
           if (response.data.id) {
             sessionStorage.setItem("userId", response.data.id);
-
           }
           setUserLoginInfo({
             ...userLogInInfo,
@@ -120,18 +121,15 @@ const Loginotp = () => {
         } else {
           setLoading(false)
           WarningBackendApi(
-            response.response.data.errorCode,
-            response.response.data.errorMessage
+            response.response?.data?.errorCode || "ERROR",
+            response.response?.data?.errorMessage || "Failed to send OTP. Please try again."
           );
         }
       } else {
         setLoading(false)
         setUserLoginInfo((prevState) => ({
           ...prevState,
-          emailerror:
-            userLogInInfo.email.length > 10
-              ? "Please 10 digit mobile Number"
-              : "",
+          emailerror: "Please enter a valid 10-digit mobile number",
         }));
       }
     }
@@ -166,10 +164,15 @@ const Loginotp = () => {
                     </label>
                     <input
                       className="form-control"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={userLogInInfo.email}
                       name="email"
-                      onChange={handlechange}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setUserLoginInfo({ ...userLogInInfo, email: digits, emailerror: "" });
+                      }}
                       maxLength={10}
                       id="userloginusername"
                       required

@@ -23,6 +23,7 @@ import {
   oxylogomobile,
   oxylogodashboard,
 } from "../imagepath";
+import NotificationBell from "../NotificationBell";
 
 const BorrowerHeader = (profile) => {
   const dispatch = useDispatch();
@@ -62,25 +63,15 @@ const BorrowerHeader = (profile) => {
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails().then((data) => {
-      if (data.request.status == 200) {
+      if (data && data.status == 200) {
         console.log("header", data.data)
-        // localStorage.setItem("userType", data.data.userDisplayId);
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response.data.errorCode != "200") {
-        WarningAlert(data.response.data.errorMessage, "/");
       }
-    });
-  }, []);
-
-  useMemo(() => {
-    const sessionsExpire = getSessionExpireTime();
-
-    if (sessionsExpire) {
-      WarningAlert("Your session is expiring in 5 minutes.", "/dashboard");
-    }
+      // silently ignore profile load errors to avoid false "Session Expiring" popups
+    }).catch(() => {});
   }, []);
 
   return (
@@ -272,6 +263,7 @@ const BorrowerHeader = (profile) => {
               <img src={headericon04} alt="" />
             </Link>
           </li>
+          <NotificationBell />
           {/* User Menu */}
           <li className="nav-item dropdown has-arrow new-user-menus">
             <Link

@@ -32,8 +32,7 @@ const BorrowerDashboard = () => {
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
   const[profileDetails,setProfileDetails]=useState();
-    const [customCity, setCustomCity] = useState('');
-  
+
   const navigate = useNavigate();
   const [treemap, Settreemap] = useState({
     series: [
@@ -175,12 +174,11 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
 
 
   const handleCityChange = (event) => {
-    if (event.target.value === "") {
+    if (event.target.value.trim() === "") {
       setSelectedCityerror(true);
-      return false;
+    } else {
+      setSelectedCityerror(false);
     }
-    setSelectedCityerror(false);
-
     setSelectedCity(event.target.value);
   };
 
@@ -188,16 +186,9 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
     console.log("Selected city:", selectedCity);
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
-    // handleClose();
-      if(selectedCity!="Others"){
-    var data={
-          city: selectedCity,
-        }
-      }else{
-        var data={
-          city:customCity
-        }
-      }
+    var data = {
+      city: selectedCity,
+    };
     axios
       .post(
         `${base_url}${userId}/city`,
@@ -267,13 +258,9 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                   <div className="page-sub-header">
                     <h3 className="page-title">
                       Welcome {""}
-                      {getreducerprofiledata?.length !== 0
-                        ? getreducerprofiledata?.firstName
-                            .charAt(0)
-                            .toUpperCase() +
-                            getreducerprofiledata?.firstName
-                              .slice(1)
-                              .toLowerCase() ?? ""
+                      {getreducerprofiledata?.firstName
+                        ? getreducerprofiledata.firstName.charAt(0).toUpperCase() +
+                          getreducerprofiledata.firstName.slice(1).toLowerCase()
                         : ""}
                     </h3>
                     <ul className="breadcrumb">
@@ -418,7 +405,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
 
                       <li>
                         <div className="report-btn">
-                          <Link to="/loanRequest" className="btn">
+                          <Link to="/post-loan-request" className="btn">
                             <img src={invoicesicon5} alt="" className="me-2" />
                             New Request
                           </Link>
@@ -505,47 +492,18 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                 <label htmlFor="citySelect" className="form-label small mb-1">
                   City
                 </label>
-                <select
+                <input
                   id="citySelect"
-                  className="form-select form-select-sm"
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Enter city"
                   value={selectedCity}
                   onChange={handleCityChange}
-                >
-                  <option value="">Select a city</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Bangalore">Bangalore</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                  <option value="Ahmedabad">Ahmedabad</option>
-                  <option value="Chennai">Chennai</option>
-                  <option value="Kolkata">Kolkata</option>
-                  <option value="Pune">Pune</option>
-                  <option value="Jaipur">Jaipur</option>
-                  <option value="Lucknow">Lucknow</option>
-                  <option value="Secunderabad">Secunderabad</option>
-                  <option value="Vishakapatnam">Vishakapatnam</option>
-                  <option value="Vijayawada">Vijayawada</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Others">Other</option>
-                </select>
-
-                {selectedCity === "Others" && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Enter City"
-                      className="form-control form-control-sm"
-                      name="customCity"
-                      value={customCity}
-                      onChange={(e) => setCustomCity(e.target.value)}
-                    />
-                  </div>
-                )}
+                />
 
                 {selectedCityerror && (
                   <p className="text-danger small mt-1">
-                    Please select a city.
+                    Please enter a city.
                   </p>
                 )}
               </div>
@@ -557,7 +515,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
     onClick={handleSave}
     size="sm"
     disabled={
-      !selectedCity || (selectedCity === "Others" && customCity.trim() === "")
+      !selectedCity.trim()
     }
   >
     Save

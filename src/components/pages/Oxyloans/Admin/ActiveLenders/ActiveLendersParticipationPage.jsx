@@ -2,15 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./ActiveLendersParticipationPage.css";
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
+import { API_USER_URL } from "../../../../../config";
 
-const LIST_API =
-  "https://fintech.oxyloans.com/oxyloans/v1/user/activLendersParicipationAmount";
+const LIST_API = `${API_USER_URL}activLendersParicipationAmount`;
 
 const SEARCH_API = (lenderId) =>
-  `https://fintech.oxyloans.com/oxyloans/v1/user/${lenderId}/activLendersParicipationAmountAndCount`;
+  `${API_USER_URL}${lenderId}/activLendersParicipationAmountAndCount`;
 
 const REFERRAL_API = (lenderId) =>
-  `https://fintech.oxyloans.com/oxyloans/v1/user/${lenderId}/allLenderReferenceDetails`;
+  `${API_USER_URL}${lenderId}/allLenderReferenceDetails`;
 
 function safeText(v) {
   if (v === null || v === undefined || String(v).trim() === "") return "-";

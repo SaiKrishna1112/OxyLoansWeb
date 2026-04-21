@@ -1,9 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
-  getUserDetails,
-  getSessionExpireTime,
   getUserDetails1,
 } from "../HttpRequest/afterlogin";
 
@@ -11,7 +9,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchData } from "../Redux/Slice";
 import { fetchDatadashboard } from "../Redux/SliceDashboard";
 
-import { WarningAlert } from "../pages/Base UI Elements/SweetAlert";
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
 
@@ -57,23 +54,15 @@ const PartnerHeader = (profile) => {
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails1().then((data) => {
-      if (data.request.status == 200) {
+      if (data && data.status == 200) {
         localStorage.setItem("userType", data.data.userDisplayId);
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response.data.errorCode != "200") {
-        WarningAlert(data.response.data.errorMessage, "/");
       }
-    });
-  }, []);
-
-  useMemo(() => {
-    const sessionsExpire = getSessionExpireTime();
-    if (sessionsExpire) {
-      WarningAlert("Your session is expiring in 5 minutes.", "/dashboard");
-    }
+      // silently ignore errors to avoid false session expiry popup
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -195,10 +184,10 @@ const PartnerHeader = (profile) => {
                   </p>
                   <p className="text-muted mb-0">
                     Wallet :
-                    {reduxStoreData?.length !== 0
-                      ? reduxStoreData?.lenderWalletAmount -
-                        reduxStoreData?.holdAmountInDealParticipation -
-                        reduxStoreData?.equityAmount
+                    {reduxStoreData?.lenderWalletAmount != null
+                      ? (reduxStoreData.lenderWalletAmount -
+                          (reduxStoreData.holdAmountInDealParticipation || 0) -
+                          (reduxStoreData.equityAmount || 0)).toFixed(2)
                       : ""}
                   </p>
                 </div>

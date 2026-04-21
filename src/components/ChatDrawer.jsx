@@ -10,6 +10,7 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef(null);
 
   const allQuickReplies = [
@@ -343,6 +344,34 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
     }
   }, [messages, isTyping]);
 
+  // Voice input using Web Speech API
+  const startListening = useCallback(() => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in your browser. Try Chrome or Edge.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results)
+        .map((r) => r[0].transcript)
+        .join("");
+      setInput(transcript);
+      if (e.results[e.results.length - 1].isFinal) {
+        setIsListening(false);
+        handleSend(transcript);
+      }
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+  }, [handleSend]);
+
   // When drawer opens & quick reply provided
   useEffect(() => {
     setVisible(open);
@@ -417,14 +446,36 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
           <div className="input-container">
             <input
               className="chat-input"
-              placeholder="💬 Ask about investments,deals..."
+              placeholder={isListening ? "🎤 Listening…" : "💬 Ask about investments, deals…"}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(input); } }}
-              disabled={isTyping}
+              disabled={isTyping || isListening}
+              style={isListening ? { background: "#fff5f5", borderColor: "#ff4d4f" } : {}}
             />
-            <button 
-              className={`chat-send-btn finance-send ${input.trim() ? 'active' : ''}`} 
+            <button
+              onClick={startListening}
+              disabled={isTyping || isListening}
+              title={isListening ? "Listening…" : "Voice input (click to speak)"}
+              style={{
+                background: isListening ? "#ff4d4f" : "#f5f5f5",
+                border: "none",
+                borderRadius: 8,
+                width: 38,
+                height: 38,
+                cursor: isTyping || isListening ? "not-allowed" : "pointer",
+                fontSize: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                animation: isListening ? "pulse 1s ease-in-out infinite" : "none",
+              }}
+            >
+              {isListening ? "🔴" : "🎤"}
+            </button>
+            <button
+              className={`chat-send-btn finance-send ${input.trim() ? 'active' : ''}`}
               onClick={() => handleSend(input)}
               disabled={isTyping || !input.trim()}
               title="Send message"

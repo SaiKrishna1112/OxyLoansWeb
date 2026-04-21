@@ -11,6 +11,8 @@ import {
   triggerDisbursal,
   bulkUpdateDisbursalDates,
   getDisbursalAuditLog,
+  getDisbursalChecklist,
+  approveAndDisburse,
 } from "../../../HttpRequest/afterlogin";
 
 const { Option } = Select;
@@ -48,6 +50,11 @@ const AdminDisbursalControl = () => {
   const [bulkModal, setBulkModal] = useState({ visible: false });
   const [bulkForm, setBulkForm] = useState({ disbursalDate: null, firstRepaymentDate: null });
   const [bulkSaving, setBulkSaving] = useState(false);
+
+  // Checklist modal
+  const [checklistModal, setChecklistModal] = useState({ visible: false, loanId: null, data: null, loading: false });
+  const [approving, setApproving] = useState(false);
+  const [approveMsg, setApproveMsg] = useState("");
 
   const loadLoans = useCallback(() => {
     setLoading(true);
@@ -117,6 +124,31 @@ const AdminDisbursalControl = () => {
       setAuditModal((prev) => ({ ...prev, logs: res.data || [], loading: false }));
     } catch {
       setAuditModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const openChecklist = async (loan) => {
+    setChecklistModal({ visible: true, loanId: loan.loanId, data: null, loading: true });
+    setApproveMsg("");
+    try {
+      const res = await getDisbursalChecklist(loan.internalId);
+      setChecklistModal((prev) => ({ ...prev, data: res.data, loading: false, internalId: loan.internalId }));
+    } catch {
+      setChecklistModal((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
+  const doApproveAndDisburse = async () => {
+    setApproving(true);
+    setApproveMsg("");
+    try {
+      await approveAndDisburse(checklistModal.internalId);
+      setApproveMsg("success");
+      loadLoans();
+    } catch (e) {
+      setApproveMsg(e?.response?.data?.error || "Failed to disburse");
+    } finally {
+      setApproving(false);
     }
   };
 
@@ -213,6 +245,9 @@ const AdminDisbursalControl = () => {
           </Tooltip>
           <button className="btn btn-sm btn-outline-secondary" onClick={() => openAuditLog(r)}>
             Audit ({r.auditLogCount || 0})
+          </button>
+          <button className="btn btn-sm btn-outline-info" onClick={() => openChecklist(r)}>
+            Checklist
           </button>
         </div>
       ),
@@ -421,6 +456,65 @@ const AdminDisbursalControl = () => {
               ))}
             </tbody>
           </table>
+        )}
+      </Modal>
+
+      {/* Checklist Modal */}
+      <Modal
+        title={`Disbursal Checklist — ${checklistModal.loanId || ""}`}
+        open={checklistModal.visible}
+        onCancel={() => { setChecklistModal({ visible: false, loanId: null, data: null, loading: false }); setApproveMsg(""); }}
+        footer={null}
+        width={520}
+      >
+        {checklistModal.loading ? (
+          <div className="text-center py-4"><div className="spinner-border" /></div>
+        ) : !checklistModal.data ? (
+          <div className="text-muted text-center py-3">Failed to load checklist</div>
+        ) : (
+          <>
+            {[
+              { key: "kycComplete", label: "KYC Complete" },
+              { key: "cibilUploaded", label: "CIBIL Uploaded" },
+              { key: "borrowerEsigned", label: "Borrower eSigned" },
+              { key: "lenderEsigned", label: "Lender eSigned" },
+              { key: "enachApproved", label: "eNACH Approved" },
+              { key: "feeCollected", label: "Fee Collected" },
+              { key: "allLenderWalletsSufficient", label: "All Lender Wallets Sufficient" },
+              { key: "feeDisclosureAccepted", label: "Fee Disclosure Accepted" },
+            ].map(({ key, label }) => {
+              const ok = checklistModal.data[key];
+              return (
+                <div key={key} className="d-flex justify-content-between align-items-center py-2 border-bottom">
+                  <span>{label}</span>
+                  <span className={`badge ${ok ? "bg-success" : "bg-danger"}`}>
+                    {ok ? "✓ Done" : "✗ Pending"}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="mt-3 p-3 rounded" style={{ background: checklistModal.data.allGreen ? "#e8f5e9" : "#fff3e0" }}>
+              <strong>Overall: </strong>
+              {checklistModal.data.allGreen
+                ? <span className="text-success">All checks passed — Ready to disburse</span>
+                : <span className="text-warning">Pending items must be completed first</span>
+              }
+            </div>
+            {approveMsg === "success" ? (
+              <div className="alert alert-success mt-3">Loan disbursed successfully!</div>
+            ) : approveMsg ? (
+              <div className="alert alert-danger mt-3">{approveMsg}</div>
+            ) : null}
+            <div className="mt-3 d-grid">
+              <button
+                className="btn btn-success btn-lg"
+                disabled={!checklistModal.data.allGreen || approving}
+                onClick={doApproveAndDisburse}
+              >
+                {approving ? "Processing…" : "Approve & Disburse"}
+              </button>
+            </div>
+          </>
         )}
       </Modal>
 

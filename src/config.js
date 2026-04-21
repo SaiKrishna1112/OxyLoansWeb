@@ -7,9 +7,9 @@
 // Production: https://fintech.oxyloans.com/oxyloans
 // ================================================================
 
-const LOCAL_IP = "192.168.0.151"; // <-- change only this when your IP changes
+const LOCAL_IP = "localhost"; // use "localhost" when running backend locally
 
-const ENV = "production"; // "local" | "production"
+const ENV = "local"; // "local" | "production"
 
 const BASE_URL =
   ENV === "local"

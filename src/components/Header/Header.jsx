@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
-  getSessionExpireTime,
   getUserDetails1,
 } from "../HttpRequest/afterlogin";
 
@@ -10,9 +9,9 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchData } from "../Redux/Slice";
 import { fetchDatadashboard } from "../Redux/SliceDashboard";
 
-import { WarningAlert } from "../pages/Base UI Elements/SweetAlert";
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
+import NotificationBell from "../NotificationBell";
 
 const Header = (profile) => {
   const location = useLocation();
@@ -56,7 +55,7 @@ const Header = (profile) => {
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails1().then((data) => {
-      if (data.request.status == 200) {
+      if (data && data.status == 200) {
         console.log("header", data.data)
         // localStorage.setItem("userType", data.data.userDisplayId);
         localStorage.setItem("groupName", data.data.groupName);
@@ -64,17 +63,9 @@ const Header = (profile) => {
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response.data.errorCode != "200") {
-        WarningAlert(data.response.data.errorMessage, "/");
       }
-    });
-  }, []);
-
-  useMemo(() => {
-    const sessionsExpire = getSessionExpireTime();
-    if (sessionsExpire) {
-      WarningAlert("Your session is expiring in 5 minutes.", "/dashboard");
-    }
+      // silently ignore errors to avoid false session expiry popup
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -135,6 +126,7 @@ const Header = (profile) => {
               <img src={headericon04} alt="" />
             </Link>
           </li>
+          <NotificationBell />
           {/* User Menu */}
           <li className="nav-item dropdown has-arrow new-user-menus">
             <Link
@@ -151,16 +143,16 @@ const Header = (profile) => {
                 />
                 <div className="user-text text-wrap">
                   <h6>
-                    {reduxStoreData?.length != 0
-                      ? reduxStoreData?.firstName.charAt(0).toUpperCase() +
-                      reduxStoreData?.firstName.slice(1).toLowerCase() ?? ""
+                    {reduxStoreData?.firstName
+                      ? reduxStoreData.firstName.charAt(0).toUpperCase() +
+                        reduxStoreData.firstName.slice(1).toLowerCase()
                       : ""}
-                    {reduxStoreData?.length != 0
+                    {reduxStoreData?.firstName
                       ? localStorage.setItem(
-                        "userName",
-                        reduxStoreData?.firstName.charAt(0).toUpperCase() +
-                        reduxStoreData?.firstName.slice(1).toLowerCase()
-                      ) ?? ""
+                          "userName",
+                          reduxStoreData.firstName.charAt(0).toUpperCase() +
+                          reduxStoreData.firstName.slice(1).toLowerCase()
+                        ) ?? ""
                       : ""}
                     <h6>   LR {reduxStoreData?.length != 0
                       ? reduxStoreData?.userId
@@ -196,11 +188,9 @@ const Header = (profile) => {
                   </p>
                   <p className="text-muted mb-0">
                     Wallet :
-                    {reduxStoreData?.length !== 0
-                      ? reduxStoreData?.lenderWalletAmount -
-                      reduxStoreData?.holdAmountInDealParticipation -
-                      reduxStoreData?.equityAmount
-                      : ""}
+                    {((reduxStoreData?.lenderWalletAmount || 0) -
+                      (reduxStoreData?.holdAmountInDealParticipation || 0) -
+                      (reduxStoreData?.equityAmount || 0)).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -219,16 +209,16 @@ const Header = (profile) => {
               {dashboarddata.iswhatAppLogin == "true" && (
                 <Link className="dropdown-item" to="/whatappuser">
                   Logout as{" "}
-                  {reduxStoreData?.length != 0
-                    ? reduxStoreData?.firstName.charAt(0).toUpperCase() +
-                    reduxStoreData?.firstName.slice(1).toLowerCase() ?? ""
+                  {reduxStoreData?.firstName
+                    ? reduxStoreData.firstName.charAt(0).toUpperCase() +
+                      reduxStoreData.firstName.slice(1).toLowerCase()
                     : ""}
-                  {reduxStoreData?.length != 0
+                  {reduxStoreData?.firstName
                     ? localStorage.setItem(
-                      "userName",
-                      reduxStoreData?.firstName.charAt(0).toUpperCase() +
-                      reduxStoreData?.firstName.slice(1).toLowerCase()
-                    ) ?? ""
+                        "userName",
+                        reduxStoreData.firstName.charAt(0).toUpperCase() +
+                        reduxStoreData.firstName.slice(1).toLowerCase()
+                      ) ?? ""
                     : ""}
                 </Link>
               )}

@@ -2952,6 +2952,11 @@ export const getBorrowerEmiScheduleForLoan = async (loanId) =>
     headers: marketplaceHeaders(),
   });
 
+export const completeEsign = async (loanRequestId) =>
+  axios.post(`${MARKETPLACE_BASE}/v1/marketplace/agreement/${loanRequestId}/esign-complete`, {}, {
+    headers: marketplaceHeaders(),
+  });
+
 // ============================================================
 // LENDER PORTFOLIO APIs  (Task 7)
 // ============================================================
@@ -2962,4 +2967,120 @@ export const getLenderPortfolio = async () => {
     headers: marketplaceHeaders(),
   });
 };
+
+// ============================================================
+// ADMIN SETTINGS APIs  (Feature 2)
+// ============================================================
+
+export const getAdminSettings = () =>
+  axios.get(`${MARKETPLACE_BASE}/v1/admin/settings`, { headers: marketplaceHeaders() });
+
+export const getAdminSettingsChangelog = () =>
+  axios.get(`${MARKETPLACE_BASE}/v1/admin/settings/changelog`, { headers: marketplaceHeaders() });
+
+export const updateAdminSetting = (key, value, remarks = "") =>
+  axios.put(
+    `${MARKETPLACE_BASE}/v1/admin/settings/${key}`,
+    { value, adminName: localStorage.getItem("userName") || "Admin", remarks },
+    { headers: marketplaceHeaders() }
+  );
+
+export const updateAdminSettingsBulk = (settings, remarks = "Bulk update") =>
+  axios.put(
+    `${MARKETPLACE_BASE}/v1/admin/settings`,
+    { settings, adminName: localStorage.getItem("userName") || "Admin", remarks },
+    { headers: marketplaceHeaders() }
+  );
+
+// ============================================================
+// FEE DISCLOSURE APIs  (Feature 5)
+// ============================================================
+
+export const getFeeDisclosure = (loanRequestId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/fees/disclosure/${loanRequestId}`, {
+    headers: marketplaceHeaders(),
+  });
+
+export const acceptFeeDisclosure = (loanRequestId) =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/fees/disclosure/${loanRequestId}/accept`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+
+// ============================================================
+// LOAN FUNDING APIs  (Feature 4)
+// ============================================================
+
+export const getLoanFundingStatus = (loanRequestId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/funding/${loanRequestId}`, {
+    headers: marketplaceHeaders(),
+  });
+
+export const commitLoanFunding = (loanRequestId, amount) =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/marketplace/funding/${loanRequestId}/commit`,
+    { amount },
+    { headers: marketplaceHeaders() }
+  );
+
+export const acceptPartialFunding = (loanRequestId) =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/marketplace/funding/${loanRequestId}/accept-partial`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+
+// ============================================================
+// MARKETPLACE REPAYMENT APIs  (Feature 9)
+// ============================================================
+
+export const getRepaymentByLoan = (loanRequestId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/repayment/loan/${loanRequestId}`, {
+    headers: marketplaceHeaders(),
+  });
+
+export const payRepayment = (repaymentId) =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/marketplace/repayment/${repaymentId}/pay`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+
+export const bounceRepayment = (repaymentId, reason = "") =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/marketplace/repayment/${repaymentId}/bounce`,
+    { reason },
+    { headers: marketplaceHeaders() }
+  );
+
+export const getPendingRepayments = () =>
+  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/repayment/pending`, {
+    headers: marketplaceHeaders(),
+  });
+
+// ============================================================
+// ADMIN DISBURSAL CHECKLIST APIs  (Feature 7)
+// ============================================================
+
+export const getDisbursalChecklist = (loanId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/checklist`, {
+    headers: marketplaceHeaders(),
+  });
+
+export const approveAndDisburse = (loanId) =>
+  axios.post(
+    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/approve-and-disburse`,
+    {},
+    { headers: marketplaceHeaders() }
+  );
+
+// ============================================================
+// OXYSCORE MARKETPLACE APIs  (Feature 6)
+// ============================================================
+
+export const getMarketplaceOxyScore = (borrowerUserId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/cibil/marketplace-score/${borrowerUserId}`, {
+    headers: marketplaceHeaders(),
+  });
 

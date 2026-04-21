@@ -6,6 +6,7 @@ import { Table, Spin, message,Modal } from 'antd';
 import Sidebar from '../../../../../SideBar/OxyloansAdminSidebar';
 import Header from '../../../../../Header/OxyloansAdminHeader';
 import Swal from 'sweetalert2';
+import { API_USER_URL } from '../../../../../../config';
 
 
 export default function ResolvedBorrowerQueries() {
@@ -47,7 +48,7 @@ export default function ResolvedBorrowerQueries() {
       console.log("Sending API call with body:", requestBody);
 
       const response = await axios.post(
-        "https://fintech.oxyloans.com/oxyloans/v1/user/queryDetailsBasedOnPrimaryType",
+        `${API_USER_URL}queryDetailsBasedOnPrimaryType`,
         requestBody,
         config
       );

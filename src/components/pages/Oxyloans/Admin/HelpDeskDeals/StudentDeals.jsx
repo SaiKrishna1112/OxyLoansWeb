@@ -5,6 +5,7 @@ import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
+import { API_USER_URL } from '../../../../../config';
 
 export default function StudentDeals() {
   const [deals, setDeals] = useState([]);
@@ -29,7 +30,7 @@ export default function StudentDeals() {
 console.log({currentPage})
     try {
       const response = await axios.post(
-        'https://fintech.oxyloans.com/oxyloans/v1/user/listOfDealsInformationForNormalDeals',
+        `${API_USER_URL}listOfDealsInformationForNormalDeals`,
         {
           pageNo:currentPage,
           pageSize:10,

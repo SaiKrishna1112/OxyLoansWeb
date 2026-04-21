@@ -51,7 +51,6 @@ const AdminDashboard = () => {
   const [show, setShow] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
-  const [customCity, setCustomCity] = useState("");
   const [showWallet, setShowWallet] = useState(false);
   const [showActivityDeals, setShowActivityDeals] = useState(false);
   const [ShowClosedDeal, setShowClosedDeal] = useState(false);
@@ -263,11 +262,11 @@ const AdminDashboard = () => {
 
 
   const handleCityChange = (event) => {
-    if (event.target.value === "") {
+    if (event.target.value.trim() === "") {
       setSelectedCityerror(true);
-      return false;
+    } else {
+      setSelectedCityerror(false);
     }
-    setSelectedCityerror(false);
     setSelectedCity(event.target.value);
   };
 
@@ -275,17 +274,10 @@ const AdminDashboard = () => {
     console.log("Selected city:", selectedCity);
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
-    
-    let data;
-    if (selectedCity !== "Others") {
-      data = {
-        city: selectedCity,
-      };
-    } else {
-      data = {
-        city: customCity,
-      };
-    }
+
+    let data = {
+      city: selectedCity,
+    };
     
     axios
       .post(`${base_url}${userId}/city`, data, {
@@ -519,13 +511,9 @@ const AdminDashboard = () => {
                     >
                       <h3 className="page-title">
                         Welcome{" "}
-                        {getreducerprofiledata?.length !== 0
-                          ? getreducerprofiledata?.firstName
-                              .charAt(0)
-                              .toUpperCase() +
-                              getreducerprofiledata?.firstName
-                                .slice(1)
-                                .toLowerCase() ?? ""
+                        {getreducerprofiledata?.firstName
+                          ? getreducerprofiledata.firstName.charAt(0).toUpperCase() +
+                            getreducerprofiledata.firstName.slice(1).toLowerCase()
                           : ""}
                       </h3>
 
@@ -595,10 +583,10 @@ const AdminDashboard = () => {
                         <h3 className="mt-2">
                           {showWallet ? (
                             <>
-                              {getreducerprofiledata?.length !== 0
-                                ? getreducerprofiledata?.lenderWalletAmount -
-                                  getreducerprofiledata?.holdAmountInDealParticipation -
-                                  getreducerprofiledata?.equityAmount
+                              {getreducerprofiledata?.lenderWalletAmount != null
+                                ? (getreducerprofiledata.lenderWalletAmount -
+                                    (getreducerprofiledata.holdAmountInDealParticipation || 0) -
+                                    (getreducerprofiledata.equityAmount || 0)).toFixed(2)
                                 : ""}
                             </>
                           ) : (
@@ -1277,47 +1265,18 @@ const AdminDashboard = () => {
                 <label htmlFor="citySelect" className="form-label small mb-1">
                   City
                 </label>
-                <select
+                <input
                   id="citySelect"
-                  className="form-select form-select-sm"
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Enter city"
                   value={selectedCity}
                   onChange={handleCityChange}
-                >
-                  <option value="">Select a city</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Bangalore">Bangalore</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                  <option value="Ahmedabad">Ahmedabad</option>
-                  <option value="Chennai">Chennai</option>
-                  <option value="Kolkata">Kolkata</option>
-                  <option value="Pune">Pune</option>
-                  <option value="Jaipur">Jaipur</option>
-                  <option value="Lucknow">Lucknow</option>
-                  <option value="Secunderabad">Secunderabad</option>
-                  <option value="Vishakapatnam">Vishakapatnam</option>
-                  <option value="Vijayawada">Vijayawada</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Others">Other</option>
-                </select>
-
-                {selectedCity === "Others" && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Enter City"
-                      className="form-control form-control-sm"
-                      name="customCity"
-                      value={customCity}
-                      onChange={(e) => setCustomCity(e.target.value)}
-                    />
-                  </div>
-                )}
+                />
 
                 {selectedCityerror && (
                   <p className="text-danger small mt-1">
-                    Please select a city.
+                    Please enter a city.
                   </p>
                 )}
               </div>
@@ -1328,10 +1287,7 @@ const AdminDashboard = () => {
                 variant="primary"
                 onClick={handleSave}
                 size="sm"
-                disabled={
-                  !selectedCity ||
-                  (selectedCity === "Others" && customCity.trim() === "")
-                }
+                disabled={!selectedCity.trim()}
               >
                 Save
               </Button>

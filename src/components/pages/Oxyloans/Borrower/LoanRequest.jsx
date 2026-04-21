@@ -32,14 +32,14 @@ const LoanRequest = () => {
   const handleSubmitHandler = () => {
     const response = submitloanRequest(newloandrequest);
     response.then((data) => {
-      if (data.request.status == 200) {
+      if (data.status == 200) {
         HandleWithFooter(
-          "The wallet-to-wallet transfer was successful. Your withdrawal request has been initiated, and the receiver will receive the wallet amount after OxyAdmins approval."
+          "Loan request submitted successfully. OxyLoans will review your request and match you with suitable lenders."
         );
-      } else if (data.request.status == 403) {
+      } else if (data.status == 403) {
         WarningAlertWalltTran(data.response.data.errorMessage);
       } else {
-        WarningAlerterror(data.response.data.errorMessage);
+        WarningAlerterror(data?.response?.data?.errorMessage || "Failed to submit loan request.");
       }
     });
   };

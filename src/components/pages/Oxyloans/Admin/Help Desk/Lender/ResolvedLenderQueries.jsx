@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import Sidebar from '../../../../../SideBar/OxyloansAdminSidebar';
 import Header from '../../../../../Header/OxyloansAdminHeader';
+import { API_USER_URL } from '../../../../../../config';
 
 const ResolvedLenderQueries = () => {
   const [queryData, setQueryData] = useState([]);
@@ -46,7 +47,7 @@ const ResolvedLenderQueries = () => {
       console.log("Sending API call with body:", requestBody);
       
       const response = await axios.post(
-        "https://fintech.oxyloans.com/oxyloans/v1/user/queryDetailsBasedOnPrimaryType",
+        `${API_USER_URL}queryDetailsBasedOnPrimaryType`,
         requestBody,
         config
       );
