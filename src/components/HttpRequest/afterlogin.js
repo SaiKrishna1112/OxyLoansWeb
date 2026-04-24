@@ -1,6 +1,25 @@
 import axios from "axios";
 import { ENV as userisIn, API_USER_URL as API_BASE_URL, MARKETPLACE_URL as MARKETPLACE_BASE } from "../../config";
 
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      const hasToken = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+      const path = window.location.pathname;
+      const onAuthPage = path.includes("login") || path.includes("register") || path === "/";
+
+      if (hasToken && !onAuthPage) {
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("userId");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("userId");
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Check both sessionStorage (main login flow) and localStorage (admin/alternate login flow)
 const getToken = () => {
   return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken") || null;
@@ -2211,7 +2230,7 @@ export const getdataofferletter = async () => {
   const userId = getUserId();
   const res = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/download/UNIVERSITYOFFERLETTER`,-
+    `${userId}/download/UNIVERSITYOFFERLETTER`,
     "GET",
     token
   );
@@ -2613,11 +2632,20 @@ export const chatbotapicall = async (messages) => {
 
 const MARKETPLACE_BASE_URL = MARKETPLACE_BASE;
 
-const marketplaceHeaders = () => ({
-  "Content-Type": "application/json",
-  accessToken: getToken(),
-  userId: getUserId(),
-});
+const marketplaceHeaders = () => {
+  const token = getToken();
+  const userId = getUserId();
+  console.log("📦 MARKETPLACE HEADERS:", {
+    token: token ? "✓ Present" : "✗ NULL/UNDEFINED",
+    userId: userId ? "✓ Present" : "✗ NULL/UNDEFINED",
+    tokenValue: token?.substring(0, 20) + "...",
+  });
+  return {
+    "Content-Type": "application/json",
+    accessToken: token,
+    userId: userId,
+  };
+};
 
 export const getMarketplaceLoans = async (lat, lng, radiusKm = 50, page = 0, size = 20) => {
   const params = new URLSearchParams({ page, size });
@@ -2738,6 +2766,24 @@ export const getNearbyBorrowers = async (lat, lng, radiusKm = 50) => {
 
 export const getNearbyLenders = async (lat, lng, radiusKm = 50) => {
   return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/nearby-lenders?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
+    headers: marketplaceHeaders(),
+  });
+};
+
+export const filterMarketplaceLoans = async (filters = {}) => {
+  const params = new URLSearchParams();
+  const allowed = [
+    "lat", "lng", "radiusKm",
+    "company", "pincode", "city", "college", "industry",
+    "minOxyScore", "minAmount", "maxAmount",
+    "minDuration", "maxDuration", "borrowerType", "sortBy",
+  ];
+  allowed.forEach((key) => {
+    if (filters[key] != null && filters[key] !== "") {
+      params.append(key, filters[key]);
+    }
+  });
+  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loan-filter?${params.toString()}`, {
     headers: marketplaceHeaders(),
   });
 };

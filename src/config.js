@@ -7,7 +7,7 @@
 // Production: https://fintech.oxyloans.com/oxyloans
 // ================================================================
 
-const LOCAL_IP = "localhost"; // use "localhost" when running backend locally
+const LOCAL_IP = "192.168.0.151"; // LAN IP — team members access backend at this address
 
 const ENV = "local"; // "local" | "production"
 

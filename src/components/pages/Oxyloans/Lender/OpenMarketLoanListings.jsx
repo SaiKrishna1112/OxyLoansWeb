@@ -52,11 +52,22 @@ export default function OpenMarketLoanListings() {
       }
       setHasMore(data.length === 20);
     } catch (e) {
+      console.error("❌ Failed to fetch loans:", e);
+      const status = e?.response?.status;
       const msg = e?.response?.data?.message
         || e?.response?.data?.error
         || e?.message
         || "Failed to load loan listings.";
-      setError(`API Error: ${msg} (${e?.response?.status || "no response"})`);
+
+      if (status === 401) {
+        setError(`⚠️ Authentication Error (401): Your session may have expired. ${msg}`);
+      } else if (status === 403) {
+        setError(`⚠️ Permission Denied (403): You don't have access to this feature. ${msg}`);
+      } else if (status === 404) {
+        setError(`⚠️ Not Found (404): Marketplace endpoint not available. ${msg}`);
+      } else {
+        setError(`❌ API Error: ${msg} (Status: ${status || "no response"})`);
+      }
     } finally {
       setLoading(false);
     }

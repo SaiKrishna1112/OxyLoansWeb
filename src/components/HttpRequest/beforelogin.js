@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ENV as userisIn, API_USER_URL as API_BASE_URL } from "../../config";
+import { API_USER_URL as API_BASE_URL } from "../../config";
 
 const handleApiRequestBeforeLogin = async (
   method,
@@ -12,7 +12,7 @@ const handleApiRequestBeforeLogin = async (
       method,
       url: `${BASE_URL}${End_Url}`,
       data: POSTDATA,
-      timeout: 5000, // 5-second timeout so local mock kicks in quickly
+      timeout: 20000,
       headers: {
         "Content-Type": "application/json",
       },
@@ -52,7 +52,7 @@ export const sendotpemail = async (email) => {
 export const Admlog = async (userid, password) => {
   const data = {
     id: userid,
-    primaryType: password,
+    password: password,
   };
   const response = await handleApiRequestBeforeLogin(
     "POST",
@@ -64,7 +64,9 @@ export const Admlog = async (userid, password) => {
   if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -86,7 +88,9 @@ export const partnerlogin = async (userid, password) => {
   if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -110,11 +114,12 @@ export const userloginSection = async (email, password) => {
     postdata
   );
 
-  if (response.status == 200) { 
+  if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
-    console.log(accessTokenFromHeader)
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -166,15 +171,6 @@ export const handlesenOtp = async (moblie) => {
     `sendOtp`,
     data
   );
-  // Local dev fallback: if API is unreachable, simulate OTP sent successfully
-  if (userisIn === "local" && response && !response.status) {
-    console.warn("LOCAL MODE: sendOtp API unreachable — using mock. OTP is: 1234");
-    return {
-      status: 200,
-      data: { id: "LOCAL_TEST_USER_001" },
-      request: { status: 200 },
-    };
-  }
   return response;
 };
 
@@ -189,31 +185,6 @@ export const usersubmitotp = async (email, password) => {
     `login?grantType=PWD`,
     data
   );
-  // Local dev fallback: if API is unreachable and OTP is 1234, simulate login success
-  if (userisIn === "local" && response && !response.status) {
-    if (password === "1234") {
-      console.warn("LOCAL MODE: login API unreachable — using mock login for OTP 1234");
-      return {
-        status: 200,
-        data: {
-          id: "LOCAL_TEST_USER_001",
-          primaryType: "BORROWER",
-          tokenGeneratedTime: Date.now(),
-        },
-        headers: { accesstoken: "LOCAL_MOCK_TOKEN_" + Date.now() },
-        request: { status: 200 },
-      };
-    }
-    // Wrong OTP in local mock
-    if (!response.response) {
-      response.response = {
-        data: {
-          errorCode: "INVALID_OTP",
-          errorMessage: "Invalid OTP. In local mode use: 1234",
-        },
-      };
-    }
-  }
   return response;
 };
 

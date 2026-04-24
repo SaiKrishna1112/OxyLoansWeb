@@ -35,6 +35,7 @@ import Footer from "../../Footer/Footer";
 import {
   getuserMembershipValidity,
   getUserDetails,
+  getUserDetails1,
   getactivityApisData,
 } from "../../HttpRequest/afterlogin";
 import { personalDetails } from "../Base UI Elements/SweetAlert";
@@ -51,6 +52,7 @@ const AdminDashboard = () => {
   const [show, setShow] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
+  const [customCity, setCustomCity] = useState("");
   const [showWallet, setShowWallet] = useState(false);
   const [showActivityDeals, setShowActivityDeals] = useState(false);
   const [ShowClosedDeal, setShowClosedDeal] = useState(false);
@@ -239,23 +241,15 @@ const AdminDashboard = () => {
   }, [regular_runningDeal.pageno]);
 
   useEffect(() => {
-    console.log("userData", getreducerprofiledata);
-    getUserDetails().then((data) => {
-      if (data.request.status === 200) {
-        setdashboarddata({
-          ...dashboarddata,
-          profileData: data,
-        });
+    const primaryType = localStorage.getItem("primaryType");
+    const fetchProfile = primaryType === "LENDER" ? getUserDetails1 : getUserDetails;
+    fetchProfile().then((data) => {
+      if (data?.request?.status === 200) {
+        setdashboarddata({ ...dashboarddata, profileData: data });
+        const city = data?.data?.city;
+        if (!city) setShow(true);
       }
-      console.log("profileData", data.request.status);
-      if (
-        data.data.city === null ||
-        data.data.city === undefined ||
-        data.data.city === ""
-      ) {
-        setShow(true);
-      }
-    });
+    }).catch(() => {});
     return () => {};
   }, []);
  

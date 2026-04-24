@@ -70,6 +70,7 @@ const Loginotp = () => {
         toastrSuccess("Login Success!");
 
         sessionStorage.setItem("userId", retriveresponse.data.id);
+        localStorage.setItem("userId", retriveresponse.data.id);
         sessionStorage.setItem(
           "tokenTime",
           retriveresponse.data.tokenGeneratedTime
@@ -78,6 +79,7 @@ const Loginotp = () => {
           "accessToken",
           retriveresponse.headers.accesstoken
         );
+        localStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
         localStorage.setItem("primaryType", retriveresponse.data.primaryType)
 
         if (retriveresponse.data.primaryType == "LENDER") {
