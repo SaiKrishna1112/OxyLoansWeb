@@ -41,6 +41,9 @@ import {
   getdataofferletter,
   getdatafeereceipt,
   getdatapayslips,
+  getPCreditReportDoc,
+  borrowerSecureInfo,
+  getBorrowerSecureInfo,
 
 } from "../../../HttpRequest/afterlogin";
 
@@ -186,6 +189,7 @@ const BorrowerProfile = () => {
     aadhar: "",
     Passport: "",
     PanCard: "",
+    creditReport: "",
     CHEQUELEAF: "",
     DRIVINGLICENCE: "",
     VOTERID: "",
@@ -214,6 +218,24 @@ const BorrowerProfile = () => {
     universityName: "",
     universityLocation: "",
   });
+  const [secureInfo, setSecureInfo] = useState({
+    aadharPassword: "",
+    panPassword: "",
+    bankStatementPassword: "",
+    companyAddress: "",
+    designation: "",
+    cibilScore: "",
+    comments: "",
+    cibilPassword: "",
+    payslipsPassword: "",
+  });
+  const [secureInfoVisibility, setSecureInfoVisibility] = useState({
+    aadharPassword: false,
+    panPassword: false,
+    bankStatementPassword: false,
+    cibilPassword: false,
+    payslipsPassword: false,
+  });
 
   const handleCategoryChange = (e) => {
     setCategory(e.target.value);
@@ -227,6 +249,49 @@ const BorrowerProfile = () => {
       ...prev,
       [name]: value,
     }));
+  };
+  const handleSecureInfoChange = (event) => {
+    const { name, value } = event.target;
+    setSecureInfo((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+  const toggleSecureInfoVisibility = (fieldName) => {
+    setSecureInfoVisibility((prev) => ({
+      ...prev,
+      [fieldName]: !prev[fieldName],
+    }));
+  };
+
+  const saveSecureInfo = async () => {
+    const userId = sessionStorage.getItem("userId");
+    if (!userId) {
+      WarningBackendApi("warning", "Session expired. Please login again.");
+      return;
+    }
+
+    const payload = {
+      userId: String(userId),
+      userType: "USER",
+    };
+
+    Object.keys(secureInfo).forEach((key) => {
+      const value = secureInfo[key];
+      if (value !== null && value !== undefined && String(value).trim() !== "") {
+        payload[key] = value;
+      }
+    });
+
+    const response = await borrowerSecureInfo(payload);
+    if (response?.status == 200) {
+      Success("success", "Secure Info saved successfully.");
+    } else {
+      WarningBackendApi(
+        "warning",
+        response?.response?.data?.errorMessage || "Unable to save secure info."
+      );
+    }
   };
 
   const handlebankchange = (event) => {
@@ -1481,6 +1546,32 @@ console.log("data",data.status);
   }, []);
 
   useEffect(() => {
+    const loadSecureInfo = async () => {
+      const response = await getBorrowerSecureInfo();
+      if (response?.status == 200 && response?.data) {
+        setSecureInfo((prev) => ({
+          ...prev,
+          aadharPassword: response.data.aadharPassword || "",
+          panPassword: response.data.panPassword || "",
+          bankStatementPassword: response.data.bankStatementPassword || "",
+          companyAddress: response.data.companyAddress || "",
+          designation: response.data.designation || "",
+          cibilScore:
+            response.data.cibilScore === null ||
+            response.data.cibilScore === undefined
+              ? ""
+              : String(response.data.cibilScore),
+          comments: response.data.comments || "",
+          cibilPassword: response.data.cibilPassword || "",
+          payslipsPassword: response.data.payslipsPassword || "",
+        }));
+      }
+    };
+
+    loadSecureInfo();
+  }, []);
+
+  useEffect(() => {
     const fetchApiData1 = () => {
       return getPanDoc();
     };
@@ -1519,7 +1610,10 @@ console.log("data",data.status);
       return getdatafeereceipt();
     }
       const fetchApiData13=()=>{
-      return getdatapayslips();
+        return getdatapayslips();
+      }
+      const fetchApiData14=()=>{
+        return getPCreditReportDoc();
     }
 
     Promise.allSettled([
@@ -1536,7 +1630,7 @@ console.log("data",data.status);
       fetchApiData11(),
       fetchApiData12(),
       fetchApiData13(),
-
+      fetchApiData14(),
     ])
       .then((responses) => {
         console.log(responses[11].value.data);
@@ -1555,6 +1649,7 @@ console.log("data",data.status);
           offerletter: responses[10].value.data,
           feereceipt: responses[11].value.data,
           paySlips: responses[12].value.data,
+          creditReport: responses[13].value.data,
         });
       })
       .catch((error) => { });
@@ -1616,12 +1711,13 @@ console.log("data",data.status);
                           : dashboarddata.profileData != null
                             ? dashboarddata.profileData.data.userId
                             : "BR18"}
-                        {`, ${reduxStoreData.length != 0
-                          ? reduxStoreData.groupName
-                          : dashboarddata.profileData != null
-                            ? dashboarddata.profileData.data.groupName
-                            : "NewLender"
-                          }`}
+                        {`, ${
+                          reduxStoreData.length != 0
+                            ? reduxStoreData.groupName
+                            : dashboarddata.profileData != null
+                              ? dashboarddata.profileData.data.groupName
+                              : "NewLender"
+                        }`}
                       </h6>
                       <div className="user-Location">
                         <i className="fas fa-map-marker-alt" />{" "}
@@ -1640,7 +1736,7 @@ console.log("data",data.status);
                       </div>
 
                       {reduxStoreData.groupName != "NewLender" &&
-                        reduxStoreDataDashboard?.validityDate != null ? (
+                      reduxStoreDataDashboard?.validityDate != null ? (
                         <div className="user-Location my-1">
                           <i className="fa-solid fa-calendar-days" /> Validity :
                           {reduxStoreDataDashboard.validityDate}
@@ -1721,6 +1817,15 @@ console.log("data",data.status);
                         to="#whatapp1"
                       >
                         <i class="fa fa-whatsapp"></i> Update Your Number
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className="nav-link Secure"
+                        data-bs-toggle="tab"
+                        to="#secure_info_tab"
+                      >
+                        <i className="fa-solid fa-user-shield"></i> Secure Info
                       </Link>
                     </li>
                   </ul>
@@ -1847,6 +1952,23 @@ console.log("data",data.status);
                             </h5>
                           </div>
                         </div>
+                        <div className="card">
+                          <div className="card-body">
+                            <h5 className="card-title d-flex justify-content-between">
+                              <span>Secure Info</span>
+                              <Link
+                                className="edit-link"
+                                to="#"
+                                onClick={(e) => {
+                                  openTheActiveTabs("Secure");
+                                }}
+                              >
+                                <i className="far fa-edit me-1" />
+                                Edit
+                              </Link>
+                            </h5>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     {/* /Personal Details */}
@@ -1856,12 +1978,11 @@ console.log("data",data.status);
                   <div id="bankAccount_tab" className="tab-pane fade Bank">
                     <div className="card">
                       <div className="card-body">
-                        <h5 className="card-title">Bank Account Details</h5>
-                        <br />
+                        <h5 className="card-title mb-4">Bank Account Details</h5>
                         <div className="row">
                           <div className="col-md-12 col-lg-12">
-                            <div className="row">
-                              <div className="form-group col-12 col-md-4 local-forms">
+                            <div className="row g-3">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Name as Per Bank
                                   <span className="login-danger">*</span>
@@ -1881,7 +2002,7 @@ console.log("data",data.status);
                                   </div>
                                 )}
                               </div>
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Account Number
                                   <span className="login-danger">*</span>
@@ -1903,7 +2024,7 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Confirm Account Number
                                   <span className="login-danger">*</span>
@@ -1941,7 +2062,7 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   IFSC Code
                                   <span className="login-danger">*</span>
@@ -1962,7 +2083,7 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Bank Name
                                   <span className="login-danger">*</span>
@@ -1983,7 +2104,7 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Branch
                                   <span className="login-danger">*</span>
@@ -2004,7 +2125,7 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Bank city{" "}
                                   <span className="login-danger">*</span>
@@ -2025,7 +2146,7 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                              <div className="form-group col-12 col-md-4 local-forms">
+                              <div className="form-group col-12 col-md-4 local-forms mb-3">
                                 <label>
                                   Mobile Number
                                   <span className="login-danger">*</span>
@@ -2048,7 +2169,7 @@ console.log("data",data.status);
                               </div>
 
                               {dashboarddata.isValid && (
-                                <div className="form-group col-12 col-md-4 local-forms">
+                                <div className="form-group col-12 col-md-4 local-forms mb-3">
                                   <label>
                                     Otp <span className="login-danger">*</span>
                                   </label>
@@ -2524,65 +2645,66 @@ console.log("data",data.status);
                               </div>
 
                               <div className="form-group col-12 col-sm-4 local-forms">
-  <label>
-    Residence Address
-    <span className="login-danger"> *</span>
-  </label>
-  <textarea
-    type="text"
-    className="form-control"
-    placeholder="Enter Residence Address"
-    onChange={handlechange}
-    value={userProfile.residenceAddress}
-    name="residenceAddress"
-  />
-  {userProfile.residenceAddresserror && (
-    <div className="text-danger">
-      {userProfile.residenceAddresserror}
-    </div>
-  )}
+                                <label>
+                                  Residence Address
+                                  <span className="login-danger"> *</span>
+                                </label>
+                                <textarea
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Enter Residence Address"
+                                  onChange={handlechange}
+                                  value={userProfile.residenceAddress}
+                                  name="residenceAddress"
+                                />
+                                {userProfile.residenceAddresserror && (
+                                  <div className="text-danger">
+                                    {userProfile.residenceAddresserror}
+                                  </div>
+                                )}
 
-  {/* ✅ Checkbox */}
-  <div className="form-check mt-2">
-    <input
-      type="checkbox"
-      className="form-check-input"
-      id="sameAddress"
-      checked={userProfile.sameAsResidence}
-      onChange={(e) => {
-        const isChecked = e.target.checked;
-        setUserProfile((prev) => ({
-          ...prev,
-          sameAsResidence: isChecked,
-          permanentAddress: isChecked ? prev.residenceAddress : "",
-        }));
-      }}
-    />
-     same as Residence address
-  </div>
-</div>
+                                {/* ✅ Checkbox */}
+                                <div className="form-check mt-2">
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    id="sameAddress"
+                                    checked={userProfile.sameAsResidence}
+                                    onChange={(e) => {
+                                      const isChecked = e.target.checked;
+                                      setUserProfile((prev) => ({
+                                        ...prev,
+                                        sameAsResidence: isChecked,
+                                        permanentAddress: isChecked
+                                          ? prev.residenceAddress
+                                          : "",
+                                      }));
+                                    }}
+                                  />
+                                  same as Residence address
+                                </div>
+                              </div>
 
-<div className="form-group col-12 col-sm-4 local-forms">
-  <label>
-    Permanent Address
-    <span className="login-danger">*</span>
-  </label>
-  <textarea
-    type="text"
-    className="form-control"
-    placeholder="Enter Permanent Address"
-    onChange={handlechange}
-    value={userProfile.permanentAddress}
-    name="permanentAddress"
-    disabled={userProfile.sameAsResidence} // Disable if checkbox is checked
-  />
-  {userProfile.permanentAddresserror && (
-    <div className="text-danger">
-      {userProfile.permanentAddresserror}
-    </div>
-  )}
-</div>
-
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Permanent Address
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <textarea
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Enter Permanent Address"
+                                  onChange={handlechange}
+                                  value={userProfile.permanentAddress}
+                                  name="permanentAddress"
+                                  disabled={userProfile.sameAsResidence} // Disable if checkbox is checked
+                                />
+                                {userProfile.permanentAddresserror && (
+                                  <div className="text-danger">
+                                    {userProfile.permanentAddresserror}
+                                  </div>
+                                )}
+                              </div>
 
                               {/* <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
@@ -2624,47 +2746,53 @@ console.log("data",data.status);
                                 )}
                               </div> */}
 
-<div className="form-group col-12 col-sm-4 local-forms">
-        <label>
-          Pin Code <span className="login-danger">*</span>
-        </label>
-        <input
-          type="number"
-          className="form-control"
-          placeholder="Enter Pincode"
-          maxLength={6}
-          onKeyPress={handleKeyPressNumber}
-          onChange={handlechange}
-          value={userProfile.pinCode}
-          name="pinCode"
-        />
-        {userProfile.pinCodeerror && (
-          <div className="text-danger">{userProfile.pinCodeerror}</div>
-        )}
-      </div>
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Pin Code{" "}
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  placeholder="Enter Pincode"
+                                  maxLength={6}
+                                  onKeyPress={handleKeyPressNumber}
+                                  onChange={handlechange}
+                                  value={userProfile.pinCode}
+                                  name="pinCode"
+                                />
+                                {userProfile.pinCodeerror && (
+                                  <div className="text-danger">
+                                    {userProfile.pinCodeerror}
+                                  </div>
+                                )}
+                              </div>
 
-      {/* Locality Dropdown */}
-      <div className="form-group col-12 col-sm-4 local-forms">
-        <label>
-          Locality <span className="login-danger">*</span>
-        </label>
-        <select
-          className="form-control"
-          name="locality"
-          value={userProfile.locality}
-          onChange={handlechange}
-        >
-          <option value="">Select Locality</option>
-          {localityOptions.map((loc, index) => (
-            <option key={index} value={loc}>
-              {loc}
-            </option>
-          ))}
-        </select>
-        {userProfile.localityerror && (
-          <div className="text-danger">{userProfile.localityerror}</div>
-        )}
-      </div>
+                              {/* Locality Dropdown */}
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Locality{" "}
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <select
+                                  className="form-control"
+                                  name="locality"
+                                  value={userProfile.locality}
+                                  onChange={handlechange}
+                                >
+                                  <option value="">Select Locality</option>
+                                  {localityOptions.map((loc, index) => (
+                                    <option key={index} value={loc}>
+                                      {loc}
+                                    </option>
+                                  ))}
+                                </select>
+                                {userProfile.localityerror && (
+                                  <div className="text-danger">
+                                    {userProfile.localityerror}
+                                  </div>
+                                )}
+                              </div>
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
                                   City <span className="login-danger">*</span>
@@ -2750,98 +2878,186 @@ console.log("data",data.status);
                               </div>
 
                               <div className="form-group">
-      <label><strong>Borrower Category</strong></label>
+                                <label>
+                                  <strong>Borrower Category</strong>
+                                </label>
 
-      {/* Radio Buttons Row */}
-      <div className="d-flex gap-4 mb-3">
-        <div className="form-check">
-          <input
-            type="radio"
-            name="category"
-            value="SALARIED"
-            className="form-check-input"
-            id="salaried"
-            onChange={handleCategoryChange}
-            checked={category === "SALARIED"}
-          />
-          <label className="form-check-label" htmlFor="salaried">Salaried</label>
-        </div>
-        <div className="form-check">
-          <input
-            type="radio"
-            name="category"
-            value="SELFEMPLOYED"
-            className="form-check-input"
-            id="selfEmployed"
-            onChange={handleCategoryChange}
-            checked={category === "SELFEMPLOYED"}
-          />
-          <label className="form-check-label" htmlFor="selfEmployed">Self Employed</label>
-        </div>
-        <div className="form-check">
-          <input
-            type="radio"
-            name="category"
-            value="STUDENT"
-            className="form-check-input"
-            id="student"
-            onChange={handleCategoryChange}
-            checked={category === "STUDENT"}
-          />
-          <label className="form-check-label" htmlFor="student">Student</label>
-        </div>
-      </div>
+                                {/* Radio Buttons Row */}
+                                <div className="d-flex gap-4 mb-3">
+                                  <div className="form-check">
+                                    <input
+                                      type="radio"
+                                      name="category"
+                                      value="SALARIED"
+                                      className="form-check-input"
+                                      id="salaried"
+                                      onChange={handleCategoryChange}
+                                      checked={category === "SALARIED"}
+                                    />
+                                    <label
+                                      className="form-check-label"
+                                      htmlFor="salaried"
+                                    >
+                                      Salaried
+                                    </label>
+                                  </div>
+                                  <div className="form-check">
+                                    <input
+                                      type="radio"
+                                      name="category"
+                                      value="SELFEMPLOYED"
+                                      className="form-check-input"
+                                      id="selfEmployed"
+                                      onChange={handleCategoryChange}
+                                      checked={category === "SELFEMPLOYED"}
+                                    />
+                                    <label
+                                      className="form-check-label"
+                                      htmlFor="selfEmployed"
+                                    >
+                                      Self Employed
+                                    </label>
+                                  </div>
+                                  <div className="form-check">
+                                    <input
+                                      type="radio"
+                                      name="category"
+                                      value="STUDENT"
+                                      className="form-check-input"
+                                      id="student"
+                                      onChange={handleCategoryChange}
+                                      checked={category === "STUDENT"}
+                                    />
+                                    <label
+                                      className="form-check-label"
+                                      htmlFor="student"
+                                    >
+                                      Student
+                                    </label>
+                                  </div>
+                                </div>
 
-      {/* Error Message */}
-      {error && <div className="text-danger mb-3">{error}</div>}
+                                {/* Error Message */}
+                                {error && (
+                                  <div className="text-danger mb-3">
+                                    {error}
+                                  </div>
+                                )}
 
-      {/* Conditional Input Fields in a Row */}
-      <div className="row">
-        {category === "SALARIED"  && (
-          <>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.totalExperience}/>
-            </div>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="company" placeholder="Company" className="form-control" onChange={handleChange} value={formData.company} />
-            </div>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="salary" placeholder="Salary" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.salary} />
-            </div>
-          </>
-        )}
+                                {/* Conditional Input Fields in a Row */}
+                                <div className="row">
+                                  {category === "SALARIED" && (
+                                    <>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="totalExperience"
+                                          placeholder="Total Experience"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          onKeyPress={handleKeyPressNumber}
+                                          value={formData.totalExperience}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="company"
+                                          placeholder="Company"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.company}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="salary"
+                                          placeholder="Salary"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          onKeyPress={handleKeyPressNumber}
+                                          value={formData.salary}
+                                        />
+                                      </div>
+                                    </>
+                                  )}
 
-        {category === "SELFEMPLOYED" && (
-          <>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="totalExperience" placeholder="Total Experience" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.totalExperience}/>
-            </div>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="company" placeholder="Organization" className="form-control" onChange={handleChange} value={formData.company} />
-            </div>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="salary" placeholder="Income" className="form-control" onChange={handleChange} onKeyPress={handleKeyPressNumber} value={formData.salary}/>
-            </div>
-          </>
-        )}
+                                  {category === "SELFEMPLOYED" && (
+                                    <>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="totalExperience"
+                                          placeholder="Total Experience"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          onKeyPress={handleKeyPressNumber}
+                                          value={formData.totalExperience}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="company"
+                                          placeholder="Organization"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.company}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="salary"
+                                          placeholder="Income"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          onKeyPress={handleKeyPressNumber}
+                                          value={formData.salary}
+                                        />
+                                      </div>
+                                    </>
+                                  )}
 
-        {category === "STUDENT" && (
-          <>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="country" placeholder="Country" className="form-control" onChange={handleChange} value={formData.country}/>
-            </div>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="universityName" placeholder="University Name" className="form-control" onChange={handleChange} value={formData.universityName}/>
-            </div>
-            <div className="col-md-4 mb-2">
-              <input type="text" name="universityLocation" placeholder="University Location" className="form-control" onChange={handleChange} value={formData.universityLocation}/>
-            </div>
-          </>
-        )}
-      </div>
+                                  {category === "STUDENT" && (
+                                    <>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="country"
+                                          placeholder="Country"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.country}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="universityName"
+                                          placeholder="University Name"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.universityName}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="universityLocation"
+                                          placeholder="University Location"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.universityLocation}
+                                        />
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
 
-      {/* <button className="btn btn-primary mt-3" onClick={handleSubmit}>Submit</button> */}
-    </div>
+                                {/* <button className="btn btn-primary mt-3" onClick={handleSubmit}>Submit</button> */}
+                              </div>
                               <div className="col-12 ">
                                 <button
                                   className="btn btn-primary col-md-4 col-12"
@@ -2885,11 +3101,10 @@ console.log("data",data.status);
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
-
                                 </div>
 
                                 {kyc.PanCard != undefined &&
-                                  kyc.PanCard != "" ? (
+                                kyc.PanCard != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.PanCard.fileName}</small>
@@ -2898,6 +3113,38 @@ console.log("data",data.status);
                                   <h6 className="settings-size text-warning">
                                     <i className="fa-solid fa-upload mx-lg-1 "></i>
                                     <small>Upload Pan</small>
+                                  </h6>
+                                )}
+                              </div>
+                              <div className="form-group col-12 col-md-6">
+                                <p className="settings-label">
+                                  Credit Report <span className="star-red">*</span>
+                                </p>
+                                <div className="settings-btn">
+                                  <input
+                                    type="file"
+                                    name="creditReport"
+                                    id="creditReport"
+                                    className="hide-input"
+                                    onChange={handlefileupload}
+                                  />
+                                  <label htmlFor="creditReport" className="upload">
+                                    <i className="feather-upload">
+                                      <FeatherIcon icon="upload" />
+                                    </i>
+                                  </label>
+                                </div>
+
+                                {kyc.creditReport != undefined &&
+                                kyc.creditReport != "" ? (
+                                  <h6 className="settings-size text-success">
+                                    <i className="fa-solid fa-check mx-lg-1 "></i>
+                                    <small>{kyc.creditReport.fileName}</small>
+                                  </h6>
+                                ) : (
+                                  <h6 className="settings-size text-warning">
+                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                    <small>Upload Credit Report</small>
                                   </h6>
                                 )}
                               </div>
@@ -2926,7 +3173,7 @@ console.log("data",data.status);
                                   </label>
                                 </div>
                                 {kyc.CHEQUELEAF != undefined &&
-                                  kyc.CHEQUELEAF != "" ? (
+                                kyc.CHEQUELEAF != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.CHEQUELEAF.fileName}</small>
@@ -2938,10 +3185,11 @@ console.log("data",data.status);
                                   </h6>
                                 )}
                               </div>
-                           
-                           <div className="form-group col-12 col-md-6">
+
+                              <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Bank Statement (6 Months)<span className="star-red">*</span>
+                                  Bank Statement (6 Months)
+                                  <span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
@@ -2951,16 +3199,18 @@ console.log("data",data.status);
                                     className="hide-input"
                                     onChange={handlefileupload}
                                   />
-                                  <label htmlFor="bankStatment" className="upload">
+                                  <label
+                                    htmlFor="bankStatment"
+                                    className="upload"
+                                  >
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
-
                                 </div>
 
                                 {kyc.bankStatement != undefined &&
-                                  <kyc className="bankStatement"></kyc> != "" ? (
+                                <kyc className="bankStatement"></kyc> != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.bankStatement.fileName}</small>
@@ -2972,10 +3222,11 @@ console.log("data",data.status);
                                   </h6>
                                 )}
                               </div>
-                            
-                            <div className="form-group col-12 col-md-6">
+
+                              <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Latest Pay slips (latest payslips 6 months)<span className="star-red">*</span>
+                                  Latest Pay slips (latest payslips 6 months)
+                                  <span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
@@ -2990,10 +3241,9 @@ console.log("data",data.status);
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
-
                                 </div>
                                 {kyc.paySlips != undefined &&
-                                  kyc.paySlips != "" ? (
+                                kyc.paySlips != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.paySlips.fileName}</small>
@@ -3006,7 +3256,6 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                             
                               {/* <div className="form-group col-12 col-md-3">
                                 <button className="btn btn-success" onClick={() => handleviewCredit()}>View Credit Report</button>
                               </div>
@@ -3018,22 +3267,22 @@ console.log("data",data.status);
                                 <h6>Document Password : <span style={{ fontWeight: '300' }}> {uploddata.password}</span></h6>
                                 <h6>Risk Category : <span style={{ fontWeight: '300' }}> {uploddata.riskCategory != null ? uploddata.riskCategory : "D"}</span></h6>
                               </>} */}
-
                             </div>
                           </div>
                         </div>
 
-
-
-<h5 className="card-title">Address Proof Documents</h5>
-<span className="settings-label">(NOTE: Upload any one of the documents given below)</span>
+                        <h5 className="card-title">Address Proof Documents</h5>
+                        <span className="settings-label">
+                          (NOTE: Upload any one of the documents given below)
+                        </span>
 
                         <div className="row">
                           <div className="col-md-12 col-lg-12 row">
                             <div className="row mt-3">
                               <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Driving Licence <span className="star-red">*</span>
+                                  Driving Licence{" "}
+                                  <span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
@@ -3043,16 +3292,18 @@ console.log("data",data.status);
                                     className="hide-input"
                                     onChange={handlefileupload}
                                   />
-                                  <label htmlFor="drivingLicence" className="upload">
+                                  <label
+                                    htmlFor="drivingLicence"
+                                    className="upload"
+                                  >
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
-
                                 </div>
 
                                 {kyc.DRIVINGLICENCE != undefined &&
-                                  kyc.DRIVINGLICENCE != "" ? (
+                                kyc.DRIVINGLICENCE != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.DRIVINGLICENCE.fileName}</small>
@@ -3079,17 +3330,14 @@ console.log("data",data.status);
                                     className="hide-input"
                                     onChange={handlefileupload}
                                   />
-                                  <label
-                                    htmlFor="VOTERID"
-                                    className="upload"
-                                  >
+                                  <label htmlFor="VOTERID" className="upload">
                                     <i className="feather-upload">
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
                                 </div>
                                 {kyc.VOTERID != undefined &&
-                                  kyc.VOTERID != "" ? (
+                                kyc.VOTERID != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.VOTERID.fileName}</small>
@@ -3102,17 +3350,22 @@ console.log("data",data.status);
                                 )}
                               </div>
 
-                            {userProfile.studentOrNot==true?
-                            <>
-<h5 className="card-title">Educational and University Documents</h5>
-<span className="settings-label">(NOTE: All the documents are mandotary and are in pdf only.)</span>
-</>
-:null}
-
+                              {userProfile.studentOrNot == true ? (
+                                <>
+                                  <h5 className="card-title">
+                                    Educational and University Documents
+                                  </h5>
+                                  <span className="settings-label">
+                                    (NOTE: All the documents are mandotary and
+                                    are in pdf only.)
+                                  </span>
+                                </>
+                              ) : null}
 
                               <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
-                                  Aadhar Card <span className="star-red">*</span>
+                                  Aadhar Card{" "}
+                                  <span className="star-red">*</span>
                                 </p>
                                 <div className="settings-btn">
                                   <input
@@ -3127,11 +3380,9 @@ console.log("data",data.status);
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
-
                                 </div>
 
-                                {kyc.aadhar != undefined &&
-                                  kyc.aadhar != "" ? (
+                                {kyc.aadhar != undefined && kyc.aadhar != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.aadhar.fileName}</small>
@@ -3142,10 +3393,9 @@ console.log("data",data.status);
                                     <small>Upload Aadhar</small>
                                   </h6>
                                 )}
-                                </div>
+                              </div>
 
-
-<div className="form-group col-12 col-md-6">
+                              <div className="form-group col-12 col-md-6">
                                 <p className="settings-label">
                                   Passport <span className="star-red">*</span>
                                 </p>
@@ -3162,11 +3412,10 @@ console.log("data",data.status);
                                       <FeatherIcon icon="upload" />
                                     </i>
                                   </label>
-
                                 </div>
 
                                 {kyc.Passport != undefined &&
-                                  kyc.Passport != "" ? (
+                                kyc.Passport != "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.Passport.fileName}</small>
@@ -3177,286 +3426,200 @@ console.log("data",data.status);
                                     <small>Upload Passport</small>
                                   </h6>
                                 )}
-                                </div>
+                              </div>
 
+                              {userProfile.studentOrNot == true ? (
+                                <>
+                                  <div className="form-group col-12 col-md-6">
+                                    <p className="settings-label">
+                                      Tenth <span className="star-red">*</span>
+                                    </p>
+                                    <div className="settings-btn">
+                                      <input
+                                        type="file"
+                                        name="TENTH"
+                                        id="tenth"
+                                        className="hide-input"
+                                        onChange={handlefileupload}
+                                      />
+                                      <label htmlFor="tenth" className="upload">
+                                        <i className="feather-upload">
+                                          <FeatherIcon icon="upload" />
+                                        </i>
+                                      </label>
+                                    </div>
 
-{userProfile.studentOrNot==true?
-<>
+                                    {kyc.tenth != undefined &&
+                                    kyc.tenth != "" ? (
+                                      <h6 className="settings-size text-success">
+                                        <i className="fa-solid fa-check mx-lg-1 "></i>
+                                        <small>{kyc.tenth.fileName}</small>
+                                      </h6>
+                                    ) : (
+                                      <h6 className="settings-size text-warning">
+                                        <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                        <small>Upload Tenth</small>
+                                      </h6>
+                                    )}
+                                  </div>
 
-<div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  Tenth <span className="star-red">*</span>
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="TENTH"
-                                    id="tenth"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label htmlFor="tenth" className="upload">
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
+                                  <div className="form-group col-12 col-md-6">
+                                    <p className="settings-label">
+                                      Intermediate{" "}
+                                      <span className="star-red">*</span>
+                                    </p>
+                                    <div className="settings-btn">
+                                      <input
+                                        type="file"
+                                        name="INTER"
+                                        id="inter"
+                                        className="hide-input"
+                                        onChange={handlefileupload}
+                                      />
+                                      <label htmlFor="inter" className="upload">
+                                        <i className="feather-upload">
+                                          <FeatherIcon icon="upload" />
+                                        </i>
+                                      </label>
+                                    </div>
 
-                                </div>
+                                    {kyc.intermediate != undefined &&
+                                    kyc.intermediate != "" ? (
+                                      <h6 className="settings-size text-success">
+                                        <i className="fa-solid fa-check mx-lg-1 "></i>
+                                        <small>
+                                          {kyc.intermediate.fileName}
+                                        </small>
+                                      </h6>
+                                    ) : (
+                                      <h6 className="settings-size text-warning">
+                                        <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                        <small>Upload Intermediate</small>
+                                      </h6>
+                                    )}
+                                  </div>
 
+                                  <div className="form-group col-12 col-md-6">
+                                    <p className="settings-label">
+                                      Graduation{" "}
+                                      <span className="star-red">*</span>
+                                    </p>
+                                    <div className="settings-btn">
+                                      <input
+                                        type="file"
+                                        name="GRADUATION"
+                                        id="graduation"
+                                        className="hide-input"
+                                        onChange={handlefileupload}
+                                      />
+                                      <label
+                                        htmlFor="graduation"
+                                        className="upload"
+                                      >
+                                        <i className="feather-upload">
+                                          <FeatherIcon icon="upload" />
+                                        </i>
+                                      </label>
+                                    </div>
 
-                                {kyc.tenth != undefined &&
-                                  kyc.tenth != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.tenth.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Tenth</small>
-                                  </h6>
-                                )}
-                                </div>
+                                    {kyc.graduation != undefined &&
+                                    kyc.graduation != "" ? (
+                                      <h6 className="settings-size text-success">
+                                        <i className="fa-solid fa-check mx-lg-1 "></i>
+                                        <small>{kyc.graduation.fileName}</small>
+                                      </h6>
+                                    ) : (
+                                      <h6 className="settings-size text-warning">
+                                        <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                        <small>Upload Graduation</small>
+                                      </h6>
+                                    )}
+                                  </div>
 
-<div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  Intermediate <span className="star-red">*</span>
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="INTER"
-                                    id="inter"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label htmlFor="inter" className="upload">
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
+                                  <div className="form-group col-12 col-md-6">
+                                    <p className="settings-label">
+                                      University of Offer letter{" "}
+                                      <span className="star-red">*</span>
+                                    </p>
+                                    <div className="settings-btn">
+                                      <input
+                                        type="file"
+                                        name="UNIVERSITYOFFERLETTER"
+                                        id="offerletter"
+                                        className="hide-input"
+                                        onChange={handlefileupload}
+                                      />
+                                      <label
+                                        htmlFor="offerletter"
+                                        className="upload"
+                                      >
+                                        <i className="feather-upload">
+                                          <FeatherIcon icon="upload" />
+                                        </i>
+                                      </label>
+                                    </div>
 
-                                </div>
+                                    {kyc.offerletter != undefined &&
+                                    kyc.offerletter != "" ? (
+                                      <h6 className="settings-size text-success">
+                                        <i className="fa-solid fa-check mx-lg-1 "></i>
+                                        <small>
+                                          {kyc.offerletter.fileName}
+                                        </small>
+                                      </h6>
+                                    ) : (
+                                      <h6 className="settings-size text-warning">
+                                        <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                        <small>
+                                          Upload University of Offer letter
+                                        </small>
+                                      </h6>
+                                    )}
+                                  </div>
 
-                                {kyc.intermediate != undefined &&
-                                  kyc.intermediate != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.intermediate.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Intermediate</small>
-                                  </h6>
-                                )}
-                                </div>
+                                  <div className="form-group col-12 col-md-6">
+                                    <p className="settings-label">
+                                      University of fee receipt{" "}
+                                      <span className="star-red">*</span>
+                                    </p>
+                                    <div className="settings-btn">
+                                      <input
+                                        type="file"
+                                        name="FEE"
+                                        id="feereceipt"
+                                        className="hide-input"
+                                        onChange={handlefileupload}
+                                      />
+                                      <label
+                                        htmlFor="feereceipt"
+                                        className="upload"
+                                      >
+                                        <i className="feather-upload">
+                                          <FeatherIcon icon="upload" />
+                                        </i>
+                                      </label>
+                                    </div>
 
-<div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  Graduation <span className="star-red">*</span>
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="GRADUATION"
-                                    id="graduation"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label htmlFor="graduation" className="upload">
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
-
-                                </div>
-
-                                {kyc.graduation != undefined &&
-                                  kyc.graduation != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.graduation.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload Graduation</small>
-                                  </h6>
-                                )}
-                                </div>
-
-<div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  University of Offer letter <span className="star-red">*</span>
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="UNIVERSITYOFFERLETTER"
-                                    id="offerletter"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label htmlFor="offerletter" className="upload">
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
-
-                                </div>
-
-                                {kyc.offerletter != undefined &&
-                                  kyc.offerletter != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.offerletter.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload University of Offer letter</small>
-                                  </h6>
-                                )}
-                                </div>
-
-
-<div className="form-group col-12 col-md-6">
-                                <p className="settings-label">
-                                  University of fee receipt <span className="star-red">*</span>
-                                </p>
-                                <div className="settings-btn">
-                                  <input
-                                    type="file"
-                                    name="FEE"
-                                    id="feereceipt"
-                                    className="hide-input"
-                                    onChange={handlefileupload}
-                                  />
-                                  <label htmlFor="feereceipt" className="upload">
-                                    <i className="feather-upload">
-                                      <FeatherIcon icon="upload" />
-                                    </i>
-                                  </label>
-
-                                </div>
-
-                                {kyc.feereceipt != undefined &&
-                                  kyc.feereceipt != "" ? (
-                                  <h6 className="settings-size text-success">
-                                    <i className="fa-solid fa-check mx-lg-1 "></i>
-                                    <small>{kyc.feereceipt.fileName}</small>
-                                  </h6>
-                                ) : (
-                                  <h6 className="settings-size text-warning">
-                                    <i className="fa-solid fa-upload mx-lg-1 "></i>
-                                    <small>Upload University of Fee receipt</small>
-                                  </h6>
-                                )}
-                                </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</>
-:null}
-
-
-
-
-
-
-
-
-
-                             
+                                    {kyc.feereceipt != undefined &&
+                                    kyc.feereceipt != "" ? (
+                                      <h6 className="settings-size text-success">
+                                        <i className="fa-solid fa-check mx-lg-1 "></i>
+                                        <small>{kyc.feereceipt.fileName}</small>
+                                      </h6>
+                                    ) : (
+                                      <h6 className="settings-size text-warning">
+                                        <i className="fa-solid fa-upload mx-lg-1 "></i>
+                                        <small>
+                                          Upload University of Fee receipt
+                                        </small>
+                                      </h6>
+                                    )}
+                                  </div>
+                                </>
+                              ) : null}
                             </div>
                           </div>
                         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                        
                       </div>
                     </div>
                   </div>
@@ -3489,15 +3652,16 @@ console.log("data",data.status);
                                     maxLength={11}
                                   />
 
-                                  {whatappnumber.whatapperror && <div className="error">{whatappnumber.whatapperror}</div>}
+                                  {whatappnumber.whatapperror && (
+                                    <div className="error">
+                                      {whatappnumber.whatapperror}
+                                    </div>
+                                  )}
                                   <div className="form-group mt-2">
                                     <button
                                       className="btn btn-primary btn-block"
                                       type="submit"
-
-                                      onClick={() =>
-
-                                        sendWhatsappOtpapi1()}
+                                      onClick={() => sendWhatsappOtpapi1()}
                                       disabled={valid}
                                     >
                                       SEND OTP
@@ -3515,7 +3679,12 @@ console.log("data",data.status);
                                     maxLength={4}
                                     placeholder="Enter 4 Digit otp"
                                     onChange={handlechangewhatapp}
-                                  />{whatappnumber.otperror && <div className="error">{whatappnumber.otperror}</div>}
+                                  />
+                                  {whatappnumber.otperror && (
+                                    <div className="error">
+                                      {whatappnumber.otperror}
+                                    </div>
+                                  )}
 
                                   <div className="form-group mt-2 formdisplay">
                                     <button
@@ -3537,6 +3706,267 @@ console.log("data",data.status);
                               </>
                             )}
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="secure_info_tab" className="tab-pane fade Secure">
+                    <div className="card">
+                      <div className="card-body">
+                        <h5 className="card-title mb-4">Secure Info</h5>
+                        <div className="row g-3">
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>Aadhar Password</label>
+                            <div className="position-relative">
+                              <input
+                                type={
+                                  secureInfoVisibility.aadharPassword
+                                    ? "text"
+                                    : "password"
+                                }
+                                className="form-control pe-5"
+                                name="aadharPassword"
+                                value={secureInfo.aadharPassword}
+                                onChange={handleSecureInfoChange}
+                                placeholder="Enter aadhar password"
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                className="btn position-absolute end-0 top-50 translate-middle-y p-0 pe-2 text-secondary border-0 bg-transparent shadow-none"
+                                onClick={() =>
+                                  toggleSecureInfoVisibility("aadharPassword")
+                                }
+                                aria-label={
+                                  secureInfoVisibility.aadharPassword
+                                    ? "Hide Aadhar password"
+                                    : "Show Aadhar password"
+                                }
+                              >
+                                <FeatherIcon
+                                  icon={
+                                    secureInfoVisibility.aadharPassword
+                                      ? "eye"
+                                      : "eye-off"
+                                  }
+                                  size={20}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>PAN Password</label>
+                            <div className="position-relative">
+                              <input
+                                type={
+                                  secureInfoVisibility.panPassword
+                                    ? "text"
+                                    : "password"
+                                }
+                                className="form-control pe-5"
+                                name="panPassword"
+                                value={secureInfo.panPassword}
+                                onChange={handleSecureInfoChange}
+                                placeholder="Enter PAN password"
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                className="btn position-absolute end-0 top-50 translate-middle-y p-0 pe-2 text-secondary border-0 bg-transparent shadow-none"
+                                onClick={() =>
+                                  toggleSecureInfoVisibility("panPassword")
+                                }
+                                aria-label={
+                                  secureInfoVisibility.panPassword
+                                    ? "Hide PAN password"
+                                    : "Show PAN password"
+                                }
+                              >
+                                <FeatherIcon
+                                  icon={
+                                    secureInfoVisibility.panPassword
+                                      ? "eye"
+                                      : "eye-off"
+                                  }
+                                  size={20}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>Bank Statement Password</label>
+                            <div className="position-relative">
+                              <input
+                                type={
+                                  secureInfoVisibility.bankStatementPassword
+                                    ? "text"
+                                    : "password"
+                                }
+                                className="form-control pe-5"
+                                name="bankStatementPassword"
+                                value={secureInfo.bankStatementPassword}
+                                onChange={handleSecureInfoChange}
+                                placeholder="Enter bank statement password"
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                className="btn position-absolute end-0 top-50 translate-middle-y p-0 pe-2 text-secondary border-0 bg-transparent shadow-none"
+                                onClick={() =>
+                                  toggleSecureInfoVisibility(
+                                    "bankStatementPassword"
+                                  )
+                                }
+                                aria-label={
+                                  secureInfoVisibility.bankStatementPassword
+                                    ? "Hide bank statement password"
+                                    : "Show bank statement password"
+                                }
+                              >
+                                <FeatherIcon
+                                  icon={
+                                    secureInfoVisibility.bankStatementPassword
+                                      ? "eye"
+                                      : "eye-off"
+                                  }
+                                  size={20}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>Company Address</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="companyAddress"
+                              value={secureInfo.companyAddress}
+                              onChange={handleSecureInfoChange}
+                              placeholder="Enter company address"
+                            />
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>Designation</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="designation"
+                              value={secureInfo.designation}
+                              onChange={handleSecureInfoChange}
+                              placeholder="Enter designation"
+                            />
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>CIBIL Score</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="cibilScore"
+                              value={secureInfo.cibilScore}
+                              onChange={handleSecureInfoChange}
+                              placeholder="Enter CIBIL score"
+                            />
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>CIBIL Password</label>
+                            <div className="position-relative">
+                              <input
+                                type={
+                                  secureInfoVisibility.cibilPassword
+                                    ? "text"
+                                    : "password"
+                                }
+                                className="form-control pe-5"
+                                name="cibilPassword"
+                                value={secureInfo.cibilPassword}
+                                onChange={handleSecureInfoChange}
+                                placeholder="Enter CIBIL password"
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                className="btn position-absolute end-0 top-50 translate-middle-y p-0 pe-2 text-secondary border-0 bg-transparent shadow-none"
+                                onClick={() =>
+                                  toggleSecureInfoVisibility("cibilPassword")
+                                }
+                                aria-label={
+                                  secureInfoVisibility.cibilPassword
+                                    ? "Hide CIBIL password"
+                                    : "Show CIBIL password"
+                                }
+                              >
+                                <FeatherIcon
+                                  icon={
+                                    secureInfoVisibility.cibilPassword
+                                      ? "eye"
+                                      : "eye-off"
+                                  }
+                                  size={20}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="form-group col-12 col-md-4 local-forms mb-3">
+                            <label>Payslips Password</label>
+                            <div className="position-relative">
+                              <input
+                                type={
+                                  secureInfoVisibility.payslipsPassword
+                                    ? "text"
+                                    : "password"
+                                }
+                                className="form-control pe-5"
+                                name="payslipsPassword"
+                                value={secureInfo.payslipsPassword}
+                                onChange={handleSecureInfoChange}
+                                placeholder="Enter payslips password"
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                className="btn position-absolute end-0 top-50 translate-middle-y p-0 pe-2 text-secondary border-0 bg-transparent shadow-none"
+                                onClick={() =>
+                                  toggleSecureInfoVisibility("payslipsPassword")
+                                }
+                                aria-label={
+                                  secureInfoVisibility.payslipsPassword
+                                    ? "Hide payslips password"
+                                    : "Show payslips password"
+                                }
+                              >
+                                <FeatherIcon
+                                  icon={
+                                    secureInfoVisibility.payslipsPassword
+                                      ? "eye"
+                                      : "eye-off"
+                                  }
+                                  size={20}
+                                />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="form-group col-12 col-md-8 local-forms mb-3">
+                            <label>Comments</label>
+                            <textarea
+                              className="form-control"
+                              name="comments"
+                              rows={3}
+                              value={secureInfo.comments}
+                              onChange={handleSecureInfoChange}
+                              placeholder="Enter comments"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="text-start mt-3">
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={saveSecureInfo}
+                          >
+                            Save Details
+                          </button>
                         </div>
                       </div>
                     </div>

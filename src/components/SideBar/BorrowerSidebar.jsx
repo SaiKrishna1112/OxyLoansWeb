@@ -127,6 +127,97 @@ const BorrowerSidebar = (props) => {
 
                 <li
                   className={`${
+                    "/borrowerLoanRequestCreate" === pathName ||
+                    "/borrowerRequestAmount" === pathName ||
+                    "/borrowerLoansInitiated" === pathName ||
+                    "/borrowerDisbursementAmount" === pathName ||
+                    "/borrowerDisbursementInterestAmount" === pathName
+                      ? "active submenu"
+                      : "submenu"
+                  }`}
+                >
+                  <Link
+                    to="#"
+                    className={
+                      isSideMenu == "borrowerLoanRequests" ? "subdrop" : ""
+                    }
+                    onClick={() =>
+                      toggleSidebar(
+                        isSideMenu == "borrowerLoanRequests"
+                          ? ""
+                          : "borrowerLoanRequests",
+                      )
+                    }
+                  >
+                    <i className="fa-solid fa-hand-holding-dollar"></i>
+                    <span> Loan Applications </span>
+                    <span className="menu-arrow"></span>
+                  </Link>
+                  {isSideMenu == "borrowerLoanRequests" ? (
+                    <ul
+                      style={{
+                        display:
+                          isSideMenu == "borrowerLoanRequests"
+                            ? "block"
+                            : "none",
+                      }}
+                    >
+                      <li>
+                        <Link
+                          to="/borrowerLoanRequestCreate"
+                          className={`${
+                            "/borrowerLoanRequestCreate" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Create Application
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/borrowerRequestAmount"
+                          className={`${
+                            "/borrowerRequestAmount" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Funding Request
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/borrowerLoansInitiated"
+                          className={`${
+                            "/borrowerLoansInitiated" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Offered Amount
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/borrowerDisbursementAmount"
+                          className={`${
+                            "/borrowerDisbursementAmount" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Disbursements
+                        </Link>
+                      </li>
+                    </ul>
+                  ) : (
+                    ""
+                  )}
+                </li>
+
+                <li
+                  className={`${
                     "/borrowerenach" === pathName ||
                     "/borrowerloanstatement" === pathName ||
                     "/borrowerAgreedLoans" === pathName ||

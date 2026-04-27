@@ -23,6 +23,9 @@ import Emicalculator from "./components/pages/Oxyloans/Lender/Emicalculator";
 import LoadwaletThroughQr from "./components/pages/Oxyloans/Lender/LoadwaletThroughQr";
 import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/LoadwalletThroughVirtualAccount";
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
+import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
+import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
+import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
 import MyEarnings from "./components/pages/Oxyloans/Lender/MyEarnings";
@@ -45,6 +48,8 @@ import Withdrawdealfromwallet from "./components/pages/Oxyloans/Lender/Withdrawd
 import Writetous from "./components/pages/Oxyloans/Lender/Writetous";
 import WithdrawalFromWallet from "./components/pages/Oxyloans/Lender/WithdrawalFromWallet";
 import WithdrawdealFounds from "./components/pages/Oxyloans/Lender/WithdrawdealFounds";
+import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges";
+import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees";
 import MembershipHistory from "./components/pages/Oxyloans/Lender/MembershipHistory";
 import Mytransactions from "./components/pages/Oxyloans/Lender/Mytransactions";
 import WalletToWalletHistory from "./components/pages/Oxyloans/Lender/WalletToWalletHistory";
@@ -125,6 +130,13 @@ import EquityDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EquityD
 import EscrowsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EscrowsDeals.jsx";
 import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
 import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";
+
+import BorrowerLoanRequestCreate from "./components/pages/Oxyloans/Borrower/BorrowerLoanRequestCreate.jsx";
+import BorrowerRequestAmount from "./components/pages/Oxyloans/Borrower/BorrowerRequestAmount.jsx";
+import BorrowerLoansInitiated from "./components/pages/Oxyloans/Borrower/BorrowerLoansInitiated.jsx";
+import BorrowerDisbursementAmount from "./components/pages/Oxyloans/Borrower/BorrowerDisbursementAmount.jsx";
+import BorrowerDisbursementInterestAmount from "./components/pages/Oxyloans/Borrower/BorrowerDisbursementInterestAmount.jsx";
+import BorrowerNearbyLendersPage from "./components/pages/Oxyloans/Borrower/BorrowerNearbyLendersPage.jsx";
 // ********************BORROWER MODULE    ROUTES END ************************** //
 
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
@@ -241,6 +253,9 @@ const AppRouter = () => {
         />
         <Route path="/myEarnings" element={<MyEarnings />} />
         <Route path="/loanListings" element={<LoanListings />} />
+        <Route path="/proximityLoans" element={<ProximityLoans />} />
+        <Route path="/offerGivenList" element={<OfferGivenList />} />
+        <Route path="/disburseLoans" element={<DisburseLoans />} />
         <Route path="/WalletToWallet" element={<WalletToWallet />} />
         <Route
           path="/withdrawalFromWallet"
@@ -311,6 +326,12 @@ const AppRouter = () => {
         <Route path="/patnerdashboard" element={<Patnerdashboard />} />
         <Route path="/partnerrequestInfo" element={<PartnerrequestInfo />} />
         <Route path="/Partneraccept" element={<Partneraccept />} />
+        <Route path="/borrowerLoanRequestCreate" element={<BorrowerLoanRequestCreate />} />
+        <Route path="/borrowerRequestAmount" element={<BorrowerRequestAmount />} />
+        <Route path="/borrowerLoansInitiated" element={<BorrowerLoansInitiated />} />
+        <Route path="/borrowerDisbursementAmount" element={<BorrowerDisbursementAmount />} />
+        <Route path="/borrowerDisbursementInterestAmount/:borrowerId/:loanId/:id" element={<BorrowerDisbursementInterestAmount />} />
+        <Route path="/nearbyleders" element={<BorrowerNearbyLendersPage />} />
         {/* ******************** BORROWER MODULE ROUTES END **************************  */}
 
         {/* ******************** Admin MODULE ROUTES Start **************************  */}
@@ -361,6 +382,8 @@ const AppRouter = () => {
         <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
 
         <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
+        <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
+        <Route path="/adminProcessingFees" element={<ProcessingFees />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

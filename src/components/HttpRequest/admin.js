@@ -788,3 +788,49 @@ export const fetchTopLenders = async ()=>{
   );
   return response;
 }
+
+export const getBorrowerCharges = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerCharges`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const updateBorrowerCharges = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateBorrowerCharges`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getAdminUpdateProcessingFees = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getAdminUpdateProcessingFees`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const adminUpdateProcessingFee = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `adminUpdateProcessingFee`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};

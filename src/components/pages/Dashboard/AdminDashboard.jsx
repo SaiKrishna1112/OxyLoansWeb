@@ -14,6 +14,7 @@ import {
   regular_Api,
   getNoDealsParticipated,
   handelexcelsForNewLenderDashboard,
+  setLatLong,
 } from "../../HttpRequest/afterlogin";
 import { useNavigate } from "react-router-dom";
 
@@ -415,7 +416,7 @@ const AdminDashboard = () => {
     return () => {};
   }, [showParticipatedDeals]);
 
-  useEffect(() => {
+  useEffect( () => {
     const profileskip = localStorage.getItem("profileskip");
     if (profileskip) {
     } else {
@@ -424,6 +425,21 @@ const AdminDashboard = () => {
         const { kycStatus, bankDetailsInfo, personalDetailsInfo, groupName } =
           profileData;
         const isvalidity = membershipdata.ismembershiptrue;
+
+        // if(profileData.latitude === null || profileData.latitude === undefined || profileData.latitude === "" || profileData.longitude === null || profileData.longitude === undefined || profileData.longitude === ""){
+                 try{
+                     setLatLong().then((response) => {
+                      if (response.status === 200) {
+                        console.log("Geolocation data updated successfully");
+                      }else {
+                        console.error("Failed to update geolocation data");
+                      }
+                    });
+                 }
+                  catch(error){
+                    console.error("Error fetching geolocation data:", error);
+                  }
+        // }
 
         if (
           kycStatus === false &&
@@ -896,7 +912,7 @@ const AdminDashboard = () => {
             
 
             <div className="row">
-              <div className="col-md-12 col-lg-12">
+              <div className="col-md-6 col-lg-6">
                 <div className="card">
                   <div className="card-body">
                     <span>
@@ -928,6 +944,25 @@ const AdminDashboard = () => {
                     </span>
                   </div>
                 </div>
+              </div>
+              <div className="col-md-6 col-lg-6">
+                <div className="card">
+                  <div className="card-body">
+                    <span>
+                      <span className="text-bold text-success mx-lg-1">
+                        <strong>Lend Smarter with Proximity Loans:</strong>
+                      </span>
+                          <span>
+                            Connect with nearby borrowers and diversify your investments.
+                            <span className="badge bg-info mx-2">
+                              <Link to="/proximityLoans" className="text-white">
+                                Browse Loans
+                              </Link>
+                            </span>
+                          </span>
+                    </span>
+                    </div>
+                    </div>
               </div>
             </div>
 

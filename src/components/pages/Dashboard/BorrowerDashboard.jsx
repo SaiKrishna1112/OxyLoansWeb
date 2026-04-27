@@ -1,4 +1,4 @@
-import React, { useState ,useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
@@ -31,9 +31,9 @@ const BorrowerDashboard = () => {
   const [show, setShow] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
-  const[profileDetails,setProfileDetails]=useState();
-    const [customCity, setCustomCity] = useState('');
-  
+  const [profileDetails, setProfileDetails] = useState();
+  const [customCity, setCustomCity] = useState("");
+
   const navigate = useNavigate();
   const [treemap, Settreemap] = useState({
     series: [
@@ -113,8 +113,6 @@ const BorrowerDashboard = () => {
     },
   });
 
-
-
   const [data, setdata] = useState({
     series: [
       {
@@ -151,28 +149,54 @@ const BorrowerDashboard = () => {
       },
     },
   });
-useEffect(() => {
-  getCall();   
-},[])
-  const getCall=()=>{
-axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
-  headers:{
-    accessToken: sessionStorage.getItem('accessToken'),
-  }
-})
-.then((response) => {
-  console.log("response", response);
-   setProfileDetails(response.data);
-   if(response.data.city == null || response.data.city == ""){
-    setShow(true);
-   }
+  useEffect(() => {
+    getCall();
+  }, []);
+  const triggerSavingGoogleDistance = async (userId) => {
+    try {
+      await axios.post(
+        `${base_url}savingGoogleDistance`,
+        {
+          userId: String(userId),
+        },
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        },
+      );
+    } catch (error) {
+      // Silent background call - no user popup required.
+      console.log("savingGoogleDistance api failed", error);
+    }
+  };
 
-})
-.catch((error) => {
-  console.log("error",error)
-})
-  }
-
+  const getCall = () => {
+    axios
+      .get(`${base_url}personal/${sessionStorage.getItem("userId")}`, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
+      .then((response) => {
+        console.log("response", response);
+        setProfileDetails(response.data);
+        if (
+          response?.data?.latitude == null ||
+          response?.data?.longitude == null
+        ) {
+          triggerSavingGoogleDistance(
+            response?.data?.userId || sessionStorage.getItem("userId"),
+          );
+        }
+        if (response.data.city == null || response.data.city == "") {
+          setShow(true);
+        }
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
+  };
 
   const handleCityChange = (event) => {
     if (event.target.value === "") {
@@ -189,25 +213,21 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
     // handleClose();
-      if(selectedCity!="Others"){
-    var data={
-          city: selectedCity,
-        }
-      }else{
-        var data={
-          city:customCity
-        }
-      }
+    if (selectedCity != "Others") {
+      var data = {
+        city: selectedCity,
+      };
+    } else {
+      var data = {
+        city: customCity,
+      };
+    }
     axios
-      .post(
-        `${base_url}${userId}/city`,
-        data,
-        {
-          headers: {
-            accessToken: sessionStorage.getItem("accessToken"),
-          },
-        }
-      )
+      .post(`${base_url}${userId}/city`, data, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
       .then(function (response) {
         console.log("City saved successfully:", response.data);
         setShow(false);
@@ -268,12 +288,12 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                     <h3 className="page-title">
                       Welcome {""}
                       {getreducerprofiledata?.length !== 0
-                        ? getreducerprofiledata?.firstName
+                        ? (getreducerprofiledata?.firstName
                             .charAt(0)
                             .toUpperCase() +
                             getreducerprofiledata?.firstName
                               .slice(1)
-                              .toLowerCase() ?? ""
+                              .toLowerCase() ?? "")
                         : ""}
                     </h3>
                     <ul className="breadcrumb">
@@ -327,7 +347,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         <h6>Active </h6>
                         <h3>
                           {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfActiveDealsCount ?? 0
+                            ? (getdashboardData?.numberOfActiveDealsCount ?? 0)
                             : ""}
                         </h3>
                       </div>
@@ -351,7 +371,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         <h6>Closed </h6>
                         <h3>
                           {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfClosedDealsCount ?? 0
+                            ? (getdashboardData?.numberOfClosedDealsCount ?? 0)
                             : ""}
                         </h3>
                       </div>
@@ -433,6 +453,14 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                           </Link>
                         </div>
                       </li>
+                      <li>
+                        <div className="report-btn">
+                          <Link to="/nearbyleders" className="btn">
+                            <i className="fa-solid fa-location-dot me-2"></i>
+                            Nearby Lenders
+                          </Link>
+                        </div>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -491,80 +519,78 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           {/* Footer */}
           <Footer />
         </div>
-          <Modal
-            show={show}
-            onHide={() => setShow(false)}
-            dialogClassName="custom-small-modal"
-          >
-            <Modal.Header closeButton className="py-2 px-3">
-              <Modal.Title className="h6">Select City</Modal.Title>
-            </Modal.Header>
+        <Modal
+          show={show}
+          onHide={() => setShow(false)}
+          dialogClassName="custom-small-modal"
+        >
+          <Modal.Header closeButton className="py-2 px-3">
+            <Modal.Title className="h6">Select City</Modal.Title>
+          </Modal.Header>
 
-            <Modal.Body className="py-2 px-3">
-              <div className="mb-2">
-                <label htmlFor="citySelect" className="form-label small mb-1">
-                  City
-                </label>
-                <select
-                  id="citySelect"
-                  className="form-select form-select-sm"
-                  value={selectedCity}
-                  onChange={handleCityChange}
-                >
-                  <option value="">Select a city</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Bangalore">Bangalore</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                  <option value="Ahmedabad">Ahmedabad</option>
-                  <option value="Chennai">Chennai</option>
-                  <option value="Kolkata">Kolkata</option>
-                  <option value="Pune">Pune</option>
-                  <option value="Jaipur">Jaipur</option>
-                  <option value="Lucknow">Lucknow</option>
-                  <option value="Secunderabad">Secunderabad</option>
-                  <option value="Vishakapatnam">Vishakapatnam</option>
-                  <option value="Vijayawada">Vijayawada</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Others">Other</option>
-                </select>
+          <Modal.Body className="py-2 px-3">
+            <div className="mb-2">
+              <label htmlFor="citySelect" className="form-label small mb-1">
+                City
+              </label>
+              <select
+                id="citySelect"
+                className="form-select form-select-sm"
+                value={selectedCity}
+                onChange={handleCityChange}
+              >
+                <option value="">Select a city</option>
+                <option value="Mumbai">Mumbai</option>
+                <option value="Delhi">Delhi</option>
+                <option value="Bangalore">Bangalore</option>
+                <option value="Hyderabad">Hyderabad</option>
+                <option value="Ahmedabad">Ahmedabad</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Kolkata">Kolkata</option>
+                <option value="Pune">Pune</option>
+                <option value="Jaipur">Jaipur</option>
+                <option value="Lucknow">Lucknow</option>
+                <option value="Secunderabad">Secunderabad</option>
+                <option value="Vishakapatnam">Vishakapatnam</option>
+                <option value="Vijayawada">Vijayawada</option>
+                <option value="Gujarat">Gujarat</option>
+                <option value="Madhya Pradesh">Madhya Pradesh</option>
+                <option value="Others">Other</option>
+              </select>
 
-                {selectedCity === "Others" && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Enter City"
-                      className="form-control form-control-sm"
-                      name="customCity"
-                      value={customCity}
-                      onChange={(e) => setCustomCity(e.target.value)}
-                    />
-                  </div>
-                )}
+              {selectedCity === "Others" && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    placeholder="Enter City"
+                    className="form-control form-control-sm"
+                    name="customCity"
+                    value={customCity}
+                    onChange={(e) => setCustomCity(e.target.value)}
+                  />
+                </div>
+              )}
 
-                {selectedCityerror && (
-                  <p className="text-danger small mt-1">
-                    Please select a city.
-                  </p>
-                )}
-              </div>
-            </Modal.Body>
+              {selectedCityerror && (
+                <p className="text-danger small mt-1">Please select a city.</p>
+              )}
+            </div>
+          </Modal.Body>
 
           <Modal.Footer className="py-2 px-3">
-  <Button
-    variant="primary"
-    onClick={handleSave}
-    size="sm"
-    disabled={
-      !selectedCity || (selectedCity === "Others" && customCity.trim() === "")
-    }
-  >
-    Save
-  </Button>
-</Modal.Footer>
-
-          </Modal>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              size="sm"
+              disabled={
+                !selectedCity ||
+                (selectedCity === "Others" && customCity.trim() === "")
+              }
+            >
+              Save
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
       {/* /Main Wrapper */}
     </>

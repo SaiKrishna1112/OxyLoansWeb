@@ -379,6 +379,55 @@ const Sidebar = (props) => {
                     ""
                   )}
                 </li>
+{/* P2P */}
+                 <li
+                  className={`${"/offerGivenList" === pathName ||
+                      "/disburseLoans" === pathName
+                      ? "active submenu"
+                      : "submenu"
+                    }`}
+                >
+                  <Link
+                    to="#"
+                    className={isSideMenu == "P2PLoans" ? "subdrop" : ""}
+                    onClick={() =>
+                      toggleSidebar(isSideMenu == "P2PLoans" ? "" : "P2PLoans")
+                    }
+                  >
+                    <i className="fa-solid fa-hand-holding-dollar"></i>
+                    <span> P2P Loans</span> <span className="menu-arrow" />
+                  </Link>
+                  {isSideMenu == "P2PLoans" ? (
+                    <ul style={{ display: "block" }}>
+                       <li>
+                        <Link
+                          to="/proximityLoans"
+                          className={`${"/proximityLoans" === pathName ? "active" : ""}`}
+                        >
+                          Proximity Borrowers
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/offerGivenList"
+                          className={`${"/offerGivenList" === pathName ? "active" : ""}`}
+                        >
+                          Offers Given
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/disburseLoans"
+                          className={`${"/disburseLoans" === pathName ? "active" : ""}`}
+                        >
+                          Disburse Loans
+                        </Link>
+                      </li>
+                    </ul>
+                  ) : (
+                    ""
+                  )}
+                </li>
 
                 <li
                   className={`${"/WalletToWallet" === pathName ||
@@ -708,6 +757,7 @@ const Sidebar = (props) => {
                     ""
                   )}
                 </li>
+
 
                 <li
                   className={`${"/configautoInvest" === pathName ||

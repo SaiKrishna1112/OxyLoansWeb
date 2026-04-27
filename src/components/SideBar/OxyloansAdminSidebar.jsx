@@ -243,6 +243,16 @@ const OxyloansAdminSidebar = () => {
       icon: "fas fa-hand-holding-usd",
       type: ["ADMIN","SUPERADMIN"],
     },
+    {
+      key: "borrowerFees",
+      label: "Borrower Fees",
+      icon: "fa-solid fa-indian-rupee-sign",
+      children: [
+        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
+        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
+      ],
+      type: ["ADMIN", "SUPERADMIN"],
+    },
 
   ];
   
