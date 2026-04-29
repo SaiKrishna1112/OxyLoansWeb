@@ -534,7 +534,7 @@ const AdminDashboard = () => {
                       }}
                     >
                       <h3 className="page-title">
-                        Welcome{" "}
+                        Welcome back,{" "}
                         {getreducerprofiledata?.length !== 0
                           ? getreducerprofiledata?.firstName
                               .charAt(0)
@@ -542,7 +542,7 @@ const AdminDashboard = () => {
                               getreducerprofiledata?.firstName
                                 .slice(1)
                                 .toLowerCase() ?? ""
-                          : ""}
+                          : ""} 👋
                       </h3>
 
                       <div
@@ -593,11 +593,15 @@ const AdminDashboard = () => {
                           </Tag>
                         </Link>
                       </div>
+                    
                     </div>
                   </div>
                 </div>
               </div>
+                <p>Discover borrowers, fund loans, and track your earnings</p>
             </div>
+
+           
 
             <div className="row">
               <div className="col-xl-3 col-sm-6 col-12 d-flex">
@@ -950,7 +954,7 @@ const AdminDashboard = () => {
                   <div className="card-body">
                     <span>
                       <span className="text-bold text-success mx-lg-1">
-                        <strong>Lend Smarter with Proximity Loans:</strong>
+                        <strong>Lend Smarter with Proximity based Loans:</strong>
                       </span>
                           <span>
                             Connect with nearby borrowers and diversify your investments.

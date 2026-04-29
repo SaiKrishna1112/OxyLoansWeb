@@ -286,7 +286,7 @@ const BorrowerDashboard = () => {
                 <div className="col-sm-12">
                   <div className="page-sub-header">
                     <h3 className="page-title">
-                      Welcome {""}
+                      Welcome back,{" "}
                       {getreducerprofiledata?.length !== 0
                         ? (getreducerprofiledata?.firstName
                             .charAt(0)
@@ -294,7 +294,7 @@ const BorrowerDashboard = () => {
                             getreducerprofiledata?.firstName
                               .slice(1)
                               .toLowerCase() ?? "")
-                        : ""}
+                        : ""} 👋
                     </h3>
                     <ul className="breadcrumb">
                       <li className="breadcrumb-item active">
@@ -306,9 +306,12 @@ const BorrowerDashboard = () => {
                       </li>
                     </ul>
                   </div>
+                  <p>Track your loan requests, offers, and repayments</p>
                 </div>
               </div>
             </div>
+
+           
 
             {/* /Page Header */}
             {/* Overview Section */}

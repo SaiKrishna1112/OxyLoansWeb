@@ -1,11 +1,29 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Table } from "antd";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
 import { getBorrowerRequestAmount } from "../../../HttpRequest/afterlogin";
 
+const formatLoanRequestStatus = (status) => {
+  const normalized = String(status || "").trim().toUpperCase();
+  if (!normalized) return "-";
+
+  const labels = {
+    REQUEST: "Request submitted",
+    PARTIALLYPROCESSING: "Partially processing",
+    FULLYPROCESSING: "Fully processing",
+    COMPLETED: "Completed",
+    CLOSED: "Closed",
+    REJECTED: "Rejected",
+    CANCELLED: "Cancelled",
+  };
+
+  return labels[normalized] || normalized.replace(/_/g, " ");
+};
+
 const BorrowerRequestAmount = () => {
+  const navigate = useNavigate();
   const [requestAmountInfo, setRequestAmountInfo] = useState({
     apiData: [],
     hasData: false,
@@ -20,7 +38,7 @@ const BorrowerRequestAmount = () => {
         response?.response?.data?.message ||
         response?.data?.errorMessage ||
         response?.data?.message ||
-        "We could not load your funding requests. Please try again."
+        "We could not load your loan requests. Please try again."
       );
     };
 
@@ -58,16 +76,71 @@ const BorrowerRequestAmount = () => {
     fetchRequestAmount();
   }, []);
 
-  const formatLoanRequestStatus = (value) => {
-    if (!value) return "-";
-    const normalized = String(value).trim().toUpperCase();
-    if (normalized === "PARTIALLYPROCESSING") return "Partially Processing";
-    if (normalized === "PROCESSING") return "Processing";
-    if (normalized === "COMPLETED") return "Completed";
-    if (normalized === "PENDING") return "Pending";
-    if (normalized === "REJECTED") return "Rejected";
-    return value;
-  };
+  const latestLoanRequest = useMemo(() => {
+    if (
+      !Array.isArray(requestAmountInfo.apiData) ||
+      !requestAmountInfo.apiData.length
+    ) {
+      return null;
+    }
+
+    return [...requestAmountInfo.apiData].sort(
+      (a, b) => Number(b?.id || 0) - Number(a?.id || 0),
+    )[0];
+  }, [requestAmountInfo.apiData]);
+
+  const latestLoanRequestStatus = useMemo(() => {
+    return String(latestLoanRequest?.loanRequestStatus || "")
+      .trim()
+      .toUpperCase();
+  }, [latestLoanRequest]);
+
+  const statusBanner = useMemo(() => {
+    if (requestAmountInfo.loading) return null;
+    if (!latestLoanRequestStatus) return null;
+
+    if (latestLoanRequestStatus === "REQUEST") return null;
+
+    if (latestLoanRequestStatus === "CLOSED") {
+      return (
+        <div className="alert alert-info d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3">
+          <div>
+            <div className="fw-semibold">Your previous request is closed</div>
+            <div className="small">
+              You can raise a new request by entering the amount again.
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => navigate("/borrowerLoanRequestCreate")}
+          >
+            Raise New Request
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div
+      //  className="alert alert-light border d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-3"
+      >
+        {/* <div>
+          <div className="fw-semibold">Current status</div>
+          <div className="small">
+            {formatLoanRequestStatus(latestLoanRequestStatus)}
+          </div>
+        </div> */}
+        {/* <button
+          type="button"
+          className="btn btn-outline-primary"
+          onClick={() => navigate("/borrowerLoansInitiated")}
+        >
+          View Offers
+        </button> */}
+      </div>
+    );
+  }, [latestLoanRequestStatus, navigate, requestAmountInfo.loading]);
 
   const dataSource = requestAmountInfo.apiData.map((data, index) => ({
     key: data.id || index,
@@ -151,7 +224,21 @@ const BorrowerRequestAmount = () => {
       title: "Status",
       dataIndex: "loanRequestStatus",
       align: "center",
-      render: (value) => formatLoanRequestStatus(value),
+      render: (value) => value,
+    },
+    {
+      title: "Action",
+      dataIndex: "action",
+      align: "center",
+      render: (value) => (
+        <button
+          type="button"
+          className="btn btn-success"
+          onClick={() => navigate("/borrowerLoansInitiated")}
+        >
+          View Lender Offers
+        </button>
+      ),
     },
   ];
 
@@ -165,29 +252,30 @@ const BorrowerRequestAmount = () => {
             <div className="page-header">
               <div className="row align-items-center">
                 <div className="col">
-                  <h3 className="page-title">Funding Request</h3>
+                  <h3 className="page-title">My Loan Requests </h3>
                   <ul className="breadcrumb">
                     <li className="breadcrumb-item">
                       <Link to="/borrowerDashboard">Dashboard</Link>
                     </li>
-                    <li className="breadcrumb-item active">Funding Request</li>
+                    <li className="breadcrumb-item active">My Loan Requests </li>
                   </ul>
                 </div>
               </div>
+              <span className="text-muted">View and track all your loan requests, check their status, and review offers from lenders. </span>
             </div>
 
             <div className="row mb-3">
               <div className="col-12 col-md-6 col-xl-3 mb-3">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
-                    <p className="text-muted mb-1">Total requested amount</p>
+                    <p className="text-muted mb-1">Total Loan Request Amount</p>
                     <h4 className="mb-0">
                       ₹ {totalRequestedAmount.toFixed(2)}
                     </h4>
                   </div>
                 </div>
               </div>
-              <div className="col-12 col-md-6 col-xl-3 mb-3">
+              {/* <div className="col-12 col-md-6 col-xl-3 mb-3">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
                     <p className="text-muted mb-1">Partially processing</p>
@@ -214,13 +302,24 @@ const BorrowerRequestAmount = () => {
                     <h4 className="mb-0">{requestSummary.completedCount}</h4>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
+
+            {statusBanner}
 
             <div className="row">
               <div className="col-sm-12">
                 <div className="card border-0 shadow-sm">
                   <div className="card-body">
+                    {/* <div className="d-flex align-items-center justify-content-end mb-3">
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        onClick={() => navigate("/borrowerLoansInitiated")}
+                      >
+                        View Lender Offers
+                      </button>
+                    </div> */}
                     {requestAmountInfo.errorMessage ? (
                       <div className="alert alert-danger" role="alert">
                         {requestAmountInfo.errorMessage}
@@ -236,7 +335,7 @@ const BorrowerRequestAmount = () => {
                         showSizeChanger: false,
                       }}
                       locale={{
-                        emptyText: "No funding requests to display yet.",
+                        emptyText: "No loan requests to display yet.",
                       }}
                       scroll={{ x: true }}
                     />

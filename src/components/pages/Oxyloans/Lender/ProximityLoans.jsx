@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import {
@@ -45,10 +45,10 @@ const borrowerIcon = new L.DivIcon({
 
 const lenderIcon = new L.DivIcon({
   className: "",
-  html: '<div style="position:relative;"><div style="width:36px;height:36px;background:#3d5ee1;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(61,94,225,0.3),0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;"><i class="fa fa-home" style="color:#fff;font-size:14px;"></i></div><div style="position:absolute;top:38px;left:50%;transform:translateX(-50%);background:#3d5ee1;color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:2px 6px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.2);">YOU</div></div>',
-  iconSize: [36, 52],
-  iconAnchor: [18, 18],
-  popupAnchor: [0, -22],
+  html: '<div style="position:relative;"><div style="width:46px;height:46px;background:#3d5ee1;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 4px rgba(61,94,225,0.28),0 6px 16px rgba(0,0,0,0.28);display:flex;align-items:center;justify-content:center;"><i class="fa fa-home" style="color:#fff;font-size:18px;"></i></div><div style="position:absolute;top:49px;left:50%;transform:translateX(-50%);background:#3d5ee1;color:#fff;font-size:10px;font-weight:800;letter-spacing:0.2px;border-radius:6px;padding:3px 8px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.22);">YOUR LOCATION</div></div>',
+  iconSize: [46, 66],
+  iconAnchor: [23, 23],
+  popupAnchor: [0, -26],
 });
 
 // Fly map to lender position on first load
@@ -411,7 +411,7 @@ const MapView = ({
               Nearby Borrowers
             </h6>
             <small className="text-muted">
-              Hover to highlight on map · Click to view
+              View and fund loan requests from borrowers near your location.
             </small>
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
@@ -823,6 +823,7 @@ const StatusBadge = ({ status }) => {
 
 // ── Main Component ────────────────────────────────────────────────
 const ProximityLoans = () => {
+  const navigate = useNavigate();
   const [borrowers, setBorrowers] = useState([]);
   const [allBorrowers, setAllBorrowers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -848,6 +849,16 @@ const ProximityLoans = () => {
   const [showConsentModal, setShowConsentModal] = useState(false);
 
   const [viewDoc, setViewDoc] = useState(null);
+
+  const agreeAllConsentsRef = React.useRef(null);
+  const allConsentsChecked = offerData.consentItems.every(Boolean);
+  const someConsentsChecked = offerData.consentItems.some(Boolean);
+
+  useEffect(() => {
+    if (!agreeAllConsentsRef.current) return;
+    agreeAllConsentsRef.current.indeterminate =
+      someConsentsChecked && !allConsentsChecked;
+  }, [someConsentsChecked, allConsentsChecked, showOffer]);
 
   const DISTANCE_OPTIONS = [
     { label: "All Distances", value: "ALL" },
@@ -1043,11 +1054,19 @@ const ProximityLoans = () => {
         });
         return;
       }
-      Swal.fire({
-        icon: "success",
-        title: "Offer Sent!",
-        confirmButtonColor: PRIMARY,
-      });
+    Swal.fire({
+  icon: "success",
+  title: "🎉 Congratulations!",
+  text: "Your loan offer has been sent successfully. You will be notified once the borrower reviews and responds.",
+  confirmButtonText: "View My Offers",
+  showCancelButton: true,
+  cancelButtonText: "Close",
+  confirmButtonColor: PRIMARY,
+}).then((result) => {
+  if (result.isConfirmed) {
+    navigate("/offerGivenList");
+  }
+});
       setShowOffer(false);
       setOfferData({
         amount: "",
@@ -1107,9 +1126,10 @@ const ProximityLoans = () => {
                     <i className="fa fa-arrow-left me-1" /> Back to List
                   </button>
                   <h4 className="mb-0 fw-bold" style={{ color: "#111827" }}>
-                    Borrower Details
+                    Borrower Profile & Loan Request
                   </h4>
                 </div>
+                
                 <div className="d-flex gap-2">
                   <button
                     className="btn"
@@ -1135,7 +1155,8 @@ const ProximityLoans = () => {
                       });
                     }}
                   >
-                    <i className="fa fa-paper-plane me-1" /> Give Offer
+                    <i className="fa fa-paper-plane me-1" />
+                    Send Loan Offer
                   </button>
                   <Link
                     to="/offerGivenList"
@@ -1146,10 +1167,11 @@ const ProximityLoans = () => {
                       fontSize: 14,
                     }}
                   >
-                    <i className="fa fa-list-alt me-1" /> Given Offer List
+                    <i className="fa fa-list-alt me-1" /> View My Offers
                   </Link>
                 </div>
               </div>
+              <span className="text-muted"> Review borrower details to assess risk and make a confident lending decision. </span>
             </div>
 
             {detailLoading && (
@@ -1361,7 +1383,8 @@ const ProximityLoans = () => {
                                 }}
                               >
                                 Read and acknowledge all{" "}
-                                {LENDER_CONSENTS.length} items to proceed
+                                
+                                 consents to proceed
                               </small>
                             </div>
                             <div
@@ -1501,7 +1524,47 @@ const ProximityLoans = () => {
                               borderTop: "1px solid #dee2e6",
                             }}
                           >
-                            {offerData.consentItems.every(Boolean) ? (
+                            <div className="mb-2 d-flex align-items-center gap-2">
+                              <input
+                                id="agree_all_consents"
+                                ref={agreeAllConsentsRef}
+                                type="checkbox"
+                                checked={allConsentsChecked}
+                                onChange={(e) => {
+                                  const nextChecked = e.target.checked;
+                                  setOfferData({
+                                    ...offerData,
+                                    consentItems: offerData.consentItems.map(
+                                      () => nextChecked,
+                                    ),
+                                  });
+                                  if (offerErrors.consent)
+                                    setOfferErrors({
+                                      ...offerErrors,
+                                      consent: "",
+                                    });
+                                }}
+                                style={{
+                                  width: 16,
+                                  height: 16,
+                                  cursor: "pointer",
+                                  accentColor: PRIMARY,
+                                }}
+                              />
+                              <label
+                                className="mb-0"
+                                htmlFor="agree_all_consents"
+                                style={{
+                                  cursor: "pointer",
+                                  fontSize: 12.5,
+                                  fontWeight: 600,
+                                  color: "#1a1f36",
+                                }}
+                              >
+                                <span>Agree to All Terms &amp; Conditions</span>
+                              </label>
+                            </div>
+                            {allConsentsChecked ? (
                               <div
                                 className="d-flex align-items-center gap-2"
                                 style={{
@@ -1523,14 +1586,14 @@ const ProximityLoans = () => {
                                   className="fa fa-info-circle me-1"
                                   style={{ color: "#f0ad4e" }}
                                 />
-                                Please read each item carefully and check the
+                                Please read each consent carefully and check the
                                 box to acknowledge it.
                                 <strong style={{ color: "#dc3545" }}>
                                   {" "}
-                                  {LENDER_CONSENTS.length -
+                                  {/* {LENDER_CONSENTS.length -
                                     offerData.consentItems.filter(Boolean)
                                       .length}{" "}
-                                  remaining.
+                                  remaining. */}
                                 </strong>
                               </div>
                             )}
@@ -1651,7 +1714,7 @@ const ProximityLoans = () => {
             {activeTab === "profile" && (
               <div className="card">
                 <div className="card-body">
-                  <h5 className="card-title fw-bold mb-3">Profile Details</h5>
+                  <h5 className="card-title fw-bold mb-3">Borrower Profile</h5>
                   {p ? (
                     <>
                       <div className="row">
@@ -1702,46 +1765,78 @@ const ProximityLoans = () => {
                           ) : null,
                         )}
                       </div>
-                      <hr />
-                      <h6 className="fw-bold mb-2">Loan Info</h6>
-                      {loanDetails?.map((loan, index) => (
-                        <div
-                          key={loan.id || index}
-                          className="mb-3 p-2 border rounded"
-                        >
-                          <div className="row">
-                            {[
-                              [
-                                "Loan Request Amount",
-                                loan.requestAmount
-                                  ? `₹${Number(loan.requestAmount).toLocaleString()}`
-                                  : null,
-                              ],
-                              [
-                                "Loan Status",
-                                loan.loanRequestStatus === "PARTIALLYPROCESSING"
-                                  ? "Partially Processing"
-                                  : loan.loanRequestStatus,
-                              ],
-                              [
-                                "Pending Amount",
-                                loan.partiallyPendingAmount
-                                  ? `₹${Number(loan.partiallyPendingAmount).toLocaleString()}`
-                                  : null,
-                              ],
-                            ].map(([label, value]) =>
-                              value ? (
-                                <div className="col-md-4 mb-2" key={label}>
-                                  <small className="text-muted d-block">
-                                    {label}
-                                  </small>
-                                  <strong>{value}</strong>
-                                </div>
-                              ) : null,
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                     <hr />
+
+<div
+  className="mb-3 p-3 rounded"
+  style={{
+    background: "linear-gradient(135deg, #eef4ff 0%, #ffffff 100%)",
+    border: `1.5px solid ${PRIMARY}40`,
+    boxShadow: "0 4px 14px rgba(61, 94, 225, 0.08)",
+  }}
+>
+  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h6 className="fw-bold mb-1" style={{ color: "#1a1f36" }}>
+        {/* <i className="fa fa-handshake-o me-2" style={{ color: PRIMARY }} /> */}
+        Borrower Loan Request Details
+      </h6>
+      {/* <small className="text-muted ">
+         <i className="fa fa-handshake-o me-2" style={{ color: PRIMARY }} />
+        This borrower has requested a loan. Review the requested amount and pending amount before sending your offer.
+      </small> */}
+    </div>
+
+  </div>
+
+  {loanDetails?.length > 0 ? (
+    loanDetails.map((loan, index) => (
+      <div
+        key={loan.id || index}
+        className="mb-2 p-3 rounded"
+        style={{
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        
+        <div className="row">
+          {[
+            [
+              "Requested Loan Amount",
+              loan.requestAmount
+                ? `₹${Number(loan.requestAmount).toLocaleString()}`
+                : null,
+            ],
+            [
+              "Current Loan Status",
+              loan.loanRequestStatus === "PARTIALLYPROCESSING"
+                ? "Partially Processing"
+                : loan.loanRequestStatus,
+            ],
+            [
+              "Amount Still Needed",
+              loan.partiallyPendingAmount
+                ? `₹${Number(loan.partiallyPendingAmount).toLocaleString()}`
+                : null,
+            ],
+          ].map(([label, value]) =>
+            value ? (
+              <div className="col-md-4 mb-2" key={label}>
+                <small className="text-muted d-block">{label}</small>
+                <strong style={{ color: "#111827", fontSize: 15 }}>
+                  {value}
+                </strong>
+              </div>
+            ) : null,
+          )}
+        </div>
+      </div>
+    ))
+  ) : (
+    <p className="text-muted mb-0">No loan request details available.</p>
+  )}
+</div>
                     </>
                   ) : (
                     !detailLoading && (
@@ -2102,10 +2197,11 @@ const ProximityLoans = () => {
                   }}
                 >
                   <i className="fa fa-list-alt me-1" />
-                  Given Offer List
+                  View My Offers
                 </Link>
               </div>
             </div>
+            <span className="text-muted">View and fund loan requests from borrowers near your location. </span>
           </div>
         </div>
 

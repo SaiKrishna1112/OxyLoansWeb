@@ -75,8 +75,8 @@ const OfferGivenList = () => {
       }
       await Swal.fire({
         icon: "success",
-        title: "Agreement Generated",
-        text: "Agreement generated successfully.",
+        title: "Agreement Generated Successfully",
+        text: "The loan agreement is now ready for your review. ",
         confirmButtonColor: PRIMARY,
       });
       fetchOffers(currentPage);
@@ -110,7 +110,7 @@ const OfferGivenList = () => {
     } else {
       res = await brLoanStatusApprovalByLr(offer.id, action,offer.loanRequestId);
     }
-    // ✅ Handle both axios + custom responses
+    
     const status = res?.status || res?.response?.status;
     console.log("API response for action", action, ":", res);
     if (!res || status >= 400) {
@@ -119,26 +119,26 @@ const OfferGivenList = () => {
 
     // ✅ Clean message mapping
     const actionMap = {
-      ACCEPTED: {
+      LOANACCEPTED: {
         title: "Offer Accepted!",
         text: "The offer has been accepted successfully.",
         icon: "success",
       },
-      REJECTED: {
+      LENDER_REJECTED: {
         title: "Offer Rejected",
-        text: "The offer has been rejected.",
+        text: "The offer has been rejected successfully.",
         icon: "info",
       },
       LOANPROCESSED: {
-        title: "Loan Processed!",
-        text: "The loan has been processed successfully.",
+        title: "🎉 Congratulations!",
+        text: "The loan has been successfully disbursed to the borrower in accordance with the agreed terms. You can track this loan and its repayment details in your loan offers.",
         icon: "success",
       },
     };
 
     const config = actionMap[action] || {
-      title: "Success",
-      text: "Action completed successfully.",
+      title: "🎉 Congratulations!",
+      text: "The loan has been funded successfully in accordance with the agreed terms.",
       icon: "success",
     };
 
@@ -199,44 +199,103 @@ const OfferGivenList = () => {
       <SideBar />
       <div className="page-wrapper">
         <div className="content container-fluid">
-
           {/* Page Header */}
           <div className="page-header">
             <div className="row align-items-center">
               <div className="col">
-                <h3 className="page-title">Offers Given</h3>
+                <h3 className="page-title">My Loan Offers</h3>
                 <ul className="breadcrumb">
-                  <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
-                  <li className="breadcrumb-item active">Offers Given</li>
+                  <li className="breadcrumb-item">
+                    <Link to="/dashboard">Dashboard</Link>
+                  </li>
+                  <li className="breadcrumb-item active">My Loan Offers</li>
                 </ul>
               </div>
             </div>
+            <span className="text-muted">
+              View & Manage your loan offers and track their status.
+            </span>
             <div className="col-auto d-flex justify-content-end mt-2">
-                <Link to="/proximityLoans" className="btn"
-                  style={{ background: PRIMARY, color: "#fff", fontWeight: 600, borderRadius: 8, padding: "8px 20px" }}>
-                  <i className="fa fa-plus me-1" /> New Offer
-                </Link>
-              </div>
+              <Link
+                to="/proximityLoans"
+                className="btn"
+                style={{
+                  background: PRIMARY,
+                  color: "#fff",
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  padding: "8px 20px",
+                }}
+              >
+                <i className="fa fa-plus me-1" /> New Offer
+              </Link>
+            </div>
           </div>
 
           {/* Summary Cards */}
           {!loading && totalCount > 0 && (
             <div className="row mb-3 g-3">
               {[
-                { label: "Total Offers", value: totalCount, icon: "fa-paper-plane" },
-                { label: "Initiated",    value: offers.filter(o => (o.lenderStatus || "").toUpperCase() === "INITIATED").length,  icon: "fa-clock-o" },
-                { label: "Accepted",     value: offers.filter(o => (o.lenderStatus || "").toUpperCase() === "LOANACCEPTED" || (o.borrowerStatus || "").toUpperCase() === "LOANACCEPTED").length,   icon: "fa-check-circle" },
-                { label: "Rejected",     value: offers.filter(o => (o.lenderStatus || "").toUpperCase() === "LENDER_REJECTED" || (o.borrowerStatus || "").toUpperCase() === "BORROWER_REJECTED").length,   icon: "fa-times-circle" },
+                {
+                  label: "Total Offers",
+                  value: totalCount,
+                  icon: "fa-paper-plane",
+                },
+                {
+                  label: "Initiated",
+                  value: offers.filter(
+                    (o) => (o.lenderStatus || "").toUpperCase() === "INITIATED",
+                  ).length,
+                  icon: "fa-clock-o",
+                },
+                {
+                  label: "Accepted",
+                  value: offers.filter(
+                    (o) =>
+                      (o.lenderStatus || "").toUpperCase() === "LOANACCEPTED" ||
+                      (o.borrowerStatus || "").toUpperCase() === "LOANACCEPTED",
+                  ).length,
+                  icon: "fa-check-circle",
+                },
+                {
+                  label: "Rejected",
+                  value: offers.filter(
+                    (o) =>
+                      (o.lenderStatus || "").toUpperCase() ===
+                        "LENDER_REJECTED" ||
+                      (o.borrowerStatus || "").toUpperCase() ===
+                        "BORROWER_REJECTED",
+                  ).length,
+                  icon: "fa-times-circle",
+                },
               ].map(({ label, value, icon }) => (
                 <div className="col-6 col-md-3" key={label}>
-                  <div className="card mb-0" style={{ borderLeft: `4px solid ${PRIMARY}` }}>
+                  <div
+                    className="card mb-0"
+                    style={{ borderLeft: `4px solid ${PRIMARY}` }}
+                  >
                     <div className="card-body py-3 d-flex align-items-center gap-3">
-                      <div className="d-flex align-items-center justify-content-center rounded-circle"
-                        style={{ width: 44, height: 44, background: "#eef1fd", flexShrink: 0 }}>
-                        <i className={`fa ${icon}`} style={{ color: PRIMARY, fontSize: 18 }} />
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-circle"
+                        style={{
+                          width: 44,
+                          height: 44,
+                          background: "#eef1fd",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <i
+                          className={`fa ${icon}`}
+                          style={{ color: PRIMARY, fontSize: 18 }}
+                        />
                       </div>
                       <div>
-                        <div className="fw-bold" style={{ fontSize: 20, lineHeight: 1 }}>{value}</div>
+                        <div
+                          className="fw-bold"
+                          style={{ fontSize: 20, lineHeight: 1 }}
+                        >
+                          {value}
+                        </div>
                         <small className="text-muted">{label}</small>
                       </div>
                     </div>
@@ -251,7 +310,10 @@ const OfferGivenList = () => {
             <div className="card-header d-flex align-items-center justify-content-between py-3">
               <h5 className="mb-0 fw-bold">Offer Given List</h5>
               {totalCount > 0 && (
-                <small className="text-muted">Total <strong>{totalCount}</strong> offer{totalCount !== 1 ? "s" : ""}</small>
+                <small className="text-muted">
+                  Total <strong>{totalCount}</strong> offer
+                  {totalCount !== 1 ? "s" : ""}
+                </small>
               )}
             </div>
 
@@ -263,42 +325,120 @@ const OfferGivenList = () => {
                 </div>
               ) : offers.length === 0 ? (
                 <div className="text-center py-5">
-                  <i className="fa fa-paper-plane fa-3x mb-3" style={{ color: "#d0d5dd" }} />
-                  <p className="text-muted mb-1">No offers given yet.</p>
-                  <Link to="/proximityLoans" className="btn btn-sm mt-2"
-                    style={{ background: PRIMARY, color: "#fff", borderRadius: 6 }}>
+                  <i
+                    className="fa fa-paper-plane fa-3x mb-3"
+                    style={{ color: "#d0d5dd" }}
+                  />
+                  <p className="text-muted mb-1">
+                    {" "}
+                    You have not submitted any loan offers yet. Explore borrower
+                    requests and submit your first offer to get started.{" "}
+                  </p>
+                  <Link
+                    to="/proximityLoans"
+                    className="btn btn-sm mt-2"
+                    style={{
+                      background: PRIMARY,
+                      color: "#fff",
+                      borderRadius: 6,
+                    }}
+                  >
                     Browse Borrowers
                   </Link>
                 </div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0" style={{ fontSize: 13 }}>
+                  <table
+                    className="table table-hover align-middle mb-0"
+                    style={{ fontSize: 13 }}
+                  >
                     <thead style={{ background: "#f5f7fb" }}>
                       <tr>
-                        <th className="ps-4 py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>#</th>
-                        <th className="py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>Borrower</th>
-                        <th className="py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>Offer Amount</th>
-                        <th className="py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>Tenure</th>
-                        <th className="py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>ROI (%)</th>
-                        <th className="py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>Status</th>
-                        <th className="py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>Agreement</th>
-                        <th className="text-center py-3 text-uppercase text-muted" style={{ fontSize: 11, letterSpacing: 0.5 }}>Actions</th>
+                        <th
+                          className="ps-4 py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          #
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          Borrower
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          Offer Amount
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          Tenure
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          ROI (%)
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          Status
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          Agreement
+                        </th>
+                        <th
+                          className="text-center py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {offers.map((offer, idx) => {
-                        const lenderStatus = (offer.lenderStatus || "").toUpperCase();
-                        const borrowerStatus = (offer.borrowerStatus || "").toUpperCase();
-                        const status = lenderStatus=== "INITIATED" ? "INITIATED" : lenderStatus === "PROCESSING" ? "Processing" : lenderStatus=== "LOANACCEPTED" ?"Loan_Accepted" : lenderStatus;
+                        const lenderStatus = (
+                          offer.lenderStatus || ""
+                        ).toUpperCase();
+                        const borrowerStatus = (
+                          offer.borrowerStatus || ""
+                        ).toUpperCase();
+                        const status =
+                          lenderStatus === "INITIATED"
+                            ? "INITIATED"
+                            : lenderStatus === "PROCESSING"
+                              ? "Processing"
+                              : lenderStatus === "LOANACCEPTED"
+                                ? "Loan_Accepted"
+                                : lenderStatus;
                         const { bg, color } = statusStyle(status);
                         const isInitiated = lenderStatus === "INITIATED";
-                        const canAccept = isInitiated && borrowerStatus === "LOANACCEPTED";
-                        const serialNo  = (currentPage - 1) * PAGE_SIZE + idx + 1;
-                        const canProcess = lenderStatus === "PROCESSING" && borrowerStatus === "PROCESSING";
-                        const walletDebited = (offer.walletStatus || "").toUpperCase() === "DEBITED";
-                        const hasInvoiceUrl = Boolean((offer.invoiceUrl || "").toString().trim());
+                        const canAccept =
+                          isInitiated && borrowerStatus === "LOANACCEPTED";
+                        const serialNo =
+                          (currentPage - 1) * PAGE_SIZE + idx + 1;
+                        const canProcess =
+                          lenderStatus === "PROCESSING" &&
+                          borrowerStatus === "PROCESSING";
+                        const walletDebited =
+                          (offer.walletStatus || "").toUpperCase() ===
+                          "DEBITED";
+                        const hasInvoiceUrl = Boolean(
+                          (offer.invoiceUrl || "").toString().trim(),
+                        );
                         const rowId = String(offer?.id ?? "");
-                        const isAgreementLoading = Boolean(agreementLoadingById[rowId]);
+                        const isAgreementLoading = Boolean(
+                          agreementLoadingById[rowId],
+                        );
                         return (
                           <tr key={offer.id || offer.offerId || idx}>
                             <td className="ps-4 text-muted py-3">{serialNo}</td>
@@ -306,30 +446,65 @@ const OfferGivenList = () => {
                             {/* Borrower */}
                             <td>
                               <div className="d-flex align-items-center gap-2">
-                                <div className="d-flex align-items-center justify-content-center rounded-circle"
-                                  style={{ width: 34, height: 34, background: "#eef1fd", flexShrink: 0 }}>
-                                  <i className="fa fa-user" style={{ color: PRIMARY, fontSize: 14 }} />
+                                <div
+                                  className="d-flex align-items-center justify-content-center rounded-circle"
+                                  style={{
+                                    width: 34,
+                                    height: 34,
+                                    background: "#eef1fd",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <i
+                                    className="fa fa-user"
+                                    style={{ color: PRIMARY, fontSize: 14 }}
+                                  />
                                 </div>
                                 <div>
-                                  <div className="fw-semibold" style={{ lineHeight: 1.2 }}>
-                                    {offer.borrowerName || offer.firstName || "—"}
+                                  <div
+                                    className="fw-semibold"
+                                    style={{ lineHeight: 1.2 }}
+                                  >
+                                    {offer.borrowerName ||
+                                      offer.firstName ||
+                                      "—"}
                                   </div>
-                                  <small className="text-muted">{offer.borrowerId || offer.borrowerUserId || ""}</small>
+                                  <small className="text-muted">
+                                    {offer.borrowerId ||
+                                      offer.borrowerUserId ||
+                                      ""}
+                                  </small>
                                 </div>
                               </div>
                             </td>
 
                             <td className="fw-semibold py-3">
-                              ₹{Number(offer.lenderInterestedAmount || offer.offerAmount || 0).toLocaleString("en-IN")}
+                              ₹
+                              {Number(
+                                offer.lenderInterestedAmount ||
+                                  offer.offerAmount ||
+                                  0,
+                              ).toLocaleString("en-IN")}
                             </td>
-                            <td className="py-3">{offer.duration ? `${offer.duration} Days` : "—"}</td>
-                            <td className="py-3">{offer.roi ? `${offer.roi}%` : "—"}</td>
+                            <td className="py-3">
+                              {offer.duration ? `${offer.duration} Days` : "—"}
+                            </td>
+                            <td className="py-3">
+                              {offer.roi ? `${offer.roi}%` : "—"}
+                            </td>
                             {/* <td className="text-muted">{offer.offerDate || offer.createdDate || offer.offeredOn || "—"}</td> */}
 
                             {/* Status badge */}
                             <td className="py-3">
-                              <span className="rounded-pill px-3 py-1"
-                                style={{ background: bg, color, fontWeight: 600, fontSize: 11 }}>
+                              <span
+                                className="rounded-pill px-3 py-1"
+                                style={{
+                                  background: bg,
+                                  color,
+                                  fontWeight: 600,
+                                  fontSize: 11,
+                                }}
+                              >
                                 {status}
                               </span>
                             </td>
@@ -377,7 +552,9 @@ const OfferGivenList = () => {
                                   )}
                                 </button>
                               ) : (
-                                <small className="text-muted">Pending wallet debit</small>
+                                <small className="text-muted">
+                                  Pending wallet debit
+                                </small>
                               )}
                             </td>
 
@@ -388,8 +565,19 @@ const OfferGivenList = () => {
                                   <button
                                     className="btn btn-sm"
                                     title="Accept"
-                                    style={{ background: "#198754", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}
-                                    onClick={() => setConfirmModal({ offer, action: "LOANACCEPTED" })}
+                                    style={{
+                                      background: "#198754",
+                                      color: "#fff",
+                                      borderRadius: 6,
+                                      padding: "4px 10px",
+                                      fontSize: 12,
+                                    }}
+                                    onClick={() =>
+                                      setConfirmModal({
+                                        offer,
+                                        action: "LOANACCEPTED",
+                                      })
+                                    }
                                   >
                                     <i className="fa fa-check me-1" /> Accept
                                   </button>
@@ -398,8 +586,19 @@ const OfferGivenList = () => {
                                   <button
                                     className="btn btn-sm"
                                     title="Reject"
-                                    style={{ background: "#dc3545", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}
-                                    onClick={() => setConfirmModal({ offer, action: "LENDER_REJECTED" })}
+                                    style={{
+                                      background: "#dc3545",
+                                      color: "#fff",
+                                      borderRadius: 6,
+                                      padding: "4px 10px",
+                                      fontSize: 12,
+                                    }}
+                                    onClick={() =>
+                                      setConfirmModal({
+                                        offer,
+                                        action: "LENDER_REJECTED",
+                                      })
+                                    }
                                   >
                                     <i className="fa fa-times me-1" /> Reject
                                   </button>
@@ -408,10 +607,22 @@ const OfferGivenList = () => {
                                   <button
                                     className="btn btn-sm"
                                     title="Accept"
-                                    style={{ background: "#0d6efd", color: "#fff", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}
-                                    onClick={() => setConfirmModal({ offer, action: "LOANPROCESSED" })}
+                                    style={{
+                                      background: "#0d6efd",
+                                      color: "#fff",
+                                      borderRadius: 6,
+                                      padding: "4px 10px",
+                                      fontSize: 12,
+                                    }}
+                                    onClick={() =>
+                                      setConfirmModal({
+                                        offer,
+                                        action: "LOANPROCESSED",
+                                      })
+                                    }
                                   >
-                                    <i className="fa fa-check me-1" /> Process & Disburse Loan
+                                    <i className="fa fa-check me-1" /> Process &
+                                    Disburse Loan
                                   </button>
                                 )}
                               </div>
@@ -429,16 +640,30 @@ const OfferGivenList = () => {
             {totalPages > 1 && (
               <div className="card-footer d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <small className="text-muted">
-                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of <strong>{totalCount}</strong> offers
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, totalCount)} of{" "}
+                  <strong>{totalCount}</strong> offers
                 </small>
                 <ul className="pagination mb-0">
-                  <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                    <button className="page-link" onClick={() => goToPage(1)} title="First">
+                  <li
+                    className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => goToPage(1)}
+                      title="First"
+                    >
                       <i className="fa fa-angle-double-left" />
                     </button>
                   </li>
-                  <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                    <button className="page-link" onClick={() => goToPage(currentPage - 1)} title="Previous">
+                  <li
+                    className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => goToPage(currentPage - 1)}
+                      title="Previous"
+                    >
                       <i className="fa fa-chevron-left" />
                     </button>
                   </li>
@@ -448,22 +673,47 @@ const OfferGivenList = () => {
                         <span className="page-link">&hellip;</span>
                       </li>
                     ) : (
-                      <li key={page} className={`page-item ${currentPage === page ? "active" : ""}`}>
-                        <button className="page-link"
-                          style={currentPage === page ? { background: PRIMARY, borderColor: PRIMARY, color: "#fff" } : {}}
-                          onClick={() => goToPage(page)}>
+                      <li
+                        key={page}
+                        className={`page-item ${currentPage === page ? "active" : ""}`}
+                      >
+                        <button
+                          className="page-link"
+                          style={
+                            currentPage === page
+                              ? {
+                                  background: PRIMARY,
+                                  borderColor: PRIMARY,
+                                  color: "#fff",
+                                }
+                              : {}
+                          }
+                          onClick={() => goToPage(page)}
+                        >
                           {page}
                         </button>
                       </li>
-                    )
+                    ),
                   )}
-                  <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                    <button className="page-link" onClick={() => goToPage(currentPage + 1)} title="Next">
+                  <li
+                    className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => goToPage(currentPage + 1)}
+                      title="Next"
+                    >
                       <i className="fa fa-chevron-right" />
                     </button>
                   </li>
-                  <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                    <button className="page-link" onClick={() => goToPage(totalPages)} title="Last">
+                  <li
+                    className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
+                  >
+                    <button
+                      className="page-link"
+                      onClick={() => goToPage(totalPages)}
+                      title="Last"
+                    >
                       <i className="fa fa-angle-double-right" />
                     </button>
                   </li>
@@ -477,45 +727,117 @@ const OfferGivenList = () => {
       {/* Accept / Reject Confirmation Modal */}
       {confirmModal && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1050, display: "flex", alignItems: "center", justifyContent: "center" }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 1050,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
           onClick={() => !actionLoading && setConfirmModal(null)}
         >
           <div
-            style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 420, boxShadow: "0 8px 40px rgba(0,0,0,0.18)", overflow: "hidden" }}
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              width: "100%",
+              maxWidth: 420,
+              boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+              overflow: "hidden",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{
-              background: confirmModal.action === "LOANACCEPTED" || confirmModal.action === "LOANPROCESSED" ? "#1a7a4a" : "#c0392b",
-              padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between"
-            }}>
+            <div
+              style={{
+                background:
+                  confirmModal.action === "LOANACCEPTED" ||
+                  confirmModal.action === "LOANPROCESSED"
+                    ? "#1a7a4a"
+                    : "#c0392b",
+                padding: "14px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <h5 className="mb-0 text-white" style={{ fontWeight: 600 }}>
-                <i className={`fa ${confirmModal.action === "LOANACCEPTED" ? "fa-check-circle" : confirmModal.action === "LOANPROCESSED" ? "fa-cogs" : "fa-times-circle"} me-2`} />
-                {confirmModal.action === "LOANACCEPTED" ? "Accept Offer" : confirmModal.action === "LOANPROCESSED" ? "Process & Disburse Loan" : "Reject Offer"}
+                <i
+                  className={`fa ${confirmModal.action === "LOANACCEPTED" ? "fa-check-circle" : confirmModal.action === "LOANPROCESSED" ? "fa-cogs" : "fa-times-circle"} me-2`}
+                />
+                {confirmModal.action === "LOANACCEPTED"
+                  ? "Confirm Loan Funding"
+                  : confirmModal.action === "LOANPROCESSED"
+                    ? "Process & Disburse Loan"
+                    : "Reject Offer"}
               </h5>
-              <button className="btn btn-sm"
-                style={{ color: "#fff", background: "transparent", border: "1px solid rgba(255,255,255,0.4)", borderRadius: 6, padding: "4px 10px", fontSize: 16 }}
-                onClick={() => setConfirmModal(null)}>✕</button>
+              <button
+                className="btn btn-sm"
+                style={{
+                  color: "#fff",
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.4)",
+                  borderRadius: 6,
+                  padding: "4px 10px",
+                  fontSize: 16,
+                }}
+                onClick={() => setConfirmModal(null)}
+              >
+                ✕
+              </button>
             </div>
 
             {/* Modal Body */}
             <div style={{ padding: "20px 24px" }}>
               <p className="mb-3" style={{ fontSize: 14 }}>
-                Are you sure you want to <strong>{confirmModal.action === "LOANACCEPTED" ? "accept" : confirmModal.action === "LOANPROCESSED" ? "process" : "reject"}</strong> the offer for{" "}
-                <strong>{confirmModal.offer.borrowerName || confirmModal.offer.firstName || "this borrower"}</strong>?
+                Are you sure you want to{" "}
+                <strong>
+                  {confirmModal.action === "LOANACCEPTED"
+                    ? "proceed"
+                    : confirmModal.action === "LOANPROCESSED"
+                      ? "process"
+                      : "reject"}
+                </strong>{" "}
+                with this offer for{" "}
+                <strong>
+                  {confirmModal.offer.borrowerName ||
+                    confirmModal.offer.firstName ||
+                    "this borrower"}
+                </strong>
+                ?
               </p>
-              <div className="rounded p-3 mb-0" style={{ background: "#f8f9fb", fontSize: 13 }}>
+              <div
+                className="rounded p-3 mb-0"
+                style={{ background: "#f8f9fb", fontSize: 13 }}
+              >
                 <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">Offer Amount</span>
-                  <strong>₹{Number(confirmModal.offer.lenderInterestedAmount || confirmModal.offer.offerAmount || 0).toLocaleString("en-IN")}</strong>
+                  <strong>
+                    ₹
+                    {Number(
+                      confirmModal.offer.lenderInterestedAmount ||
+                        confirmModal.offer.offerAmount ||
+                        0,
+                    ).toLocaleString("en-IN")}
+                  </strong>
                 </div>
                 <div className="d-flex justify-content-between mb-1">
                   <span className="text-muted">Duration</span>
-                  <strong>{confirmModal.offer.duration ? `${confirmModal.offer.duration} Days` : "—"}</strong>
+                  <strong>
+                    {confirmModal.offer.duration
+                      ? `${confirmModal.offer.duration} Days`
+                      : "—"}
+                  </strong>
                 </div>
                 <div className="d-flex justify-content-between">
                   <span className="text-muted">ROI</span>
-                  <strong>{confirmModal.offer.roi ? `${confirmModal.offer.roi}%` : "—"}</strong>
+                  <strong>
+                    {confirmModal.offer.roi
+                      ? `${confirmModal.offer.roi}%`
+                      : "—"}
+                  </strong>
                 </div>
               </div>
             </div>
@@ -525,16 +847,37 @@ const OfferGivenList = () => {
               <button
                 className="btn"
                 style={{
-                  background: confirmModal.action === "LOANACCEPTED" || confirmModal.action === "LOANPROCESSED" ? "#1a7a4a" : "#c0392b",
-                  color: "#fff", fontWeight: 600, borderRadius: 6, padding: "8px 22px", flex: 1
+                  background:
+                    confirmModal.action === "LOANACCEPTED" ||
+                    confirmModal.action === "LOANPROCESSED"
+                      ? "#1a7a4a"
+                      : "#c0392b",
+                  color: "#fff",
+                  fontWeight: 600,
+                  borderRadius: 6,
+                  padding: "8px 22px",
+                  flex: 1,
                 }}
                 onClick={handleAction}
                 disabled={actionLoading}
               >
-                {actionLoading
-                  ? <><span className="spinner-border spinner-border-sm me-1" />Processing...</>
-                  : <><i className={`fa ${confirmModal.action === "LOANACCEPTED" || confirmModal.action === "LOANPROCESSED" ? "fa-check" : "fa-times"} me-1`} />{confirmModal.action === "LOANACCEPTED" ? "Yes, Accept" : confirmModal.action === "LOANPROCESSED" ? "Yes, Process & Disburse" : "Yes, Reject"}</>
-                }
+                {actionLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-1" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <i
+                      className={`fa ${confirmModal.action === "LOANACCEPTED" || confirmModal.action === "LOANPROCESSED" ? "fa-check" : "fa-times"} me-1`}
+                    />
+                    {confirmModal.action === "LOANACCEPTED"
+                      ? "Proceed to Fund"
+                      : confirmModal.action === "LOANPROCESSED"
+                        ? "Proceed & Disburse"
+                        : "Yes, Reject"}
+                  </>
+                )}
               </button>
               <button
                 className="btn btn-outline-secondary"

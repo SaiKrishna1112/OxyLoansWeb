@@ -171,7 +171,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Create Application
+                          Apply for a Loan
                         </Link>
                       </li>
                       <li>
@@ -183,7 +183,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Funding Request
+                          My Loan Requests
                         </Link>
                       </li>
                       <li>
@@ -195,7 +195,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Offered Amount
+                          Offers Received Amount
                         </Link>
                       </li>
                       <li>
@@ -207,7 +207,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Disbursements
+                          Disburse Loans
                         </Link>
                       </li>
                     </ul>
@@ -231,7 +231,7 @@ const BorrowerSidebar = (props) => {
                     className={isSideMenu == "myborrowings" ? "subdrop" : ""}
                     onClick={() =>
                       toggleSidebar(
-                        isSideMenu == "myborrowings" ? "" : "myborrowings"
+                        isSideMenu == "myborrowings" ? "" : "myborrowings",
                       )
                     }
                   >
@@ -407,7 +407,7 @@ const BorrowerSidebar = (props) => {
                     className={isSideMenu == "MyNetwork" ? "subdrop" : ""}
                     onClick={() =>
                       toggleSidebar(
-                        isSideMenu == "MyNetwork" ? "" : "MyNetwork"
+                        isSideMenu == "MyNetwork" ? "" : "MyNetwork",
                       )
                     }
                   >

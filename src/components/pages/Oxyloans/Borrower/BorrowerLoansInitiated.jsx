@@ -159,15 +159,15 @@ const BorrowerLoansInitiated = () => {
   const handleBorrowerAction = async (record, borrowerStatus) => {
     const isAcceptAction = borrowerStatus === "LOANACCEPTED";
     const confirmationResult = await Swal.fire({
-      title: "Confirm your choice",
+      title: "Confirm Loan Offer",
       text: isAcceptAction
-        ? "Accept this lender's offer?"
-        : "Reject this lender's offer?",
+        ? "Are you sure you want to accept this loan offer?"
+        : "Are you sure you want to reject this loan offer? ",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: isAcceptAction ? "#28a745" : "#dc3545",
       cancelButtonColor: "#6c757d",
-      confirmButtonText: isAcceptAction ? "Yes, Accept" : "Yes, Reject",
+      confirmButtonText: isAcceptAction ? "Accept Offer" : "Reject Offer",
       cancelButtonText: "Cancel",
     });
 
@@ -188,8 +188,8 @@ const BorrowerLoansInitiated = () => {
       if (response?.status == 200) {
         HandleWithFooter(
           borrowerStatus === "LOANACCEPTED"
-            ? "Offer accepted successfully."
-            : "Offer rejected successfully.",
+            ? "Your selected loan offer has been accepted successfully "
+            : "Your selected loan offer has been rejected successfully ",
         );
         await fetchLoansInitiated();
       } else {
@@ -216,13 +216,13 @@ const BorrowerLoansInitiated = () => {
 
   const handleLoanExecute = async (record) => {
     const confirmationResult = await Swal.fire({
-      title: "Confirm execution",
-      text: "Proceed with loan execution for this application?",
+      title: "Confirm Loan Execution ",
+      text: "Are you sure you want to proceed with executing this loan?",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#0d6efd",
       cancelButtonColor: "#6c757d",
-      confirmButtonText: "Yes, Execute",
+      confirmButtonText: "Yes, Execute Loan",
       cancelButtonText: "Cancel",
     });
 
@@ -239,7 +239,9 @@ const BorrowerLoansInitiated = () => {
     try {
       const response = await borrowerLoanExcute(payload);
       if (response?.status == 200) {
-        HandleWithFooter("Loan executed successfully.");
+        HandleWithFooter(
+          "Your loan has been successfully executed in accordance with the agreed terms. You may track its status and updates in the Disbursements section.",
+        );
         await fetchLoansInitiated();
       } else {
         WarningBackendApi(
@@ -327,11 +329,11 @@ const BorrowerLoansInitiated = () => {
       dataIndex: "lenderId",
     },
     {
-      title: "Lender name",
+      title: "Lender Name",
       dataIndex: "lenderName",
     },
     {
-      title: "Offered amount",
+      title: "Offered Amount",
       dataIndex: "lenderInterestedAmount",
       render: (value) => (value === "-" ? value : `₹ ${value}`),
     },
@@ -346,15 +348,15 @@ const BorrowerLoansInitiated = () => {
       render: (value) => (value === "-" ? value : `${value} Days`),
     },
     {
-      title: "Loan status",
+      title: "Loan Status",
       dataIndex: "loanStatus",
     },
     {
-      title: "Lender status",
+      title: "Lender Status",
       dataIndex: "lenderStatus",
     },
     {
-      title: "Borrower status",
+      title: "Borrower Status",
       dataIndex: "borrowerStatus",
     },
     {
@@ -474,29 +476,32 @@ const BorrowerLoansInitiated = () => {
             <div className="page-header">
               <div className="row align-items-center">
                 <div className="col">
-                  <h3 className="page-title">Offered Amount</h3>
+                  <h3 className="page-title">Offers Received</h3>
                   <ul className="breadcrumb">
                     <li className="breadcrumb-item">
                       <Link to="/borrowerDashboard">Dashboard</Link>
                     </li>
-                    <li className="breadcrumb-item active">Offered Amount</li>
+                    <li className="breadcrumb-item active">Offers Received</li>
                   </ul>
                 </div>
               </div>
+              <span className="text-muted">Compare offers from lenders and choose the best option for your needs.</span>
             </div>
 
             <div className="row mb-3">
               <div className="col-12 col-md-6 col-xl-3 mb-3">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
-                    <p className="text-muted mb-1">Total offered amount</p>
+                    <p className="text-muted mb-1">
+                      Total Amount of Offers Received
+                    </p>
                     <h4 className="mb-0">
                       ₹ {totalInitiatedAmount.toFixed(2)}
                     </h4>
                   </div>
                 </div>
               </div>
-              <div className="col-12 col-md-6 col-xl-3 mb-3">
+              {/* <div className="col-12 col-md-6 col-xl-3 mb-3">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
                     <p className="text-muted mb-1">Pending your action</p>
@@ -519,7 +524,7 @@ const BorrowerLoansInitiated = () => {
                     <h4 className="mb-0">{loanSummary.executedLoansCount}</h4>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="row">

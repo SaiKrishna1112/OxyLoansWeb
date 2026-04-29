@@ -52,6 +52,7 @@ const BorrowerDisbursementAmount = () => {
     loanId: data.loanRequestId ?? null,
     createdAt: data.createdAt || "-",
     disbursedAmount: data.disbursedAmount ?? "-",
+    processingFee:data.processingFee ?? "-",
     debitAmount: data.debitAmount ?? "-",
     borrowerStatus: data.borrowerStatus || "-",
     paymentStatus: data.paymentStatus,
@@ -116,8 +117,14 @@ const BorrowerDisbursementAmount = () => {
       align: "center",
     },
     {
-      title: "Disbursed amount",
+      title: "Disbursed Amount",
       dataIndex: "disbursedAmount",
+      align: "center",
+      render: (value) => (value === "-" ? value : `₹ ${value}`),
+    },
+    {
+      title: "Processing Fee",
+      dataIndex: "processingFee",
       align: "center",
       render: (value) => (value === "-" ? value : `₹ ${value}`),
     },
@@ -128,7 +135,7 @@ const BorrowerDisbursementAmount = () => {
     //   render: (value) => (value === "-" ? value : `₹ ${value}`),
     // },
     {
-      title: "Borrower status",
+      title: "Borrower Status",
       align: "center",
       dataIndex: "borrowerStatus",
       render: (value) => {
@@ -136,19 +143,24 @@ const BorrowerDisbursementAmount = () => {
         let badgeClass = "bg-secondary";
         if (status === "PROCESSING") badgeClass = "bg-warning text-dark";
         if (status === "COMPLETED") badgeClass = "bg-success";
-        if (status === "FAILED" || status === "REJECTED") badgeClass = "bg-danger";
+        if (status === "FAILED" || status === "REJECTED")
+          badgeClass = "bg-danger";
         return <span className={`badge ${badgeClass}`}>{value || "-"}</span>;
       },
     },
     {
-      title: "Created date",
+      title: "Created Date",
       dataIndex: "createdAt",
       align: "center",
       render: (value) => {
         if (!value || value === "-") return "-";
         const date = new Date(value.replace(" ", "T"));
         if (Number.isNaN(date.getTime())) return value;
-        return date.toLocaleString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+        return date.toLocaleString(undefined, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+        });
       },
     },
     {
@@ -182,12 +194,12 @@ const BorrowerDisbursementAmount = () => {
             borderRadius: "6px",
           }}
         >
-          Interest Charges
+          View Interest Charges
         </Button>
       ),
     },
     {
-      title: "Agreement Generation",
+      title: "Loan Agreement",
       dataIndex: "invoice",
       align: "center",
       render: (_, row) => {
@@ -208,7 +220,9 @@ const BorrowerDisbursementAmount = () => {
               opacity: isPaid ? 1 : 0.6,
             }}
           >
-            {generatingInvoice[row.key] ? "Generating..." : "Generate Loan Agreement"}
+            {generatingInvoice[row.key]
+              ? "Generating..."
+              : "Generate Loan Agreement"}
           </Button>
         );
       },
@@ -224,27 +238,35 @@ const BorrowerDisbursementAmount = () => {
           <div className="page-header">
             <div className="row align-items-center">
               <div className="col">
-                <h3 className="page-title">Disbursements</h3>
+                <h3 className="page-title">Loan Disbursements</h3>
                 <ul className="breadcrumb">
                   <li className="breadcrumb-item">
                     <Link to="/borrowerDashboard">Dashboard</Link>
                   </li>
-                  <li className="breadcrumb-item active">Disbursements</li>
+                  <li className="breadcrumb-item active">Loan Disbursements</li>
                 </ul>
               </div>
             </div>
+            <span className="text-muted">Track your loan disbursements, payment status, and related charges.</span>
+          </div>
+
+          {/* Repayment Marquee */}
+          <div className="mb-3" style={{ background: "#fdecea", border: "1.5px solid #f5c6cb", borderRadius: 4, overflow: "hidden" }}>
+            <marquee behavior="scroll" direction="left" scrollamount="2" style={{ padding: "8px 0", fontSize: 13, color: "#7a1a1a", fontWeight: 500 }}>
+              ⚠️&nbsp;&nbsp;<strong>Repayment Reminder:</strong>&nbsp; Loan repayment is scheduled for the <strong>5th of each month</strong>. Ensure timely payment to avoid additional charges.
+            </marquee>
           </div>
 
           <div className="row mb-3">
             <div className="col-12 col-md-6 col-xl-3 mb-3">
               <div className="card border-0 shadow-sm h-100">
                 <div className="card-body">
-                  <p className="text-muted mb-1">Total disbursed amount</p>
+                  <p className="text-muted mb-1">Total Disbursed Loan Amount</p>
                   <h4 className="mb-0">₹ {totalDisbursedAmount.toFixed(2)}</h4>
                 </div>
               </div>
             </div>
-            <div className="col-12 col-md-6 col-xl-3 mb-3">
+            {/* <div className="col-12 col-md-6 col-xl-3 mb-3">
               <div className="card border-0 shadow-sm h-100">
                 <div className="card-body">
                   <p className="text-muted mb-1">Processing disbursements</p>
@@ -267,7 +289,7 @@ const BorrowerDisbursementAmount = () => {
                   <h4 className="mb-0">₹ {disbursementSummary.totalDebitAmount.toFixed(2)}</h4>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <div className="row">
@@ -276,6 +298,7 @@ const BorrowerDisbursementAmount = () => {
                 <div className="card-body">
                   <div className="mb-3">
                     <h5 className="mb-1">Disbursement List</h5>
+                    <span className="text-muted">View your loan disbursements and their key details.</span>
                   </div>
                   {disbursementInfo.errorMessage ? (
                     <div className="alert alert-danger" role="alert">

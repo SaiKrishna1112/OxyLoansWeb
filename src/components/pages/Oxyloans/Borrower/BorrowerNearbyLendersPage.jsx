@@ -24,14 +24,18 @@ const createLenderPinIcon = () =>
     className: "custom-map-pin-wrapper",
     html: `
       <div class="custom-map-pin" style="--pin-color:${LENDER_PIN_COLOR}">
-        <span class="pin-head"></span>
+        <div class="pin-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white">
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+          </svg>
+        </div>
         <span class="pin-tail"></span>
         <span class="pin-glow"></span>
       </div>
     `,
-    iconSize: [30, 42],
-    iconAnchor: [15, 38],
-    popupAnchor: [0, -34],
+    iconSize: [32, 44],
+    iconAnchor: [16, 42],
+    popupAnchor: [0, -40],
   });
 
 const lenderPinIcon = createLenderPinIcon();
@@ -40,12 +44,18 @@ const youLocationIcon = L.divIcon({
   className: "you-marker-outer",
   html: `
     <div class="you-marker-inner">
-      <span class="you-marker-label">YOU</span>
+      <div class="you-pin-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="white">
+          <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+        </svg>
+      </div>
+      <span class="you-pin-tail"></span>
+      <span class="you-pin-glow"></span>
     </div>
   `,
-  iconSize: [48, 40],
-  iconAnchor: [24, 40],
-  popupAnchor: [0, -36],
+  iconSize: [54, 70],
+  iconAnchor: [27, 68],
+  popupAnchor: [0, -64],
 });
 
 const MapFlyTo = ({ center }) => {
@@ -87,7 +97,7 @@ const BorrowerNearbyLendersPage = () => {
   });
   const [pagination, setPagination] = useState({
     pageNo: 1,
-    pageSize: 100,
+    pageSize: 200,
   });
   const [maxPageReached, setMaxPageReached] = useState(1);
   const [selectedRadiusKm, setSelectedRadiusKm] = useState(25);
@@ -142,9 +152,7 @@ const BorrowerNearbyLendersPage = () => {
               index ===
               self.findIndex(
                 (candidate) =>
-                  String(candidate?.lenderId) === String(item?.lenderId) &&
-                  String(candidate?.lenderLat) === String(item?.lenderLat) &&
-                  String(candidate?.lenderLng) === String(item?.lenderLng),
+                  String(candidate?.lenderId) === String(item?.lenderId),
               ),
           );
 
@@ -253,35 +261,44 @@ const BorrowerNearbyLendersPage = () => {
 
           .custom-map-pin {
             position: relative;
-            width: 30px;
-            height: 42px;
+            width: 32px;
+            height: 44px;
             transform-origin: 50% 100%;
             transition: transform 180ms ease, filter 220ms ease;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+            filter: drop-shadow(0 4px 10px rgba(37,99,235,0.45));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
           }
 
-          .custom-map-pin .pin-head {
-            display: block;
-            width: 22px;
-            height: 22px;
-            margin: 0 auto;
+          .custom-map-pin .pin-circle {
+            width: 28px;
+            height: 28px;
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
-            background: var(--pin-color);
-            border: 2px solid #ffffff;
-            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1);
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+          }
+
+          .custom-map-pin .pin-circle svg {
+            transform: rotate(45deg);
           }
 
           .custom-map-pin .pin-tail {
             position: absolute;
             left: 50%;
-            top: 16px;
+            top: 20px;
             width: 4px;
-            height: 18px;
+            height: 16px;
             transform: translateX(-50%);
             border-radius: 6px;
-            background: var(--pin-color);
-            opacity: 0.95;
+            background: linear-gradient(to bottom, #2563eb, #1d4ed8);
+            opacity: 0.9;
           }
 
           .custom-map-pin .pin-glow {
@@ -289,17 +306,16 @@ const BorrowerNearbyLendersPage = () => {
             left: 50%;
             bottom: 0;
             width: 20px;
-            height: 10px;
+            height: 8px;
             transform: translateX(-50%);
             border-radius: 50%;
-            background: color-mix(in srgb, var(--pin-color) 75%, transparent);
-            filter: blur(5px);
-            opacity: 0.7;
+            background: rgba(37,99,235,0.35);
+            filter: blur(4px);
           }
 
           .leaflet-marker-icon:hover .custom-map-pin {
-            transform: translateY(-3px) scale(1.04);
-            filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.28));
+            transform: translateY(-4px) scale(1.08);
+            filter: drop-shadow(0 10px 16px rgba(37,99,235,0.55));
           }
 
           .you-marker-outer {
@@ -309,33 +325,54 @@ const BorrowerNearbyLendersPage = () => {
 
           .you-marker-inner {
             position: relative;
+            width: 54px;
+            height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            filter: drop-shadow(0 5px 12px rgba(22,163,74,0.55));
+          }
+
+          .you-pin-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            background: linear-gradient(135deg, ${BORROWER_MARKER_COLOR} 0%, #15803d 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 3px 10px rgba(22,163,74,0.55);
             display: flex;
             align-items: center;
             justify-content: center;
-            min-width: 44px;
-            height: 28px;
-            padding: 0 10px;
-            background: ${BORROWER_MARKER_COLOR};
-            color: #fff;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.06em;
-            border-radius: 6px;
-            border: 2px solid #fff;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.45);
+            flex-shrink: 0;
           }
 
-          .you-marker-inner::after {
-            content: "";
+          .you-pin-circle svg {
+            transform: rotate(45deg);
+          }
+
+          .you-pin-tail {
             position: absolute;
             left: 50%;
-            bottom: -8px;
+            top: 34px;
+            width: 5px;
+            height: 22px;
             transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-top: 8px solid ${BORROWER_MARKER_COLOR};
+            border-radius: 6px;
+            background: linear-gradient(to bottom, ${BORROWER_MARKER_COLOR}, #15803d);
+            opacity: 0.9;
+          }
+
+          .you-pin-glow {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 28px;
+            height: 10px;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            background: rgba(22,163,74,0.4);
+            filter: blur(5px);
           }
 
           .radius-options {
@@ -564,7 +601,7 @@ const BorrowerNearbyLendersPage = () => {
                     >
                       <Tooltip
                         direction="top"
-                        offset={[0, -36]}
+                        offset={[0, -64]}
                         opacity={1}
                         className="map-hover-name"
                       >
@@ -611,7 +648,7 @@ const BorrowerNearbyLendersPage = () => {
                         >
                           <Tooltip
                             direction="top"
-                            offset={[0, -34]}
+                            offset={[0, -40]}
                             opacity={1}
                             className="map-hover-name"
                           >
@@ -712,20 +749,26 @@ const BorrowerNearbyLendersPage = () => {
                             background: isSelected ? `${PRIMARY}14` : "#f8f9fa",
                             marginBottom: 8,
                             cursor: "pointer",
+                            transition: "all 0.15s",
                           }}
                           onClick={() => setSelectedLenderId(lenderId)}
                         >
-                          <div className="fw-semibold text-truncate" style={{ fontSize: 13 }}>
-                            {lender?.lenderName || "Lender"}
-                          </div>
-                          <div className="text-muted" style={{ fontSize: 11 }}>
-                            ID: {lender?.lenderId ?? "—"}
-                          </div>
-                          <div className="text-muted mt-1" style={{ fontSize: 11 }}>
-                            <i className="fa fa-map-marker me-1" style={{ color: "#dc3545" }} />
-                            {lender?.distance !== null && lender?.distance !== undefined
-                              ? `${Number(lender.distance).toFixed(2)} km`
-                              : "Distance N/A"}
+                          <div className="d-flex align-items-center gap-2">
+                            <div style={{ width: 32, height: 32, borderRadius: "50%", background: isSelected ? PRIMARY : "#e8f0ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <i className="fa fa-user" style={{ color: isSelected ? "#fff" : PRIMARY, fontSize: 13 }} />
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div className="fw-semibold text-truncate" style={{ fontSize: 12, color: isSelected ? PRIMARY : "#1a1f36" }}>
+                                {lender?.lenderName || "Lender"}
+                              </div>
+                              <div style={{ fontSize: 10, color: "#888" }}>ID: {lender?.lenderId ?? "—"}</div>
+                            </div>
+                            <div className="ms-auto text-end" style={{ flexShrink: 0 }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: lender?.distance <= 5 ? "#16a34a" : lender?.distance <= 25 ? "#d97706" : "#dc3545" }}>
+                                {lender?.distance != null ? `${Number(lender.distance).toFixed(1)} km` : "N/A"}
+                              </div>
+                              <div style={{ fontSize: 9, color: "#aaa" }}>away</div>
+                            </div>
                           </div>
                         </div>
                       );
@@ -777,11 +820,10 @@ const BorrowerNearbyLendersPage = () => {
                       <option value={100}>100</option>
                       <option value={150}>150</option>
                       <option value={200}>200</option>
+                      <option value={500}>500</option>
                     </select>
                   </div>
-                  <small className="text-muted d-block mt-2">
-                    API page count: {pageInfo.rawCount}
-                  </small>
+                 
                 </div>
               </div>
             </div>

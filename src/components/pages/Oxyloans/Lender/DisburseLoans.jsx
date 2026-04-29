@@ -126,13 +126,21 @@ const DisburseLoans = () => {
           <div className="page-header">
             <div className="row align-items-center">
               <div className="col">
-                <h3 className="page-title">Disburse Loans</h3>
+                <h3 className="page-title">Disbursed Loans</h3>
                 <ul className="breadcrumb">
                   <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
-                  <li className="breadcrumb-item active">Disburse Loans</li>
+                  <li className="breadcrumb-item active">Disbursed Loans</li>
                 </ul>
               </div>
             </div>
+            <span className="text-muted">Track and manage all loans you have disbursed and monitor their performance.</span>
+          </div>
+
+          {/* Repayment Marquee */}
+          <div className="mb-2" style={{ background: "#fffdf0", borderRadius: 6 }}>
+            <marquee behavior="scroll" direction="left" scrollamount="2" style={{ padding: "6px 0", fontSize: 12, color: "#7a5c00", fontWeight: 500, textAlign: "center" }}>
+              📅&nbsp;&nbsp;<strong>Repayment Reminder:</strong>&nbsp; Borrower repayment is scheduled for the <strong>5th of each month</strong>. Timely payment ensures consistent returns on your investment.
+            </marquee>
           </div>
 
           {/* Summary Cards */}
@@ -164,11 +172,14 @@ const DisburseLoans = () => {
           {/* Table Card */}
           <div className="card">
             <div className="card-header d-flex align-items-center justify-content-between py-3">
-              <h5 className="mb-0 fw-bold">Disburse Loans List</h5>
+              <h5 className="mb-0 fw-bold">Disbursed Loans List</h5>
+              <p className="text-muted">View all your disbursed loans and their key details.</p>
               {totalCount > 0 && (
                 <small className="text-muted">Total <strong>{totalCount}</strong> loan{totalCount !== 1 ? "s" : ""}</small>
               )}
+               
             </div>
+           
 
             <div className="card-body p-0">
               {loading ? (

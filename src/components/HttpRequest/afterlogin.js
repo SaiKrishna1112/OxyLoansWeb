@@ -2689,6 +2689,18 @@ export const submitBorrowerLoanRequest = async (payload) => {
   return response;
 };
 
+export const getCibilBasedRoi = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/getCibilBasedRoi`,
+    "GET",
+    token
+  );
+  return response;
+};
+
 export const getBorrowerEligibleAmount = async () => {
   const token = getToken();
   const userId = getUserId();

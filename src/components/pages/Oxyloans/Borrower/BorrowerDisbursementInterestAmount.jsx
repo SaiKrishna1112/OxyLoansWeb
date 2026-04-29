@@ -142,16 +142,36 @@ const BorrowerDisbursementInterestAmount = () => {
     return (
       <>
         {/* Header */}
-        <div style={{ borderBottom: "1px solid #e2e8f0", paddingBottom: 10, marginBottom: 14 }}>
+        <div
+          style={{
+            borderBottom: "1px solid #e2e8f0",
+            paddingBottom: 10,
+            marginBottom: 14,
+          }}
+        >
           <div style={{ fontSize: 13, color: "#64748b" }}>
-            Borrower ID: <strong>{borrowerId}</strong> &nbsp;|&nbsp; Loan ID: <strong>{loanId}</strong>
+            Borrower ID: <strong>{borrowerId}</strong> &nbsp;|&nbsp; Loan ID:{" "}
+            <strong>{loanId}</strong>
           </div>
         </div>
 
         {/* Fee Breakdown */}
         <div style={{ border: "1px solid #e2e8f0", marginBottom: 16 }}>
-          <div style={{ padding: "8px 14px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>Fee Breakdown</span>
+          <div
+            style={{
+              padding: "8px 14px",
+              borderBottom: "1px solid #e2e8f0",
+              background: "#f8fafc",
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
+              Charges Breakdown
+            </span>
+            <br/>
+            <p style={{   color: "#1e293b" }}>
+              Review all applicable charges, including platform fees, penalties,
+              and interest
+            </p>
           </div>
           {feeRows.map(({ key, label, isDay }, idx) => {
             const raw = data[key];
@@ -164,24 +184,53 @@ const BorrowerDisbursementInterestAmount = () => {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "8px 14px",
-                  borderBottom: idx < feeRows.length - 1 ? "1px solid #f1f5f9" : "none",
+                  borderBottom:
+                    idx < feeRows.length - 1 ? "1px solid #f1f5f9" : "none",
                 }}
               >
                 <span style={{ fontSize: 13, color: "#334155" }}>{label}</span>
-                <span style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{value}</span>
+                <span
+                  style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}
+                >
+                  {value}
+                </span>
               </div>
             );
           })}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderTop: "2px solid #e2e8f0" }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>Grand Total</span>
-            <span style={{ fontWeight: 800, fontSize: 15, color: "#1e293b" }}>{fmt(data.grandTotal)}</span>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "10px 14px",
+              borderTop: "2px solid #e2e8f0",
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>
+              Grand Total
+            </span>
+            <span style={{ fontWeight: 800, fontSize: 15, color: "#1e293b" }}>
+              {fmt(data.grandTotal)}
+            </span>
           </div>
         </div>
 
         {/* Lender Table */}
         <div style={{ border: "1px solid #e2e8f0" }}>
-          <div style={{ padding: "8px 14px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc" }}>
-            <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>Lender-wise Interest Details</span>
+          <div
+            style={{
+              padding: "8px 14px",
+              borderBottom: "1px solid #e2e8f0",
+              background: "#f8fafc",
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
+              Lender-wise Interest Details
+            </span>{" "}<br/>
+            <p style={{  color: "#1e293b" }}>
+              View interest calculations for each lender based on amount,
+              duration, and rate.
+            </p>
           </div>
           <Table
             columns={tableColumns}
@@ -218,6 +267,7 @@ const BorrowerDisbursementInterestAmount = () => {
                   <li className="breadcrumb-item active">Interest Charges</li>
                 </ul>
               </div>
+              <p className="">View a detailed breakdown of interest, fees, and charges applied to your loan. </p>
             </div>
           </div>
 
