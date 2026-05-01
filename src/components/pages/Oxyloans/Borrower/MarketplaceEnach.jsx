@@ -23,9 +23,6 @@ const MarketplaceEnach = () => {
     debitDay: "5",
   });
 
-  // In local mode OTP is always 1234
-  const LOCAL_OTP = "1234";
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
     setError("");
@@ -66,12 +63,7 @@ const MarketplaceEnach = () => {
         setLoading(false);
       })
       .catch((err) => {
-        // Local/dev fallback — accept OTP 1234 when backend is unreachable
-        if (!err?.response || otp === LOCAL_OTP) {
-          setStep("success");
-        } else {
-          setError(err?.response?.data?.message || "OTP verification failed. Please try again.");
-        }
+        setError(err?.response?.data?.message || "OTP verification failed. Please try again.");
         setLoading(false);
       });
   };
@@ -409,10 +401,6 @@ const MarketplaceEnach = () => {
                       <p className="text-muted mb-4">
                         An OTP has been sent to your registered mobile number to authorize
                         the eNACH mandate.
-                        <br />
-                        <span className="text-muted" style={{ fontSize: 12 }}>
-                          (Local/dev mode: use <strong>1234</strong>)
-                        </span>
                       </p>
 
                       <div className="row justify-content-center">

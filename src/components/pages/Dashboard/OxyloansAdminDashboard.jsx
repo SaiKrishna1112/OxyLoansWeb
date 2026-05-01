@@ -8,6 +8,8 @@ import OxyloansAdminSidebar from "../../SideBar/OxyloansAdminSidebar";
 import Footer from "../../Footer/Footer";
 import { handleDashboardUsersData,fetchActiveLendersData } from "../../HttpRequest/admin";
 import Swal from "sweetalert2";
+import FloatingAssistant from "../../FloatingAssistant";
+import logo from "../../../assets/img/avtarimage.png";
 
 const OxyloansAdminDashboard = () => {
   const[userData,setUserData]=useState({})
@@ -184,6 +186,7 @@ useEffect(()=>{
         </div>
         <Footer />
       </div>
+      <FloatingAssistant avatarSrc={logo} />
     </div>
   );
 };

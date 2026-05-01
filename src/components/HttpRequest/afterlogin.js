@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ENV as userisIn, API_USER_URL as API_BASE_URL, MARKETPLACE_URL as MARKETPLACE_BASE } from "../../config";
+import { API_USER_URL as API_BASE_URL, MARKETPLACE_URL as MARKETPLACE_BASE } from "../../config";
 
 axios.interceptors.response.use(
   (response) => response,
@@ -21,7 +21,7 @@ axios.interceptors.response.use(
 );
 
 // Check both sessionStorage (main login flow) and localStorage (admin/alternate login flow)
-const getToken = () => {
+export const getToken = () => {
   return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken") || null;
 };
 export const base_url=API_BASE_URL;
@@ -1475,7 +1475,7 @@ export const nofreeParticipationapi = async (
       deal.lenderParticipationTotal !== null || 0 ? "ADD" : "UPDATE",
     accountType: accountType,
     lenderRemainingWalletAmount: lenderRemainingWalletAmount,
-    ExtensionConsents: userisIn === "local" ? "INTERESTED" : "NOTINTERESTED",
+    ExtensionConsents: "NOTINTERESTED",
     feeStatus: "COMPLETED",
     // lenderTotalPanLimit:userPanLimit,
     // totalParticipatedAmount:userTotalParticipation
@@ -1512,7 +1512,7 @@ export const dealparticipationValidityUser = async (deal) => {
     totalParticipatedAmount: deal.apidata.lenderTotalParticipationAmount,
     lenderRemainingWalletAmount: deal.apidata.lenderRemainingWalletAmount,
     lenderParticipationFrom: "WEB",
-    ExtensionConsents: userisIn === "local" ? "INTERESTED" : "NOTINTERESTED",
+    ExtensionConsents: "NOTINTERESTED",
   };
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
@@ -1546,7 +1546,7 @@ export const newlenderdealparticipation = async (deal) => {
     totalParticipatedAmount: deal.apidata.lenderTotalParticipationAmount,
     lenderRemainingWalletAmount: deal.apidata.lenderRemainingWalletAmount,
     lenderParticipationFrom: "WEB",
-    ExtensionConsents: userisIn === "local" ? "INTERESTED" : "NOTINTERESTED",
+    ExtensionConsents: "NOTINTERESTED",
   };
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
@@ -2606,21 +2606,17 @@ export const editloanNewRequestHold = async (status) => {
 
 export const chatbotapicall = async (messages) => {
   const token = getToken();
-  const postdata = {
-    message: messages,
-  };
-  
+  const userId = getUserId();
   const response = await axios({
-    url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
+    url: `${MARKETPLACE_BASE}/v1/ai/chat`,
     method: "POST",
     headers: {
-      accessToken: `${token}`,
-      "X-API-KEY": "oxy-ai-prod-key",
+      "Content-Type": "application/json",
+      accessToken: token,
+      userId: userId,
     },
-    data: postdata,
-    responseType: 'text',
+    data: { message: messages, primaryType: localStorage.getItem("primaryType") || "LENDER" },
   });
-  
   return response;
 };
 
@@ -3129,4 +3125,35 @@ export const getMarketplaceOxyScore = (borrowerUserId) =>
   axios.get(`${MARKETPLACE_BASE}/v1/cibil/marketplace-score/${borrowerUserId}`, {
     headers: marketplaceHeaders(),
   });
+
+// ============================================================
+// COLLECTIONS APIs
+// ============================================================
+
+export const getCollectionStats = () =>
+  axios.get(`${MARKETPLACE_BASE}/v1/collections/stats`, { headers: marketplaceHeaders() });
+
+export const getCollectionCases = (status = "") =>
+  axios.get(`${MARKETPLACE_BASE}/v1/collections/cases?status=${status}`, { headers: marketplaceHeaders() });
+
+export const getCollectionCase = (caseId) =>
+  axios.get(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}`, { headers: marketplaceHeaders() });
+
+export const assignCollectionAgent = (caseId, agentId, agentName) =>
+  axios.post(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}/assign`,
+    { agentId, agentName }, { headers: marketplaceHeaders() });
+
+export const logCollectionAction = (caseId, actionType, note, outcome) =>
+  axios.post(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}/action`,
+    { actionType, note, outcome }, { headers: marketplaceHeaders() });
+
+export const updateCollectionStatus = (caseId, status, note = "") =>
+  axios.put(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}/status`,
+    { status, note }, { headers: marketplaceHeaders() });
+
+export const getMyCollectionCases = () =>
+  axios.get(`${MARKETPLACE_BASE}/v1/collections/my-cases`, { headers: marketplaceHeaders() });
+
+export const syncCollections = () =>
+  axios.post(`${MARKETPLACE_BASE}/v1/collections/sync`, {}, { headers: marketplaceHeaders() });
 

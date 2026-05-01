@@ -42,7 +42,7 @@ import { personalDetails } from "../Base UI Elements/SweetAlert";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import axios from "axios";
-import { base_url } from "../../HttpRequest/afterlogin";
+import { base_url, getToken, getUserId } from "../../HttpRequest/afterlogin";
 import { fetchTopLenders } from "../../HttpRequest/admin";
 import Swal from "sweetalert2";
 
@@ -266,17 +266,17 @@ const AdminDashboard = () => {
 
   const handleSave = () => {
     console.log("Selected city:", selectedCity);
-    const userId = sessionStorage.getItem("userId");
+    const userId = getUserId();
     console.log("User ID:", userId);
 
     let data = {
       city: selectedCity,
     };
-    
+
     axios
       .post(`${base_url}${userId}/city`, data, {
         headers: {
-          accessToken: sessionStorage.getItem("accessToken"),
+          accessToken: getToken(),
         },
       })
       .then(function (response) {
@@ -556,6 +556,19 @@ const AdminDashboard = () => {
                             className="badge bg-success mx-2"
                           >
                             Get Membership
+                          </Tag>
+                        </Link>
+                        <Link to="/lender-analytics">
+                          <Tag
+                            style={{
+                              height: "1.8rem",
+                              display: "flex",
+                              alignItems: "center",
+                              backgroundColor: "#6366f1",
+                            }}
+                            className="badge mx-2"
+                          >
+                            Analytics
                           </Tag>
                         </Link>
                       </div>

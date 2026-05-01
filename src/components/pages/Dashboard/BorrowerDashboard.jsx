@@ -3,6 +3,8 @@ import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
 import ReactApexChart from "react-apexcharts";
+import FloatingAssistant from "../../FloatingAssistant";
+import logo from "../../../assets/img/avtarimage.png";
 
 import { Link } from "react-router-dom";
 import "../Oxyloans/Lender/table.css";
@@ -255,23 +257,41 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
             <div className="page-header">
               <div className="row">
                 <div className="col-sm-12">
-                  <div className="page-sub-header">
-                    <h3 className="page-title">
-                      Welcome {""}
-                      {getreducerprofiledata?.firstName
-                        ? getreducerprofiledata.firstName.charAt(0).toUpperCase() +
-                          getreducerprofiledata.firstName.slice(1).toLowerCase()
-                        : ""}
-                    </h3>
-                    <ul className="breadcrumb">
-                      <li className="breadcrumb-item active">
-                        <Link to="/borrowerDashboard">Home</Link>
-                      </li>
-                      <li className="breadcrumb-item">
-                        {" "}
-                        <Link to="/borrowerDashboard">Dashboard</Link>
-                      </li>
-                    </ul>
+                  <div className="page-sub-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <h3 className="page-title">
+                        Welcome {""}
+                        {getreducerprofiledata?.firstName
+                          ? getreducerprofiledata.firstName.charAt(0).toUpperCase() +
+                            getreducerprofiledata.firstName.slice(1).toLowerCase()
+                          : ""}
+                      </h3>
+                      <ul className="breadcrumb">
+                        <li className="breadcrumb-item active">
+                          <Link to="/borrowerDashboard">Home</Link>
+                        </li>
+                        <li className="breadcrumb-item">
+                          {" "}
+                          <Link to="/borrowerDashboard">Dashboard</Link>
+                        </li>
+                      </ul>
+                    </div>
+                    <Link to="/borrower-analytics">
+                      <button
+                        style={{
+                          padding: "6px 16px",
+                          borderRadius: 8,
+                          background: "#6366f1",
+                          color: "#fff",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Analytics
+                      </button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -525,6 +545,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           </Modal>
       </div>
       {/* /Main Wrapper */}
+      <FloatingAssistant avatarSrc={logo} />
     </>
   );
 };

@@ -5,6 +5,7 @@ import Header from "../../../Header/Header";
 import Sidebar from "../../../SideBar/SideBar";
 import { useNavigate } from "react-router-dom";
 import { API_USER_URL } from "../../../../config";
+import { getToken } from "../../../HttpRequest/afterlogin";
 
 export default function TopLendersInfo() {
   const [lenders, setLenders] = useState([]);
@@ -13,7 +14,7 @@ export default function TopLendersInfo() {
 
   useEffect(() => {
     const fetchLenders = async () => {
-      const accessToken = sessionStorage.getItem("accessToken");
+      const accessToken = getToken();
       if (!accessToken) {
         console.error("Access token missing");
         setLoading(false);

@@ -20,6 +20,110 @@ function calcEmi(amount, months, rate) {
   return Math.round(emi);
 }
 
+function VoiceAgent({ onResult }) {
+  const [listening, setListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+
+  const parseVoice = (text) => {
+    const t = text.toLowerCase();
+    const result = {};
+    const wordNums = {
+      one: 1, two: 2, three: 3, four: 4, five: 5,
+      six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+      twenty: 20, thirty: 30, fifty: 50,
+    };
+    Object.entries(wordNums).forEach(([w, n]) => {
+      if (t.includes(w + " lakh")) result.loanAmount = n * 100000;
+      if (t.includes(w + " thousand")) result.loanAmount = n * 1000;
+    });
+    const numLakh = t.match(/(\d+)\s*lakh/);
+    if (numLakh) result.loanAmount = parseInt(numLakh[1]) * 100000;
+    const numK = t.match(/(\d+)\s*thousand/);
+    if (numK) result.loanAmount = parseInt(numK[1]) * 1000;
+    const months = t.match(/(\d+)\s*month/);
+    if (months) result.durationMonths = parseInt(months[1]);
+    if (t.includes("one year")) result.durationMonths = 12;
+    if (t.includes("two year")) result.durationMonths = 24;
+    if (t.includes("personal")) result.purpose = "Personal";
+    if (t.includes("medical")) result.purpose = "Medical";
+    if (t.includes("education")) result.purpose = "Education";
+    if (t.includes("business")) result.purpose = "Business";
+    if (t.includes("wedding") || t.includes("marriage")) result.purpose = "Wedding";
+    if (t.includes("home") || t.includes("house")) result.purpose = "Home Renovation";
+    if (t.includes("travel")) result.purpose = "Travel";
+    const rate = t.match(/(\d+)\s*percent/);
+    if (rate) result.preferredMaxRate = parseInt(rate[1]);
+    onResult(result);
+  };
+
+  const startListening = () => {
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+      alert("Voice input requires Chrome browser. Please use Chrome.");
+      return;
+    }
+    const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognition.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      setTranscript(text);
+      parseVoice(text);
+    };
+    recognition.start();
+  };
+
+  return (
+    <div style={{
+      textAlign: "center", marginBottom: 20, padding: 16,
+      background: "linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%)",
+      borderRadius: 12, border: "1px solid #d0d7ff",
+    }}>
+      <p style={{ margin: "0 0 12px", fontSize: 13, color: "#555", fontWeight: 500 }}>
+        🎤 Voice Quick-Fill — say your loan details and we'll fill the form
+      </p>
+      <button
+        onClick={startListening}
+        disabled={listening}
+        style={{
+          width: 64, height: 64, borderRadius: "50%", border: "none",
+          background: listening ? "#d63031" : "#6c5ce7",
+          color: "#fff", fontSize: 26, cursor: listening ? "default" : "pointer",
+          boxShadow: listening ? "0 0 0 8px rgba(214,48,49,0.2)" : "0 4px 12px rgba(108,92,231,0.4)",
+          animation: listening ? "voicePulse 1s infinite" : "none",
+          transition: "all 0.2s",
+        }}
+        title={listening ? "Listening…" : "Click to speak"}
+      >
+        🎤
+      </button>
+      <p style={{ marginTop: 10, fontSize: 12, color: listening ? "#d63031" : "#888", fontWeight: listening ? 600 : 400 }}>
+        {listening ? "🔴 Listening… speak now" : 'Try: "I need one lakh for 12 months personal use"'}
+      </p>
+      {transcript && (
+        <div style={{
+          marginTop: 8, padding: "6px 12px", background: "#fff",
+          borderRadius: 8, fontSize: 13, fontStyle: "italic", color: "#444",
+          border: "1px solid #e0e0ff", display: "inline-block",
+        }}>
+          Heard: "{transcript}"
+        </div>
+      )}
+      <style>{`
+        @keyframes voicePulse {
+          0%   { box-shadow: 0 0 0 0 rgba(214,48,49,0.5); }
+          70%  { box-shadow: 0 0 0 18px rgba(214,48,49,0); }
+          100% { box-shadow: 0 0 0 0 rgba(214,48,49,0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function PostLoanRequest() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -45,6 +149,17 @@ export default function PostLoanRequest() {
       setFees(null);
     }
   }, [form.loanAmount]);
+
+  const handleVoiceResult = (parsed) => {
+    setForm((prev) => ({
+      ...prev,
+      ...(parsed.loanAmount    !== undefined ? { loanAmount:      String(parsed.loanAmount)    } : {}),
+      ...(parsed.durationMonths!== undefined ? { durationMonths:  parsed.durationMonths        } : {}),
+      ...(parsed.purpose       !== undefined ? { loanPurpose:     parsed.purpose               } : {}),
+      ...(parsed.preferredMaxRate!==undefined? { preferredMaxRate:parsed.preferredMaxRate      } : {}),
+    }));
+    setError("");
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -116,6 +231,8 @@ export default function PostLoanRequest() {
                 <h4 className="card-title">Loan Details</h4>
               </div>
               <div className="card-body">
+                <VoiceAgent onResult={handleVoiceResult} />
+
                 {error && <div className="alert alert-danger">{error}</div>}
                 {success && <div className="alert alert-success">{success}</div>}
 

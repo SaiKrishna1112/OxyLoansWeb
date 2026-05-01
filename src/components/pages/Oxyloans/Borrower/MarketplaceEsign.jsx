@@ -16,9 +16,6 @@ const MarketplaceEsign = () => {
   const [agreementUrl, setAgreementUrl] = useState(null);
   const [agreed, setAgreed] = useState(false);
 
-  // In local/dev mode OTP is always 1234
-  const LOCAL_OTP = "1234";
-
   const sendOtp = () => {
     setLoading(true);
     setError("");
@@ -30,8 +27,8 @@ const MarketplaceEsign = () => {
   };
 
   const verifyOtp = () => {
-    if (otp !== LOCAL_OTP) {
-      setError("Invalid OTP. (Local mode: use 1234)");
+    if (!otp || otp.length < 4) {
+      setError("Please enter a valid 4-digit OTP.");
       return;
     }
     setLoading(true);
@@ -219,10 +216,6 @@ const MarketplaceEsign = () => {
                       ></i>
                       <p className="text-muted mb-4">
                         An OTP has been sent to your registered mobile number.
-                        <br />
-                        <span className="text-muted" style={{ fontSize: 12 }}>
-                          (Local/dev mode: use <strong>1234</strong>)
-                        </span>
                       </p>
 
                       <div className="row justify-content-center">

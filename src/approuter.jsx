@@ -153,6 +153,11 @@ import TopLendersInfo from "./components/pages/Oxyloans/Admin/TopLendersList/Top
 import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/AllReferreDetails.js";
 import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
 import ActiveLendersParticipationPage from "./components/pages/Oxyloans/Admin/ActiveLenders/ActiveLendersParticipationPage.jsx";
+import CollectionsAdminDashboard from "./components/pages/Oxyloans/Admin/CollectionsAdminDashboard";
+import AgentPortal from "./components/pages/Oxyloans/Admin/AgentPortal";
+import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
+import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
+import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -327,6 +332,12 @@ const AppRouter = () => {
         <Route path="/agreement/:loanRequestId" element={<PrivateRoute element={<AgreementPage />} />} />
         <Route path="/my-loans" element={<PrivateRoute element={<MyLoans />} />} />
         <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolio />} />} />
+        <Route path="/admin/collections" element={<PrivateRoute element={<CollectionsAdminDashboard />} />} />
+        <Route path="/admin/agent-portal" element={<PrivateRoute element={<AgentPortal />} />} />
+        <Route path="/admin/ceo-dashboard" element={<PrivateRoute element={<CeoDashboard />} />} />
+        <Route path="/admin/marketplace" element={<PrivateRoute element={<MarketplaceAdminDashboard />} />} />
+        <Route path="/lender-analytics" element={<PrivateRoute element={<LenderAnalytics />} />} />
+        <Route path="/borrower-analytics" element={<PrivateRoute element={<BorrowerAnalytics />} />} />
       </Routes>
     </BrowserRouter>
   );
