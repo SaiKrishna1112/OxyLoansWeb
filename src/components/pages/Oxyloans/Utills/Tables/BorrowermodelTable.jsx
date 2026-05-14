@@ -22,7 +22,7 @@ const BorrowermodelTable = ({ data }) => {
                 InterestPaidDate: dataItem.interestPaidDate ? dataItem.interestPaidDate : "Yet to be paid",
                 InterestAmount: index === 0 ? (
                     <>
-                        {dataItem.interestAmount}
+                        {dataItem.interestAmount.toLocaleString("en-IN")}
                         {console.log(data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo)}
                         {console.log(data.data.dealLevelLoanEmiCard[0])}
                         {/* {()=>handleUploadData(data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo)} */}
@@ -44,14 +44,14 @@ const BorrowermodelTable = ({ data }) => {
                                                 {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo.map((item, index) => (
                                                     <tr key={index}>
                                                         <th scope="row">{item.upatedDate}</th>
-                                                        <td>{item.interestAmount}</td>
+                                                        <td>{item.interestAmount.toLocaleString("en-IN")}</td>
                                                         <td>{item.differenceInDays}</td>
                                                     </tr>
                                                 ))}
                                                 <tr>
                                                     <td colSpan="1">Total Amount</td>
                                                     <td>
-                                                        {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo.reduce((total, item) => total + item.interestAmount, 0)}
+                                                        {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo.reduce((total, item) => total + item.interestAmount, 0).toLocaleString("en-IN")}
                                                     </td>
                                                 </tr>
                                             </>
@@ -72,7 +72,7 @@ const BorrowermodelTable = ({ data }) => {
                         </Popover>
                     </>
                 ) : (
-                    dataItem.interestAmount
+                    dataItem.interestAmount.toLocaleString("en-IN")
                 ),
                 Noofdays: dataItem.differenceInDaysForFirstParticipation,
                 listOfPaticipatedInfo: dataItem.listOfPaticipatedInfo,

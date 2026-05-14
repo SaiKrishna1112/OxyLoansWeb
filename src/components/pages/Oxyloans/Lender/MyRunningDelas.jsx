@@ -416,7 +416,7 @@ const MyRunningDeals = () => {
                                 Tenure : {data.dealDuration} {data.lederReturnType == "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
                               </div>
                               <div className="col-auto col-lg-3">
-                                Participated Amount: INR {data.paticipatedAmount}
+                                Participated Amount: INR {data.paticipatedAmount.toLocaleString("en-IN")}
                               </div>
                               {/* <div>Status : Open</div> */}
                             </div>
@@ -492,7 +492,7 @@ const MyRunningDeals = () => {
                                   <div className="col-sm-6 col-lg-2">
                                     <span>Interest Earned</span>
                                     <h6 className="mb-0">
-                                      INR {data.interestEarned}
+                                      INR {data.interestEarned.toLocaleString("en-IN")}
                                     </h6>
                                   </div>
                                 )}
@@ -657,7 +657,7 @@ const MyRunningDeals = () => {
                                   Tenure : {data.dealDuration} {data.lederReturnType == "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
                                 </div>
                                 <div className="col-auto col-lg-3">
-                                  Participated Amount: INR {data.paticipatedAmount}
+                                  Participated Amount: INR {data.paticipatedAmount.toLocaleString("en-IN")}
                                 </div>
                                 {/* <div>Status : Open</div> */}
                               </div>
@@ -734,7 +734,7 @@ const MyRunningDeals = () => {
                                     <div className="col-sm-6 col-lg-2">
                                       <span>Interest Earned</span>
                                       <h6 className="mb-0">
-                                        INR {data.interestEarned}
+                                        INR {data.interestEarned.toLocaleString("en-IN")}
                                       </h6>
                                     </div>
                                   )}

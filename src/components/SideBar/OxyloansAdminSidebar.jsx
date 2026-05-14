@@ -88,6 +88,13 @@ const OxyloansAdminSidebar = () => {
       link: "/borrowerLoanApplications",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
+    {
+  key: "failedborrowers",
+  label: "Failed borrowers",
+  link: "/failedborrowers",
+  icon: "fa-solid fa-triangle-exclamation",
+  type: ["HELPDESKADMIN", "ADMIN"]
+},
       {
       key: "activeLenders",
       label: "Active Lenders",

@@ -834,3 +834,71 @@ export const adminUpdateProcessingFee = async (payload) => {
   );
   return response;
 };
+
+export const adminBorrowerSecureInfo = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerSecureInfo`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const calculateRoiBasedOnCibilScore = async (cibilScore, userId) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `calculateRoiBasedOnCibilScore`,
+    "PATCH",
+    token,
+    { cibilScore: String(cibilScore), userId: String(userId) }
+  );
+  return response;
+};
+
+export const verifyDocument = async (userId, id, status) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `verifyDocuments`,
+    "PATCH",
+    token,
+    { userId: String(userId), id: String(id), status }
+  );
+  return response;
+};
+
+export const updateBorrowerComment = async (id, comments) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "updateComments",
+    "PATCH",
+    token,
+    { id, comments }
+  );
+  return response;
+};
+
+export const getPendingBorrowerList = async (pageNo, pageSize, name) => {
+  const token = getToken();
+  
+  const data = {
+    pageNo: pageNo,
+    pageSize: pageSize,
+    name: name,
+  };
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getPendingBorrowerList",
+    "POST",
+    token,
+    data
+  );
+
+  return response;
+};

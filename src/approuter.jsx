@@ -24,6 +24,7 @@ import LoadwaletThroughQr from "./components/pages/Oxyloans/Lender/LoadwaletThro
 import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/LoadwalletThroughVirtualAccount";
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
+import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
 import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
@@ -158,6 +159,7 @@ import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/
 import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
 
 import ActiveLendersParticipationPage from "./components/pages/Oxyloans/Admin/ActiveLenders/ActiveLendersParticipationPage.jsx";
+import FailedBorrowers from "./components/pages/Oxyloans/Admin/FailedBorrowers.jsx";
 
 
 const AppRouter = () => {
@@ -254,6 +256,7 @@ const AppRouter = () => {
         <Route path="/myEarnings" element={<MyEarnings />} />
         <Route path="/loanListings" element={<LoanListings />} />
         <Route path="/proximityLoans" element={<ProximityLoans />} />
+        <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
         <Route path="/offerGivenList" element={<OfferGivenList />} />
         <Route path="/disburseLoans" element={<DisburseLoans />} />
         <Route path="/WalletToWallet" element={<WalletToWallet />} />
@@ -384,6 +387,7 @@ const AppRouter = () => {
         <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
         <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
         <Route path="/adminProcessingFees" element={<ProcessingFees />} />
+        <Route path="/failedborrowers" element={<FailedBorrowers />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>

@@ -194,7 +194,7 @@ const RegularEscrowDeals = () => {
                                   Tenure : {data.duration} Months
                                 </div>
                                 <div className="col-auto col-lg-3">
-                                  Deal Value : {data.dealAmount}
+                                  Deal Value :INR {data.dealAmount.toLocaleString("en-IN")}
                                 </div>
                                 {/* <div>Status : Open</div> */}
                               </div>
@@ -228,19 +228,19 @@ const RegularEscrowDeals = () => {
                                   <div className="col-sm-6 col-lg-2">
                                     <span>Available Limit</span>
                                     <h6 className="mb-0">
-                                      {data.remainingAmountToPaticipateInDeal}
+                                      INR {data.remainingAmountToPaticipateInDeal.toLocaleString("en-IN")}
                                     </h6>
                                   </div>
                                   <div className="col-sm-6 col-lg-2">
                                     <span>Min Amount</span>
                                     <h6 className="mb-0">
-                                      {data.minimumAmountInDeal}
+                                      INR {data.minimumAmountInDeal.toLocaleString("en-IN")}
                                     </h6>
                                   </div>
                                   <div className="col-sm-6 col-lg-2">
                                     <span>Max Amount</span>
                                     <h6 className="mb-0">
-                                      {data.lenderPaticipationLimit}
+                                      INR {data.lenderPaticipationLimit.toLocaleString("en-IN")}
                                     </h6>
                                   </div>
                                   <div className="col-sm-6 col-lg-2">

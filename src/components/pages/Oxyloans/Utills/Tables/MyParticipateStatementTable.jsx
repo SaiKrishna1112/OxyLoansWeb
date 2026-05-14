@@ -203,7 +203,7 @@ const MyParticipateStatementTable = ({ data }) => {
         InterestPaidDate: dataItem.interestPaidDate || "Yet to be paid",
         InterestAmount: (
           <>
-            {dataItem.interestAmount}
+            {dataItem.interestAmount.toLocaleString("en-IN")}
             {shouldShowBreakupButton && (
               <button
                 className="btn btn-sm btn-outline-primary ms-2"
@@ -279,14 +279,14 @@ const MyParticipateStatementTable = ({ data }) => {
                 <td>{item.amount}</td>
                 <td>{item.upatedDate}</td>
                 <td>{item.differenceInDays}</td>
-                <td>{item.interestAmount}</td>
+                <td>{item.interestAmount.toLocaleString("en-IN")}</td>
               </tr>
             ))}
             <tr>
               <td colSpan="5" className="text-end fw-bold">
                 Total Amount
               </td>
-              <td className="fw-bold">{totalAmount}</td>
+              <td className="fw-bold">{totalAmount.toLocaleString("en-IN")}</td>
             </tr>
           </tbody>
         </table>

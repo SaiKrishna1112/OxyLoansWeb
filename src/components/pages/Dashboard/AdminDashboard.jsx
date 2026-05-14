@@ -8,6 +8,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "../Oxyloans/Lender/table.css";
 import FloatingAssistant from "../../FloatingAssistant"
 import logo from "../../../assets/img/avtarimage.png"
+import { formatAmountWithCommas, amountToWords } from '../../../utils/formatAmount';
 
 import {
   getDashboardInvestment,
@@ -510,142 +511,152 @@ const AdminDashboard = () => {
   };
 
   const leftColClass = showChart ? "col-12 col-lg-8" : "col-12 col-lg-6";
+const getFinancialYear = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1; 
 
+  if (month >= 4) {
+    
+    return `${year.toString().slice(-2)}-${(year + 1).toString().slice(-2)}`;
+  } else {
+    
+    return `${(year - 1).toString().slice(-2)}-${year.toString().slice(-2)}`;
+  }
+};
   return (
     <>
-    <div>
-      <div className="main-wrapper">
-        <Header />
-        <SideBar />
+      <div>
+        <div className="main-wrapper">
+          <Header />
+          <SideBar />
 
-        <div className="page-wrapper">
-          <div className="content container-fluid">
-            <div className="page-header">
-              <div className="row">
-                <div className="col-sm-12">
-                  <div className="page-sub-header">
-                    <div
-                      className="mebershipbutton"
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        justifyContent: "space-around",
-                        alignItems: "center",
-                      }}
-                    >
-                      <h3 className="page-title">
-                        Welcome back,{" "}
-                        {getreducerprofiledata?.length !== 0
-                          ? getreducerprofiledata?.firstName
-                              .charAt(0)
-                              .toUpperCase() +
-                              getreducerprofiledata?.firstName
-                                .slice(1)
-                                .toLowerCase() ?? ""
-                          : ""} 👋
-                      </h3>
-
+          <div className="page-wrapper">
+            <div className="content container-fluid">
+              <div className="page-header">
+                <div className="row">
+                  <div className="col-sm-12">
+                    <div className="page-sub-header">
                       <div
-                        className="button_class"
+                        className="mebershipbutton"
                         style={{
                           display: "flex",
                           flexDirection: "row",
-                          position: "absolute",
-                          right: "1rem",
-                          flexWrap: "wrap",
+                          justifyContent: "space-around",
+                          alignItems: "center",
                         }}
                       >
-                        <Link to="/todaydeal">
-                          <Tag
-                            style={{
-                              height: "1.8rem",
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                            className="badge bg-info mx-2"
-                          >
-                            Today Deals
-                          </Tag>
-                        </Link>
-                        <Link to="/myRunningDeals">
-                          <Tag
-                            style={{
-                              height: "1.8rem",
-                              display: "flex",
-                              alignItems: "center",
-                              backgroundColor: "#008f64",
-                            }}
-                            className="badge bg-success-dark mx-2"
-                          >
-                            My Participated Deals
-                          </Tag>
-                        </Link>
-                        <Link to="/membership">
-                          <Tag
-                            style={{
-                              height: "1.8rem",
-                              display: "flex",
-                              alignItems: "center",
-                            }}
-                            className="badge bg-success mx-2"
-                          >
-                            Get Membership
-                          </Tag>
-                        </Link>
+                        <h3 className="page-title">
+                          Welcome back,{" "}
+                          {getreducerprofiledata?.length !== 0
+                            ? (getreducerprofiledata?.firstName
+                                .charAt(0)
+                                .toUpperCase() +
+                                getreducerprofiledata?.firstName
+                                  .slice(1)
+                                  .toLowerCase() ?? "")
+                            : ""}{" "}
+                          👋
+                        </h3>
+
+                        <div
+                          className="button_class"
+                          style={{
+                            display: "flex",
+                            flexDirection: "row",
+                            position: "absolute",
+                            right: "1rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Link to="/todaydeal">
+                            <Tag
+                              style={{
+                                height: "1.8rem",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                              className="badge bg-info mx-2"
+                            >
+                              Today Deals
+                            </Tag>
+                          </Link>
+                          <Link to="/myRunningDeals">
+                            <Tag
+                              style={{
+                                height: "1.8rem",
+                                display: "flex",
+                                alignItems: "center",
+                                backgroundColor: "#008f64",
+                              }}
+                              className="badge bg-success-dark mx-2"
+                            >
+                              My Participated Deals
+                            </Tag>
+                          </Link>
+                          <Link to="/membership">
+                            <Tag
+                              style={{
+                                height: "1.8rem",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                              className="badge bg-success mx-2"
+                            >
+                              Get Membership
+                            </Tag>
+                          </Link>
+                        </div>
                       </div>
-                    
                     </div>
                   </div>
                 </div>
+                <p>Discover borrowers, fund loans, and track your earnings.</p>
               </div>
-                <p>Discover borrowers, fund loans, and track your earnings</p>
-            </div>
 
-           
-
-            <div className="row">
-              <div className="col-xl-3 col-sm-6 col-12 d-flex">
-                <div className="card bg-comman w-100">
-                  <div className="card-body">
-                    <div className="db-widgets d-flex justify-content-between align-items-center">
-                      <div className="db-info">
-                        <div className="d-flex align-items-center justify-content-between">
-                          <h6 className="m-0">Wallet</h6>
+              <div className="row">
+                <div className="col-xl-3 col-sm-6 col-12 d-flex">
+                  <div className="card bg-comman w-100">
+                    <div className="card-body">
+                      <div className="db-widgets d-flex justify-content-between align-items-center">
+                        <div className="db-info">
+                          <div className="d-flex align-items-center justify-content-between">
+                            <h6 className="m-0">Wallet</h6>
+                          </div>
+                          <h3 className="mt-2">
+                            {showWallet ? (
+                              <>
+                               {getreducerprofiledata?.length !== 0
+                                  ? formatAmountWithCommas(getreducerprofiledata?.lenderWalletAmount -
+                                    getreducerprofiledata?.holdAmountInDealParticipation -
+                                    getreducerprofiledata?.equityAmount)
+                                  : ""}
+                              </>
+                            ) : (
+                              <span
+                                style={{
+                                  letterSpacing: "2px",
+                                  fontSize: "18px",
+                                  opacity: 0.4,
+                                }}
+                              >
+                                ✱✱✱
+                              </span>
+                            )}
+                          </h3>
                         </div>
-                        <h3 className="mt-2">
-                          {showWallet ? (
-                            <>
-                              {getreducerprofiledata?.length !== 0
-                                ? getreducerprofiledata?.lenderWalletAmount -
-                                  getreducerprofiledata?.holdAmountInDealParticipation -
-                                  getreducerprofiledata?.equityAmount
-                                : ""}
-                            </>
-                          ) : (
-                          <span
-                         style={{
-                       letterSpacing: "2px",
-                       fontSize: "18px",
-                       opacity: 0.4, 
-                       }}
-                         >
-                       ✱✱✱
-                      </span>
-                          )}
-                        </h3>
-                      </div>
 
-                      <div className="db-icon">
-                        <img
-                          src={dashboard3}
-                          alt="Dashboard Icon"
-                          height={60}
-                          width={60}
-                        />
+                        <div className="db-icon">
+                          <img
+                            src={dashboard3}
+                            alt="Dashboard Icon"
+                            height={60}
+                            width={60}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-{/* 
+                    {/* 
                   <Link to="/earningCertificate">
                     <div
                       className="card-footer m-0 p-1 c-black"
@@ -666,730 +677,815 @@ const AdminDashboard = () => {
                   </Link>
                   
                 </div> */}
-              {/* </div> */}
+                    {/* </div> */}
 
-     <div className="card-footer m-0 p-1 c-black" style={{ color: "gray", textAlign: "center" }}>
-
-  <Link to="/earningCertificate" style={{ textDecoration: "none", color: "gray" }}>
-    Earnings FY : 24-25
-  </Link>
-  <button
-    className="btn btn-sm p-0 border-0 bg-transparent ms-5"
-    onClick={() => setShowWallet(!showWallet)}
-  >
-    {showWallet ? (
-      <FaEye size={20} color="gray" title="Show data" />
-    ) : (
-      <FaEyeSlash size={20} color="gray" title="Hide data" />
-    )}
-  </button>
-
-         </div>
-      </div>
-  </div>
-              
-
-              <div className="col-xl-3 col-sm-6 col-12 d-flex">
-              <div className="card bg-comman w-100" style={{ position: "relative" }}>
-             <Link to="/myRunningDeals">
-          <div className="card-body">
-        <div className="db-widgets d-flex justify-content-between align-items-center">
-          <div className="db-info">
-            <h6>Active Deals</h6>
-            <h3>
-              {showActivityDeals ? (
-                getdashboardData?.length !== 0 ? (
-                  getdashboardData?.numberOfActiveDealsCount ?? 0
-                ) : (
-                  ""
-                )
-              ) : (
-                <span style={{ letterSpacing: "2px",fontSize: "18px" ,   opacity: 0.4  }}>✱✱✱</span>
-              )}
-            </h3>
-          </div>
-          <div className="db-icon">
-            <img src={dashboard2} alt="Dashboard Icon" height={60} width={60} />
-          </div>
-        </div>
-      </div>
-    </Link>
-
-    
-    <div
-      className="card-footer m-0 p-1 c-black"
-      style={{
-        color: "gray",
-        textAlign: "center",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-     
-      <div style={{ flex: 1 }}>
-        {showActivityDeals ? (
-          <>
-            <strong>INR </strong>{" "}
-            {dashboardcarddata?.length !== 0
-              ? dashboardcarddata?.activeDealsAmount ?? 0
-              : ""}
-          </>
-        ) : (
-          <span style={{ letterSpacing: "2px"  }}>INR ✱✱✱</span>
-        )}
-      </div>
-
-      
-      <div
-        style={{
-          zIndex: 10,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-        }}
-        onClick={() => setShowActivityDeals(!showActivityDeals)}
-      >
-        {showActivityDeals ? (
-          <FaEye size={20} color="gray" title="Show Data" />
-        ) : (
-          <FaEyeSlash size={20} color="gray" title="Hide Data" />
-        )}
-      </div>
-    </div>
-  </div>
-</div>
-
-
-              <div className="col-xl-3 col-sm-6 col-12 d-flex">
-            <div className="card bg-comman w-100">
-          <Link to="/myclosedDeals">
-      <div className="card-body">
-        <div className="db-widgets d-flex justify-content-between align-items-center">
-          <div className="db-info">
-            <h6>Closed Deals</h6>
-            <h3>
-              {ShowClosedDeal ? (
-                getdashboardData?.length !== 0 ? (
-                  getdashboardData?.numberOfClosedDealsCount ?? 0
-                ) : (
-                  ""
-                )
-              ) : (
-                <span style={{ letterSpacing: "2px", fontSize: "18px" ,    opacity: 0.4 }}>✱✱✱</span>
-              )}
-            </h3>
-          </div>
-          <div className="db-icon">
-            <img
-              src={dashboard1}
-              alt="Dashboard Icon"
-              height={60}
-              width={60}
-            />
-          </div>
-        </div>
-      </div>
-    </Link>
-
-
-    <div
-      className="card-footer m-0 p-1 c-black"
-      style={{
-        color: "gray",
-        textAlign: "center",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-     
-      <div style={{ flex: 1 }}>
-        {ShowClosedDeal ? (
-          <>
-            <strong>INR :</strong>{" "}
-            {dashboardcarddata?.length !== 0
-              ? dashboardcarddata?.closedDealsAmount ?? 0
-              : ""}
-          </>
-        ) : (
-          <span style={{ letterSpacing: "2px" }}>INR ✱✱✱</span>
-        )}
-      </div>
-
-      
-      <div
-        style={{
-          zIndex: 10,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-        }}
-        onClick={() => setShowClosedDeal(!ShowClosedDeal)}
-      >
-        {ShowClosedDeal ? (
-          <FaEye size={20} color="gray" title="Show Data" />  
-        ) : (
-          <FaEyeSlash size={20} color="gray" title="Hide Data" />
-        )}
-      </div>
-    </div>
-  </div>
-</div>
-              
-
-<div className="col-xl-3 col-sm-6 col-12 d-flex">
-  <div className="card bg-comman w-100">
-    <div className="card-body">
-      <div className="db-widgets d-flex justify-content-between align-items-center">
-        <div className="db-info">
-          <h6>Total Deals</h6>
-          <h3>
-            {ShowTotalDeal ? (
-              getdashboardData?.length !== 0 ? (
-                getdashboardData?.numberOfClosedDealsCount +
-                getdashboardData?.numberOfActiveDealsCount
-              ) : (
-                ""
-              )
-            ) : (
-              <span style={{ letterSpacing: "2px",fontSize: "18px",    opacity: 0.4 }}>✱✱✱</span>
-            )}
-          </h3>
-        </div>
-        <div className="db-icon">
-          <img
-            src={dashboard4}
-            alt="Dashboard Icon"
-            height={60}
-            width={60}
-          />
-        </div>
-      </div>
-    </div>
-
-    {/* Footer Section */}
-    <div
-      className="card-footer m-0 p-1 c-black"
-      style={{
-        color: "gray",
-        textAlign: "center",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      {/* Amount Section */}
-      <div style={{ flex: 1 }}>
-        {ShowTotalDeal ? (
-          <>
-            <strong>INR :</strong>{" "}
-            {dashboardcarddata?.length !== 0
-              ? dashboardcarddata?.disbursedDealsAmount ?? 0
-              : ""}
-          </>
-        ) : (
-          <span style={{ letterSpacing: "2px" }}>INR ✱✱✱</span>
-        )}
-      </div>
-
-      {/* Eye Icon Section */}
-      <div
-        style={{
-          zIndex: 10,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-        }}
-        onClick={() => setShowTotalDeal(!ShowTotalDeal)}
-      >
-        {ShowTotalDeal ? (
-          <FaEye size={20} color="gray" title="Hide Data" />
-        ) : (
-          <FaEyeSlash size={20} color="gray" title="Show Data" />
-        )}
-      </div>
-    </div>
-  </div>
-</div>
-
-            
-
-            <div className="row">
-              <div className="col-md-6 col-lg-6">
-                <div className="card">
-                  <div className="card-body">
-                    <span>
-                      <span className="text-bold text-success mx-lg-1">
-                       <strong> Subscription Validity:</strong>
-                      </span>
-                      {getreducerprofiledata?.length !== 0 &&
-                        (getreducerprofiledata?.groupName === "NewLender" ? (
-                          <span>
-                            You are a new lender, pay the annual membership fee
-                            to participate in the multiple deals
-                            <span className="badge bg-info mx-2">
-                              <Link to="/membership" className="text-white">
-                                Get Membership
-                              </Link>
-                            </span>
-                          </span>
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{ color: "gray", textAlign: "center" }}
+                    >
+                      <Link
+                        to="/earningCertificate"
+                        style={{ textDecoration: "none", color: "gray" }}
+                      >
+                        Earnings FY : {getFinancialYear()}
+                      </Link>
+                      <button
+                        className="btn btn-sm p-0 border-0 bg-transparent ms-5"
+                        onClick={() => setShowWallet(!showWallet)}
+                      >
+                        {showWallet ? (
+                          <FaEye size={20} color="gray" title="Show data" />
                         ) : (
-                          <span>
-                            {getdashboardData?.validityDate &&
-                              `Active until ${getdashboardData?.validityDate}`}{" "}
-                            <span className="badge bg-info mx-2">
-                              <Link to="/membership" className="text-white">
-                                Get Membership
-                              </Link>
-                            </span>
-                          </span>
-                        ))}
-                    </span>
+                          <FaEyeSlash
+                            size={20}
+                            color="gray"
+                            title="Hide data"
+                          />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="col-md-6 col-lg-6">
-                <div className="card">
-                  <div className="card-body">
-                    <span>
-                      <span className="text-bold text-success mx-lg-1">
-                        <strong>Lend Smarter with Proximity based Loans:</strong>
-                      </span>
+
+                <div className="col-xl-3 col-sm-6 col-12 d-flex">
+                  <div
+                    className="card bg-comman w-100"
+                    style={{ position: "relative" }}
+                  >
+                    <Link to="/myRunningDeals">
+                      <div className="card-body">
+                        <div className="db-widgets d-flex justify-content-between align-items-center">
+                          <div className="db-info">
+                            <h6>Active Deals</h6>
+                            <h3>
+                              {showActivityDeals ? (
+                                getdashboardData?.length !== 0 ? (
+                                  (getdashboardData?.numberOfActiveDealsCount ??
+                                  0)
+                                ) : (
+                                  ""
+                                )
+                              ) : (
+                                <span
+                                  style={{
+                                    letterSpacing: "2px",
+                                    fontSize: "18px",
+                                    opacity: 0.4,
+                                  }}
+                                >
+                                  ✱✱✱
+                                </span>
+                              )}
+                            </h3>
+                          </div>
+                          <div className="db-icon">
+                            <img
+                              src={dashboard2}
+                              alt="Dashboard Icon"
+                              height={60}
+                              width={60}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{
+                        color: "gray",
+                        textAlign: "center",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        {showActivityDeals ? (
+                          <span title={amountToWords(dashboardcarddata?.activeDealsAmount ?? 0)}>
+                            {/* <strong>INR </strong>{" "} */}
+                            {dashboardcarddata?.length !== 0
+                              ? formatAmountWithCommas(dashboardcarddata?.activeDealsAmount ?? 0)
+                              : ""}
+                          </span>
+                        ) : (
+                          <span style={{ letterSpacing: "2px" }}>₹ ✱✱✱</span>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          zIndex: 10,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                        onClick={() => setShowActivityDeals(!showActivityDeals)}
+                      >
+                        {showActivityDeals ? (
+                          <FaEye size={20} color="gray" title="Show Data" />
+                        ) : (
+                          <FaEyeSlash
+                            size={20}
+                            color="gray"
+                            title="Hide Data"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-xl-3 col-sm-6 col-12 d-flex">
+                  <div className="card bg-comman w-100">
+                    <Link to="/myclosedDeals">
+                      <div className="card-body">
+                        <div className="db-widgets d-flex justify-content-between align-items-center">
+                          <div className="db-info">
+                            <h6>Closed Deals</h6>
+                            <h3>
+                              {ShowClosedDeal ? (
+                                getdashboardData?.length !== 0 ? (
+                                  (getdashboardData?.numberOfClosedDealsCount ??
+                                  0)
+                                ) : (
+                                  ""
+                                )
+                              ) : (
+                                <span
+                                  style={{
+                                    letterSpacing: "2px",
+                                    fontSize: "18px",
+                                    opacity: 0.4,
+                                  }}
+                                >
+                                  ✱✱✱
+                                </span>
+                              )}
+                            </h3>
+                          </div>
+                          <div className="db-icon">
+                            <img
+                              src={dashboard1}
+                              alt="Dashboard Icon"
+                              height={60}
+                              width={60}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{
+                        color: "gray",
+                        textAlign: "center",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        {ShowClosedDeal ? (
+                          <span title={amountToWords(dashboardcarddata?.closedDealsAmount ?? 0)}>
+                            {/* <strong>INR :</strong>{" "} */}
+                            {dashboardcarddata?.length !== 0
+                              ? formatAmountWithCommas(dashboardcarddata?.closedDealsAmount ?? 0)
+                              : ""}
+                          </span>
+                        ) : (
+                          <span style={{ letterSpacing: "2px" }}>₹ ✱✱✱</span>
+                        )}
+                      </div>
+
+                      <div
+                        style={{
+                          zIndex: 10,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                        onClick={() => setShowClosedDeal(!ShowClosedDeal)}
+                      >
+                        {ShowClosedDeal ? (
+                          <FaEye size={20} color="gray" title="Show Data" />
+                        ) : (
+                          <FaEyeSlash
+                            size={20}
+                            color="gray"
+                            title="Hide Data"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-xl-3 col-sm-6 col-12 d-flex">
+                  <div className="card bg-comman w-100">
+                    <div className="card-body">
+                      <div className="db-widgets d-flex justify-content-between align-items-center">
+                        <div className="db-info">
+                          <h6>Total Deals</h6>
+                          <h3>
+                            {ShowTotalDeal ? (
+                              getdashboardData?.length !== 0 ? (
+                                getdashboardData?.numberOfClosedDealsCount +
+                                getdashboardData?.numberOfActiveDealsCount
+                              ) : (
+                                ""
+                              )
+                            ) : (
+                              <span
+                                style={{
+                                  letterSpacing: "2px",
+                                  fontSize: "18px",
+                                  opacity: 0.4,
+                                }}
+                              >
+                                ✱✱✱
+                              </span>
+                            )}
+                          </h3>
+                        </div>
+                        <div className="db-icon">
+                          <img
+                            src={dashboard4}
+                            alt="Dashboard Icon"
+                            height={60}
+                            width={60}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Section */}
+                    <div
+                      className="card-footer m-0 p-1 c-black"
+                      style={{
+                        color: "gray",
+                        textAlign: "center",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      {/* Amount Section */}
+                      <div style={{ flex: 1 }}>
+                        {ShowTotalDeal ? (
+                          <span title={amountToWords(dashboardcarddata?.disbursedDealsAmount ?? 0)}>
+                            {dashboardcarddata?.length !== 0
+                              ? formatAmountWithCommas(dashboardcarddata?.disbursedDealsAmount ?? 0)
+                              : ""}
+                          </span>
+                        ) : (
+                          <span style={{ letterSpacing: "2px" }}>₹ ✱✱✱</span>
+                        )}
+                      </div>
+
+                      {/* Eye Icon Section */}
+                      <div
+                        style={{
+                          zIndex: 10,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                        onClick={() => setShowTotalDeal(!ShowTotalDeal)}
+                      >
+                        {ShowTotalDeal ? (
+                          <FaEye size={20} color="gray" title="Hide Data" />
+                        ) : (
+                          <FaEyeSlash
+                            size={20}
+                            color="gray"
+                            title="Show Data"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row">
+                  <div className="col-md-6 col-lg-6">
+                    <div className="card">
+                      <div className="card-body">
+                        <span>
+                          <span className="text-bold text-success mx-lg-1">
+                            <strong> Subscription Validity:</strong>
+                          </span>
+                          {getreducerprofiledata?.length !== 0 &&
+                            (getreducerprofiledata?.groupName ===
+                            "NewLender" ? (
+                              <span>
+                                You are a new lender, pay the annual membership
+                                fee to participate in the multiple deals
+                                <span className="badge bg-info mx-2">
+                                  <Link to="/membership" className="text-white">
+                                    Get Membership
+                                  </Link>
+                                </span>
+                              </span>
+                            ) : (
+                              <span>
+                                {getdashboardData?.validityDate &&
+                                  `Active until ${getdashboardData?.validityDate}`}{" "}
+                                <span className="badge bg-info mx-2">
+                                  <Link to="/membership" className="text-white">
+                                    Get Membership
+                                  </Link>
+                                </span>
+                              </span>
+                            ))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-6 col-lg-6">
+                    <div className="card">
+                      <div className="card-body">
+                        <span>
+                          <span className="text-bold text-success mx-lg-1">
+                            <strong>
+                              Lend Smarter with Proximity-Based Loans:
+                            </strong>
+                          </span>
                           <span>
-                            Connect with nearby borrowers and diversify your investments.
+                            Connect with nearby borrowers and diversify your
+                            investments.
                             <span className="badge bg-info mx-2">
                               <Link to="/proximityLoans" className="text-white">
                                 Browse Loans
                               </Link>
                             </span>
                           </span>
-                    </span>
-                    </div>
-                    </div>
-              </div>
-            </div>
-
-
- <div className="row mt-3">
-   <div className="col-md-12 col-lg-12">
-     <div className="card">
-       <div className="card-body position-relative">
-
-        {/* Corner Badge */}
-        <span
-          className="badge bg-info"
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            cursor: "pointer",
-            padding: "8px 12px"
-          }}
-        >
-          <Link to="/top-lenders" className="text-white" style={{ textDecoration: "none" }}>
-            View More
-          </Link>
-        </span>
-
-       
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-          <span className="text-bold text-success">
-           <strong> Top Lender of Oxyloans:</strong>
-          </span>
-
-          {topLender ? (
-            <span className="d-flex align-items-center">
-              🏆 <strong className="mx-1">Total Cumulative Participation - LR{topLender.lenderId}</strong> 
-              
-            </span>
-          ) : (
-            <span>Loading top lender...</span>
-          )}
-
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
-            <div className="row">
-              <div className={leftColClass}>
-                <div className="card card-chart">
-                  <div className="card-header">
-                    <div className="row align-items-center">
-                      <div className="col-10">
-                        <h6 className="card-title">Deals Amount Monitor</h6>
+                        </span>
                       </div>
-                      <div className="col-2 text-end">
-  <button
-    className="btn btn-sm p-0 border-0 bg-transparent"
-    onClick={() => setShowChart(!showChart)}
-  >
-    {!showChart ? (
-      <FaEyeSlash size={20} color="gray" title="Hide Chart" />
-    ) : (
-      <FaEye size={20} color="gray" title="Show Chart" />
-    )}
-  </button>
-</div>
+                    </div>
+                  </div>
+                </div>
 
+                <div className="row mt-3">
+                  <div className="col-md-12 col-lg-12">
+                    <div className="card">
+                      <div className="card-body position-relative">
+                        {/* Corner Badge */}
+                        <span
+                          className="badge bg-info"
+                          style={{
+                            position: "absolute",
+                            top: "10px",
+                            right: "10px",
+                            cursor: "pointer",
+                            padding: "8px 12px",
+                          }}
+                        >
+                          <Link
+                            to="/top-lenders"
+                            className="text-white"
+                            style={{ textDecoration: "none" }}
+                          >
+                            View More
+                          </Link>
+                        </span>
+
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                          <span className="text-bold text-success">
+                            <strong> Top Lender of Oxyloans:</strong>
+                          </span>
+
+                          {topLender ? (
+                            <span className="d-flex align-items-center">
+                              🏆{" "}
+                              <strong className="mx-1">
+                                Total Cumulative Participation - LR
+                                {topLender.lenderId}
+                              </strong>
+                            </span>
+                          ) : (
+                            <span>Loading top lender...</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row">
+                  <div className={leftColClass}>
+                    <div className="card card-chart">
+                      <div className="card-header">
+                        <div className="row align-items-center">
+                          <div className="col-10">
+                            <h6 className="card-title">Deals Amount Monitor</h6>
+                          </div>
+                          <div className="col-2 text-end">
+                            <button
+                              className="btn btn-sm p-0 border-0 bg-transparent"
+                              onClick={() => setShowChart(!showChart)}
+                            >
+                              {!showChart ? (
+                                <FaEyeSlash
+                                  size={20}
+                                  color="gray"
+                                  title="Hide Chart"
+                                />
+                              ) : (
+                                <FaEye
+                                  size={20}
+                                  color="gray"
+                                  title="Show Chart"
+                                />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {showChart && (
+                        <div className="card-body">
+                          <div id="apexcharts-area" />
+                          <Chart
+                            options={treemap.options}
+                            series={treemap.series}
+                            type="bar"
+                            className="activechart"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {showChart && (
-                    <div className="card-body">
-                      <div id="apexcharts-area" />
-                      <Chart
-                        options={treemap.options}
-                        series={treemap.series}
-                        type="bar"
-                        className="activechart"
-                      />
+                    <div className="col-12 col-lg-4 d-flex">
+                      <div className="card flex-fill comman-shadow">
+                        <div className="card-header">
+                          <div className="row align-items-center">
+                            <div className="col-12">
+                              <div className="d-flex justify-content-between align-items-center">
+                                <h5 className="card-title">
+                                  Participated vs Created In System
+                                </h5>
+                                <div className="col-4 text-end">
+                                  <button
+                                    className="btn btn-sm p-0 border-0 bg-transparent"
+                                    onClick={() =>
+                                      setShowParticipatedDeals(
+                                        !showParticipatedDeals,
+                                      )
+                                    }
+                                  >
+                                    {!showParticipatedDeals ? (
+                                      <FaEyeSlash
+                                        size={20}
+                                        color="gray"
+                                        title="Hide Chart"
+                                      />
+                                    ) : (
+                                      <FaEye
+                                        size={20}
+                                        color="gray"
+                                        title="Show Chart"
+                                      />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {showParticipatedDeals ? (
+                          <div className="dash-widget d-flex justify-content-center align-items-center p-3">
+                            <div className="circle-bar">
+                              <ProgressBar
+                                width={270}
+                                radius={75}
+                                progress={dealsProgressed.percentage}
+                                rotate={-180}
+                                strokeWidth={10}
+                                strokeColor="#70C4CF"
+                                strokeLinecap="square"
+                                trackStrokeWidth={8}
+                                trackStrokeColor="#e6e6e6"
+                                trackStrokeLinecap="square"
+                                pointerRadius={0}
+                                initialAnimation={true}
+                                transition="1.5s ease 0.5s"
+                                trackTransition="0s ease"
+                              >
+                                <div
+                                  className="circle-graph1"
+                                  data-percent="50"
+                                >
+                                  <div className="progress-less teacher-dashboard text-center">
+                                    <h4>
+                                      {`${
+                                        getdashboardData?.numberOfClosedDealsCount ??
+                                        0
+                                      }/${dealsProgressed?.totalDeals ?? "—"}`}
+                                    </h4>
+                                    <p>Deals</p>
+                                  </div>
+                                </div>
+                              </ProgressBar>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="dash-widget d-flex justify-content-center align-items-center p-3">
+                            <div className="circle-bar">
+                              <ProgressBar
+                                width={270}
+                                radius={75}
+                                progress={0}
+                                rotate={-180}
+                                strokeWidth={10}
+                                strokeColor="#70C4CF"
+                                strokeLinecap="square"
+                                trackStrokeWidth={8}
+                                trackStrokeColor="#e6e6e6"
+                                trackStrokeLinecap="square"
+                                pointerRadius={0}
+                                initialAnimation={true}
+                                transition="1.5s ease 0.5s"
+                                trackTransition="0s ease"
+                              >
+                                <div className="circle-graph1" data-percent="0">
+                                  <div className="progress-less teacher-dashboard text-center">
+                                    <h4>****/****</h4>
+                                    <p>Deals</p>
+                                  </div>
+                                </div>
+                              </ProgressBar>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  )}
+                </div>
+
+                <div className="row">
+                  <div className="col-xl-12 d-flex">
+                    <div className="card flex-fill student-space comman-shadow">
+                      <div className="card-header d-flex align-items-center justify-content-between">
+                        <h5 className="card-title">Investment / Wallet</h5>
+                        <div className="d-flex align-items-center gap-3">
+                          {showTable && (
+                            <ul className="chart-list-out student-ellips">
+                              <li className="star-menus">
+                                {
+                                  <Link
+                                    id="downloadLink"
+                                    onClick={() =>
+                                      handleClickGetLink("WALLETCREDITED")
+                                    }
+                                  >
+                                    <i className="fa-solid fa-download"></i>
+                                  </Link>
+                                }
+                              </li>
+                            </ul>
+                          )}
+                          <div className="col-4 text-end">
+                            <button
+                              className="btn btn-sm p-0 border-0 bg-transparent"
+                              onClick={() => setShowTable(!showTable)}
+                            >
+                              {!showTable ? (
+                                <FaEyeSlash
+                                  size={20}
+                                  color="gray"
+                                  title="Hide Chart"
+                                />
+                              ) : (
+                                <FaEye
+                                  size={20}
+                                  color="gray"
+                                  title="Show Chart"
+                                />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {showTable && (
+                        <div className="card-body">
+                          <div>
+                            <Table
+                              className="table-responsive table-responsive-md table-responsive-lg table-responsive-xs"
+                              pagination={{
+                                total: dashboardInvestment.apiData.countValue,
+                                defaultPageSize:
+                                  dashboardInvestment.defaultPageSize,
+                                position: ["topRight"],
+                                showSizeChanger: false,
+                                onShowSizeChange: onShowSizeChange,
+                                size: "default",
+                                showLessItems: true,
+                                responsive: true,
+                              }}
+                              columns={columns}
+                              expandable={true}
+                              dataSource={
+                                dashboardInvestment.hasdata ? datasource : []
+                              }
+                              loading={dashboardInvestment.loading}
+                              onChange={investmentdashboardPagination}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {regular_runningDeal.apidata?.listOfDealsInformationToLender
+                    ?.length > 0 ? (
+                    <div className="col-xl-12 d-flex">
+                      <div className="card flex-fill comman-shadow">
+                        <div className="card-header d-flex align-items-center">
+                          <h5 className="card-title ">Ongoing Deals</h5>
+                          <ul className="chart-list-out student-ellips">
+                            <li className="star-menus"></li>
+                          </ul>
+                        </div>
+                        <div className="card-body">
+                          <div className="activity-groups">
+                            {regular_runningDeal.apidata
+                              .listOfDealsInformationToLender &&
+                            regular_runningDeal.apidata
+                              .listOfDealsInformationToLender.length > 0
+                              ? regular_runningDeal.apidata.listOfDealsInformationToLender
+                                  .slice(0, 4)
+                                  .map((data, index) => (
+                                    <div
+                                      key={`listOfDealsInfo-${index}`}
+                                      className="activity-awards"
+                                    >
+                                      <div className="award-boxs">
+                                        <img src={rightclickmark} alt="Award" />
+                                      </div>
+                                      <div className="award-list-outs">
+                                        <h4> {data.dealName}</h4>
+                                        <h5>
+                                          Min: ₹
+                                          {data.minimumAmountInDeal.toLocaleString()}
+                                          , Max: ₹
+                                          {data.lenderPaticipationLimit.toLocaleString()}
+                                          , RoI:
+                                          {data.rateOfInterest.toFixed(2)}%
+                                        </h5>
+                                      </div>
+                                      <div className="award-time-list">
+                                        <Link
+                                          to={`/participatedeal?dealId=${data.dealId}`}
+                                        >
+                                          <span>Participate</span>
+                                        </Link>
+                                      </div>
+                                    </div>
+                                  ))
+                              : regular_runningDeal.apidataESCROW &&
+                                regular_runningDeal.apidataESCROW
+                                  .slice(0, 4)
+                                  .map((data, index) => (
+                                    <div
+                                      key={`listOfDealsInfo-${index}`}
+                                      className="activity-awards"
+                                    >
+                                      <div className="award-boxs">
+                                        <img src={awardicon01} alt="Award" />
+                                      </div>
+                                      <div className="award-list-outs">
+                                        <h4
+                                          style={{
+                                            fontWeight: "400",
+                                            inlineSize: "18rem",
+                                          }}
+                                          className="textwrap"
+                                        >
+                                          {data.dealName}
+                                        </h4>
+                                        <h5>
+                                          Min: {data.minimumPaticipationAmount},
+                                          Max:
+                                          {data.lenderPaticipationAmount}, RoI:
+                                          {data.rateOfInterest}%
+                                        </h5>
+                                      </div>
+                                      <div className="award-time-list">
+                                        <Link
+                                          to={`/participatedeal?dealId=${data.dealId}`}
+                                        >
+                                          <span>Participate</span>
+                                        </Link>
+                                      </div>
+                                    </div>
+                                  ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    ""
                   )}
                 </div>
               </div>
 
-              {showChart && (
-                <div className="col-12 col-lg-4 d-flex">
-                  <div className="card flex-fill comman-shadow">
-                    <div className="card-header">
-                      <div className="row align-items-center">
-                        <div className="col-12">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <h5 className="card-title">
-                              Participated vs Created In System
-                            </h5> 
-                             <div className="col-4 text-end">
-                   <button
-                 className="btn btn-sm p-0 border-0 bg-transparent"
-               onClick={() => setShowParticipatedDeals(!showParticipatedDeals)}
-        >
-    {!showParticipatedDeals ? (
-      <FaEyeSlash size={20} color="gray" title="Hide Chart" />
-    ) : (
-      <FaEye size={20} color="gray" title="Show Chart" />
-    )}
-  </button>
-</div>
-                  </div>
-                </div>
-            </div>
-         </div>
+              <Modal
+                show={show}
+                onHide={handleClose}
+                dialogClassName="custom-small-modal"
+              >
+                <Modal.Header closeButton className="py-2 px-3">
+                  <Modal.Title className="h6">Select City</Modal.Title>
+                </Modal.Header>
 
-                    {showParticipatedDeals ? (
-                      <div className="dash-widget d-flex justify-content-center align-items-center p-3">
-                        <div className="circle-bar">
-                          <ProgressBar
-                            width={270}
-                            radius={75}
-                            progress={dealsProgressed.percentage}
-                            rotate={-180}
-                            strokeWidth={10}
-                            strokeColor="#70C4CF"
-                            strokeLinecap="square"
-                            trackStrokeWidth={8}
-                            trackStrokeColor="#e6e6e6"
-                            trackStrokeLinecap="square"
-                            pointerRadius={0}
-                            initialAnimation={true}
-                            transition="1.5s ease 0.5s"
-                            trackTransition="0s ease"
-                          >
-                            <div className="circle-graph1" data-percent="50">
-                              <div className="progress-less teacher-dashboard text-center">
-                                <h4>
-                                  {`${
-                                    getdashboardData?.numberOfClosedDealsCount ?? 0
-                                  }/${
-                                    dealsProgressed?.totalDeals ?? "—"
-                                  }`}
-                                </h4>
-                                <p>Deals</p>
-                              </div>
-                            </div>
-                          </ProgressBar>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="dash-widget d-flex justify-content-center align-items-center p-3">
-                        <div className="circle-bar">
-                          <ProgressBar
-                            width={270}
-                            radius={75}
-                            progress={0}
-                            rotate={-180}
-                            strokeWidth={10}
-                            strokeColor="#70C4CF"
-                            strokeLinecap="square"
-                            trackStrokeWidth={8}
-                            trackStrokeColor="#e6e6e6"
-                            trackStrokeLinecap="square"
-                            pointerRadius={0}
-                            initialAnimation={true}
-                            transition="1.5s ease 0.5s"
-                            trackTransition="0s ease"
-                          >
-                            <div className="circle-graph1" data-percent="0">
-                              <div className="progress-less teacher-dashboard text-center">
-                                <h4>****/****</h4>
-                                <p>Deals</p>
-                              </div>
-                            </div>
-                          </ProgressBar>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+                <Modal.Body className="py-2 px-3">
+                  <div className="mb-2">
+                    <label
+                      htmlFor="citySelect"
+                      className="form-label small mb-1"
+                    >
+                      City
+                    </label>
+                    <select
+                      id="citySelect"
+                      className="form-select form-select-sm"
+                      value={selectedCity}
+                      onChange={handleCityChange}
+                    >
+                      <option value="">Select a city</option>
+                      <option value="Mumbai">Mumbai</option>
+                      <option value="Delhi">Delhi</option>
+                      <option value="Bangalore">Bangalore</option>
+                      <option value="Hyderabad">Hyderabad</option>
+                      <option value="Ahmedabad">Ahmedabad</option>
+                      <option value="Chennai">Chennai</option>
+                      <option value="Kolkata">Kolkata</option>
+                      <option value="Pune">Pune</option>
+                      <option value="Jaipur">Jaipur</option>
+                      <option value="Lucknow">Lucknow</option>
+                      <option value="Secunderabad">Secunderabad</option>
+                      <option value="Vishakapatnam">Vishakapatnam</option>
+                      <option value="Vijayawada">Vijayawada</option>
+                      <option value="Gujarat">Gujarat</option>
+                      <option value="Madhya Pradesh">Madhya Pradesh</option>
+                      <option value="Others">Other</option>
+                    </select>
 
-            <div className="row">
-              <div className="col-xl-12 d-flex">
-                <div className="card flex-fill student-space comman-shadow">
-                  <div className="card-header d-flex align-items-center justify-content-between">
-                    <h5 className="card-title">Investment / Wallet</h5>
-                    <div className="d-flex align-items-center gap-3">
-                      {showTable && (
-                        <ul className="chart-list-out student-ellips">
-                          <li className="star-menus">
-                            {
-                              <Link
-                                id="downloadLink"
-                                onClick={() => handleClickGetLink("WALLETCREDITED")}
-                              >
-                                <i className="fa-solid fa-download"></i>
-                              </Link>
-                            }
-                          </li>
-                        </ul>
-                      )}
-           <div className="col-4 text-end">
-       <button
-       className="btn btn-sm p-0 border-0 bg-transparent"
-        onClick={() => setShowTable(!showTable)}
-  >
-    {!showTable ? (
-      <FaEyeSlash size={20} color="gray" title="Hide Chart" />
-    ) : (
-      <FaEye size={20} color="gray" title="Show Chart" />
-    )}
-  </button>
-</div>
-       </div>
-     </div>
-
-                  {showTable && (
-                    <div className="card-body">
-                      <div>
-                        <Table
-                          className="table-responsive table-responsive-md table-responsive-lg table-responsive-xs"
-                          pagination={{
-                            total: dashboardInvestment.apiData.countValue,
-                            defaultPageSize: dashboardInvestment.defaultPageSize,
-                            position: ["topRight"],
-                            showSizeChanger: false,
-                            onShowSizeChange: onShowSizeChange,
-                            size: "default",
-                            showLessItems: true,
-                            responsive: true,
-                          }}
-                          columns={columns}
-                          expandable={true}
-                          dataSource={
-                            dashboardInvestment.hasdata ? datasource : []
-                          }
-                          loading={dashboardInvestment.loading}
-                          onChange={investmentdashboardPagination}
+                    {selectedCity === "Others" && (
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          placeholder="Enter City"
+                          className="form-control form-control-sm"
+                          name="customCity"
+                          value={customCity}
+                          onChange={(e) => setCustomCity(e.target.value)}
                         />
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {regular_runningDeal.apidata?.listOfDealsInformationToLender
-                ?.length > 0 ? (
-                <div className="col-xl-12 d-flex">
-                  <div className="card flex-fill comman-shadow">
-                    <div className="card-header d-flex align-items-center">
-                      <h5 className="card-title ">Ongoing Deals</h5>
-                      <ul className="chart-list-out student-ellips">
-                        <li className="star-menus">
-                        </li>
-                      </ul>
-                    </div>
-                    <div className="card-body">
-                      <div className="activity-groups">
-                        {regular_runningDeal.apidata
-                          .listOfDealsInformationToLender &&
-                        regular_runningDeal.apidata
-                          .listOfDealsInformationToLender.length > 0
-                          ? regular_runningDeal.apidata.listOfDealsInformationToLender
-                              .slice(0, 4)
-                              .map((data, index) => (
-                                <div
-                                  key={`listOfDealsInfo-${index}`}
-                                  className="activity-awards"
-                                >
-                                  <div className="award-boxs">
-                                    <img src={rightclickmark} alt="Award" />
-                                  </div>
-                                  <div className="award-list-outs">
-                                    <h4> {data.dealName}</h4>
-                                    <h5>
-                                      Min: ₹{data.minimumAmountInDeal.toLocaleString()}, Max:
-                                      ₹{data.lenderPaticipationLimit.toLocaleString()}, RoI:
-                                      {data.rateOfInterest.toFixed(2)}%
-                                    </h5>
-                                  </div>
-                                  <div className="award-time-list">
-                                    <Link
-                                      to={`/participatedeal?dealId=${data.dealId}`}
-                                    >
-                                      <span>Participate</span>
-                                    </Link>
-                                  </div>
-                                </div>
-                              ))
-                          : regular_runningDeal.apidataESCROW &&
-                            regular_runningDeal.apidataESCROW
-                              .slice(0, 4)
-                              .map((data, index) => (
-                                <div
-                                  key={`listOfDealsInfo-${index}`}
-                                  className="activity-awards"
-                                >
-                                  <div className="award-boxs">
-                                    <img src={awardicon01} alt="Award" />
-                                  </div>
-                                  <div className="award-list-outs">
-                                    <h4
-                                      style={{
-                                        fontWeight: "400",
-                                        inlineSize: "18rem",
-                                      }}
-                                      className="textwrap"
-                                    >
-                                      {data.dealName}
-                                    </h4>
-                                    <h5>
-                                      Min: {data.minimumPaticipationAmount},
-                                      Max:
-                                      {data.lenderPaticipationAmount}, RoI:
-                                      {data.rateOfInterest}%
-                                    </h5>
-                                  </div>
-                                  <div className="award-time-list">
-                                    <Link
-                                      to={`/participatedeal?dealId=${data.dealId}`}
-                                    >
-                                      <span>Participate</span>
-                                    </Link>
-                                  </div>
-                                </div>
-                              ))}
-                      </div>
-                    </div>
+                    )}
+
+                    {selectedCityerror && (
+                      <p className="text-danger small mt-1">
+                        Please select a city.
+                      </p>
+                    )}
                   </div>
-                </div>
-              ) : (
-                ""
-              )}
+                </Modal.Body>
+
+                <Modal.Footer className="py-2 px-3">
+                  <Button
+                    variant="primary"
+                    onClick={handleSave}
+                    size="sm"
+                    disabled={
+                      !selectedCity ||
+                      (selectedCity === "Others" && customCity.trim() === "")
+                    }
+                  >
+                    Save
+                  </Button>
+                </Modal.Footer>
+              </Modal>
+
+              <Footer />
             </div>
           </div>
 
-          <Modal
-            show={show}
-            onHide={handleClose}
-            dialogClassName="custom-small-modal"
-          >
-            <Modal.Header closeButton className="py-2 px-3">
-              <Modal.Title className="h6">Select City</Modal.Title>
-            </Modal.Header>
+          <FloatingAssistant
+            avatarSrc={logo}
+            // onOpen={() => {
+            //   window.open("https://askdisha.com/oxyloans", "_blank", "noopener,noreferrer");
+            // }}
+          />
 
-            <Modal.Body className="py-2 px-3">
-              <div className="mb-2">
-                <label htmlFor="citySelect" className="form-label small mb-1">
-                  City
-                </label>
-                <select
-                  id="citySelect"
-                  className="form-select form-select-sm"
-                  value={selectedCity}
-                  onChange={handleCityChange}
-                >
-                  <option value="">Select a city</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Bangalore">Bangalore</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                  <option value="Ahmedabad">Ahmedabad</option>
-                  <option value="Chennai">Chennai</option>
-                  <option value="Kolkata">Kolkata</option>
-                  <option value="Pune">Pune</option>
-                  <option value="Jaipur">Jaipur</option>
-                  <option value="Lucknow">Lucknow</option>
-                  <option value="Secunderabad">Secunderabad</option>
-                  <option value="Vishakapatnam">Vishakapatnam</option>
-                  <option value="Vijayawada">Vijayawada</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Others">Other</option>
-                </select>
-
-                {selectedCity === "Others" && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Enter City"
-                      className="form-control form-control-sm"
-                      name="customCity"
-                      value={customCity}
-                      onChange={(e) => setCustomCity(e.target.value)}
-                    />
-                  </div>
-                )}
-
-                {selectedCityerror && (
-                  <p className="text-danger small mt-1">
-                    Please select a city.
-                  </p>
-                )}
-              </div>
-            </Modal.Body>
-
-            <Modal.Footer className="py-2 px-3">
-              <Button
-                variant="primary"
-                onClick={handleSave}
-                size="sm"
-                disabled={
-                  !selectedCity ||
-                  (selectedCity === "Others" && customCity.trim() === "")
-                }
-              >
-                Save
-              </Button>
-            </Modal.Footer>
-          </Modal>
-
-          <Footer />
-        </div>
-      </div>
-
-       <FloatingAssistant
-        avatarSrc={logo}
-        // onOpen={() => {
-        //   window.open("https://askdisha.com/oxyloans", "_blank", "noopener,noreferrer");
-        // }}
-      /> 
-      
-        <style>
-          {`
+          <style>
+            {`
             .back-btn {
               background-color: white;
               color: #333;
@@ -1405,9 +1501,9 @@ const AdminDashboard = () => {
               background-color: #f0f0f0;
             }
           `}
-        </style>
-      </div> 
-    </div>    
+          </style>
+        </div>
+      </div>
     </>
   );
 };

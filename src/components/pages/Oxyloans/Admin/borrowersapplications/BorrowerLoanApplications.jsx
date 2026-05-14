@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Table, Select, Input, Button, Tag, Space, Typography, Card, message, } from "antd";
 import {  Spinner } from 'react-bootstrap';
 
-import { EyeOutlined, EditOutlined, UserSwitchOutlined, CommentOutlined } from "@ant-design/icons";
-import { commentsAdminApiCall, searchCall,handleChangePrimaryType,handleInterestStatus } from "../../../../HttpRequest/admin";
+import { EyeOutlined, EditOutlined, UserSwitchOutlined, CommentOutlined,FileSearchOutlined  } from "@ant-design/icons";
+import { commentsAdminApiCall, searchCall, handleChangePrimaryType, handleInterestStatus, adminBorrowerSecureInfo, calculateRoiBasedOnCibilScore } from "../../../../HttpRequest/admin";
 import Swal from 'sweetalert2';
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
@@ -33,14 +33,17 @@ const BorrowerLoanApplications = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
     const [interestStatus, setInterestStatus] = useState(false);
-  
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyForm, setVerifyForm] = useState({ verifiedMonthIncome: "", cibilScore: "", adminComments: "", verificationStatus: "VERIFIED" });
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [roiResult, setRoiResult] = useState(null);
 
   const pageSize = 10; // Fixed page size
   const navigate = useNavigate();
 
   const [show, setShow] = useState(false);
 
-  const handleClose = () => {setShow(false);setCommentsAdmin(false),setInterestStatus(false)};
+  const handleClose = () => { setShow(false); setCommentsAdmin(false); setInterestStatus(false); setShowVerifyModal(false); };
   
   const [formData, setFormData] = useState({
     location: "",
@@ -353,6 +356,11 @@ const BorrowerLoanApplications = () => {
     // Implement view details functionality
   };
 
+  const viewDetailsBorrower = async (record) => {
+     console.log("View details for:", record);
+    navigate(`/borrowerDocuments/${record.userDisplayId}`)
+  }
+
     const changetoLender = async () => {
       if (selectedRecord) {
         try {
@@ -407,7 +415,53 @@ const BorrowerLoanApplications = () => {
 
   const changeUserStatus = (record) => {
     console.log("Change user status for:", record);
-    // Implement status change functionality
+  };
+
+  const openVerifyModal = (record) => {
+    setSelectedRecord(record);
+    setVerifyForm({ verifiedMonthIncome: "", cibilScore: "", adminComments: "", verificationStatus: "VERIFIED" });
+    setRoiResult(null);
+    setShowVerifyModal(true);
+  };
+
+  const handleVerifySubmit = async () => {
+    if (!selectedRecord) return;
+    setVerifyLoading(true);
+    setRoiResult(null);
+    try {
+      const response = await adminBorrowerSecureInfo({
+        userId: String(selectedRecord.userDisplayId),
+        verifiedMonthIncome: verifyForm.verifiedMonthIncome,
+        cibilScore: verifyForm.cibilScore,
+        adminComments: verifyForm.adminComments,
+        userType: "ADMIN",
+        verificationStatus: verifyForm.verificationStatus,
+      });
+      if (response?.status === 200) {
+        // Only call ROI calculation if status is VERIFIED
+        if (verifyForm.verificationStatus === "VERIFIED") {
+          const roiRes = await calculateRoiBasedOnCibilScore(
+            verifyForm.cibilScore,
+            selectedRecord.userDisplayId
+          );
+          if (roiRes?.status === 200) {
+            setRoiResult(roiRes.data);
+          } else {
+            Swal.fire({ icon: "success", title: "Success!", text: "Borrower verified. ROI calculation unavailable.", confirmButtonColor: "#3085d6" });
+            setShowVerifyModal(false);
+          }
+        } else {
+          Swal.fire({ icon: "success", title: "Success!", text: `Borrower status updated to ${verifyForm.verificationStatus}.`, confirmButtonColor: "#3085d6" });
+          setShowVerifyModal(false);
+        }
+      } else {
+        Swal.fire({ icon: "error", title: "Failed", text: response?.response?.data?.errorMessage || "Something went wrong." });
+      }
+    } catch (e) {
+      Swal.fire({ icon: "error", title: "Error", text: "Request failed. Please try again." });
+    } finally {
+      setVerifyLoading(false);
+    }
   };
 
   const viewComments = (record) => {
@@ -512,15 +566,15 @@ const BorrowerLoanApplications = () => {
       ),
     },
    
-    {
-      title: "View Documents",
-      key: "viewDocuments",
-      render: (_, record) => (
-        <div>
+    // {
+    //   title: "View Documents",
+    //   key: "viewDocuments",
+    //   render: (_, record) => (
+    //     <div>
 
-        </div>
-      ),
-    },
+    //     </div>
+    //   ),
+    // },
     {
       title: "Comments",
       key: "comments",
@@ -595,7 +649,15 @@ const BorrowerLoanApplications = () => {
         <Space size="small" style={{display:'flex', flexDirection:'column'}}>
           <Button 
             type="primary" 
-            icon={<EyeOutlined />} 
+            icon={<FileSearchOutlined />} 
+            size="small"
+            onClick={() => viewDetailsBorrower(record)}
+          >
+            View Documents
+          </Button>
+          <Button 
+            type="primary" 
+            icon={<UserSwitchOutlined />} 
             size="small"
             onClick={() => viewDetails(record)}
           >
@@ -614,7 +676,15 @@ const BorrowerLoanApplications = () => {
             size="small"
             onClick={() => changeUserStatus(record)}
           >
-             View Experian Report
+            View Experian Report
+          </Button>
+          <Button
+            type="default"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => openVerifyModal(record)}
+          >
+            Verify Borrower
           </Button>
         </Space>
       ),
@@ -985,7 +1055,108 @@ const BorrowerLoanApplications = () => {
                 </Modal.Footer>
               </Modal>
 
-                {/* Interest Status */}
+              {/* Verify Borrower Modal */}
+      <Modal show={showVerifyModal} onHide={handleClose} size="md">
+        <Modal.Header closeButton>
+          <Modal.Title>Verify Borrower — {selectedRecord?.user?.firstName} {selectedRecord?.user?.lastName} (ID: {selectedRecord?.userDisplayId})</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {roiResult ? (
+            <div style={{ textAlign: "center", padding: "8px 0 16px" }}>
+              {/* Status banner */}
+              <div style={{
+                background: roiResult.status === "ELIGIBLE_LOW_INTEREST" ? "linear-gradient(135deg,#1a7a4a,#28a745)" :
+                  roiResult.status === "ELIGIBLE_HIGH_INTEREST" ? "linear-gradient(135deg,#b45309,#f59e0b)" :
+                  "linear-gradient(135deg,#991b1b,#dc3545)",
+                borderRadius: 14, padding: "20px 24px 16px", color: "#fff", marginBottom: 20,
+                boxShadow: "0 6px 24px rgba(0,0,0,0.13)"
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1, opacity: 0.85, marginBottom: 6 }}>ELIGIBILITY STATUS</div>
+                <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: 0.5, marginBottom: 4 }}>
+                  {roiResult.status?.replace(/_/g, " ")}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.75 }}>User ID: {roiResult.userId}</div>
+              </div>
+
+              {/* Metrics row */}
+              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
+                {[
+                  { label: "CIBIL Score", value: roiResult.cibilScore, icon: "fa-bar-chart", color: "#3d5ee1" },
+                  { label: "Rate of Interest", value: `${roiResult.roi}%`, icon: "fa-percent", color: "#28a745" },
+                  { label: "Record ID", value: `#${roiResult.id}`, icon: "fa-hashtag", color: "#6c757d" },
+                ].map(({ label, value, icon, color }) => (
+                  <div key={label} style={{
+                    flex: "1 1 120px", background: "#f8f9fa", borderRadius: 10, padding: "14px 10px",
+                    border: `1.5px solid ${color}22`, boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
+                  }}>
+                    <i className={`fa ${icon}`} style={{ fontSize: 20, color, marginBottom: 6, display: "block" }} />
+                    <div style={{ fontSize: 22, fontWeight: 800, color, lineHeight: 1 }}>{value}</div>
+                    <div style={{ fontSize: 11, color: "#6c757d", marginTop: 4, fontWeight: 500 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                style={{ borderRadius: 20, padding: "5px 22px", fontSize: 12 }}
+                onClick={handleClose}
+              >
+                Close
+              </button>
+            </div>
+          ) : (
+            <Form>
+              <Form.Group className="mb-2">
+                <Form.Label>Verified Monthly Income</Form.Label>
+                <Form.Control
+                  placeholder="e.g. 15000"
+                  value={verifyForm.verifiedMonthIncome}
+                  onChange={(e) => setVerifyForm((p) => ({ ...p, verifiedMonthIncome: e.target.value }))}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>CIBIL Score</Form.Label>
+                <Form.Control
+                  placeholder="e.g. 750"
+                  value={verifyForm.cibilScore}
+                  onChange={(e) => setVerifyForm((p) => ({ ...p, cibilScore: e.target.value }))}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Admin Comments</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Enter comments"
+                  value={verifyForm.adminComments}
+                  onChange={(e) => setVerifyForm((p) => ({ ...p, adminComments: e.target.value }))}
+                />
+              </Form.Group>
+              <Form.Group className="mb-2">
+                <Form.Label>Verification Status</Form.Label>
+                <Form.Select
+                  value={verifyForm.verificationStatus}
+                  onChange={(e) => setVerifyForm((p) => ({ ...p, verificationStatus: e.target.value }))}
+                >
+                  <option value="VERIFIED">VERIFIED</option>
+                  <option value="HOLD">HOLD</option>
+                  <option value="REJECTED">REJECTED</option>
+                </Form.Select>
+              </Form.Group>
+            </Form>
+          )}
+        </Modal.Body>
+        {!roiResult && (
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+            <Button variant="primary" onClick={handleVerifySubmit} disabled={verifyLoading}>
+              {verifyLoading ? <><Spinner animation="border" size="sm" /> Submitting...</> : "Submit"}
+            </Button>
+          </Modal.Footer>
+        )}
+      </Modal>
+
+        {/* Interest Status */}
                       <Modal show={interestStatus} onHide={handleClose} top size="sm">
                         <Modal.Header closeButton>
                           <Modal.Title>Confirmation</Modal.Title>

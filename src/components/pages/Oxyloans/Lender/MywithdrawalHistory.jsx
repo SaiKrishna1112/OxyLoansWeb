@@ -55,7 +55,7 @@ const MywithdrawalHistory = () => {
         datasource.push({
           key: Math.random(),
           raisedon: data.createdOn,
-          amount: data.amount,
+          amount: data.amount ? data.amount.toLocaleString("en-IN") : null,
           approvedOn: data.requestFrom == "DEAL" ? data.createdOn : data.approvedOn,
           reason: data.withdrawalReason,
           requestedFrom: data.requestFrom,

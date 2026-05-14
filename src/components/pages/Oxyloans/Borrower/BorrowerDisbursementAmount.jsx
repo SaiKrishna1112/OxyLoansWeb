@@ -251,8 +251,8 @@ const BorrowerDisbursementAmount = () => {
           </div>
 
           {/* Repayment Marquee */}
-          <div className="mb-3" style={{ background: "#fdecea", border: "1.5px solid #f5c6cb", borderRadius: 4, overflow: "hidden" }}>
-            <marquee behavior="scroll" direction="left" scrollamount="2" style={{ padding: "8px 0", fontSize: 13, color: "#7a1a1a", fontWeight: 500 }}>
+          <div className="mb-3" style={{ background: "#fdecea",  borderRadius: 6 }}>
+            <marquee behavior="scroll" direction="left" scrollamount="2" style={{  color: "#7a1a1a", padding: "6px 0", fontSize: 12, fontWeight: 500, textAlign: "center"  }}>
               ⚠️&nbsp;&nbsp;<strong>Repayment Reminder:</strong>&nbsp; Loan repayment is scheduled for the <strong>5th of each month</strong>. Ensure timely payment to avoid additional charges.
             </marquee>
           </div>

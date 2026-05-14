@@ -6,6 +6,7 @@ import FeatherIcon from "feather-icons-react";
 import { userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import { BsWhatsapp } from "react-icons/bs";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -201,11 +202,11 @@ const Login = () => {
                   </div>
 
                   <div className="social-login">
-                    {/* <Link to="#">
+                    {/* <Link to="#" className="bg-success text-white">
                       <i className="fab fa-google-plus-g" />
                     </Link> */}
                     <Link to="/whatsapplogin" className="bg-success text-white">
-                      <i className="fa fa-whatsapp" />{" "}
+                       <BsWhatsapp />{" "}
                     </Link>
                     {/* <Link onClick={() => {}} to="#">
                       <i className="fab fa-facebook-f" />
