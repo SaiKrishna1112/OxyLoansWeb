@@ -2,6 +2,9 @@ import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
+import LenderAIDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -164,10 +167,11 @@ const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Loginotp />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/loadwaletThroughQr" element={<LoadwaletThroughQr />} />
         <Route path="/loginotp" element={<Loginotp />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<LenderRegister />} />
         <Route path="/userType" element={<UserType />} />
         <Route path="/borrower_register" element={<BorrowerRegister />} />
@@ -222,6 +226,10 @@ const AppRouter = () => {
         <Route path="/testdeals1" element={<Testdeal1 />} />
         <Route path="/viewCurrentDayDeals" element={<ViewCurrentDayDeals />} />
         <Route path="/emicalculator" element={<Emicalculator />} />
+        <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
+        <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
+        <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
         <Route path="/configautoInvest" element={<ConfigautoInvest />} />
         <Route path="/membership" element={<Membership />} />
         <Route

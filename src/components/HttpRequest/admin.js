@@ -1,5 +1,5 @@
 import axios from "axios";
-const userisIn = "production"; //local or production
+const userisIn = "local"; //local or production
 const API_BASE_URL =
   userisIn == "local"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"

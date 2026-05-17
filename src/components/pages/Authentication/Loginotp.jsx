@@ -70,21 +70,15 @@ const Loginotp = () => {
         toastrSuccess("Login Success!");
 
         sessionStorage.setItem("userId", retriveresponse.data.id);
-        sessionStorage.setItem(
-          "tokenTime",
-          retriveresponse.data.tokenGeneratedTime
-        );
-        sessionStorage.setItem(
-          "accessToken",
-          retriveresponse.headers.accesstoken
-        );
-        // dispatch(getProfile({ res: retriveresponse.data }));
-        localStorage.setItem("primaryType", retriveresponse.data.primaryType)
+        sessionStorage.setItem("tokenTime", retriveresponse.data.tokenGeneratedTime);
+        sessionStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
+        sessionStorage.setItem("email", retriveresponse.data.email || "");
+        localStorage.setItem("primaryType", retriveresponse.data.primaryType);
 
         if (retriveresponse.data.primaryType == "LENDER") {
           history("/dashboard");
-        } else if (retriveresponse.data.primaryType == "ADMIN") {
-          history("/dashboard");
+        } else if (retriveresponse.data.primaryType == "ADMIN" || retriveresponse.data.primaryType == "HELPDESKADMIN") {
+          history("/oxyloansadmindashboard");
         } else {
           history("/borrowerDashboard");
         }

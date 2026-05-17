@@ -115,6 +115,14 @@ const Sidebar = (props) => {
                   </Link>
                 </li>
 
+                <li className={`${"/lenderAIDashboard" === pathName ? "active" : ""}`}>
+                  <Link to="/lenderAIDashboard">
+                    <i className="fa-solid fa-robot"></i>{" "}
+                    <span> AI Portfolio Dashboard </span>
+                    <span className="menu-arrow"></span>
+                  </Link>
+                </li>
+
                 <li
                   className={`${
                     "/dashboardTransactions" === pathName ? "active" : ""
