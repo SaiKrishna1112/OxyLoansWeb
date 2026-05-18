@@ -479,14 +479,26 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
     acc[d].push(p);
     return acc;
   }, {});
-  const sortedDates = Object.keys(payoutsByDate).sort();
+  const allSortedDates = Object.keys(payoutsByDate).sort();
+  const MAX_DATES = 10;
+  const tooMany = allSortedDates.length > MAX_DATES;
+  const sortedDates = tooMany ? allSortedDates.slice(0, MAX_DATES) : allSortedDates;
+  const hiddenTotal = tooMany
+    ? allSortedDates.slice(MAX_DATES).reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
+    : 0;
+  const displayTotal = tooMany
+    ? sortedDates.reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
+    : total;
+  const heading = tooMany
+    ? `Next 10 Payment Dates (${allSortedDates.length} total in 60 days)`
+    : "Upcoming Payments — Next 60 Days";
 
   return (
     <div style={{ background: "#fff7e6", borderRadius: 14, padding: "16px 20px", marginBottom: 20, border: "1px solid #ffd591" }}>
       {/* Brief summary — always visible */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "#d46b08", marginBottom: 4 }}>Upcoming Payments — Next 60 Days</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#d46b08", marginBottom: 4 }}>{heading}</div>
           {sortedDates.length > 0 ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {sortedDates.map((d) => {
@@ -514,8 +526,13 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
             onClick={sortedDates.length > 0 ? expandAndScroll : undefined}
             title={sortedDates.length > 0 ? "Click to see deal-level breakdown" : undefined}
           >
-            <div style={{ fontSize: 11, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1 }}>Total Due</div>
-            <div style={{ fontWeight: 700, fontSize: 22, color: "#fa8c16" }}>₹{fmt(total)}</div>
+            <div style={{ fontSize: 11, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1 }}>
+              {tooMany ? "Showing Next 10" : "Total Due"}
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 22, color: "#fa8c16" }}>₹{fmt(displayTotal)}</div>
+            {tooMany && (
+              <div style={{ fontSize: 11, color: "#d46b08" }}>+₹{fmt(hiddenTotal)} more</div>
+            )}
           </div>
           {sortedDates.length > 0 && (
             <button
