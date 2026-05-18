@@ -996,13 +996,14 @@ const LenderPortfolioDashboard = () => {
   const [error, setError] = useState(null);
   const [dealsShown, setDealsShown] = useState(10);
   const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
-  const [showNextDay, setShowNextDay] = useState(false);
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [previewTier, setPreviewTier] = useState(null);
+  const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
+  const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
@@ -1058,6 +1059,32 @@ const LenderPortfolioDashboard = () => {
       .catch(() => {})
       .finally(() => setUpcomingLoading(false));
   }, [resolvedLenderId]);
+
+  const fetchTimingDetail = (bucket, page = 0) => {
+    setTimingDetail(prev => ({
+      ...prev,
+      [bucket]: { ...(prev[bucket] || {}), loading: true, error: null }
+    }));
+    axios.get(
+      `${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/payment-timing?bucket=${bucket}&page=${page}&size=20`,
+      { headers: { accessToken: getToken() } }
+    ).then(res => {
+      const json = res.data;
+      setTimingDetail(prev => {
+        const existing = prev[bucket] || {};
+        const allRecords = page === 0 ? json.records : [...(existing.records || []), ...(json.records || [])];
+        return { ...prev, [bucket]: { records: allRecords, page: json.page, total: json.total, hasMore: json.hasMore, loading: false } };
+      });
+    }).catch(() => {
+      setTimingDetail(prev => ({ ...prev, [bucket]: { ...(prev[bucket] || {}), loading: false, error: 'Failed to load' } }));
+    });
+  };
+
+  const handleTimingClick = (bucket) => {
+    if (timingBucket === bucket) { setTimingBucket(null); return; }
+    setTimingBucket(bucket);
+    if (!timingDetail[bucket] || !timingDetail[bucket].records) fetchTimingDetail(bucket, 0);
+  };
 
   const heroBg = isPro
     ? "linear-gradient(135deg, #1a237e 0%, #4a148c 60%, #6a1b9a 100%)"
@@ -1601,101 +1628,131 @@ const LenderPortfolioDashboard = () => {
                             )}
                           </div>
                         </div>
-                        {/* Breakdown row */}
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-                          {early > 0 && (
-                            <div style={{ background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#722ed1' }}>{early}</div>
-                              <div style={{ fontSize: 11, color: '#722ed1' }}>⚡ Paid Early</div>
+                        {/* Breakdown row — click any block to see records */}
+                        {(() => {
+                          const bucketColors = {
+                            EARLY:    { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: '⚡ Paid Early' },
+                            SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: '✅ Same Day' },
+                            NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Days' },
+                            LATE:     { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: '⏰ Late' },
+                            NO_TS:    { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: '📋 Settled' },
+                          };
+                          const makeBucket = (bucket, count, extraLabel) => {
+                            if (!count) return null;
+                            const c = bucketColors[bucket] || bucketColors.NO_TS;
+                            const isOpen = timingBucket === bucket;
+                            const isLoading = timingDetail[bucket]?.loading;
+                            return (
+                              <div
+                                key={bucket}
+                                onClick={() => handleTimingClick(bucket)}
+                                style={{ background: isOpen ? c.border : c.bg, border: `1px solid ${isOpen ? c.text : c.border}`, borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90, cursor: 'pointer', transition: 'all 0.2s', boxShadow: isOpen ? `0 2px 8px ${c.border}` : 'none', userSelect: 'none' }}
+                                title={`Click to see ${count} ${c.label} payment records`}
+                              >
+                                <div style={{ fontSize: 22, fontWeight: 700, color: c.text }}>{isLoading ? '…' : count}</div>
+                                <div style={{ fontSize: 11, color: c.text }}>{c.label}</div>
+                                {extraLabel && <div style={{ fontSize: 10, color: c.text, opacity: 0.7 }}>{extraLabel}</div>}
+                                <div style={{ fontSize: 10, color: c.text, marginTop: 2, opacity: 0.6 }}>{isOpen ? '▲ hide' : '▼ view'}</div>
+                              </div>
+                            );
+                          };
+                          return (
+                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                              {makeBucket('EARLY', early)}
+                              {makeBucket('SAME_DAY', same)}
+                              {makeBucket('NEXT_DAY', next)}
+                              {makeBucket('LATE', late)}
+                              {noTs > 0 && makeBucket('NO_TS', noTs, 'legacy records')}
+                              {(pipAppr + pipInit) > 0 && (
+                                <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
+                                  <div style={{ fontSize: 22, fontWeight: 700, color: '#1890ff' }}>{pipAppr + pipInit}</div>
+                                  <div style={{ fontSize: 11, color: '#1890ff' }}>📋 In Pipeline</div>
+                                </div>
+                              )}
+                              {upcoming > 0 && (
+                                <div style={{ background: '#fff0f6', border: '1px solid #ffadd2', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
+                                  <div style={{ fontSize: 22, fontWeight: 700, color: '#eb2f96' }}>{upcoming}</div>
+                                  <div style={{ fontSize: 11, color: '#eb2f96' }}>⏳ Upcoming</div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                            <div style={{ fontSize: 22, fontWeight: 700, color: '#52c41a' }}>{same}</div>
-                            <div style={{ fontSize: 11, color: '#52c41a' }}>✅ Same Day</div>
-                          </div>
-                          {next > 0 && (
-                            <div
-                              onClick={() => isPro && setShowNextDay(v => !v)}
-                              style={{ background: '#e6fffb', border: `1px solid ${showNextDay ? '#13c2c2' : '#87e8de'}`, borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90, cursor: isPro ? 'pointer' : 'default' }}
-                              title={isPro ? "Click to see all +1–2 day payments" : undefined}
-                            >
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#13c2c2' }}>{next}</div>
-                              <div style={{ fontSize: 11, color: '#13c2c2' }}>+1–2 Days {isPro ? (showNextDay ? '▲' : '▼') : '🔒'}</div>
+                          );
+                        })()}
+                        {/* Inline expandable payment timing panel */}
+                        {timingBucket && (() => {
+                          const c = { EARLY: { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: 'Paid Early' }, SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: 'Same Day' }, NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Day' }, LATE: { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: 'Late' }, NO_TS: { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: 'Settled (Legacy)' } }[timingBucket] || {};
+                          const d = timingDetail[timingBucket] || {};
+                          const records = d.records || [];
+                          const typeLabel = t => t === 'LENDERINTEREST' ? 'Interest' : t === 'PRINCIPALINTEREST' ? 'Closure Int.' : t === 'WITHDRAWALINTEREST' ? 'Withdrawal Int.' : t;
+                          const diffLabel = (days) => {
+                            if (days === null || days === undefined) return '—';
+                            if (days < 0) return `${Math.abs(days)}d early`;
+                            if (days === 0) return 'same day';
+                            return `+${days}d`;
+                          };
+                          const diffStyle = (days) => {
+                            if (days === null || days === undefined) return { color: '#8c8c8c' };
+                            if (days < 0) return { color: '#722ed1', fontWeight: 600 };
+                            if (days === 0) return { color: '#52c41a', fontWeight: 600 };
+                            if (days <= 2) return { color: '#13c2c2', fontWeight: 600 };
+                            return { color: '#fa8c16', fontWeight: 600 };
+                          };
+                          return (
+                            <div style={{ marginBottom: 16, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${c.border}` }}>
+                                <div style={{ fontWeight: 700, color: c.text, fontSize: 13 }}>
+                                  {c.label} Payments — {d.total !== undefined ? `${records.length} of ${d.total}` : ''}
+                                </div>
+                                <button onClick={() => setTimingBucket(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text, fontSize: 16, lineHeight: 1, padding: '0 4px' }} title="Close">✕</button>
+                              </div>
+                              {d.loading && records.length === 0 && (
+                                <div style={{ padding: '24px', textAlign: 'center', color: c.text, fontSize: 13 }}>Loading…</div>
+                              )}
+                              {d.error && (
+                                <div style={{ padding: '16px', textAlign: 'center', color: '#ff4d4f', fontSize: 13 }}>{d.error}</div>
+                              )}
+                              {records.length > 0 && (
+                                <div style={{ maxHeight: 360, overflowY: 'auto', overflowX: 'auto' }}>
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                    <thead style={{ position: 'sticky', top: 0, background: c.bg, zIndex: 1 }}>
+                                      <tr style={{ borderBottom: `1px solid ${c.border}` }}>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Deal</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Type</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Scheduled</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Credited</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'center', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Days</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'right', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Amount</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {records.map((r, i) => (
+                                        <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.5)' }}>
+                                          <td style={{ padding: '6px 10px', color: '#262626', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.dealName}>{r.dealName || `Deal #${r.dealId}`}</td>
+                                          <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11 }}>{typeLabel(r.amountType)}</td>
+                                          <td style={{ padding: '6px 10px', color: '#595959', whiteSpace: 'nowrap' }}>{r.scheduledDate || '—'}</td>
+                                          <td style={{ padding: '6px 10px', color: '#262626', whiteSpace: 'nowrap' }}>{r.actualDate || '—'}</td>
+                                          <td style={{ padding: '6px 10px', textAlign: 'center', ...diffStyle(r.diffDays) }}>{diffLabel(r.diffDays)}</td>
+                                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#52c41a', whiteSpace: 'nowrap' }}>₹{(r.amount || 0).toLocaleString('en-IN')}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                              {(d.hasMore || d.loading) && (
+                                <div style={{ padding: '10px 16px', borderTop: `1px solid ${c.border}`, textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => fetchTimingDetail(timingBucket, (d.page || 0) + 1)}
+                                    disabled={d.loading}
+                                    style={{ background: c.text, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 20px', cursor: d.loading ? 'default' : 'pointer', fontSize: 12, fontWeight: 600, opacity: d.loading ? 0.6 : 1 }}
+                                  >
+                                    {d.loading ? 'Loading…' : `Load more (${d.total - records.length} remaining)`}
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {late > 0 && (
-                            <div style={{ background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#fa8c16' }}>{late}</div>
-                              <div style={{ fontSize: 11, color: '#fa8c16' }}>⏰ Late</div>
-                            </div>
-                          )}
-                          {noTs > 0 && (
-                            <div style={{ background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#595959' }}>{noTs}</div>
-                              <div style={{ fontSize: 11, color: '#8c8c8c' }}>Settled</div>
-                              <div style={{ fontSize: 10, color: '#bfbfbf' }}>legacy records</div>
-                            </div>
-                          )}
-                          {(pipAppr + pipInit) > 0 && (
-                            <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#1890ff' }}>{pipAppr + pipInit}</div>
-                              <div style={{ fontSize: 11, color: '#1890ff' }}>📋 In Pipeline</div>
-                            </div>
-                          )}
-                          {upcoming > 0 && (
-                            <div style={{ background: '#fff0f6', border: '1px solid #ffadd2', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#eb2f96' }}>{upcoming}</div>
-                              <div style={{ fontSize: 11, color: '#eb2f96' }}>⏳ Upcoming</div>
-                            </div>
-                          )}
-                        </div>
-                        {/* SMART teaser for payment detail */}
-                        {!isPro && (
-                          <div style={{ marginBottom: 16, background: '#f9f0ff', border: '1px dashed #d3adf7', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
-                            <span style={{ fontSize: 13, color: '#722ed1' }}>
-                              🔒 Full payment-by-payment timeline &amp; +1–2 day detail available in <strong>OXI Pro</strong>
-                            </span>
-                          </div>
-                        )}
-                        {/* +1-2 day expandable detail — PRO only */}
-                        {showNextDay && isPro && nextDayList.length > 0 && (
-                          <div style={{ marginBottom: 20, background: '#e6fffb', border: '1px solid #87e8de', borderRadius: 8, padding: 14 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: '#13c2c2', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
-                              All +1–2 Day Payments ({nextDayList.length})
-                            </div>
-                            <div style={{ overflowX: 'auto' }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                                <thead>
-                                  <tr style={{ borderBottom: '1px solid #87e8de' }}>
-                                    <th style={{ padding: '5px 10px', textAlign: 'left', color: '#13c2c2', fontWeight: 600 }}>Scheduled</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'left', color: '#13c2c2', fontWeight: 600 }}>Credited</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'center', color: '#13c2c2', fontWeight: 600 }}>Delay</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'right', color: '#13c2c2', fontWeight: 600 }}>Amount</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'left', color: '#13c2c2', fontWeight: 600 }}>Type</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {nextDayList.map((ev, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                      <td style={{ padding: '6px 10px', color: '#595959' }}>{ev.scheduledDate}</td>
-                                      <td style={{ padding: '6px 10px', color: '#262626', fontWeight: 600 }}>{ev.actualDate}</td>
-                                      <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                                        <span style={{ background: '#e6fffb', color: '#13c2c2', border: '1px solid #87e8de', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                                          +{ev.diffDays}d
-                                        </span>
-                                      </td>
-                                      <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#52c41a' }}>₹{ev.amount?.toLocaleString('en-IN') ?? 0}</td>
-                                      <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11 }}>
-                                        {ev.type === 'LENDERINTEREST' ? 'Interest' : ev.type === 'PRINCIPALRETURN' ? 'Principal' : ev.type}
-                                        {ev.dealRemark ? ` · ${ev.dealRemark}` : ''}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Recent payments timeline — PRO only */}
                         {isPro && recent.length > 0 && (
