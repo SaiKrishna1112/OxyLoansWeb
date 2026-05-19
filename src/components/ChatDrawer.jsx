@@ -41,6 +41,34 @@ const ROLE_CONFIG = {
   Admin:    { label: "Admin Assistant",    color: "#f97316", bg: "linear-gradient(135deg, #f97316 0%, #ea6c00 100%)" },
 };
 
+const FOLLOWUP = {
+  LENDER_PROFILE:           ["Show my active deals", "What interest did I earn this year?", "Show my upcoming payments"],
+  DEALS_STATISTICS:         ["Show my running deals", "Show upcoming payments", "Show interest history"],
+  LENDER_RUNNING_DEALS:     ["Show my wallet balance", "Show upcoming interest payments", "Which deal has the highest rate?"],
+  OPEN_DEALS:               ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
+  INTEREST_HISTORY:         ["Show my principal returned", "Show upcoming payments", "How much is in my wallet?"],
+  PRINCIPAL_HISTORY:        ["Show my wallet balance", "Show my referral earnings", "Show my active deals"],
+  LENDER_UPCOMING_INTEREST: ["Show my wallet balance", "What interest have I earned?", "Show active deals"],
+  REFERRAL_HISTORY:         ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
+  EMI_SCHEDULE:             ["Show my active loans", "What interest rate am I paying?", "How does repayment work?"],
+  LOAN_APPLICATIONS:        ["Show my active loans", "How long does loan approval take?", "What documents are required?"],
+  ACTIVE_LOANS:             ["Show my EMI schedule", "What interest rate am I paying?", "How does repayment work?"],
+};
+
+const TYPE_META = {
+  LENDER_PROFILE:           { icon: "💰", label: "Wallet", color: "#16a34a" },
+  LENDER_RUNNING_DEALS:     { icon: "📊", label: "Deals",  color: "#2563eb" },
+  OPEN_DEALS:               { icon: "🎯", label: "Marketplace", color: "#7c3aed" },
+  INTEREST_HISTORY:         { icon: "💵", label: "Earnings", color: "#0ea5a1" },
+  PRINCIPAL_HISTORY:        { icon: "🏦", label: "Principal", color: "#16a34a" },
+  LENDER_UPCOMING_INTEREST: { icon: "📅", label: "Upcoming", color: "#f97316" },
+  REFERRAL_HISTORY:         { icon: "🎁", label: "Referral", color: "#7c3aed" },
+  DEALS_STATISTICS:         { icon: "📈", label: "Stats",  color: "#2563eb" },
+  EMI_SCHEDULE:             { icon: "📅", label: "EMI",    color: "#f97316" },
+  LOAN_APPLICATIONS:        { icon: "📋", label: "Applications", color: "#6366f1" },
+  ACTIVE_LOANS:             { icon: "🏠", label: "Loans",  color: "#2563eb" },
+};
+
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
 const STATUS_COLOR = {
@@ -356,15 +384,411 @@ function ActiveLoansView({ loans }) {
   );
 }
 
+// ─── Lender: Profile card ─────────────────────────────────────────────────────
+
+function LenderProfileView({ data }) {
+  const panColor = (data.panStatus || "").toUpperCase() === "VERIFIED"
+    ? { bg: "#dcfce7", text: "#15803d", border: "#86efac" }
+    : { bg: "#fef9c3", text: "#a16207", border: "#fde047" };
+  const memColor = String(data.membershipStatus || "ACTIVE").toUpperCase() === "ACTIVE"
+    ? { bg: "#dbeafe", text: "#1d4ed8", border: "#93c5fd" }
+    : { bg: "#f1f5f9", text: "#64748b", border: "#e2e8f0" };
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      {/* Wallet balance hero */}
+      <div style={{
+        background: "linear-gradient(135deg, #0ea5a1 0%, #059890 100%)",
+        borderRadius: 12, padding: "16px 14px", marginBottom: 8, textAlign: "center",
+      }}>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Wallet Balance
+        </div>
+        <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>
+          {fmtINR(data.walletBalance)}
+        </div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 4 }}>
+          {data.lenderName || "—"}
+        </div>
+      </div>
+
+      {/* Info grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        {[
+          { label: "Email", value: data.email || "—" },
+          { label: "Mobile", value: data.mobile || "—" },
+        ].map(({ label, value }) => (
+          <div key={label} style={{
+            background: "#f8fafc", borderRadius: 8, padding: "8px 10px",
+            border: "1px solid #e2e8f0",
+          }}>
+            <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>{label}</div>
+            <div style={{ fontSize: 11, color: "#334155", fontWeight: 600, wordBreak: "break-all" }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Badges row */}
+      <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+        <span style={{
+          flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, padding: "5px 0",
+          borderRadius: 8, border: `1px solid ${panColor.border}`,
+          background: panColor.bg, color: panColor.text,
+        }}>
+          PAN {data.panStatus || "Unknown"}
+        </span>
+        <span style={{
+          flex: 1, textAlign: "center", fontSize: 10, fontWeight: 700, padding: "5px 0",
+          borderRadius: 8, border: `1px solid ${memColor.border}`,
+          background: memColor.bg, color: memColor.text,
+        }}>
+          Membership {String(data.membershipStatus || "Unknown")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Lender: Deal statistics ──────────────────────────────────────────────────
+
+function DealStatisticsView({ data }) {
+  const stats = [
+    { label: "Active", value: data.activeDeals ?? 0, color: "#2563eb", bg: "#dbeafe" },
+    { label: "Disbursed", value: data.disbursedDeals ?? 0, color: "#16a34a", bg: "#dcfce7" },
+    { label: "Closed", value: data.closedDeals ?? 0, color: "#64748b", bg: "#f1f5f9" },
+  ];
+  const amounts = [
+    { label: "Total Invested", value: data.totalInvested, color: "#0ea5a1" },
+    { label: "Total Repaid", value: data.totalRepaid, color: "#16a34a" },
+    { label: "Pending Repayment", value: data.pendingRepayment, color: "#ea580c" },
+  ].filter(a => a.value != null);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      {/* Deal counts */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 8 }}>
+        {stats.map(s => (
+          <div key={s.label} style={{
+            textAlign: "center", padding: "10px 4px", borderRadius: 10,
+            background: s.bg, border: `1px solid ${s.color}30`,
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Amount breakdown */}
+      {amounts.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {amounts.map(a => (
+            <div key={a.label} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "7px 11px", background: "#f8fafc", borderRadius: 8,
+              border: "1px solid #e2e8f0",
+            }}>
+              <span style={{ fontSize: 11, color: "#64748b" }}>{a.label}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: a.color }}>{fmtINR(a.value)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Lender: Running/participated deals ──────────────────────────────────────
+
+function LenderRunningDealsView({ deals }) {
+  return (
+    <div style={{ marginTop: 8, overflowX: "auto", borderRadius: 10, border: "1px solid #e2e8f0" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+        <thead>
+          <tr style={{ background: "#f8fafc" }}>
+            {["Deal", "Invested", "ROI %", "Status", "Closed"].map(h => (
+              <th key={h} style={appTh}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {deals.length === 0 ? (
+            <tr><td colSpan={5} style={{ padding: 14, textAlign: "center", color: "#94a3b8" }}>No deals found</td></tr>
+          ) : deals.map((d, i) => {
+            const key = (d.status || "").toUpperCase();
+            const borderColor = STATUS_BORDER[key] || "#e2e8f0";
+            return (
+              <tr key={i} style={{
+                borderTop: "1px solid #f1f5f9",
+                background: i % 2 === 0 ? "#fff" : "#fafbff",
+                borderLeft: `3px solid ${borderColor}`,
+              }}>
+                <td style={{ ...appTd, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {d.dealName || "—"}
+                </td>
+                <td style={{ ...appTd, fontWeight: 600 }}>{fmtINR(d.participatedAmount)}</td>
+                <td style={{ ...appTd, color: "#0ea5a1", fontWeight: 700 }}>
+                  {d.rateOfInterest != null ? `${d.rateOfInterest}%` : "—"}
+                </td>
+                <td style={appTd}><StatusBadge status={d.status} /></td>
+                <td style={{ ...appTd, fontSize: 10, color: "#94a3b8" }}>{d.closedDate || "—"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Lender: Open deals to invest ────────────────────────────────────────────
+
+function OpenDealsView({ deals }) {
+  return (
+    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+      {deals.length === 0 ? (
+        <div style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, padding: 14 }}>
+          No open deals available right now
+        </div>
+      ) : deals.map((d, i) => {
+        const target = Number(d.targetAmount) || 0;
+        const raised = Number(d.raisedAmount) || 0;
+        const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
+        const barColor = pct >= 80 ? "#ef4444" : pct >= 50 ? "#f97316" : "#0ea5a1";
+
+        return (
+          <div key={i} style={{
+            borderRadius: 10, background: "#fff", border: "1px solid #e2e8f0",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.04)", overflow: "hidden",
+          }}>
+            {/* Deal header */}
+            <div style={{
+              padding: "9px 12px", background: "#f0fdfa",
+              borderBottom: "1px solid #ccfbf1",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 12, color: "#0f172a" }}>{d.dealName || `Deal #${i + 1}`}</div>
+              <div style={{
+                fontSize: 11, fontWeight: 800, color: "#0ea5a1",
+                background: "#ccfbf1", padding: "2px 8px", borderRadius: 20,
+                border: "1px solid #5eead4",
+              }}>
+                {d.rateOfInterest != null ? `${d.rateOfInterest}% p.a.` : "—"}
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ padding: "8px 12px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#64748b", marginBottom: 4 }}>
+                <span>Raised: {fmtINR(raised)}</span>
+                <span>Target: {fmtINR(target)}</span>
+              </div>
+              <div style={{ height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                <div style={{
+                  height: "100%", width: `${pct}%`, background: barColor,
+                  borderRadius: 3, transition: "width 0.5s ease",
+                }} />
+              </div>
+              <div style={{ fontSize: 10, color: barColor, fontWeight: 700, marginTop: 3, textAlign: "right" }}>
+                {pct}% funded
+              </div>
+            </div>
+
+            {/* Closing date */}
+            {d.closingDate && (
+              <div style={{
+                padding: "5px 12px", background: "#fef9c3",
+                borderTop: "1px solid #fde047", fontSize: 10, color: "#a16207",
+              }}>
+                Closes: {d.closingDate}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Lender: Interest / principal / referral history ─────────────────────────
+
+function LenderHistoryView({ items = [], totalLabel, totalValue, accentColor = "#0ea5a1", columns }) {
+  return (
+    <div style={{ marginTop: 8 }}>
+      {/* Total strip */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        background: `${accentColor}12`, border: `1px solid ${accentColor}30`,
+        borderRadius: 10, padding: "8px 12px", marginBottom: 8,
+      }}>
+        <span style={{ fontSize: 11, color: "#64748b" }}>{totalLabel}</span>
+        <span style={{ fontSize: 16, fontWeight: 800, color: accentColor }}>{fmtINR(totalValue)}</span>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #e2e8f0" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+          <thead>
+            <tr style={{ background: "#f8fafc" }}>
+              {columns.map(c => <th key={c.key} style={appTh}>{c.label}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 ? (
+              <tr><td colSpan={columns.length} style={{ padding: 14, textAlign: "center", color: "#94a3b8" }}>No records found</td></tr>
+            ) : items.map((item, i) => (
+              <tr key={i} style={{ borderTop: "1px solid #f1f5f9", background: i % 2 === 0 ? "#fff" : "#fafbff" }}>
+                {columns.map(c => (
+                  <td key={c.key} style={{ ...appTd, ...(c.style || {}) }}>
+                    {c.fmt ? c.fmt(item[c.key]) : (item[c.key] ?? "—")}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {items.length > 0 && (
+        <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "right", marginTop: 4 }}>
+          Showing {items.length} records
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Lender: Upcoming interest ────────────────────────────────────────────────
+
+function LenderUpcomingInterestView({ items = [], totalUpcoming }) {
+  return (
+    <LenderHistoryView
+      items={items}
+      totalLabel="Total Upcoming Interest"
+      totalValue={totalUpcoming}
+      accentColor="#f97316"
+      columns={[
+        { key: "dealName",  label: "Deal" },
+        { key: "dueDate",   label: "Due Date" },
+        { key: "amount",    label: "Interest", fmt: fmtINR, style: { fontWeight: 700, color: "#f97316" } },
+      ]}
+    />
+  );
+}
+
+// ─── Proactive follow-up suggestions ─────────────────────────────────────────
+
+function SuggestedFollowup({ type, onSend }) {
+  const suggestions = FOLLOWUP[type];
+  if (!suggestions || suggestions.length === 0) return null;
+  return (
+    <div style={{ marginTop: 10, paddingTop: 8, borderTop: "1px dashed #e2e8f0" }}>
+      <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 5, fontStyle: "italic" }}>
+        💡 You might also ask:
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+        {suggestions.map((s, i) => (
+          <button key={i} onClick={() => onSend(s)} style={{
+            fontSize: 10, padding: "3px 9px", borderRadius: 20, cursor: "pointer",
+            border: "1px solid #6366f130", background: "#f5f3ff", color: "#6366f1",
+            transition: "all 0.15s", fontFamily: "inherit",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#6366f1"; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#f5f3ff"; e.currentTarget.style.color = "#6366f1"; }}>
+            {s}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Topic badge ──────────────────────────────────────────────────────────────
+
+function TopicBadge({ type }) {
+  const meta = TYPE_META[type];
+  if (!meta) return null;
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 20,
+      background: meta.color + "15", color: meta.color,
+      border: `1px solid ${meta.color}30`, marginBottom: 6,
+      textTransform: "uppercase", letterSpacing: "0.04em",
+    }}>
+      {meta.icon} {meta.label}
+    </div>
+  );
+}
+
 // ─── Rich message dispatcher ──────────────────────────────────────────────────
 
 function RichMessage({ data }) {
   if (!data) return null;
-  const { type, loans = [] } = data;
-  if (!loans.length) return null;
-  if (type === "EMI_SCHEDULE")      return <EmiScheduleView loans={loans} />;
-  if (type === "LOAN_APPLICATIONS") return <LoanApplicationsView loans={loans} />;
-  if (type === "ACTIVE_LOANS")      return <ActiveLoansView loans={loans} />;
+  const { type } = data;
+
+  // Borrower types
+  if (type === "EMI_SCHEDULE")      return <EmiScheduleView loans={data.loans || []} />;
+  if (type === "LOAN_APPLICATIONS") return <LoanApplicationsView loans={data.loans || []} />;
+  if (type === "ACTIVE_LOANS")      return <ActiveLoansView loans={data.loans || []} />;
+
+  // Lender types
+  if (type === "LENDER_PROFILE")    return <LenderProfileView data={data} />;
+  if (type === "DEALS_STATISTICS")  return <DealStatisticsView data={data} />;
+
+  if (type === "LENDER_RUNNING_DEALS")
+    return <LenderRunningDealsView deals={data.deals || []} />;
+
+  if (type === "OPEN_DEALS")
+    return <OpenDealsView deals={data.deals || []} />;
+
+  if (type === "LENDER_UPCOMING_INTEREST")
+    return <LenderUpcomingInterestView items={data.items || []} totalUpcoming={data.totalUpcoming} />;
+
+  if (type === "INTEREST_HISTORY")
+    return (
+      <LenderHistoryView
+        items={data.items || []}
+        totalLabel={`Total Earned (${data.totalCount ?? ""} transactions)`}
+        totalValue={data.totalEarned}
+        accentColor="#0ea5a1"
+        columns={[
+          { key: "dealName",    label: "Deal" },
+          { key: "earnedDate",  label: "Date" },
+          { key: "amount",      label: "Earned", fmt: fmtINR, style: { fontWeight: 700, color: "#0ea5a1" } },
+        ]}
+      />
+    );
+
+  if (type === "PRINCIPAL_HISTORY")
+    return (
+      <LenderHistoryView
+        items={data.items || []}
+        totalLabel="Total Principal Returned"
+        totalValue={data.totalReturned}
+        accentColor="#16a34a"
+        columns={[
+          { key: "dealName",     label: "Deal" },
+          { key: "returnedDate", label: "Date" },
+          { key: "amount",       label: "Returned", fmt: fmtINR, style: { fontWeight: 700, color: "#16a34a" } },
+        ]}
+      />
+    );
+
+  if (type === "REFERRAL_HISTORY")
+    return (
+      <LenderHistoryView
+        items={data.items || []}
+        totalLabel="Total Referral Bonus"
+        totalValue={data.totalBonus}
+        accentColor="#7c3aed"
+        columns={[
+          { key: "referredName", label: "Referred User" },
+          { key: "bonusDate",    label: "Date" },
+          { key: "amount",       label: "Bonus", fmt: fmtINR, style: { fontWeight: 700, color: "#7c3aed" } },
+        ]}
+      />
+    );
+
   return null;
 }
 
@@ -420,6 +844,15 @@ function FormattedText({ text }) {
     </div>
   );
 }
+
+// ─── Keyframe injection ───────────────────────────────────────────────────────
+
+const DOT_KEYFRAME = `
+  @keyframes chatDotBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.55; }
+    30%           { transform: translateY(-7px); opacity: 1; }
+  }
+`;
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -520,6 +953,7 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
 
   return (
     <div style={styles.backdrop}>
+      <style dangerouslySetInnerHTML={{ __html: DOT_KEYFRAME }} />
       <div style={styles.drawer}>
 
         {/* HEADER */}
@@ -562,9 +996,12 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
                   ? { ...styles.bubble, ...styles.botBubble, ...(m.data ? styles.richBubble : {}) }
                   : { ...styles.bubble, ...styles.userBubble, background: cfg.color }
               }>
-                {/* Text: small caption when rich data follows, full text otherwise */}
+                {/* Topic badge + caption for rich messages */}
                 {m.data ? (
-                  <div style={styles.richCaption}>{m.text}</div>
+                  <>
+                    <TopicBadge type={m.data.type} />
+                    <div style={styles.richCaption}>{m.text}</div>
+                  </>
                 ) : (
                   <div style={styles.bubbleText}>
                     <FormattedText text={m.text} />
@@ -572,6 +1009,10 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
                 )}
 
                 {m.data && <RichMessage data={m.data} />}
+
+                {m.from === "bot" && m.data && (
+                  <SuggestedFollowup type={m.data.type} onSend={handleSend} />
+                )}
 
                 <div style={styles.time}>
                   {m.timestamp?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -583,8 +1024,15 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
           {isTyping && (
             <div style={{ ...styles.msgRow, justifyContent: "flex-start" }}>
               <div style={{ ...styles.botDot, background: cfg.color }} />
-              <div style={{ ...styles.bubble, ...styles.botBubble }}>
-                <div style={styles.dots}><span /><span /><span /></div>
+              <div style={{ ...styles.bubble, ...styles.botBubble, padding: "8px 13px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={styles.dots}>
+                    <span style={{ ...styles.dot, background: cfg.color }} />
+                    <span style={{ ...styles.dot, background: cfg.color, animationDelay: "0.2s" }} />
+                    <span style={{ ...styles.dot, background: cfg.color, animationDelay: "0.4s" }} />
+                  </div>
+                  <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic" }}>AI is thinking…</span>
+                </div>
               </div>
             </div>
           )}
@@ -679,7 +1127,11 @@ const styles = {
     paddingBottom: 6, borderBottom: "1px dashed #e2e8f0",
   },
   time: { fontSize: 10, opacity: 0.45, marginTop: 6, textAlign: "right" },
-  dots: { display: "flex", gap: 4, padding: "2px 0" },
+  dots: { display: "flex", gap: 5, padding: "2px 0", alignItems: "center" },
+  dot: {
+    width: 7, height: 7, borderRadius: "50%", display: "inline-block",
+    animation: "chatDotBounce 1.4s ease-in-out infinite",
+  },
   chips: {
     display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 12px",
     background: "#f8fafc", borderTop: "1px solid #e2e8f0", flexShrink: 0,
