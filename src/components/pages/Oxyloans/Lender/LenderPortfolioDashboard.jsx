@@ -202,10 +202,10 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, userId: lenderId },
+        { message: text, primaryType: "LENDER" },
         { headers: { accessToken: token, "Content-Type": "application/json" } }
       );
-      const reply = res.data?.response || res.data?.message || res.data?.reply
+      const reply = res.data?.answer
         || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
     } catch {
@@ -1635,7 +1635,7 @@ const LenderPortfolioDashboard = () => {
                             SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: '✅ Same Day' },
                             NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Days' },
                             LATE:     { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: '⏰ Late' },
-                            NO_TS:    { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: '📋 Settled' },
+                            NO_TS:    { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: '✅ Closure Settlements' },
                           };
                           const makeBucket = (bucket, count, extraLabel) => {
                             if (!count) return null;
@@ -1662,7 +1662,7 @@ const LenderPortfolioDashboard = () => {
                               {makeBucket('SAME_DAY', same)}
                               {makeBucket('NEXT_DAY', next)}
                               {makeBucket('LATE', late)}
-                              {noTs > 0 && makeBucket('NO_TS', noTs, 'legacy records')}
+                              {noTs > 0 && makeBucket('NO_TS', noTs)}
                               {(pipAppr + pipInit) > 0 && (
                                 <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
                                   <div style={{ fontSize: 22, fontWeight: 700, color: '#1890ff' }}>{pipAppr + pipInit}</div>
@@ -1680,7 +1680,7 @@ const LenderPortfolioDashboard = () => {
                         })()}
                         {/* Inline expandable payment timing panel */}
                         {timingBucket && (() => {
-                          const c = { EARLY: { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: 'Paid Early' }, SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: 'Same Day' }, NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Day' }, LATE: { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: 'Late' }, NO_TS: { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: 'Settled (Legacy)' } }[timingBucket] || {};
+                          const c = { EARLY: { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: 'Paid Early' }, SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: 'Same Day' }, NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Day' }, LATE: { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: 'Late' }, NO_TS: { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: 'Closure Settlements' } }[timingBucket] || {};
                           const d = timingDetail[timingBucket] || {};
                           const records = d.records || [];
                           const typeLabel = t => t === 'LENDERINTEREST' ? 'Interest' : t === 'PRINCIPALINTEREST' ? 'Closure Int.' : t === 'WITHDRAWALINTEREST' ? 'Withdrawal Int.' : t;
@@ -1716,22 +1716,24 @@ const LenderPortfolioDashboard = () => {
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                                     <thead style={{ position: 'sticky', top: 0, background: c.bg, zIndex: 1 }}>
                                       <tr style={{ borderBottom: `1px solid ${c.border}` }}>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>#</th>
                                         <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Deal</th>
                                         <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Type</th>
-                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Scheduled</th>
-                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Credited</th>
-                                        <th style={{ padding: '7px 10px', textAlign: 'center', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Days</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>{timingBucket === 'NO_TS' ? 'Paid Date' : 'Scheduled'}</th>
+                                        {timingBucket !== 'NO_TS' && <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Credited</th>}
+                                        {timingBucket !== 'NO_TS' && <th style={{ padding: '7px 10px', textAlign: 'center', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Days</th>}
                                         <th style={{ padding: '7px 10px', textAlign: 'right', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Amount</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       {records.map((r, i) => (
                                         <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.5)' }}>
-                                          <td style={{ padding: '6px 10px', color: '#262626', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.dealName}>{r.dealName || `Deal #${r.dealId}`}</td>
+                                          <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11, whiteSpace: 'nowrap' }}>{r.dealId}</td>
+                                          <td style={{ padding: '6px 10px', color: '#262626', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.dealName}>{r.dealName || '—'}</td>
                                           <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11 }}>{typeLabel(r.amountType)}</td>
                                           <td style={{ padding: '6px 10px', color: '#595959', whiteSpace: 'nowrap' }}>{r.scheduledDate || '—'}</td>
-                                          <td style={{ padding: '6px 10px', color: '#262626', whiteSpace: 'nowrap' }}>{r.actualDate || '—'}</td>
-                                          <td style={{ padding: '6px 10px', textAlign: 'center', ...diffStyle(r.diffDays) }}>{diffLabel(r.diffDays)}</td>
+                                          {timingBucket !== 'NO_TS' && <td style={{ padding: '6px 10px', color: '#262626', whiteSpace: 'nowrap' }}>{r.actualDate || '—'}</td>}
+                                          {timingBucket !== 'NO_TS' && <td style={{ padding: '6px 10px', textAlign: 'center', ...diffStyle(r.diffDays) }}>{diffLabel(r.diffDays)}</td>}
                                           <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#52c41a', whiteSpace: 'nowrap' }}>₹{(r.amount || 0).toLocaleString('en-IN')}</td>
                                         </tr>
                                       ))}
