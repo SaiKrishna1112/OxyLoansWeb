@@ -14,6 +14,7 @@ axios.interceptors.response.use(
         sessionStorage.removeItem("userId");
         localStorage.removeItem("accessToken");
         localStorage.removeItem("userId");
+        window.location.href = "/loginotp";
       }
     }
     return Promise.reject(error);
@@ -2607,17 +2608,27 @@ export const editloanNewRequestHold = async (status) => {
 export const chatbotapicall = async (messages) => {
   const token = getToken();
   const userId = getUserId();
-  const response = await axios({
-    url: `${MARKETPLACE_BASE}/v1/ai/chat`,
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      accessToken: token,
-      userId: userId,
-    },
-    data: { message: messages, primaryType: localStorage.getItem("primaryType") || "LENDER" },
-  });
-  return response;
+  try {
+    const response = await axios({
+      url: `${MARKETPLACE_BASE}/v1/ai/chat`,
+      method: "POST",
+      timeout: 30000,
+      headers: {
+        "Content-Type": "application/json",
+        accessToken: token,
+        userId: userId,
+      },
+      data: { message: messages, primaryType: localStorage.getItem("primaryType") || "LENDER" },
+    });
+    return response;
+  } catch (error) {
+    if (!error.response) {
+      error.response = {
+        data: { answer: "Unable to reach the AI service. Please try again.", responseData: null },
+      };
+    }
+    throw error;
+  }
 };
 
 
