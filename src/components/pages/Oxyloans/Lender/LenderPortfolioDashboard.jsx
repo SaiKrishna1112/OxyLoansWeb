@@ -1004,6 +1004,7 @@ const LenderPortfolioDashboard = () => {
   const [previewTier, setPreviewTier] = useState(null);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
+  const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'PRO')).toUpperCase();
@@ -1482,20 +1483,44 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {shown.map((m, idx) => (
-                            <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                              <td><strong>#{m.dealId}</strong></td>
-                              <td>{fmtDate(m.maturityDate)}</td>
-                              <td>₹{fmt(m.principalAmount)}</td>
-                              <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                              <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
-                              <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
-                            </tr>
-                          ))}
+                          {shown.map((m, idx) => {
+                            const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
+                            const nudgeIsPast = nudge && nudge < new Date();
+                            const alreadyReminded = remindedDeals.has(m.dealId);
+                            const sendReminder = () => {
+                              axios.post(`${MARKETPLACE_URL}/v1/notifications/maturity-reminder`, {
+                                dealId: m.dealId,
+                                maturityDate: fmtDate(m.maturityDate),
+                                principal: fmt(m.principalAmount),
+                              }, { headers: { accessToken: getToken() } })
+                                .then(() => setRemindedDeals(prev => new Set([...prev, m.dealId])))
+                                .catch(() => setRemindedDeals(prev => new Set([...prev, m.dealId])));
+                            };
+                            return (
+                              <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
+                                <td><strong>#{m.dealId}</strong></td>
+                                <td>{fmtDate(m.maturityDate)}</td>
+                                <td>₹{fmt(m.principalAmount)}</td>
+                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                                <td>
+                                  {alreadyReminded ? (
+                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
+                                  ) : nudgeIsPast ? (
+                                    <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
+                                      Remind Me
+                                    </button>
+                                  ) : (
+                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
