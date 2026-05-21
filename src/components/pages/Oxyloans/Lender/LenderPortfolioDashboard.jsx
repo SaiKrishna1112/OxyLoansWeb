@@ -1482,7 +1482,7 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th><th>Action</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1494,7 +1494,6 @@ const LenderPortfolioDashboard = () => {
                               <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                               <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
                               <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
-                              <td>{m.actionNeeded ? <span style={{ background: "#fff1f0", color: "#ff4d4f", border: "1px solid #ffa39e", borderRadius: 4, padding: "2px 8px", fontSize: 11 }}>Plan now</span> : <span style={{ color: "#8c8c8c", fontSize: 11 }}>Monitor</span>}</td>
                             </tr>
                           ))}
                         </tbody>
