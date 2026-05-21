@@ -298,6 +298,16 @@ const BorrowerSidebar = (props) => {
                 </li>
               </ul>
               {/* /Main Menu*/}
+              {/* AI Insights */}
+              <ul>
+                <li className={`${"/ai/borrower-insights" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/borrower-insights">
+                    <i className="fa-solid fa-brain"></i>
+                    <span>AI Loan Insights</span>
+                  </Link>
+                </li>
+              </ul>
+              {/* /AI Insights */}
               {/* Management */}
               <ul>
                 <li

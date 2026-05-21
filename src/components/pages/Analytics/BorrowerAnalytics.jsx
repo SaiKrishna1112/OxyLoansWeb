@@ -54,18 +54,29 @@ export default function BorrowerAnalytics() {
           getMyMarketplaceLoans(),
         ]);
 
+        // Use local var to avoid stale-closure bug when falling back to marketplace loans
+        let loanData = [];
         if (loanRes.status === "fulfilled") {
           const d = loanRes.value?.data?.content || loanRes.value?.data?.data || loanRes.value?.data || [];
-          setLoans(Array.isArray(d) ? d : []);
+          loanData = Array.isArray(d) ? d : [];
         }
-        // Also try marketplace loans
-        if (mktRes.status === "fulfilled" && loans.length === 0) {
+        if (loanData.length === 0 && mktRes.status === "fulfilled") {
           const d = mktRes.value?.data || [];
-          if (Array.isArray(d) && d.length > 0) setLoans(d);
+          if (Array.isArray(d)) loanData = d;
         }
+        setLoans(loanData);
+
         if (emiRes.status === "fulfilled") {
-          const d = emiRes.value?.data?.emiSchedule || emiRes.value?.data || [];
-          setEmis(Array.isArray(d) ? d : []);
+          const raw = emiRes.value?.data;
+          // API returns an array of loan objects, each with an emiSchedule array — flatten them
+          if (Array.isArray(raw)) {
+            const flat = raw.flatMap(loan => Array.isArray(loan.emiSchedule) ? loan.emiSchedule : []);
+            setEmis(flat.length > 0 ? flat : raw);
+          } else if (raw?.emiSchedule) {
+            setEmis(Array.isArray(raw.emiSchedule) ? raw.emiSchedule : []);
+          } else {
+            setEmis(Array.isArray(raw) ? raw : []);
+          }
         }
       } finally {
         setLoading(false);
@@ -216,7 +227,7 @@ export default function BorrowerAnalytics() {
                         </td>
                         <td style={{ padding: "10px 14px", color: "#475569" }}>{loan.loanPurpose || loan.purpose || "—"}</td>
                         <td style={{ padding: "10px 14px", color: "#64748b" }}>
-                          {loan.loanDuration ? `${loan.loanDuration} mo` : "—"}
+                          {(loan.loanDuration || loan.durationMonths) ? `${loan.loanDuration || loan.durationMonths} mo` : "—"}
                         </td>
                         <td style={{ padding: "10px 14px" }}>
                           <Badge status={loan.status || loan.loanStatus} />

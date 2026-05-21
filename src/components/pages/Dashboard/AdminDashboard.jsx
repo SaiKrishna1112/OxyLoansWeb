@@ -246,7 +246,7 @@ const AdminDashboard = () => {
     fetchProfile().then((data) => {
       if (data?.request?.status === 200) {
         setdashboarddata({ ...dashboarddata, profileData: data });
-        const city = data?.data?.city;
+        const city = data?.data?.city || localStorage.getItem("userCity");
         if (!city) setShow(true);
       }
     }).catch(() => {});
@@ -281,6 +281,7 @@ const AdminDashboard = () => {
       })
       .then(function (response) {
         console.log("City saved successfully:", response.data);
+        localStorage.setItem("userCity", selectedCity);
         setShow(false);
         setSelectedCity("");
         if (response.status === 200) {

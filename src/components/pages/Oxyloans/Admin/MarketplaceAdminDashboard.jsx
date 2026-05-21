@@ -67,15 +67,13 @@ const MarketplaceAdminDashboard = () => {
   useEffect(() => {
     getMarketplaceAdminStats()
       .then((res) => {
-        if (res.request.status === 200) {
-          setStats(res.data);
-        } else {
-          setStatsError("Failed to load statistics.");
-        }
+        setStats(res.data);
         setStatsLoading(false);
       })
-      .catch(() => {
-        setStatsError("Failed to load statistics.");
+      .catch((err) => {
+        setStatsError(
+          err?.response?.data?.error || err?.message || "Failed to load statistics."
+        );
         setStatsLoading(false);
       });
   }, []);
@@ -86,27 +84,19 @@ const MarketplaceAdminDashboard = () => {
       setLoansState((prev) => ({ ...prev, loading: true, error: "" }));
       getMarketplaceAdminLoans(statusFilter, page, loansState.size)
         .then((res) => {
-          if (res.request.status === 200) {
-            setLoansState((prev) => ({
-              ...prev,
-              data: res.data.loans || [],
-              total: res.data.total || 0,
-              loading: false,
-              page,
-            }));
-          } else {
-            setLoansState((prev) => ({
-              ...prev,
-              loading: false,
-              error: "Failed to load loans.",
-            }));
-          }
+          setLoansState((prev) => ({
+            ...prev,
+            data: res.data.loans || [],
+            total: res.data.total || 0,
+            loading: false,
+            page,
+          }));
         })
-        .catch(() => {
+        .catch((err) => {
           setLoansState((prev) => ({
             ...prev,
             loading: false,
-            error: "Failed to load loans.",
+            error: err?.response?.data?.error || err?.message || "Failed to load loans.",
           }));
         });
     },

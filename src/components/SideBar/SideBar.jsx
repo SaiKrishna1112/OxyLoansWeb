@@ -448,7 +448,7 @@ const Sidebar = (props) => {
                 <li
                   className={`${"/withdrawdealfromDeal" === pathName ||
                       "/withdrawalFromWallet" === pathName ||
-                      "/MywithdrawalHistory" === pathName
+                      "/mywithdrawalHistory" === pathName
                       ? "active submenu"
                       : "submenu"
                     }`}
@@ -494,8 +494,8 @@ const Sidebar = (props) => {
 
                       <li>
                         <Link
-                          to="/MywithdrawalHistory"
-                          className={`${"/MywithdrawalHistory" === pathName ? "active" : ""
+                          to="/mywithdrawalHistory"
+                          className={`${"/mywithdrawalHistory" === pathName ? "active" : ""
                             }`}
                         >
                           My Withdrawal History
@@ -794,6 +794,18 @@ const Sidebar = (props) => {
                   <Link to="/smart-loan-match">
                     <i className="fa-solid fa-wand-magic-sparkles"></i>
                     <span>AI Smart Match</span>
+                  </Link>
+                </li>
+                <li className={`${"/ai/portfolio" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/portfolio">
+                    <i className="fa-solid fa-chart-line"></i>
+                    <span>AI Portfolio</span>
+                  </Link>
+                </li>
+                <li className={`${"/ai/lender-earnings" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/lender-earnings">
+                    <i className="fa-solid fa-coins"></i>
+                    <span>AI Earnings</span>
                   </Link>
                 </li>
                 {/* End Marketplace Menu Items */}

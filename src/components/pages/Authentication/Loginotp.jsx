@@ -80,12 +80,14 @@ const Loginotp = () => {
           retriveresponse.headers.accesstoken
         );
         localStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
-        localStorage.setItem("primaryType", retriveresponse.data.primaryType)
+        localStorage.setItem("primaryType", retriveresponse.data.primaryType);
+        sessionStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
+        localStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
 
         if (retriveresponse.data.primaryType == "LENDER") {
           history("/dashboard");
-        } else if (retriveresponse.data.primaryType == "ADMIN") {
-          history("/dashboard");
+        } else if (retriveresponse.data.primaryType == "ADMIN" || retriveresponse.data.primaryType == "HELPDESKADMIN") {
+          history("/oxyloansadmindashboard");
         } else {
           history("/borrowerDashboard");
         }

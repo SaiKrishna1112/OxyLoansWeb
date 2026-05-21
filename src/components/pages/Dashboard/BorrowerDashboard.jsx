@@ -164,7 +164,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
 .then((response) => {
   console.log("response", response);
    setProfileDetails(response.data);
-   if(response.data.city == null || response.data.city == ""){
+   if((response.data.city == null || response.data.city == "") && !localStorage.getItem("userCity")){
     setShow(true);
    }
 
@@ -203,6 +203,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
       )
       .then(function (response) {
         console.log("City saved successfully:", response.data);
+        localStorage.setItem("userCity", selectedCity);
         setShow(false);
         if (response.status === 200) {
           Swal.fire({

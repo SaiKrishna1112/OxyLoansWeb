@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
-import Header from "../../Header/Header";
-import SideBar from "../../SideBar/SideBar";
-import Footer from "../../Footer/Footer";
-import { MARKETPLACE_URL } from "../../../config";
-import { getToken, getUserId } from "../../HttpRequest/afterlogin";
+import Header from "../../../Header/Header";
+import SideBar from "../../../SideBar/SideBar";
+import Footer from "../../../Footer/Footer";
+import { MARKETPLACE_URL } from "../../../../config";
+import { getToken, getUserId } from "../../../HttpRequest/afterlogin";
 import axios from "axios";
 
 const fmt = (n) =>
@@ -647,7 +647,7 @@ const LenderPortfolioDashboard = () => {
   const [error, setError] = useState(null);
   const [dealsShown, setDealsShown] = useState(10);
   const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
-  const [selectedModel, setSelectedModel] = useState(null);
+  const [selectedModel, setSelectedModel] = useState(null); // null = server default, "claude"|"groq"|"gemini" = override
 
   // Portfolio — reloads when lender or model changes
   useEffect(() => {
@@ -662,7 +662,7 @@ const LenderPortfolioDashboard = () => {
       .finally(() => setLoading(false));
   }, [resolvedLenderId, selectedModel]);
 
-  // Earnings — reloads when lender, FY filter, or model changes
+  // Earnings — reloads when lender or FY filter changes
   useEffect(() => {
     if (!resolvedLenderId) return;
     const token = getToken();
@@ -744,10 +744,10 @@ const LenderPortfolioDashboard = () => {
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
                         <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>AI Model</span>
                         {[
-                          { key: null,     label: "Auto",   color: "#8c8c8c" },
-                          { key: "claude", label: "Claude", color: "#a78bfa" },
-                          { key: "groq",   label: "Groq",   color: "#60a5fa" },
-                          { key: "gemini", label: "Gemini", color: "#34d399" },
+                          { key: null,      label: "Auto",   color: "#8c8c8c" },
+                          { key: "claude",  label: "Claude", color: "#a78bfa" },
+                          { key: "groq",    label: "Groq",   color: "#60a5fa" },
+                          { key: "gemini",  label: "Gemini", color: "#34d399" },
                         ].map(({ key, label, color }) => {
                           const active = selectedModel === key;
                           return (
@@ -768,6 +768,7 @@ const LenderPortfolioDashboard = () => {
                         })}
                         {loading && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginLeft: 6 }}>Regenerating…</span>}
                       </div>
+
                       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                         {(data.narrative || data.aiNarrative || "").split("\n").map((line) => line.trim()).filter((line) => line.length > 0).map((line, idx) => {
                           const icons = ["🎯", "💰", "♻️", "📈", "💡"];
