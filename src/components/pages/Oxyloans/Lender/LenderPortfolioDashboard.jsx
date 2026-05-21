@@ -202,10 +202,10 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, userId: lenderId },
+        { message: text, primaryType: "LENDER" },
         { headers: { accessToken: token, "Content-Type": "application/json" } }
       );
-      const reply = res.data?.response || res.data?.message || res.data?.reply
+      const reply = res.data?.answer
         || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
       setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
     } catch {
@@ -479,14 +479,26 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
     acc[d].push(p);
     return acc;
   }, {});
-  const sortedDates = Object.keys(payoutsByDate).sort();
+  const allSortedDates = Object.keys(payoutsByDate).sort();
+  const MAX_DATES = 10;
+  const tooMany = allSortedDates.length > MAX_DATES;
+  const sortedDates = tooMany ? allSortedDates.slice(0, MAX_DATES) : allSortedDates;
+  const hiddenTotal = tooMany
+    ? allSortedDates.slice(MAX_DATES).reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
+    : 0;
+  const displayTotal = tooMany
+    ? sortedDates.reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
+    : total;
+  const heading = tooMany
+    ? `Next 10 Payment Dates (${allSortedDates.length} total in 60 days)`
+    : "Upcoming Payments — Next 60 Days";
 
   return (
     <div style={{ background: "#fff7e6", borderRadius: 14, padding: "16px 20px", marginBottom: 20, border: "1px solid #ffd591" }}>
       {/* Brief summary — always visible */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "#d46b08", marginBottom: 4 }}>Upcoming Payments — Next 60 Days</div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#d46b08", marginBottom: 4 }}>{heading}</div>
           {sortedDates.length > 0 ? (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {sortedDates.map((d) => {
@@ -514,8 +526,13 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
             onClick={sortedDates.length > 0 ? expandAndScroll : undefined}
             title={sortedDates.length > 0 ? "Click to see deal-level breakdown" : undefined}
           >
-            <div style={{ fontSize: 11, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1 }}>Total Due</div>
-            <div style={{ fontWeight: 700, fontSize: 22, color: "#fa8c16" }}>₹{fmt(total)}</div>
+            <div style={{ fontSize: 11, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1 }}>
+              {tooMany ? "Showing Next 10" : "Total Due"}
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 22, color: "#fa8c16" }}>₹{fmt(displayTotal)}</div>
+            {tooMany && (
+              <div style={{ fontSize: 11, color: "#d46b08" }}>+₹{fmt(hiddenTotal)} more</div>
+            )}
           </div>
           {sortedDates.length > 0 && (
             <button
@@ -819,6 +836,150 @@ const DealAnalyticsCharts = ({ data, earningsData, collapsible = false, defaultO
   );
 };
 
+// ── TIER PREVIEW BANNER ────────────────────────────────────────────────────
+const TIER_INFO = {
+  FREE: {
+    label: "Free",
+    icon: "📊",
+    color: "#595959",
+    bg: "#fafafa",
+    border: "#d9d9d9",
+    activeBg: "#f5f5f5",
+    activeText: "#262626",
+    features: ["Portfolio stats", "Active & closed deals", "Payout history"],
+    locked: ["AI insights", "Earnings intelligence", "Charts & analytics", "Maturity planner"],
+  },
+  SMART: {
+    label: "Smart",
+    icon: "⚡",
+    color: "#0050b3",
+    bg: "#e6f7ff",
+    border: "#91d5ff",
+    activeBg: "linear-gradient(135deg, #0d2b6e, #0050b3)",
+    activeText: "#fff",
+    features: ["Everything in Free", "AI narrative insights", "Current FY earnings", "Reinvestment profile", "Referral tracking"],
+    locked: ["FY filter & custom range", "Investment charts", "Smart maturity planner", "Earnings intelligence"],
+    price: "₹500/year",
+  },
+  PRO: {
+    label: "Pro",
+    icon: "✦",
+    color: "#722ed1",
+    bg: "#f9f0ff",
+    border: "#d3adf7",
+    activeBg: "linear-gradient(135deg, #4a148c, #6a1b9a)",
+    activeText: "#fff",
+    features: ["Everything in Smart", "FY filter & custom range", "Investment analytics charts", "Smart maturity planner", "Full earnings intelligence"],
+    price: "₹1,000/year",
+  },
+};
+
+const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, overflow: "hidden" }}>
+      {/* Top bar */}
+      <div
+        onClick={() => setExpanded(v => !v)}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", cursor: "pointer", background: "#fafafa", borderBottom: expanded ? "1px solid #f0f0f0" : "none" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>🎯</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXI Pro (trial)</strong></div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Mini tier pill indicators */}
+          {["FREE", "SMART", "PRO"].map(t => (
+            <span
+              key={t}
+              onClick={e => { e.stopPropagation(); onSelect(t); if (!expanded) setExpanded(true); }}
+              style={{
+                padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: `1px solid ${TIER_INFO[t].border}`,
+                background: activeTier === t ? (t === "PRO" ? "#722ed1" : t === "SMART" ? "#0050b3" : "#595959") : TIER_INFO[t].bg,
+                color: activeTier === t ? "#fff" : TIER_INFO[t].color,
+                transition: "all 0.15s",
+              }}
+            >
+              {TIER_INFO[t].icon} {TIER_INFO[t].label}
+            </span>
+          ))}
+          <span style={{ fontSize: 13, color: "#8c8c8c", marginLeft: 4 }}>{expanded ? "▲" : "▼"}</span>
+        </div>
+      </div>
+
+      {/* Expanded comparison cards */}
+      {expanded && (
+        <div style={{ padding: "16px 20px" }}>
+          <div className="row g-3">
+            {["FREE", "SMART", "PRO"].map(t => {
+              const info = TIER_INFO[t];
+              const isActive = activeTier === t;
+              return (
+                <div key={t} className="col-12 col-md-4">
+                  <div
+                    onClick={() => onSelect(t)}
+                    style={{
+                      borderRadius: 12, padding: "18px 16px", cursor: "pointer", transition: "all 0.2s",
+                      border: isActive ? `2px solid ${info.color}` : `1px solid ${info.border}`,
+                      background: isActive ? info.bg : "#fff",
+                      boxShadow: isActive ? `0 4px 16px ${info.color}22` : "none",
+                      position: "relative",
+                    }}
+                  >
+                    {isActive && (
+                      <div style={{ position: "absolute", top: -1, right: 12, background: info.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "0 0 8px 8px", padding: "2px 10px", letterSpacing: 0.5 }}>
+                        PREVIEWING
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXI {info.label}</div>
+                      {info.price ? (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: info.color, background: info.bg, border: `1px solid ${info.border}`, borderRadius: 20, padding: "2px 10px" }}>{info.price}</span>
+                      ) : (
+                        <span style={{ fontSize: 12, color: "#8c8c8c" }}>Free</span>
+                      )}
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      {info.features.map(f => (
+                        <div key={f} style={{ fontSize: 12, color: "#389e0d", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <span style={{ fontWeight: 700 }}>✓</span> {f}
+                        </div>
+                      ))}
+                      {info.locked?.map(f => (
+                        <div key={f} style={{ fontSize: 12, color: "#bfbfbf", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <span>🔒</span> {f}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={e => { e.stopPropagation(); onSelect(t); }}
+                      style={{
+                        width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                        background: isActive ? info.color : info.bg,
+                        color: isActive ? "#fff" : info.color,
+                        border: `1px solid ${info.border}`,
+                        transition: "all 0.15s",
+                      }}
+                    >
+                      {isActive ? "Currently Previewing" : `Preview ${info.label}`}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
+            💡 <strong>Limited time trial:</strong> All lenders can experience OXI Pro features for free. Subscribe before the trial ends to keep your AI insights.
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
@@ -835,15 +996,18 @@ const LenderPortfolioDashboard = () => {
   const [error, setError] = useState(null);
   const [dealsShown, setDealsShown] = useState(10);
   const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
-  const [showNextDay, setShowNextDay] = useState(false);
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
+  const [previewTier, setPreviewTier] = useState(null);
+  const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
+  const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
+  const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
 
   // Tier — derived at component level so all JSX can reference it
-  const effectiveTier = (tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
+  const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'PRO')).toUpperCase();
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'SMART' || effectiveTier === 'PRO';
 
@@ -861,7 +1025,7 @@ const LenderPortfolioDashboard = () => {
   // Auto-set current FY for SMART (not PRO) — they can't pick the filter
   useEffect(() => {
     if (!data) return;
-    const t = (tierOverride || (data.membershipTier || 'FREE')).toUpperCase();
+    const t = (tierOverride || (data.membershipTier || 'PRO')).toUpperCase();
     if (t === 'SMART') {
       const now = new Date();
       const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
@@ -897,6 +1061,32 @@ const LenderPortfolioDashboard = () => {
       .finally(() => setUpcomingLoading(false));
   }, [resolvedLenderId]);
 
+  const fetchTimingDetail = (bucket, page = 0) => {
+    setTimingDetail(prev => ({
+      ...prev,
+      [bucket]: { ...(prev[bucket] || {}), loading: true, error: null }
+    }));
+    axios.get(
+      `${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/payment-timing?bucket=${bucket}&page=${page}&size=20`,
+      { headers: { accessToken: getToken() } }
+    ).then(res => {
+      const json = res.data;
+      setTimingDetail(prev => {
+        const existing = prev[bucket] || {};
+        const allRecords = page === 0 ? json.records : [...(existing.records || []), ...(json.records || [])];
+        return { ...prev, [bucket]: { records: allRecords, page: json.page, total: json.total, hasMore: json.hasMore, loading: false } };
+      });
+    }).catch(() => {
+      setTimingDetail(prev => ({ ...prev, [bucket]: { ...(prev[bucket] || {}), loading: false, error: 'Failed to load' } }));
+    });
+  };
+
+  const handleTimingClick = (bucket) => {
+    if (timingBucket === bucket) { setTimingBucket(null); return; }
+    setTimingBucket(bucket);
+    if (!timingDetail[bucket] || !timingDetail[bucket].records) fetchTimingDetail(bucket, 0);
+  };
+
   const heroBg = isPro
     ? "linear-gradient(135deg, #1a237e 0%, #4a148c 60%, #6a1b9a 100%)"
     : isSmart
@@ -927,6 +1117,13 @@ const LenderPortfolioDashboard = () => {
 
           {!loading && data && (
             <>
+              {/* ── 0. TIER PREVIEW BANNER ── */}
+              <TierPreviewBanner
+                activeTier={effectiveTier}
+                actualTier={(data?.membershipTier || 'PRO').toUpperCase()}
+                onSelect={(t) => setPreviewTier(t)}
+              />
+
               {/* ── 1. HERO ── */}
               <div className="row mb-4">
                 <div className="col-12">
@@ -1286,21 +1483,44 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th><th>Action</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {shown.map((m, idx) => (
-                            <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                              <td><strong>#{m.dealId}</strong></td>
-                              <td>{fmtDate(m.maturityDate)}</td>
-                              <td>₹{fmt(m.principalAmount)}</td>
-                              <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                              <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
-                              <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
-                              <td>{m.actionNeeded ? <span style={{ background: "#fff1f0", color: "#ff4d4f", border: "1px solid #ffa39e", borderRadius: 4, padding: "2px 8px", fontSize: 11 }}>Plan now</span> : <span style={{ color: "#8c8c8c", fontSize: 11 }}>Monitor</span>}</td>
-                            </tr>
-                          ))}
+                          {shown.map((m, idx) => {
+                            const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
+                            const nudgeIsPast = nudge && nudge < new Date();
+                            const alreadyReminded = remindedDeals.has(m.dealId);
+                            const sendReminder = () => {
+                              axios.post(`${MARKETPLACE_URL}/v1/notifications/maturity-reminder`, {
+                                dealId: m.dealId,
+                                maturityDate: fmtDate(m.maturityDate),
+                                principal: fmt(m.principalAmount),
+                              }, { headers: { accessToken: getToken() } })
+                                .then(() => setRemindedDeals(prev => new Set([...prev, m.dealId])))
+                                .catch(() => setRemindedDeals(prev => new Set([...prev, m.dealId])));
+                            };
+                            return (
+                              <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
+                                <td><strong>#{m.dealId}</strong></td>
+                                <td>{fmtDate(m.maturityDate)}</td>
+                                <td>₹{fmt(m.principalAmount)}</td>
+                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                                <td>
+                                  {alreadyReminded ? (
+                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
+                                  ) : nudgeIsPast ? (
+                                    <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
+                                      Remind Me
+                                    </button>
+                                  ) : (
+                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -1432,101 +1652,133 @@ const LenderPortfolioDashboard = () => {
                             )}
                           </div>
                         </div>
-                        {/* Breakdown row */}
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-                          {early > 0 && (
-                            <div style={{ background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#722ed1' }}>{early}</div>
-                              <div style={{ fontSize: 11, color: '#722ed1' }}>⚡ Paid Early</div>
+                        {/* Breakdown row — click any block to see records */}
+                        {(() => {
+                          const bucketColors = {
+                            EARLY:    { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: '⚡ Paid Early' },
+                            SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: '✅ Same Day' },
+                            NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Days' },
+                            LATE:     { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: '⏰ Late' },
+                            NO_TS:    { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: '✅ Closure Settlements' },
+                          };
+                          const makeBucket = (bucket, count, extraLabel) => {
+                            if (!count) return null;
+                            const c = bucketColors[bucket] || bucketColors.NO_TS;
+                            const isOpen = timingBucket === bucket;
+                            const isLoading = timingDetail[bucket]?.loading;
+                            return (
+                              <div
+                                key={bucket}
+                                onClick={() => handleTimingClick(bucket)}
+                                style={{ background: isOpen ? c.border : c.bg, border: `1px solid ${isOpen ? c.text : c.border}`, borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90, cursor: 'pointer', transition: 'all 0.2s', boxShadow: isOpen ? `0 2px 8px ${c.border}` : 'none', userSelect: 'none' }}
+                                title={`Click to see ${count} ${c.label} payment records`}
+                              >
+                                <div style={{ fontSize: 22, fontWeight: 700, color: c.text }}>{isLoading ? '…' : count}</div>
+                                <div style={{ fontSize: 11, color: c.text }}>{c.label}</div>
+                                {extraLabel && <div style={{ fontSize: 10, color: c.text, opacity: 0.7 }}>{extraLabel}</div>}
+                                <div style={{ fontSize: 10, color: c.text, marginTop: 2, opacity: 0.6 }}>{isOpen ? '▲ hide' : '▼ view'}</div>
+                              </div>
+                            );
+                          };
+                          return (
+                            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                              {makeBucket('EARLY', early)}
+                              {makeBucket('SAME_DAY', same)}
+                              {makeBucket('NEXT_DAY', next)}
+                              {makeBucket('LATE', late)}
+                              {noTs > 0 && makeBucket('NO_TS', noTs)}
+                              {(pipAppr + pipInit) > 0 && (
+                                <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
+                                  <div style={{ fontSize: 22, fontWeight: 700, color: '#1890ff' }}>{pipAppr + pipInit}</div>
+                                  <div style={{ fontSize: 11, color: '#1890ff' }}>📋 In Pipeline</div>
+                                </div>
+                              )}
+                              {upcoming > 0 && (
+                                <div style={{ background: '#fff0f6', border: '1px solid #ffadd2', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
+                                  <div style={{ fontSize: 22, fontWeight: 700, color: '#eb2f96' }}>{upcoming}</div>
+                                  <div style={{ fontSize: 11, color: '#eb2f96' }}>⏳ Upcoming</div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                            <div style={{ fontSize: 22, fontWeight: 700, color: '#52c41a' }}>{same}</div>
-                            <div style={{ fontSize: 11, color: '#52c41a' }}>✅ Same Day</div>
-                          </div>
-                          {next > 0 && (
-                            <div
-                              onClick={() => isPro && setShowNextDay(v => !v)}
-                              style={{ background: '#e6fffb', border: `1px solid ${showNextDay ? '#13c2c2' : '#87e8de'}`, borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90, cursor: isPro ? 'pointer' : 'default' }}
-                              title={isPro ? "Click to see all +1–2 day payments" : undefined}
-                            >
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#13c2c2' }}>{next}</div>
-                              <div style={{ fontSize: 11, color: '#13c2c2' }}>+1–2 Days {isPro ? (showNextDay ? '▲' : '▼') : '🔒'}</div>
+                          );
+                        })()}
+                        {/* Inline expandable payment timing panel */}
+                        {timingBucket && (() => {
+                          const c = { EARLY: { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: 'Paid Early' }, SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: 'Same Day' }, NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Day' }, LATE: { bg: '#fff7e6', border: '#ffd591', text: '#fa8c16', label: 'Late' }, NO_TS: { bg: '#fafafa', border: '#d9d9d9', text: '#595959', label: 'Closure Settlements' } }[timingBucket] || {};
+                          const d = timingDetail[timingBucket] || {};
+                          const records = d.records || [];
+                          const typeLabel = t => t === 'LENDERINTEREST' ? 'Interest' : t === 'PRINCIPALINTEREST' ? 'Closure Int.' : t === 'WITHDRAWALINTEREST' ? 'Withdrawal Int.' : t;
+                          const diffLabel = (days) => {
+                            if (days === null || days === undefined) return '—';
+                            if (days < 0) return `${Math.abs(days)}d early`;
+                            if (days === 0) return 'same day';
+                            return `+${days}d`;
+                          };
+                          const diffStyle = (days) => {
+                            if (days === null || days === undefined) return { color: '#8c8c8c' };
+                            if (days < 0) return { color: '#722ed1', fontWeight: 600 };
+                            if (days === 0) return { color: '#52c41a', fontWeight: 600 };
+                            if (days <= 2) return { color: '#13c2c2', fontWeight: 600 };
+                            return { color: '#fa8c16', fontWeight: 600 };
+                          };
+                          return (
+                            <div style={{ marginBottom: 16, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: `1px solid ${c.border}` }}>
+                                <div style={{ fontWeight: 700, color: c.text, fontSize: 13 }}>
+                                  {c.label} Payments — {d.total !== undefined ? `${records.length} of ${d.total}` : ''}
+                                </div>
+                                <button onClick={() => setTimingBucket(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.text, fontSize: 16, lineHeight: 1, padding: '0 4px' }} title="Close">✕</button>
+                              </div>
+                              {d.loading && records.length === 0 && (
+                                <div style={{ padding: '24px', textAlign: 'center', color: c.text, fontSize: 13 }}>Loading…</div>
+                              )}
+                              {d.error && (
+                                <div style={{ padding: '16px', textAlign: 'center', color: '#ff4d4f', fontSize: 13 }}>{d.error}</div>
+                              )}
+                              {records.length > 0 && (
+                                <div style={{ maxHeight: 360, overflowY: 'auto', overflowX: 'auto' }}>
+                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                    <thead style={{ position: 'sticky', top: 0, background: c.bg, zIndex: 1 }}>
+                                      <tr style={{ borderBottom: `1px solid ${c.border}` }}>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>#</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Deal</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Type</th>
+                                        <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>{timingBucket === 'NO_TS' ? 'Paid Date' : 'Scheduled'}</th>
+                                        {timingBucket !== 'NO_TS' && <th style={{ padding: '7px 10px', textAlign: 'left', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Credited</th>}
+                                        {timingBucket !== 'NO_TS' && <th style={{ padding: '7px 10px', textAlign: 'center', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Days</th>}
+                                        <th style={{ padding: '7px 10px', textAlign: 'right', color: c.text, fontWeight: 600, whiteSpace: 'nowrap' }}>Amount</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {records.map((r, i) => (
+                                        <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.5)' }}>
+                                          <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11, whiteSpace: 'nowrap' }}>{r.dealId}</td>
+                                          <td style={{ padding: '6px 10px', color: '#262626', fontWeight: 500, maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.dealName}>{r.dealName || '—'}</td>
+                                          <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11 }}>{typeLabel(r.amountType)}</td>
+                                          <td style={{ padding: '6px 10px', color: '#595959', whiteSpace: 'nowrap' }}>{r.scheduledDate || '—'}</td>
+                                          {timingBucket !== 'NO_TS' && <td style={{ padding: '6px 10px', color: '#262626', whiteSpace: 'nowrap' }}>{r.actualDate || '—'}</td>}
+                                          {timingBucket !== 'NO_TS' && <td style={{ padding: '6px 10px', textAlign: 'center', ...diffStyle(r.diffDays) }}>{diffLabel(r.diffDays)}</td>}
+                                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#52c41a', whiteSpace: 'nowrap' }}>₹{(r.amount || 0).toLocaleString('en-IN')}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                              {(d.hasMore || d.loading) && (
+                                <div style={{ padding: '10px 16px', borderTop: `1px solid ${c.border}`, textAlign: 'center' }}>
+                                  <button
+                                    onClick={() => fetchTimingDetail(timingBucket, (d.page || 0) + 1)}
+                                    disabled={d.loading}
+                                    style={{ background: c.text, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 20px', cursor: d.loading ? 'default' : 'pointer', fontSize: 12, fontWeight: 600, opacity: d.loading ? 0.6 : 1 }}
+                                  >
+                                    {d.loading ? 'Loading…' : `Load more (${d.total - records.length} remaining)`}
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {late > 0 && (
-                            <div style={{ background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#fa8c16' }}>{late}</div>
-                              <div style={{ fontSize: 11, color: '#fa8c16' }}>⏰ Late</div>
-                            </div>
-                          )}
-                          {noTs > 0 && (
-                            <div style={{ background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#595959' }}>{noTs}</div>
-                              <div style={{ fontSize: 11, color: '#8c8c8c' }}>Settled</div>
-                              <div style={{ fontSize: 10, color: '#bfbfbf' }}>legacy records</div>
-                            </div>
-                          )}
-                          {(pipAppr + pipInit) > 0 && (
-                            <div style={{ background: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#1890ff' }}>{pipAppr + pipInit}</div>
-                              <div style={{ fontSize: 11, color: '#1890ff' }}>📋 In Pipeline</div>
-                            </div>
-                          )}
-                          {upcoming > 0 && (
-                            <div style={{ background: '#fff0f6', border: '1px solid #ffadd2', borderRadius: 8, padding: '10px 18px', textAlign: 'center', minWidth: 90 }}>
-                              <div style={{ fontSize: 22, fontWeight: 700, color: '#eb2f96' }}>{upcoming}</div>
-                              <div style={{ fontSize: 11, color: '#eb2f96' }}>⏳ Upcoming</div>
-                            </div>
-                          )}
-                        </div>
-                        {/* SMART teaser for payment detail */}
-                        {!isPro && (
-                          <div style={{ marginBottom: 16, background: '#f9f0ff', border: '1px dashed #d3adf7', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
-                            <span style={{ fontSize: 13, color: '#722ed1' }}>
-                              🔒 Full payment-by-payment timeline &amp; +1–2 day detail available in <strong>OXI Pro</strong>
-                            </span>
-                          </div>
-                        )}
-                        {/* +1-2 day expandable detail — PRO only */}
-                        {showNextDay && isPro && nextDayList.length > 0 && (
-                          <div style={{ marginBottom: 20, background: '#e6fffb', border: '1px solid #87e8de', borderRadius: 8, padding: 14 }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: '#13c2c2', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
-                              All +1–2 Day Payments ({nextDayList.length})
-                            </div>
-                            <div style={{ overflowX: 'auto' }}>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                                <thead>
-                                  <tr style={{ borderBottom: '1px solid #87e8de' }}>
-                                    <th style={{ padding: '5px 10px', textAlign: 'left', color: '#13c2c2', fontWeight: 600 }}>Scheduled</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'left', color: '#13c2c2', fontWeight: 600 }}>Credited</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'center', color: '#13c2c2', fontWeight: 600 }}>Delay</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'right', color: '#13c2c2', fontWeight: 600 }}>Amount</th>
-                                    <th style={{ padding: '5px 10px', textAlign: 'left', color: '#13c2c2', fontWeight: 600 }}>Type</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {nextDayList.map((ev, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                      <td style={{ padding: '6px 10px', color: '#595959' }}>{ev.scheduledDate}</td>
-                                      <td style={{ padding: '6px 10px', color: '#262626', fontWeight: 600 }}>{ev.actualDate}</td>
-                                      <td style={{ padding: '6px 10px', textAlign: 'center' }}>
-                                        <span style={{ background: '#e6fffb', color: '#13c2c2', border: '1px solid #87e8de', borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
-                                          +{ev.diffDays}d
-                                        </span>
-                                      </td>
-                                      <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: 600, color: '#52c41a' }}>₹{ev.amount?.toLocaleString('en-IN') ?? 0}</td>
-                                      <td style={{ padding: '6px 10px', color: '#8c8c8c', fontSize: 11 }}>
-                                        {ev.type === 'LENDERINTEREST' ? 'Interest' : ev.type === 'PRINCIPALRETURN' ? 'Principal' : ev.type}
-                                        {ev.dealRemark ? ` · ${ev.dealRemark}` : ''}
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {/* Recent payments timeline — PRO only */}
                         {isPro && recent.length > 0 && (

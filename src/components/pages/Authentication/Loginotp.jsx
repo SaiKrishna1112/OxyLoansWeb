@@ -86,6 +86,9 @@ const Loginotp = () => {
         sessionStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
         sessionStorage.setItem("email", retriveresponse.data.email || "");
         localStorage.setItem("primaryType", retriveresponse.data.primaryType);
+        localStorage.setItem("primaryType", retriveresponse.data.primaryType);
+        sessionStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
+        localStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
 
         if (retriveresponse.data.primaryType == "LENDER") {
           history("/dashboard");

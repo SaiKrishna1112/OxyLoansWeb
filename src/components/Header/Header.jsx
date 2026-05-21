@@ -52,19 +52,20 @@ const Header = (profile) => {
   }, []);
 
   useEffect(() => {
+    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+    const isValidToken = token && token !== "null" && token !== "undefined";
+    if (!isValidToken) return;
+
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails1().then((data) => {
       if (data && data.status == 200) {
-        console.log("header", data.data)
-        // localStorage.setItem("userType", data.data.userDisplayId);
         localStorage.setItem("groupName", data.data.groupName);
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
         });
       }
-      // silently ignore errors to avoid false session expiry popup
     }).catch(() => {});
   }, []);
 

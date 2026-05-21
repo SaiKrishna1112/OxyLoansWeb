@@ -65,7 +65,7 @@ const OxyloansAdminSidebar = () => {
     {
       key: "OxyloansAdminDashboard",
       label: "Dashboard",
-      link: "/OxyloansAdminDashboard",
+      link: "/oxyloansadmindashboard",
       icon: "fa-solid fa-gauge",
       type: ["ADMIN", "HELPDESKADMIN"], // Show to all roles
     },
@@ -281,6 +281,13 @@ const OxyloansAdminSidebar = () => {
       link: "/marketplace-admin-dashboard",
       icon: "fa-solid fa-store",
       type: ["ADMIN","SUPERADMIN","HELPDESKADMIN"],
+    },
+  {
+      key: "aiReconciliation",
+      label: "AI Reconciliation",
+      link: "/admin/reconciliation",
+      icon: "fa-solid fa-brain",
+      type: ["ADMIN","SUPERADMIN"],
     },
 
   ];

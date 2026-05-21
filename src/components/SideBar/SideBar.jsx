@@ -107,6 +107,12 @@ const Sidebar = (props) => {
             <div id="sidebar-menu" className="sidebar-menu">
               {/* Main Menu */}
               <ul>
+                <li className={`${"/ai/portfolio" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/portfolio">
+                    <i className="fa-solid fa-brain"></i>
+                    <span> AI Dashboard </span>
+                  </Link>
+                </li>
                 <li className={`${"/dashboard" === pathName ? "active" : ""}`}>
                   <Link to="/dashboard">
                     <i className="fa-solid fa-gauge"></i>{" "}

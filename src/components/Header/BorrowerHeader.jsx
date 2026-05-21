@@ -60,17 +60,19 @@ const BorrowerHeader = (profile) => {
   }, []);
 
   useEffect(() => {
+    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+    const isValidToken = token && token !== "null" && token !== "undefined";
+    if (!isValidToken) return;
+
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails().then((data) => {
       if (data && data.status == 200) {
-        console.log("header", data.data)
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
         });
       }
-      // silently ignore profile load errors to avoid false "Session Expiring" popups
     }).catch(() => {});
   }, []);
 

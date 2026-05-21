@@ -172,6 +172,27 @@ const BorrowerDashboard = () => {
       console.log("savingGoogleDistance api failed", error);
     }
   };
+useEffect(() => {
+  getCall();   
+},[])
+  const getCall=()=>{
+axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
+  headers:{
+    accessToken: sessionStorage.getItem('accessToken'),
+  }
+})
+.then((response) => {
+  console.log("response", response);
+   setProfileDetails(response.data);
+   if((response.data.city == null || response.data.city == "") && !localStorage.getItem("userCity")){
+    setShow(true);
+   }
+
+})
+.catch((error) => {
+  console.log("error",error)
+})
+  }
 
   const getCall = () => {
     axios
@@ -234,6 +255,7 @@ const BorrowerDashboard = () => {
       })
       .then(function (response) {
         console.log("City saved successfully:", response.data);
+        localStorage.setItem("userCity", selectedCity);
         setShow(false);
         if (response.status === 200) {
           Swal.fire({

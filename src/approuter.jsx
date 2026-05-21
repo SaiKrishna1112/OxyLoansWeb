@@ -177,6 +177,10 @@ import AgentPortal from "./components/pages/Oxyloans/Admin/AgentPortal";
 import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
 import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
+import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReconciliationDashboard";
+import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
+import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -184,12 +188,21 @@ const isAuthenticated = () =>
 const PrivateRoute = ({ element }) =>
   isAuthenticated() ? element : <Navigate to="/loginotp" replace />;
 
+const CatchAll = () => {
+  if (!isAuthenticated()) return <Navigate to="/loginotp" replace />;
+  const pt = localStorage.getItem("primaryType") || "";
+  if (pt === "ADMIN" || pt === "HELPDESKADMIN") return <Navigate to="/oxyloansadmindashboard" replace />;
+  if (pt === "LENDER") return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/borrowerDashboard" replace />;
+};
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<Loginotp />} />
+        <Route path="/login" element={<Loginotp />} />
         <Route path="/loginotp" element={<Loginotp />} />
         <Route path="/admlogin" element={<Admlogin />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
@@ -545,8 +558,16 @@ const AppRouter = () => {
         <Route path="/admin/agent-portal" element={<PrivateRoute element={<AgentPortal />} />} />
         <Route path="/admin/ceo-dashboard" element={<PrivateRoute element={<CeoDashboard />} />} />
         <Route path="/admin/marketplace" element={<PrivateRoute element={<MarketplaceAdminDashboard />} />} />
+        <Route path="/smart-loan-match" element={<PrivateRoute element={<SmartLoanMatch />} />} />
         <Route path="/lender-analytics" element={<PrivateRoute element={<LenderAnalytics />} />} />
         <Route path="/borrower-analytics" element={<PrivateRoute element={<BorrowerAnalytics />} />} />
+        <Route path="/admin/reconciliation" element={<PrivateRoute element={<AdminReconciliationDashboard />} />} />
+        <Route path="/ai/portfolio" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/ai/portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
+        <Route path="*" element={<CatchAll />} />
       </Routes>
     </BrowserRouter>
   );

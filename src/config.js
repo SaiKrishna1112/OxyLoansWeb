@@ -7,13 +7,13 @@
 // Production: https://fintech.oxyloans.com/oxyloans
 // ================================================================
 
-const LOCAL_IP = "192.168.0.151"; // use "localhost" for single-machine dev; set to LAN IP (e.g. 192.168.0.151) for team access
+const LOCAL_IP = "15.207.239.145"; // test EC2; change to "localhost" for local dev
 
-const ENV = "production"; // "local" | "production"
+const ENV = "local"; // "local" | "production"
 
 const BASE_URL =
   ENV === "local"
-    ? `http://${LOCAL_IP}:8182`
+    ? `http://${LOCAL_IP}:8080/oxyloans`
     : "https://fintech.oxyloans.com/oxyloans";
 
 export const API_USER_URL = BASE_URL + "/v1/user/";
