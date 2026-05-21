@@ -8,11 +8,6 @@ import {handleAddBorrowerRequest} from "../../../../HttpRequest/admin"
 
 
 const AddBorrower = () => {
-    const userisIn = "prod";
-    const API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
   const [formData, setFormData] = useState({
     userId: '',
     fullName: '',

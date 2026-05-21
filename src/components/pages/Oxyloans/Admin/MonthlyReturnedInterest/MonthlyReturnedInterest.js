@@ -3,6 +3,7 @@ import { Table, Spin, message, Button } from 'antd';
 import axios from 'axios';
 import OxyloansAdminHeader from '../../../../Header/OxyloansAdminHeader';
 import OxyloansAdminSidebar from '../../../../SideBar/OxyloansAdminSidebar';
+import { API_USER_URL } from '../../../../../config';
 
 export default function MonthlyReturnedInterest() {
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,7 @@ export default function MonthlyReturnedInterest() {
       }
 
       const response = await axios.get(
-        'https://fintech.oxyloans.com/oxyloans/v1/user/adminMonthlyReturnedInterestAmount/May/2025',
+        `${API_USER_URL}adminMonthlyReturnedInterestAmount/May/2025`,
         {
           headers: {
             accessToken: accessToken,

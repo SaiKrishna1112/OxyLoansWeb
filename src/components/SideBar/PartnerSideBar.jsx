@@ -162,11 +162,10 @@ const PartnerSideBar = (props) => {
                   )}
                 </li>
 
-  <li className={`${"/GetListOfBorrowerDetails" === pathName ? "active" : ""}`}>
-                  <Link to="/GetListOfBorrowerDetails">
-                    <i className="fa-solid fa-gauge"></i>{" "}
-                    <span> List Of Borrower </span>
-               
+  <li className={`${"/getListOfBorrowerDetails" === pathName ? "active" : ""}`}>
+                  <Link to="/getListOfBorrowerDetails">
+                    <i className="fa-solid fa-list"></i>{" "}
+                    <span> List Of Borrowers </span>
                   </Link>
                 </li>
                    <li className={`${"/Partneraccept" === pathName ? "active" : ""}`}>

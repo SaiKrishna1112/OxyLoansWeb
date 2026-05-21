@@ -828,6 +828,26 @@ const Sidebar = (props) => {
                     ""
                   )}
                 </li>
+                {/* Marketplace Menu Items */}
+                <li className={`${"/marketplace-admin-dashboard" === pathName ? "active" : ""}`}>
+                  <Link to="/marketplace-admin-dashboard">
+                    <i className="fa-solid fa-store"></i>
+                    <span>Marketplace Dashboard</span>
+                  </Link>
+                </li>
+                <li className={`${"/admin/disbursal-control" === pathName ? "active" : ""}`}>
+                  <Link to="/admin/disbursal-control">
+                    <i className="fa-solid fa-money-bill-transfer"></i>
+                    <span>Disbursal Control</span>
+                  </Link>
+                </li>
+                <li className={`${"/admin/settings" === pathName ? "active" : ""}`}>
+                  <Link to="/admin/settings">
+                    <i className="fa-solid fa-gear"></i>
+                    <span>Platform Settings</span>
+                  </Link>
+                </li>
+                {/* End Marketplace Menu Items */}
 
                 <li className={`${"/" === pathName ? "active" : ""}`}>
                   <Link to="/">

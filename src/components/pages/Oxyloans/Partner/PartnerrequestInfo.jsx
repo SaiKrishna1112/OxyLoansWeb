@@ -9,7 +9,6 @@ import { cancelwithdrawalRequestInformation, partnerrequestInfoError } from "../
 import PartnerHeader from "../../../Header/PartnerHeader";
 import PartnerSideBar from "../../../SideBar/PartnerSideBar";
 import { getStatus, partnerrequestInfoapi } from "../../../HttpRequest/partner";
-import { error } from "jquery";
 
 const PartnerrequestInfo = () => {
   const [mywithdrawalHistory, setmywithdrawalHistory] = useState({

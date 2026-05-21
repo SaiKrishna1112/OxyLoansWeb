@@ -3,6 +3,7 @@ import axios from "axios";
 import { Table, Spin } from "antd";
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
+import { API_USER_URL } from "../../../../../config";
 
 export default function TopLendersInfo() {
   const [lenders, setLenders] = useState([]);
@@ -19,7 +20,7 @@ export default function TopLendersInfo() {
 
       try {
         const response = await axios.get(
-          "https://fintech.oxyloans.com/oxyloans/v1/user/getTopLendersInfo",
+          `${API_USER_URL}getTopLendersInfo`,
           {
             headers: {
               accessToken: accessToken,

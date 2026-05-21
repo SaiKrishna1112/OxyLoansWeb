@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import axios from "axios";
 import Sidebar from '../../../../../SideBar/OxyloansAdminSidebar';
 import Header from '../../../../../Header/OxyloansAdminHeader';
+import { API_USER_URL } from '../../../../../../config';
 
 const LenderQueries = () => {
   const [queryData, setQueryData] = useState([]);
@@ -40,7 +41,7 @@ const LenderQueries = () => {
 
     try {
       const response = await axios.post(
-        "https://fintech.oxyloans.com/oxyloans/v1/user/queryDetailsBasedOnPrimaryType",
+        `${API_USER_URL}queryDetailsBasedOnPrimaryType`,
         requestBody,
         config
       );

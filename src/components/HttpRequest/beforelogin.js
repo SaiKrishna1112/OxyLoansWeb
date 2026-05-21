@@ -1,9 +1,5 @@
 import axios from "axios";
-const userisIn = "production"; //local or production
-let API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+import { API_USER_URL as API_BASE_URL } from "../../config";
 
 const handleApiRequestBeforeLogin = async (
   method,
@@ -16,6 +12,7 @@ const handleApiRequestBeforeLogin = async (
       method,
       url: `${BASE_URL}${End_Url}`,
       data: POSTDATA,
+      timeout: 20000,
       headers: {
         "Content-Type": "application/json",
       },
@@ -25,6 +22,15 @@ const handleApiRequestBeforeLogin = async (
       return response;
     }
   } catch (error) {
+    // Ensure callers can always safely read error.response.data
+    if (!error.response) {
+      error.response = {
+        data: {
+          errorCode: "NETWORK_ERROR",
+          errorMessage: "Unable to reach server. Please check your connection.",
+        },
+      };
+    }
     return error;
   }
 };
@@ -46,7 +52,7 @@ export const sendotpemail = async (email) => {
 export const Admlog = async (userid, password) => {
   const data = {
     id: userid,
-    primaryType: password,
+    password: password,
   };
   const response = await handleApiRequestBeforeLogin(
     "POST",
@@ -58,7 +64,9 @@ export const Admlog = async (userid, password) => {
   if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -80,7 +88,9 @@ export const partnerlogin = async (userid, password) => {
   if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -104,11 +114,12 @@ export const userloginSection = async (email, password) => {
     postdata
   );
 
-  if (response.status == 200) { 
+  if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
-    console.log(accessTokenFromHeader)
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -123,7 +134,7 @@ export const sendwhatappotp = async (value1) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "whatsapp-login-otp",
+    "sendWhatsappOtp",
     data
   );
   return response;
@@ -171,7 +182,7 @@ export const usersubmitotp = async (email, password) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    `login?grantType=PWD `,
+    `login?grantType=PWD`,
     data
   );
   return response;
@@ -203,7 +214,7 @@ export const verifywhatappotp = async (api, whatsapploginotp) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "whatsapp-login-otp-verification",
+    "verifyWhatsappOtp",
     data
   );
   return response;

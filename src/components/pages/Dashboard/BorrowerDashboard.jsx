@@ -3,6 +3,8 @@ import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
 import ReactApexChart from "react-apexcharts";
+import FloatingAssistant from "../../FloatingAssistant";
+import logo from "../../../assets/img/avtarimage.png";
 
 import { Link } from "react-router-dom";
 import "../Oxyloans/Lender/table.css";
@@ -199,12 +201,11 @@ const BorrowerDashboard = () => {
   };
 
   const handleCityChange = (event) => {
-    if (event.target.value === "") {
+    if (event.target.value.trim() === "") {
       setSelectedCityerror(true);
-      return false;
+    } else {
+      setSelectedCityerror(false);
     }
-    setSelectedCityerror(false);
-
     setSelectedCity(event.target.value);
   };
 
@@ -222,6 +223,9 @@ const BorrowerDashboard = () => {
         city: customCity,
       };
     }
+    var data = {
+      city: selectedCity,
+    };
     axios
       .post(`${base_url}${userId}/city`, data, {
         headers: {
@@ -284,27 +288,41 @@ const BorrowerDashboard = () => {
             <div className="page-header">
               <div className="row">
                 <div className="col-sm-12">
-                  <div className="page-sub-header">
-                    <h3 className="page-title">
-                      Welcome back,{" "}
-                      {getreducerprofiledata?.length !== 0
-                        ? (getreducerprofiledata?.firstName
-                            .charAt(0)
-                            .toUpperCase() +
-                            getreducerprofiledata?.firstName
-                              .slice(1)
-                              .toLowerCase() ?? "")
-                        : ""} 👋
-                    </h3>
-                    <ul className="breadcrumb">
-                      <li className="breadcrumb-item active">
-                        <Link to="/borrowerDashboard">Home</Link>
-                      </li>
-                      <li className="breadcrumb-item">
-                        {" "}
-                        <Link to="/borrowerDashboard">Dashboard</Link>
-                      </li>
-                    </ul>
+                  <div className="page-sub-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <h3 className="page-title">
+                        Welcome {""}
+                        {getreducerprofiledata?.firstName
+                          ? getreducerprofiledata.firstName.charAt(0).toUpperCase() +
+                            getreducerprofiledata.firstName.slice(1).toLowerCase()
+                          : ""}
+                      </h3>
+                      <ul className="breadcrumb">
+                        <li className="breadcrumb-item active">
+                          <Link to="/borrowerDashboard">Home</Link>
+                        </li>
+                        <li className="breadcrumb-item">
+                          {" "}
+                          <Link to="/borrowerDashboard">Dashboard</Link>
+                        </li>
+                      </ul>
+                    </div>
+                    <Link to="/borrower-analytics">
+                      <button
+                        style={{
+                          padding: "6px 16px",
+                          borderRadius: 8,
+                          background: "#6366f1",
+                          color: "#fff",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        Analytics
+                      </button>
+                    </Link>
                   </div>
                   <p>Track your loan requests, offers, and repayments</p>
                 </div>
@@ -441,7 +459,7 @@ const BorrowerDashboard = () => {
 
                       <li>
                         <div className="report-btn">
-                          <Link to="/loanRequest" className="btn">
+                          <Link to="/post-loan-request" className="btn">
                             <img src={invoicesicon5} alt="" className="me-2" />
                             New Request
                           </Link>
@@ -531,71 +549,45 @@ const BorrowerDashboard = () => {
             <Modal.Title className="h6">Select City</Modal.Title>
           </Modal.Header>
 
-          <Modal.Body className="py-2 px-3">
-            <div className="mb-2">
-              <label htmlFor="citySelect" className="form-label small mb-1">
-                City
-              </label>
-              <select
-                id="citySelect"
-                className="form-select form-select-sm"
-                value={selectedCity}
-                onChange={handleCityChange}
-              >
-                <option value="">Select a city</option>
-                <option value="Mumbai">Mumbai</option>
-                <option value="Delhi">Delhi</option>
-                <option value="Bangalore">Bangalore</option>
-                <option value="Hyderabad">Hyderabad</option>
-                <option value="Ahmedabad">Ahmedabad</option>
-                <option value="Chennai">Chennai</option>
-                <option value="Kolkata">Kolkata</option>
-                <option value="Pune">Pune</option>
-                <option value="Jaipur">Jaipur</option>
-                <option value="Lucknow">Lucknow</option>
-                <option value="Secunderabad">Secunderabad</option>
-                <option value="Vishakapatnam">Vishakapatnam</option>
-                <option value="Vijayawada">Vijayawada</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Madhya Pradesh">Madhya Pradesh</option>
-                <option value="Others">Other</option>
-              </select>
+            <Modal.Body className="py-2 px-3">
+              <div className="mb-2">
+                <label htmlFor="citySelect" className="form-label small mb-1">
+                  City
+                </label>
+                <input
+                  id="citySelect"
+                  type="text"
+                  className="form-control form-control-sm"
+                  placeholder="Enter city"
+                  value={selectedCity}
+                  onChange={handleCityChange}
+                />
 
-              {selectedCity === "Others" && (
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    placeholder="Enter City"
-                    className="form-control form-control-sm"
-                    name="customCity"
-                    value={customCity}
-                    onChange={(e) => setCustomCity(e.target.value)}
-                  />
-                </div>
-              )}
-
-              {selectedCityerror && (
-                <p className="text-danger small mt-1">Please select a city.</p>
-              )}
-            </div>
-          </Modal.Body>
+                {selectedCityerror && (
+                  <p className="text-danger small mt-1">
+                    Please enter a city.
+                  </p>
+                )}
+              </div>
+            </Modal.Body>
 
           <Modal.Footer className="py-2 px-3">
-            <Button
-              variant="primary"
-              onClick={handleSave}
-              size="sm"
-              disabled={
-                !selectedCity ||
-                (selectedCity === "Others" && customCity.trim() === "")
-              }
-            >
-              Save
-            </Button>
-          </Modal.Footer>
-        </Modal>
+  <Button
+    variant="primary"
+    onClick={handleSave}
+    size="sm"
+    disabled={
+      !selectedCity.trim()
+    }
+  >
+    Save
+  </Button>
+</Modal.Footer>
+
+          </Modal>
       </div>
       {/* /Main Wrapper */}
+      <FloatingAssistant avatarSrc={logo} />
     </>
   );
 };

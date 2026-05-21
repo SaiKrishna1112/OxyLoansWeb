@@ -847,6 +847,45 @@ const Sidebar = (props) => {
                   )}
                 </li>
 
+                {/* Marketplace Menu Items */}
+                {/* <li className={`${"/marketplace-loans" === pathName ? "active" : ""}`}>
+                  <Link to="/marketplace-loans">
+                    <i className="fa-solid fa-store"></i>
+                    <span>Browse Loan Requests</span>
+                  </Link>
+                </li>
+                <li className={`${"/nearby-borrowers" === pathName ? "active" : ""}`}>
+                  <Link to="/nearby-borrowers">
+                    <i className="fa-solid fa-location-dot"></i>
+                    <span>Nearby Borrowers</span>
+                  </Link>
+                </li>
+                <li className={`${"/my-offers" === pathName ? "active" : ""}`}>
+                  <Link to="/my-offers">
+                    <i className="fa-solid fa-handshake"></i>
+                    <span>My Offers</span>
+                  </Link>
+                </li>
+                <li className={`${"/lender-emi-dashboard" === pathName ? "active" : ""}`}>
+                  <Link to="/lender-emi-dashboard">
+                    <i className="fa-solid fa-calendar-check"></i>
+                    <span>EMI Dashboard</span>
+                  </Link>
+                </li>
+                <li className={`${"/escalation-dashboard" === pathName ? "active" : ""}`}>
+                  <Link to="/escalation-dashboard">
+                    <i className="fa-solid fa-shield-halved"></i>
+                    <span>Escalation Tracker</span>
+                  </Link>
+                </li>
+                <li className={`${"/smart-loan-match" === pathName ? "active" : ""}`}>
+                  <Link to="/smart-loan-match">
+                    <i className="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>AI Smart Match</span>
+                  </Link>
+                </li> */}
+                {/* End Marketplace Menu Items */}
+
                 <li className={`${"/" === pathName ? "active" : ""}`}>
                   <Link
                     to="/"

@@ -37,13 +37,14 @@ import Footer from "../../Footer/Footer";
 import {
   getuserMembershipValidity,
   getUserDetails,
+  getUserDetails1,
   getactivityApisData,
 } from "../../HttpRequest/afterlogin";
 import { personalDetails } from "../Base UI Elements/SweetAlert";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import axios from "axios";
-import { base_url } from "../../HttpRequest/afterlogin";
+import { base_url, getToken, getUserId } from "../../HttpRequest/afterlogin";
 import { fetchTopLenders } from "../../HttpRequest/admin";
 import Swal from "sweetalert2";
 
@@ -242,57 +243,42 @@ const AdminDashboard = () => {
   }, [regular_runningDeal.pageno]);
 
   useEffect(() => {
-    console.log("userData", getreducerprofiledata);
-    getUserDetails().then((data) => {
-      if (data.request.status === 200) {
-        setdashboarddata({
-          ...dashboarddata,
-          profileData: data,
-        });
+    const primaryType = localStorage.getItem("primaryType");
+    const fetchProfile = primaryType === "LENDER" ? getUserDetails1 : getUserDetails;
+    fetchProfile().then((data) => {
+      if (data?.request?.status === 200) {
+        setdashboarddata({ ...dashboarddata, profileData: data });
+        const city = data?.data?.city;
+        if (!city) setShow(true);
       }
-      console.log("profileData", data.request.status);
-      if (
-        data.data.city === null ||
-        data.data.city === undefined ||
-        data.data.city === ""
-      ) {
-        setShow(true);
-      }
-    });
+    }).catch(() => {});
     return () => {};
   }, []);
  
 
 
   const handleCityChange = (event) => {
-    if (event.target.value === "") {
+    if (event.target.value.trim() === "") {
       setSelectedCityerror(true);
-      return false;
+    } else {
+      setSelectedCityerror(false);
     }
-    setSelectedCityerror(false);
     setSelectedCity(event.target.value);
   };
 
   const handleSave = () => {
     console.log("Selected city:", selectedCity);
-    const userId = sessionStorage.getItem("userId");
+    const userId = getUserId();
     console.log("User ID:", userId);
-    
-    let data;
-    if (selectedCity !== "Others") {
-      data = {
-        city: selectedCity,
-      };
-    } else {
-      data = {
-        city: customCity,
-      };
-    }
-    
+
+    let data = {
+      city: selectedCity,
+    };
+
     axios
       .post(`${base_url}${userId}/city`, data, {
         headers: {
-          accessToken: sessionStorage.getItem("accessToken"),
+          accessToken: getToken(),
         },
       })
       .then(function (response) {

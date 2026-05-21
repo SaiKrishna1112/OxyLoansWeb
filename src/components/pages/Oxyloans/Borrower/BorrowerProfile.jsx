@@ -13,6 +13,7 @@ import {
 } from "../../Base UI Elements/Toast";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { API_USER_URL } from "../../../../config";
 
 
 import {
@@ -57,11 +58,7 @@ const BorrowerProfile = () => {
   const reduxStoreDataDashboard = useSelector(
     (data) => data.dashboard.fetchDashboard
   );
-  const userisIn = "prod";
-  const BASE_URL =
-    userisIn == "local"
-      ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user"
-      : "https://fintech.oxyloans.com/oxyloans/v1/user";
+  const BASE_URL = API_USER_URL.replace(/\/$/, ""); // strip trailing slash for compatibility
   
   const [dashboarddata, setdashboarddata] = useState({
     sendotpbtn: true,

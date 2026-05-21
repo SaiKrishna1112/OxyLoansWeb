@@ -4,6 +4,8 @@ import { Table, Spin, Button } from "antd";
 import Header from "../../../Header/Header";
 import Sidebar from "../../../SideBar/SideBar";
 import { useNavigate } from "react-router-dom";
+import { API_USER_URL } from "../../../../config";
+import { getToken } from "../../../HttpRequest/afterlogin";
 
 export default function TopLendersInfo() {
   const [lenders, setLenders] = useState([]);
@@ -12,7 +14,7 @@ export default function TopLendersInfo() {
 
   useEffect(() => {
     const fetchLenders = async () => {
-      const accessToken = sessionStorage.getItem("accessToken");
+      const accessToken = getToken();
       if (!accessToken) {
         console.error("Access token missing");
         setLoading(false);
@@ -21,7 +23,7 @@ export default function TopLendersInfo() {
 
       try {
         const response = await axios.get(
-          "https://fintech.oxyloans.com/oxyloans/v1/user/getTopLendersInfo",
+          `${API_USER_URL}getTopLendersInfo`,
           { headers: { accessToken } }
         );
 

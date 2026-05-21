@@ -29,16 +29,22 @@ const AgreedLoan = () => {
       myagreedloanInfo.pageNo,
       myagreedloanInfo.pageSize
     );
-    response.then((data) => {
-      if (data.request.status == 200) {
-        setmyAgrredHistory({
-          ...myagreedloanInfo,
-          apiData: data.data,
-          loading: false,
-          hasdata: data.data.results.length == 0 ? false : true,
-        });
-      }
-    });
+    response
+      .then((data) => {
+        if (data.status == 200) {
+          setmyAgrredHistory({
+            ...myagreedloanInfo,
+            apiData: data.data,
+            loading: false,
+            hasdata: data.data.results && data.data.results.length > 0,
+          });
+        } else {
+          setmyAgrredHistory((prev) => ({ ...prev, loading: false }));
+        }
+      })
+      .catch(() => {
+        setmyAgrredHistory((prev) => ({ ...prev, loading: false }));
+      });
     return () => {};
   }, [myagreedloanInfo.pageNo, myagreedloanInfo.pageSize]);
 

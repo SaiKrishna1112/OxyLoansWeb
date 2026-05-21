@@ -1,9 +1,5 @@
 import axios from "axios";
-const userisIn = "production";
-let API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+import { API_USER_URL as API_BASE_URL } from "../../config";
 
 const handleApiRequestPartnerService = async (
   endpoint,
@@ -116,12 +112,9 @@ export  const  getStatus = async ()=>{
   const token = getToken();
   const userId = getUserId();
 
-
   const data = {
-
-      partnerId:1,
-
-}
+    partnerId: userId,
+  };
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `getStatus`,
@@ -134,18 +127,18 @@ export  const  getStatus = async ()=>{
 
 
 
-export const getListOfBorrowerDetailsapi = async() => {
+export const getListOfBorrowerDetailsapi = async(pageNo = 1, pageSize = 10) => {
     const token = getToken();
   const userId = getUserId();
 
   const data = {
-    "pageNo": 1,
-    "pageSize": 10
+    "pageNo": pageNo,
+    "pageSize": pageSize
 }
 
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `getListOfBorrowerDetails/3`,
+    `getListOfBorrowerDetails/${userId}`,
     "POST",
     token,
     data
@@ -156,15 +149,12 @@ export const getListOfBorrowerDetailsapi = async() => {
 
 
 export const partnerrequestInfoapi = async() => {
-    const token = getToken();
+  const token = getToken();
   const userId = getUserId();
-
-const data= {
-comments : "Requesting For Borrower",
-partnerId:userId
-
-}
-
+  const data = {
+    comments: "Requesting For Borrower",
+    partnerId: userId,
+  };
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `partnerrequestInfo`,
@@ -173,4 +163,30 @@ partnerId:userId
     data
   );
   return response;
-} 
+};
+
+export const getPartnerDashboardStats = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `partnerDashboard/${userId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const getPartnerReferredUsers = async (pageNo = 1, pageSize = 10) => {
+  const token = getToken();
+  const userId = getUserId();
+  const data = { pageNo, pageSize };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `partnerReferredUsers/${userId}`,
+    "POST",
+    token,
+    data
+  );
+  return response;
+};

@@ -8,7 +8,7 @@ import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import OtpInput from "./OtpInput";
 import { toastrWarning } from "../Base UI Elements/Toast";
 export default function LenderRegister() {
-  let inputRef = useRef();  
+  let inputRef = useRef();
   let inputRef2 = useRef();
   const navigate = useNavigate();
 
@@ -16,6 +16,23 @@ export default function LenderRegister() {
   const [submitotp, setsubmitotp] = useState(false);
   const [error, setError] = useState("");
   const [response1, setResponse] = useState({});
+  const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log("Geolocation not available:", error);
+        }
+      );
+    }
+  }, []);
 
   const [registrationField, setRegistrationField] = useState({
     email: "",
@@ -160,7 +177,10 @@ export default function LenderRegister() {
           registrationField.pancard,
           registrationField.password,
           session,
-          registrationField.referrerId
+          registrationField.referrerId,
+          "Lender",
+          userLocation.latitude,
+          userLocation.longitude
         );
         setfield(false);
         setsubmitotp(true);

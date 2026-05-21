@@ -415,13 +415,9 @@ console.log(downloadUrl)
                     <div className="mebershipbutton" style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignItems:'center',}} >
                     <h3 className="page-title">
                       Welcome {""}
-                      {getreducerprofiledata?.length !== 0
-                        ? getreducerprofiledata?.firstName
-                            .charAt(0)
-                            .toUpperCase() +
-                            getreducerprofiledata?.firstName
-                              .slice(1)
-                              .toLowerCase() ?? ""
+                      {getreducerprofiledata?.firstName
+                        ? getreducerprofiledata.firstName.charAt(0).toUpperCase() +
+                          getreducerprofiledata.firstName.slice(1).toLowerCase()
                         : ""}
                     </h3>
 

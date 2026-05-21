@@ -11,9 +11,26 @@ import { toastrWarning } from "../Base UI Elements/Toast";
 export default function BorrowerRegister() {
   const inputRef = useRef();
   let inputRef2 = useRef();
- 
+
   const navigate = useNavigate();
   const [field, setField] = useState(true);
+  const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log("Geolocation not available:", error);
+        }
+      );
+    }
+  }, []);
   const [submitotp, setSubmitOtp] = useState(false);
   const [error, setError] = useState("");
   const [response1, setResponse] = useState({});
@@ -137,7 +154,9 @@ export default function BorrowerRegister() {
           registrationField.password,
           session,
           registrationField.referrerId,
-          "Borrower"
+          "Borrower",
+          userLocation.latitude,
+          userLocation.longitude
         );
 
         setField(false);

@@ -10,6 +10,7 @@ import { fetchDatadashboard } from "../Redux/SliceDashboard";
 import { WarningAlert } from "../pages/Base UI Elements/SweetAlert";
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
+import NotificationBell from "../NotificationBell";
 
 const OxyloansAdminHeader = (profile) => {
 //   const location = useLocation();
@@ -135,6 +136,7 @@ const userId=sessionStorage.getItem("userId")
               <img src={headericon04} alt="" />
             </Link>
           </li> */}
+          <NotificationBell />
           {/* User Menu */}
           <li className="nav-item dropdown has-arrow new-user-menus">
             <Link

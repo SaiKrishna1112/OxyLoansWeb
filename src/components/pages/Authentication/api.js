@@ -1,14 +1,8 @@
 import axios from "axios";
-const userisIn = "production"; //local or production
-const API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user";
+import { API_USER_URL as API_BASE_URL } from "../../../config";
 
-const API_URL =
-  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/login?grantType=PWD";
-const API_URL_otp =
-  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/sendOtp";
+const API_URL = API_BASE_URL + "login?grantType=PWD";
+const API_URL_otp = API_BASE_URL + "sendOtp";
 // Function to perform the login API request
 export const loginUser = async (email, password, dataIpv4, dataIpv6) => {
   var data = {
@@ -197,7 +191,10 @@ export const vaildateotp = async (
   name,
   password,
   session,
-  referrerId
+  referrerId,
+  userType,
+  latitude,
+  longitude
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
@@ -218,6 +215,8 @@ export const vaildateotp = async (
       // uuid: "asdfghjkl",
       cifNumber: null,
       finoEmployeeMobileNumber: "0",
+      latitude: latitude || null,
+      longitude: longitude || null,
     };
   } else {
     var data = {
@@ -236,6 +235,8 @@ export const vaildateotp = async (
       cifNumber: null,
       finoEmployeeMobileNumber: null,
       // uuid: "asdfghjkl",
+      latitude: latitude || null,
+      longitude: longitude || null,
     };
   }
   if (utmForPartner === "Borrower") {
