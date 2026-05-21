@@ -27,9 +27,8 @@ axios.interceptors.response.use(
   }
 );
 
-// Check both sessionStorage (main login flow) and localStorage (admin/alternate login flow)
 export const getToken = () => {
-  return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken") || null;
+  return sessionStorage.getItem("accessToken");
 };
 export const base_url=API_BASE_URL;
 
@@ -3003,6 +3002,44 @@ export const aggrementGenerationforLenderSide = async (payload) => {
     payload,
   );
 
+  return response;
+};
+
+// ── AI Layer API ──────────────────────────────────────────────────────────────
+const AI_BASE_URL =
+  userisIn == "local"
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/ai/"
+    : "https://fintech.oxyloans.com/oxyloans/v1/ai/";
+
+export const getLenderAIPortfolio = async (lenderId) => {
+  const token = getToken();
+  const response = await axios.get(`${AI_BASE_URL}lender/${lenderId}/portfolio`, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getLenderAIEarnings = async (lenderId, fy, from, to) => {
+  let url = `${AI_BASE_URL}lender/${lenderId}/earnings`;
+  const params = [];
+  if (fy)   params.push(`fy=${fy}`);
+  if (from) params.push(`from=${from}`);
+  if (to)   params.push(`to=${to}`);
+  if (params.length) url += "?" + params.join("&");
+  const token = getToken();
+  const response = await axios.get(url, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getAdminAIPlatformStats = async (fy) => {
+  let url = `${AI_BASE_URL}admin/platform-stats`;
+  if (fy) url += `?fy=${fy}`;
+  const token = getToken();
+  const response = await axios.get(url, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getAdminAIReconciliationSummary = async () => {
+  const token = getToken();
+  const response = await axios.get(`${AI_BASE_URL}admin/reconciliation-summary`, { headers: { accessToken: token } });
   return response;
 };
 

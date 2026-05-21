@@ -77,6 +77,20 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"], // Show to all roles
     },
     {
+      key: "adminAIDashboard",
+      label: "🤖 AI Platform Stats",
+      link: "/adminAIDashboard",
+      icon: "fa-solid fa-robot",
+      type: ["ADMIN"],
+    },
+    {
+      key: "adminAIReconciliation",
+      label: "🤖 AI Reconciliation",
+      link: "/adminAIReconciliation",
+      icon: "fa-solid fa-scale-balanced",
+      type: ["ADMIN"],
+    },
+    {
       key: "lenderLoanApplications",
       label: "Lender Loan Applications",
       link: "/lenderLoanApplications",
