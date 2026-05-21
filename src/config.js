@@ -13,7 +13,7 @@ const ENV = "local"; // "local" | "production"
 
 const BASE_URL =
   ENV === "local"
-    ? `http://${LOCAL_IP}:8080`
+    ? `http://${LOCAL_IP}:8080/oxyloans`
     : "https://fintech.oxyloans.com/oxyloans";
 
 export const API_USER_URL = BASE_URL + "/v1/user/";

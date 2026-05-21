@@ -159,7 +159,7 @@ import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
 import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
 import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReconciliationDashboard";
-import LenderPortfolioDashboard from "./components/pages/Dashboard/LenderPortfolioDashboard";
+import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
 import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 
