@@ -998,6 +998,7 @@ const LenderPortfolioDashboard = () => {
   const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
+  const [reminderSent, setReminderSent] = useState({});
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
@@ -1084,6 +1085,18 @@ const LenderPortfolioDashboard = () => {
     if (timingBucket === bucket) { setTimingBucket(null); return; }
     setTimingBucket(bucket);
     if (!timingDetail[bucket] || !timingDetail[bucket].records) fetchTimingDetail(bucket, 0);
+  };
+
+  const sendMaturityReminder = (m) => {
+    axios.post(
+      `${MARKETPLACE_URL}/v1/notifications/maturity-reminder`,
+      { dealId: m.dealId, maturityDate: m.maturityDate, principal: m.principalAmount },
+      { headers: { accessToken: getToken(), "Content-Type": "application/json" } }
+    ).then(() => {
+      setReminderSent(prev => ({ ...prev, [m.dealId]: true }));
+    }).catch(() => {
+      alert("Could not send reminder. Please try again.");
+    });
   };
 
   const heroBg = isPro
@@ -1494,7 +1507,18 @@ const LenderPortfolioDashboard = () => {
                               <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                               <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
                               <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
-                              <td>{m.actionNeeded ? <span style={{ background: "#fff1f0", color: "#ff4d4f", border: "1px solid #ffa39e", borderRadius: 4, padding: "2px 8px", fontSize: 11 }}>Plan now</span> : <span style={{ color: "#8c8c8c", fontSize: 11 }}>Monitor</span>}</td>
+                              <td>
+                                {reminderSent[m.dealId] ? (
+                                  <span style={{ color: "#52c41a", fontSize: 11, fontWeight: 600 }}>✓ Reminder sent</span>
+                                ) : (
+                                  <button
+                                    onClick={() => sendMaturityReminder(m)}
+                                    style={{ background: "#f0f5ff", color: "#2f54eb", border: "1px solid #adc6ff", borderRadius: 4, padding: "2px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                  >
+                                    Remind Me
+                                  </button>
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

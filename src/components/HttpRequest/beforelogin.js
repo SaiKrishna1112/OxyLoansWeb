@@ -171,7 +171,7 @@ export const usersubmitotp = async (email, password) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    `login?grantType=PWD `,
+    `login?grantType=PWD`,
     data
   );
   return response;
