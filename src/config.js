@@ -1,4 +1,4 @@
-const ENV = "local"; // "local" | "test" | "production"
+const ENV = "production"; // "local" | "test" | "production"
 
 const BASE_URL =
   ENV === "local"
