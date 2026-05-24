@@ -2773,23 +2773,30 @@ export const generateBorrowerAgreement1 = async (payload) => {
 
 /////////// Lender ///////////
 
-export const chatbotapicall = async (messages) => {
+export const chatbotapicall = async (messages, primaryType) => {
   const token = getToken();
+  const userId = getUserId();
   const postdata = {
     message: messages,
+    primaryType: primaryType || localStorage.getItem("primaryType") || "LENDER",
+    userId: userId ? parseInt(userId) : null,
   };
-  
+
+  const userisIn = "production";
+  const BASE_URL = userisIn === "local"
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
+    : "https://fintech.oxyloans.com/oxyloans";
+
   const response = await axios({
-    url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
+    url: `${BASE_URL}/v1/ai/chat`,
     method: "POST",
     headers: {
       accessToken: `${token}`,
-      "X-API-KEY": "oxy-ai-prod-key",
+      "Content-Type": "application/json",
     },
     data: postdata,
-    responseType: 'text',
   });
-  
+
   return response;
 };
 

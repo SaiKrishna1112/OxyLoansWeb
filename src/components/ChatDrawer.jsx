@@ -915,7 +915,7 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
     setIsTyping(true);
 
     try {
-      const res = await chatbotapicall(trimmed);
+      const res = await chatbotapicall(trimmed, ROLE);
       const answer =
         res.data?.answer || res.data?.response || res.data?.message ||
         (typeof res.data === "string" ? res.data : null) ||
