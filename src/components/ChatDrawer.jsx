@@ -722,249 +722,338 @@ function TopicBadge({ type }) {
 
 // ─── Chatbot card components (cardType from /v1/ai/chat) ─────────────────────
 
-function GreetingCard({ text, quickReplies, onSend }) {
-  const name = text.replace(/^Hi\s+/, "").replace(/!.*/, "");
+const cardBtn = (border, color) => ({
+  background: "#fff", border: `1.5px solid ${border}`, color,
+  borderRadius: 20, padding: "5px 13px", fontSize: 12,
+  cursor: "pointer", fontWeight: 600, fontFamily: "inherit", transition: "all 0.15s",
+});
+
+function QuickBtns({ replies, onSend, border, color, bg }) {
+  if (!replies?.length) return null;
   return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
+    <div style={{ background: bg, padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
+      {replies.map((q, i) => (
+        <button key={i} onClick={() => onSend(q)} style={cardBtn(border, color)}
+          onMouseEnter={e => { e.currentTarget.style.background = color; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = color; }}
+        >{q}</button>
+      ))}
+    </div>
+  );
+}
+
+function GreetingCard({ text, quickReplies, onSend }) {
+  const name = (text.match(/^Hi\s+([^!]+)/) || [])[1]?.trim() || "there";
+  const actions = [
+    { icon: "💰", label: "Wallet",    desc: "Available balance",  q: "💰 Wallet Balance" },
+    { icon: "📊", label: "Deals",     desc: "Active investments", q: "📊 Active Deals" },
+    { icon: "💵", label: "Earnings",  desc: "Interest earned",    q: "💵 Interest Earned" },
+    { icon: "📅", label: "Payments",  desc: "Next payouts",       q: "📅 Upcoming Payments" },
+    { icon: "🔄", label: "Principal", desc: "Capital returned",   q: "🔄 Principal Returned" },
+    { icon: "🎁", label: "Referrals", desc: "Bonus earned",       q: "🎁 My Referrals" },
+  ];
+  return (
+    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4, border: "1px solid #ddd6fe" }}>
       <div style={{
-        background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-        padding: "14px 16px", color: "#fff",
+        background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%)",
+        padding: "16px 16px 14px", color: "#fff",
       }}>
-        <div style={{ fontSize: 22, marginBottom: 2 }}>👋</div>
-        <div style={{ fontWeight: 700, fontSize: 15 }}>Hi {name}!</div>
-        <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>What would you like to explore today?</div>
+        <div style={{ fontSize: 26, marginBottom: 5 }}>👋</div>
+        <div style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.3px" }}>Welcome back, {name}!</div>
+        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 3 }}>Your OxyLoans AI assistant is ready. What would you like to explore?</div>
       </div>
-      <div style={{ background: "#f8f7ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-        {(quickReplies || []).map((q, i) => (
-          <button key={i} onClick={() => onSend(q)} style={{
-            background: "#fff", border: "1.5px solid #6366f1", color: "#6366f1",
-            borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer",
-            fontWeight: 600, transition: "all 0.15s",
+      <div style={{ background: "#fafafe", padding: "12px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 7 }}>
+        {actions.map((a, i) => (
+          <button key={i} onClick={() => onSend(a.q)} style={{
+            background: "#fff", border: "1px solid #e0e7ff", borderRadius: 10,
+            padding: "9px 6px", cursor: "pointer", textAlign: "center", fontFamily: "inherit",
+            transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#6366f1"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#6366f1"; }}
-          >{q}</button>
+            onMouseEnter={e => { e.currentTarget.style.background = "#ede9fe"; e.currentTarget.style.borderColor = "#7c3aed"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e0e7ff"; }}
+          >
+            <div style={{ fontSize: 18, marginBottom: 2 }}>{a.icon}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#1e1b4b" }}>{a.label}</div>
+            <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 1 }}>{a.desc}</div>
+          </button>
         ))}
       </div>
     </div>
   );
 }
 
-function WalletCard({ text, quickReplies, onSend }) {
-  const match = text.match(/₹[\d,]+/);
-  const amount = match ? match[0] : "₹0";
+function WalletCard({ text, data, quickReplies, onSend }) {
+  const balance = data?.balance != null ? data.balance
+    : parseFloat((text.match(/₹([\d,]+)/) || [])[1]?.replace(/,/g, "")) || 0;
+  const RBI_MAX = 5000000;
+  const usedPct = Math.min(100, Math.round((balance / RBI_MAX) * 100));
+  const fmtShort = v => v >= 100000 ? `₹${(v / 100000).toFixed(1)}L` : fmtINR(v);
+
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
       <div style={{
-        background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+        background: "linear-gradient(135deg, #047857 0%, #059669 60%, #10b981 100%)",
+        padding: "16px 16px", color: "#fff",
+      }}>
+        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>💰 Wallet Balance</div>
+        <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-1px" }}>{fmtINR(balance)}</div>
+        <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>Available to invest now</div>
+        <div style={{ marginTop: 12, background: "rgba(255,255,255,0.15)", borderRadius: 8, padding: "8px 10px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, opacity: 0.9, marginBottom: 5 }}>
+            <span>RBI P2P limit: {fmtShort(RBI_MAX)}</span>
+            <span>{usedPct}% of limit</span>
+          </div>
+          <div style={{ height: 5, background: "rgba(255,255,255,0.3)", borderRadius: 3, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${usedPct}%`, background: "#fff", borderRadius: 3, transition: "width 1s ease" }} />
+          </div>
+        </div>
+      </div>
+      <QuickBtns replies={quickReplies} onSend={onSend} border="#059669" color="#059669" bg="#ecfdf5" />
+    </div>
+  );
+}
+
+function EarningsCard({ text, data, quickReplies, onSend }) {
+  const fy    = data?.fyAmount    != null ? data.fyAmount    : parseFloat((text.match(/year:\s*\*\*₹([\d,]+)/) || [])[1]?.replace(/,/g, "")) || 0;
+  const total = data?.allTimeAmount != null ? data.allTimeAmount : parseFloat((text.match(/total:\s*\*\*₹([\d,]+)/) || [])[1]?.replace(/,/g, "")) || fy;
+  const maxV  = Math.max(fy, total, 1);
+  const fyPct = Math.round((fy / maxV) * 100);
+
+  return (
+    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
+      <div style={{
+        background: "linear-gradient(135deg, #92400e 0%, #b45309 50%, #d97706 100%)",
         padding: "14px 16px", color: "#fff",
       }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>💰 Wallet Balance</div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{amount}</div>
-        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Available to invest</div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f0fdf4", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #059669", color: "#059669",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#059669"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#059669"; }}
-            >{q}</button>
-          ))}
+        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>💵 Interest Earned</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <div>
+            <div style={{ fontSize: 10, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.06em" }}>This FY</div>
+            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px", marginTop: 2 }}>{fmtINR(fy)}</div>
+          </div>
+          <div style={{ textAlign: "right", paddingBottom: 2 }}>
+            <div style={{ fontSize: 10, opacity: 0.7, textTransform: "uppercase", letterSpacing: "0.06em" }}>All Time</div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>{fmtINR(total)}</div>
+          </div>
         </div>
-      )}
+      </div>
+      <div style={{ background: "#fffbeb", padding: "12px 14px" }}>
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#92400e", fontWeight: 600, marginBottom: 4 }}>
+            <span>This Financial Year</span><span>{fmtINR(fy)}</span>
+          </div>
+          <div style={{ height: 9, background: "#fde68a", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${fyPct}%`, background: "linear-gradient(90deg,#b45309,#f59e0b)", borderRadius: 4, transition: "width 1s ease" }} />
+          </div>
+        </div>
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#78716c", fontWeight: 600, marginBottom: 4 }}>
+            <span>All-Time Total</span><span>{fmtINR(total)}</span>
+          </div>
+          <div style={{ height: 9, background: "#fde68a", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: "100%", background: "linear-gradient(90deg,#78716c,#a8a29e)", borderRadius: 4 }} />
+          </div>
+        </div>
+        {total > 0 && fy > 0 && (
+          <div style={{ marginTop: 9, fontSize: 11, color: "#78716c", textAlign: "center", fontStyle: "italic" }}>
+            {Math.round((fy / total) * 100)}% of total earnings made this financial year
+          </div>
+        )}
+      </div>
+      <QuickBtns replies={quickReplies} onSend={onSend} border="#b45309" color="#b45309" bg="#fef3c7" />
     </div>
   );
 }
 
-function DealsCard({ text, quickReplies, onSend }) {
-  const countMatch = text.match(/Deals:\s*\*\*(\d+)\*\*/);
-  const amtMatch = text.match(/Deployed:\s*\*\*(₹[\d,]+)\*\*/);
-  const count = countMatch ? countMatch[1] : "—";
-  const amount = amtMatch ? amtMatch[1] : "—";
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>📊 Active Deals</div>
-        <div style={{ display: "flex", gap: 24, marginTop: 10 }}>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 800 }}>{count}</div>
-            <div style={{ fontSize: 11, opacity: 0.8 }}>Deals</div>
-          </div>
-          <div style={{ width: 1, background: "rgba(255,255,255,0.3)" }} />
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{amount}</div>
-            <div style={{ fontSize: 11, opacity: 0.8 }}>Deployed</div>
-          </div>
-        </div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#eff6ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #1d4ed8", color: "#1d4ed8",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#1d4ed8"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#1d4ed8"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+function DealsCard({ text, data, quickReplies, onSend }) {
+  const count    = data?.count    != null ? data.count    : parseInt((text.match(/Deals:\s*\*\*(\d+)\*\*/) || [])[1]) || 0;
+  const deployed = data?.deployed != null ? data.deployed : parseFloat((text.match(/Deployed:\s*\*\*₹([\d,]+)\*\*/) || [])[1]?.replace(/,/g, "")) || 0;
+  const RBI_MAX  = 5000000;
+  const pct      = Math.min(100, Math.round((deployed / RBI_MAX) * 100));
+  const R = 32, C = 2 * Math.PI * R;
+  const dash = C * (1 - pct / 100);
 
-function PaymentsCard({ text, quickReplies, onSend }) {
-  const lines = text.split("\n").filter(l => l.includes("**") && l.includes("₹") && l.includes("🗓"));
-  const totalMatch = text.match(/Total:\s*(₹[\d,]+)/);
-  const total = totalMatch ? totalMatch[1] : null;
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)", padding: "12px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>📅 Upcoming Payments</div>
-      </div>
-      <div style={{ background: "#fff", padding: "10px 14px" }}>
-        {lines.map((line, i) => {
-          const dateMatch = line.match(/\*\*([^*]+)\*\*/);
-          const amtMatch = line.match(/(₹[\d,]+)/);
-          return (
-            <div key={i} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "7px 0", borderBottom: i < lines.length - 1 ? "1px solid #f1f5f9" : "none",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0ea5e9" }} />
-                <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{dateMatch ? dateMatch[1] : ""}</span>
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>{amtMatch ? amtMatch[1] : ""}</span>
+      <div style={{
+        background: "linear-gradient(135deg, #1e40af 0%, #1d4ed8 60%, #3b82f6 100%)",
+        padding: "14px 16px", color: "#fff",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <div>
+          <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>📊 Active Deals</div>
+          <div style={{ display: "flex", gap: 20, alignItems: "flex-end" }}>
+            <div>
+              <div style={{ fontSize: 38, fontWeight: 800, lineHeight: 1 }}>{count}</div>
+              <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>Deals</div>
             </div>
-          );
-        })}
-        {total && (
-          <div style={{ marginTop: 8, padding: "8px 10px", background: "#eff6ff", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Total</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1" }}>{total}</span>
+            <div style={{ paddingBottom: 2 }}>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{fmtINR(deployed)}</div>
+              <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>Deployed</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
+          <svg width="80" height="80" viewBox="0 0 80 80" style={{ transform: "rotate(-90deg)" }}>
+            <circle cx="40" cy="40" r={R} fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="9" />
+            <circle cx="40" cy="40" r={R} fill="none" stroke="#fff" strokeWidth="9"
+              strokeDasharray={C} strokeDashoffset={dash} strokeLinecap="round"
+              style={{ transition: "stroke-dashoffset 1.2s ease" }} />
+          </svg>
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%,-50%)", textAlign: "center",
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{pct}%</div>
+            <div style={{ fontSize: 8, color: "rgba(255,255,255,0.75)", marginTop: 1 }}>of ₹50L</div>
+          </div>
+        </div>
+      </div>
+      <div style={{ background: "#dbeafe", padding: "7px 14px", fontSize: 10, color: "#1e40af", display: "flex", justifyContent: "space-between" }}>
+        <span>RBI P2P limit used</span>
+        <span style={{ fontWeight: 700 }}>{fmtINR(Math.max(0, RBI_MAX - deployed))} remaining</span>
+      </div>
+      <QuickBtns replies={quickReplies} onSend={onSend} border="#1d4ed8" color="#1d4ed8" bg="#eff6ff" />
+    </div>
+  );
+}
+
+function PaymentsCard({ text, data, quickReplies, onSend }) {
+  const payments = data?.payments?.length > 0 ? data.payments
+    : text.split("\n").filter(l => l.includes("🗓")).map(l => ({
+        date: (l.match(/\*\*([^*]+)\*\*/) || [])[1] || "",
+        amount: parseFloat((l.match(/₹([\d,]+)/) || [])[1]?.replace(/,/g, "")) || 0,
+      }));
+  const total = data?.total != null ? data.total : (parseFloat((text.match(/Total:\s*₹([\d,]+)/) || [])[1]?.replace(/,/g, "")) || 0);
+  const maxAmt = Math.max(...payments.map(p => p.amount || 0), 1);
+
+  return (
+    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
+      <div style={{ background: "linear-gradient(135deg, #0c4a6e 0%, #0369a1 60%, #0ea5e9 100%)", padding: "13px 16px 11px", color: "#fff" }}>
+        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>📅 Upcoming Payments</div>
+        {total > 0 && <div style={{ fontSize: 26, fontWeight: 800, marginTop: 5 }}>{fmtINR(total)}</div>}
+        {total > 0 && <div style={{ fontSize: 11, opacity: 0.75 }}>across {payments.length} payment date{payments.length !== 1 ? "s" : ""}</div>}
+      </div>
+
+      {payments.length > 1 && (
+        <div style={{ background: "#f0f9ff", padding: "10px 14px 6px" }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 48 }}>
+            {payments.slice(0, 12).map((p, i) => {
+              const h = Math.max(5, Math.round(((p.amount || 0) / maxAmt) * 42));
+              return (
+                <div key={i} title={`${p.date}: ${fmtINR(p.amount)}`} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", minWidth: 4 }}>
+                  <div style={{ width: "100%", height: h, background: "linear-gradient(180deg,#0ea5e9,#0369a1)", borderRadius: "3px 3px 0 0", transition: "height 0.6s ease" }} />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "#64748b", marginTop: 3 }}>
+            <span>{payments[0]?.date}</span>
+            <span>{payments[Math.min(11, payments.length - 1)]?.date}</span>
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: "#fff", padding: "8px 14px", maxHeight: 200, overflowY: "auto" }}>
+        {payments.slice(0, 10).map((p, i) => (
+          <div key={i} style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "7px 0", borderBottom: i < Math.min(10, payments.length) - 1 ? "1px solid #f1f5f9" : "none",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0ea5e9", flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{p.date}</span>
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>{fmtINR(p.amount)}</span>
+          </div>
+        ))}
+        {payments.length > 10 && (
+          <div style={{ fontSize: 10, color: "#94a3b8", textAlign: "center", marginTop: 5 }}>+{payments.length - 10} more dates</div>
+        )}
+      </div>
+      <QuickBtns replies={quickReplies} onSend={onSend} border="#0369a1" color="#0369a1" bg="#e0f2fe" />
+    </div>
+  );
+}
+
+function PrincipalCard({ text, data, quickReplies, onSend }) {
+  const returned = data?.returned != null ? data.returned
+    : parseFloat((text.match(/₹([\d,]+)/) || [])[1]?.replace(/,/g, "")) || 0;
+
+  return (
+    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
+      <div style={{
+        background: "linear-gradient(135deg, #134e4a 0%, #0f766e 60%, #14b8a6 100%)",
+        padding: "16px 16px", color: "#fff",
+      }}>
+        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>🔄 Principal Returned</div>
+        <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: "-1px" }}>{fmtINR(returned)}</div>
+        <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>Returned from matured &amp; closed deals</div>
+        {returned > 0 && (
+          <div style={{ marginTop: 12, display: "flex", gap: 0, background: "rgba(255,255,255,0.15)", borderRadius: 8, overflow: "hidden" }}>
+            <div style={{ flex: 1, padding: "8px 10px", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.2)" }}>
+              <div style={{ fontSize: 9, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Status</div>
+              <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>✅ Recovered</div>
+            </div>
+            <div style={{ flex: 1, padding: "8px 10px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, opacity: 0.8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Source</div>
+              <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>Closed Deals</div>
+            </div>
           </div>
         )}
       </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f0f9ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #0369a1", color: "#0369a1",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#0369a1"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0369a1"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
+      <QuickBtns replies={quickReplies} onSend={onSend} border="#0f766e" color="#0f766e" bg="#f0fdfa" />
     </div>
   );
 }
 
-function EarningsCard({ text, quickReplies, onSend }) {
-  const match = text.match(/₹[\d,]+/);
-  const amount = match ? match[0] : "₹0";
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #b45309 0%, #f59e0b 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>💵 Interest Earned</div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{amount}</div>
-        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>This financial year</div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#fffbeb", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #b45309", color: "#b45309",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#b45309"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#b45309"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+function ReferralsCard({ text, data, quickReplies, onSend }) {
+  const count   = data?.count   != null ? data.count   : parseInt((text.match(/(\d+)\s+lender/i) || [])[1]) || 0;
+  const paid    = data?.paid    != null ? data.paid    : 0;
+  const pending = data?.pending != null ? data.pending : 0;
 
-function PrincipalCard({ text, quickReplies, onSend }) {
-  const match = text.match(/₹[\d,]+/);
-  const amount = match ? match[0] : "₹0";
   return (
     <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>🔄 Principal Returned</div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{amount}</div>
-        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Across all matured deals</div>
+      <div style={{
+        background: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 60%, #8b5cf6 100%)",
+        padding: "14px 16px 12px", color: "#fff",
+      }}>
+        <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>🎁 Referral Summary</div>
+        {count > 0
+          ? <div style={{ fontSize: 28, fontWeight: 800 }}>{count} referral{count !== 1 ? "s" : ""}</div>
+          : <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>No referrals yet — start sharing and earn! 🤝</div>
+        }
       </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f0fdfa", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #0f766e", color: "#0f766e",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#0f766e"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0f766e"; }}
-            >{q}</button>
-          ))}
+      {count > 0 && (
+        <div style={{ background: "#f5f3ff", padding: "10px 14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {[
+              { label: "Referred",  value: count,   color: "#6d28d9", fmt: v => v,         bg: "#ede9fe", border: "#ddd6fe" },
+              { label: "Paid Out",  value: paid,    color: "#15803d", fmt: fmtINR,          bg: "#dcfce7", border: "#bbf7d0" },
+              { label: "Pending",   value: pending, color: "#ca8a04", fmt: fmtINR,          bg: "#fef9c3", border: "#fde68a" },
+            ].map(s => (
+              <div key={s.label} style={{ textAlign: "center", background: s.bg, borderRadius: 10, padding: "9px 4px", border: `1px solid ${s.border}` }}>
+                <div style={{ fontSize: s.label === "Referred" ? 22 : 14, fontWeight: 800, color: s.color }}>{s.fmt(s.value)}</div>
+                <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function ReferralsCard({ text, quickReplies, onSend }) {
-  const countMatch = text.match(/(\d+)\s+referral/i);
-  const amtMatch = text.match(/₹[\d,]+/);
-  const hasReferrals = countMatch && parseInt(countMatch[1]) > 0;
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #6d28d9 0%, #a78bfa 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>🎁 My Referrals</div>
-        {hasReferrals ? (
-          <>
-            <div style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{countMatch[1]} referrals</div>
-            {amtMatch && <div style={{ fontSize: 16, fontWeight: 700, opacity: 0.9, marginTop: 2 }}>{amtMatch[0]} bonus earned</div>}
-          </>
-        ) : (
-          <div style={{ fontSize: 14, marginTop: 6, opacity: 0.9 }}>No referrals yet — start sharing and earn rewards!</div>
-        )}
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f5f3ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #6d28d9", color: "#6d28d9",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#6d28d9"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
+      <QuickBtns replies={quickReplies} onSend={onSend} border="#6d28d9" color="#6d28d9" bg="#ede9fe" />
     </div>
   );
 }
 
 // Dispatcher for cardType-based cards
-function ChatbotCard({ cardType, text, quickReplies, onSend }) {
-  if (cardType === "GREETING")  return <GreetingCard  text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "WALLET")    return <WalletCard    text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "DEALS")     return <DealsCard     text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "PAYMENTS")  return <PaymentsCard  text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "EARNINGS")  return <EarningsCard  text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "PRINCIPAL") return <PrincipalCard text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "REFERRALS") return <ReferralsCard text={text} quickReplies={quickReplies} onSend={onSend} />;
+function ChatbotCard({ cardType, text, data, quickReplies, onSend }) {
+  if (cardType === "GREETING")  return <GreetingCard  text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
+  if (cardType === "WALLET")    return <WalletCard    text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
+  if (cardType === "DEALS")     return <DealsCard     text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
+  if (cardType === "PAYMENTS")  return <PaymentsCard  text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
+  if (cardType === "EARNINGS")  return <EarningsCard  text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
+  if (cardType === "PRINCIPAL") return <PrincipalCard text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
+  if (cardType === "REFERRALS") return <ReferralsCard text={text} data={data} quickReplies={quickReplies} onSend={onSend} />;
   return null;
 }
 
@@ -1247,38 +1336,38 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
 
               <div style={
                 m.from === "bot"
-                  ? { ...styles.bubble, ...styles.botBubble, ...(m.data ? styles.richBubble : {}) }
+                  ? { ...styles.bubble, ...styles.botBubble, ...(m.data && !m.cardType ? styles.richBubble : {}) }
                   : { ...styles.bubble, ...styles.userBubble, background: cfg.color }
               }>
-                {/* Topic badge + caption for rich messages */}
-                {m.data ? (
-                  <>
-                    <TopicBadge type={m.data.type} />
-                    <div style={styles.richCaption}>{m.text}</div>
-                  </>
-                ) : m.cardType ? null : (
+                {/* Plain text for messages with no card and no rich data */}
+                {!m.cardType && !m.data && (
                   <div style={styles.bubbleText}>
                     <FormattedText text={m.text} />
                   </div>
                 )}
 
-                {m.data && <RichMessage data={m.data} />}
-
-                {m.from === "bot" && m.data && (
-                  <SuggestedFollowup type={m.data.type} onSend={handleSend} />
+                {/* Old-style rich messages (LENDER_PROFILE, EMI_SCHEDULE etc.) */}
+                {m.data && !m.cardType && (
+                  <>
+                    <TopicBadge type={m.data.type} />
+                    <div style={styles.richCaption}>{m.text}</div>
+                    <RichMessage data={m.data} />
+                    <SuggestedFollowup type={m.data.type} onSend={handleSend} />
+                  </>
                 )}
 
-                {/* Colorful chatbot cards for cardType responses */}
-                {m.from === "bot" && !m.data && m.cardType && (
+                {/* Colorful chatbot cards (WALLET, EARNINGS, DEALS, PAYMENTS, PRINCIPAL, REFERRALS) */}
+                {m.from === "bot" && m.cardType && (
                   <ChatbotCard
                     cardType={m.cardType}
                     text={m.text}
+                    data={m.data}
                     quickReplies={m.quickReplies}
                     onSend={handleSend}
                   />
                 )}
 
-                {/* Plain quick-reply buttons fallback (no cardType) */}
+                {/* Plain quick-reply buttons fallback (no cardType, no rich data) */}
                 {m.from === "bot" && !m.data && !m.cardType && m.quickReplies && m.quickReplies.length > 0 && (
                   <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {m.quickReplies.map((q, i) => (

@@ -1,10 +1,8 @@
 import axios from "axios";
 import { data } from "jquery";
-const userisIn = "local"; //local or production
-const API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+import { API_USER_URL, ENV, BASE_URL } from "../../config";
+const userisIn = ENV === "production" ? "production" : "local";
+const API_BASE_URL = API_USER_URL;
 
 export const getToken = () => {
   return sessionStorage.getItem("accessToken");
@@ -2775,18 +2773,12 @@ export const generateBorrowerAgreement1 = async (payload) => {
 
 export const chatbotapicall = async (messages, primaryType) => {
   const token = getToken();
-  const userId = getUserId();
   const postdata = {
     message: messages,
-    primaryType: primaryType || localStorage.getItem("primaryType") || "LENDER",
-    userId: userId ? parseInt(userId) : null,
   };
 
-  // Use central config so test builds hit test backend, prod builds hit prod
-  const { default: BASE_URL } = await import("../../config");
-
   const response = await axios({
-    url: `${BASE_URL}/v1/ai/chat`,
+    url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
     method: "POST",
     headers: {
       accessToken: `${token}`,
@@ -2984,10 +2976,7 @@ export const aggrementGenerationforLenderSide = async (payload) => {
 };
 
 // ── AI Layer API ──────────────────────────────────────────────────────────────
-const AI_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/ai/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/ai/";
+const AI_BASE_URL = BASE_URL + "/v1/ai/";
 
 export const getLenderAIPortfolio = async (lenderId) => {
   const token = getToken();
