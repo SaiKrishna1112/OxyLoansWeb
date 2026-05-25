@@ -16,7 +16,7 @@ const OxyloansAdminDashboard = () => {
   const [ActiveLenders, setActiveLenders] = useState({});
   const [loading, setLoading] = useState(false);
   const [dots, setDots] = useState('');
-const primaryType=sessionStorage.getItem('primaryType')
+const primaryType=localStorage.getItem('primaryType') || sessionStorage.getItem('primaryType')
 const email=sessionStorage.getItem('email')
 
 console.log("primaryType",primaryType)
@@ -137,7 +137,7 @@ useEffect(()=>{
           <div className="page-header">
             <div className="row">
               <div className="col-sm-12">
-                <h3 className="page-title text-primary">  Welcome {primaryType === "Admin" ? capitalize(primaryType) : capitalize(email.split("@")[0])}
+                <h3 className="page-title text-primary">  Welcome {email ? capitalize(email.split("@")[0]) : capitalize(primaryType)}
                 </h3>
               </div>
             </div>

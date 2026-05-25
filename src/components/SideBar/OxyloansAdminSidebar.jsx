@@ -77,6 +77,20 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"], // Show to all roles
     },
     {
+      key: "adminAIDashboard",
+      label: "🤖 AI Platform Stats",
+      link: "/adminAIDashboard",
+      icon: "fa-solid fa-robot",
+      type: ["ADMIN"],
+    },
+    {
+      key: "adminAIReconciliation",
+      label: "🤖 AI Reconciliation",
+      link: "/adminAIReconciliation",
+      icon: "fa-solid fa-scale-balanced",
+      type: ["ADMIN"],
+    },
+    {
       key: "lenderLoanApplications",
       label: "Lender Loan Applications",
       link: "/lenderLoanApplications",
@@ -242,6 +256,16 @@ const OxyloansAdminSidebar = () => {
       link: "/monthlyReturnedInterest",
       icon: "fas fa-hand-holding-usd",
       type: ["ADMIN","SUPERADMIN"],
+    },
+    {
+      key: "borrowerFees",
+      label: "Borrower Fees",
+      icon: "fa-solid fa-indian-rupee-sign",
+      children: [
+        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
+        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
+      ],
+      type: ["ADMIN", "SUPERADMIN"],
     },
 
   {

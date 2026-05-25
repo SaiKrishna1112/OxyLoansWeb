@@ -41,7 +41,7 @@ export const HandleWithTitle = () => {
 export const HandleWithFooter = (message) => {
   Swal.fire({
     type: "success",
-    title: "Congratulation",
+    title: "Congratulations",
     text: message,
     confirmButtonClass: "btn btn-primary",
     buttonsStyling: !1,
@@ -289,7 +289,7 @@ export const personalDetails = (message, route) => {
     showCancelButton: true,
     confirmButtonColor: "#3085d6",
     cancelButtonColor: "#d33",
-    confirmButtonText: "update",
+    confirmButtonText: "Update",
     cancelButtonText: "Skip",
   }).then((result) => {
     if (result.isConfirmed) {

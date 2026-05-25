@@ -127,6 +127,97 @@ const BorrowerSidebar = (props) => {
 
                 <li
                   className={`${
+                    "/borrowerLoanRequestCreate" === pathName ||
+                    "/borrowerRequestAmount" === pathName ||
+                    "/borrowerLoansInitiated" === pathName ||
+                    "/borrowerDisbursementAmount" === pathName ||
+                    "/borrowerDisbursementInterestAmount" === pathName
+                      ? "active submenu"
+                      : "submenu"
+                  }`}
+                >
+                  <Link
+                    to="#"
+                    className={
+                      isSideMenu == "borrowerLoanRequests" ? "subdrop" : ""
+                    }
+                    onClick={() =>
+                      toggleSidebar(
+                        isSideMenu == "borrowerLoanRequests"
+                          ? ""
+                          : "borrowerLoanRequests",
+                      )
+                    }
+                  >
+                    <i className="fa-solid fa-hand-holding-dollar"></i>
+                    <span> Loan Applications </span>
+                    <span className="menu-arrow"></span>
+                  </Link>
+                  {isSideMenu == "borrowerLoanRequests" ? (
+                    <ul
+                      style={{
+                        display:
+                          isSideMenu == "borrowerLoanRequests"
+                            ? "block"
+                            : "none",
+                      }}
+                    >
+                      <li>
+                        <Link
+                          to="/borrowerLoanRequestCreate"
+                          className={`${
+                            "/borrowerLoanRequestCreate" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Apply for a Loan
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/borrowerRequestAmount"
+                          className={`${
+                            "/borrowerRequestAmount" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          My Loan Requests
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/borrowerLoansInitiated"
+                          className={`${
+                            "/borrowerLoansInitiated" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Offers Received Amount
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/borrowerDisbursementAmount"
+                          className={`${
+                            "/borrowerDisbursementAmount" === pathName
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Disburse Loans
+                        </Link>
+                      </li>
+                    </ul>
+                  ) : (
+                    ""
+                  )}
+                </li>
+
+                <li
+                  className={`${
                     "/borrowerenach" === pathName ||
                     "/borrowerloanstatement" === pathName ||
                     "/borrowerAgreedLoans" === pathName ||
@@ -140,7 +231,7 @@ const BorrowerSidebar = (props) => {
                     className={isSideMenu == "myborrowings" ? "subdrop" : ""}
                     onClick={() =>
                       toggleSidebar(
-                        isSideMenu == "myborrowings" ? "" : "myborrowings"
+                        isSideMenu == "myborrowings" ? "" : "myborrowings",
                       )
                     }
                   >
@@ -316,7 +407,7 @@ const BorrowerSidebar = (props) => {
                     className={isSideMenu == "MyNetwork" ? "subdrop" : ""}
                     onClick={() =>
                       toggleSidebar(
-                        isSideMenu == "MyNetwork" ? "" : "MyNetwork"
+                        isSideMenu == "MyNetwork" ? "" : "MyNetwork",
                       )
                     }
                   >
