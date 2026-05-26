@@ -57,7 +57,7 @@ export const sendotpemail = async (email) => {
 export const Admlog = async (userid, password) => {
   const data = {
     id: userid,
-    password: password,
+    primaryType: password,
   };
   const response = await handleApiRequestBeforeLogin(
     "POST",

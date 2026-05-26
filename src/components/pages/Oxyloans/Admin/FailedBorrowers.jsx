@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Header from "../../../Header/OxyloansAdminHeader";
 import {
   getPendingBorrowerList,
   updateBorrowerComment,
+  getFailedBorrowerDocuments,
+  uploadBorrowerDocument,
 } from "../../../HttpRequest/admin";
 import Footer from "../../../Footer/Footer";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
@@ -51,6 +53,12 @@ const FailedBorrowers = () => {
     useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(false);
+  const [fetchedDocs, setFetchedDocs] = useState([]);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isValidComment = (value) => {
     if (value === null || value === undefined) return false;
@@ -138,8 +146,36 @@ const FailedBorrowers = () => {
     setSelectedBorrower(null);
   };
 
-  const handleDocumentsClick = (borrower) => {
+  const handleDocumentsClick = async (borrower) => {
     setSelectedDocumentsBorrower(borrower);
+    setFetchedDocs([]);
+    setUploadFile(null);
+    setDocsLoading(true);
+    try {
+      const res = await getFailedBorrowerDocuments(borrower.borrowerId);
+      setFetchedDocs(Array.isArray(res?.data) ? res.data : []);
+    } catch {
+      setFetchedDocs([]);
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!uploadFile || !selectedDocumentsBorrower) return;
+    setUploading(true);
+    try {
+      await uploadBorrowerDocument(selectedDocumentsBorrower.borrowerId, uploadFile);
+      setUploadFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      Swal.fire({ title: "Uploaded!", text: "Document uploaded successfully.", icon: "success", timer: 2000, showConfirmButton: false });
+      const res = await getFailedBorrowerDocuments(selectedDocumentsBorrower.borrowerId);
+      setFetchedDocs(Array.isArray(res?.data) ? res.data : []);
+    } catch {
+      Swal.fire({ title: "Error", text: "Upload failed. Please try again.", icon: "error" });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const closeDocumentsView = () => {
@@ -281,176 +317,179 @@ const FailedBorrowers = () => {
 
       <div className="page-wrapper">
         <div className="content">
-           {!selectedDocumentsBorrower && (
+          {!selectedDocumentsBorrower && (
             <>
-          <div className="page-header">
-            <div className="row align-items-center">
-              <div className="col-6">
-                <h3 className="page-title mb-0">Pending Borrowers</h3>
-              </div>
-
-              <div className="col-6">
-                <div className="d-flex flex-column align-items-end">
-                  <label
-                    className="mb-1"
-                    style={{ fontWeight: "600", fontSize: "13px" }}
-                  >
-                    Select Allocator Name
-                  </label>
-
-                  <select
-                    className="form-control form-control-sm"
-                    style={{ maxWidth: "200px" }}
-                    value={selectedName}
-                    onChange={(e) => handleNameChange(e.target.value)}
-                  >
-                    {defaultNames.map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <div className="card-body px-0 py-2">
-              <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
-                <div className="d-flex flex-column flex-sm-row gap-2 flex-wrap">
-                  <button
-                    className={`btn btn-sm px-4 py-2 d-flex align-items-center justify-content-center shadow-md rounded-md fw-semibold ${
-                      activeTab === "all"
-                        ? "text-dark border-0"
-                        : "btn-light border text-dark"
-                    }`}
-                    onClick={() => handleTabChange("all")}
-                    style={{
-                      background:
-                        activeTab === "all"
-                          ? "linear-gradient(135deg, #f8f9fa, #ffffff)"
-                          : "#ffffff",
-                      minWidth: "140px",
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    <span className="me-1">ALL</span>
-                    <span
-                      className="badge rounded-pill ml-1"
-                      style={{
-                        background: activeTab === "all" ? "#212529" : "#f1f3f5",
-                        color: activeTab === "all" ? "#ffffff" : "#212529",
-                        fontSize: "11px",
-                        padding: "5px 8px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      {borrowers.length}
-                    </span>
-                  </button>
-
-                  <button
-                    className={`btn btn-sm px-4 py-2 d-flex align-items-center justify-content-center shadow-md rounded-md fw-semibold transition-all ${
-                      activeTab === "updated"
-                        ? "text-white border-0"
-                        : "btn-light border text-success"
-                    }`}
-                    onClick={() => handleTabChange("updated")}
-                    style={{
-                      background:
-                        activeTab === "updated"
-                          ? "linear-gradient(135deg, #198754, #157347)"
-                          : "#fff",
-                      minWidth: "190px",
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    <span className="me-1">Comments Updated</span>
-                    <span
-                      className="badge rounded-pill ml-2"
-                      style={{
-                        background:
-                          activeTab === "updated" ? "#ffffff" : "#198754",
-                        color: activeTab === "updated" ? "#198754" : "#ffffff",
-                        fontSize: "11px",
-                        padding: "5px 8px",
-                      }}
-                    >
-                      {updatedBorrowers.length}
-                    </span>
-                  </button>
-
-                  <button
-                    className={`btn btn-sm px-4 py-2 d-flex align-items-center justify-content-center shadow-md rounded-md fw-semibold transition-all ${
-                      activeTab === "pending"
-                        ? "text-white border-0"
-                        : "btn-light border text-primary"
-                    }`}
-                    onClick={() => handleTabChange("pending")}
-                    style={{
-                      background:
-                        activeTab === "pending"
-                          ? "linear-gradient(135deg, #0d6efd, #0b5ed7)"
-                          : "#fff",
-                      minWidth: "190px",
-                      transition: "all 0.3s ease",
-                    }}
-                  >
-                    <span className="me-1">Comments Pending</span>
-                    <span
-                      className="badge rounded-pill ml-2"
-                      style={{
-                        background:
-                          activeTab === "pending" ? "#ffffff" : "#0d6efd",
-                        color: activeTab === "pending" ? "#0d6efd" : "#ffffff",
-                        fontSize: "11px",
-                        padding: "5px 8px",
-                      }}
-                    >
-                      {pendingBorrowers.length}
-                    </span>
-                  </button>
-                </div>
-
-                <div className="d-flex align-items-center justify-content-center justify-content-md-end gap-2 flex-wrap">
-                  <button
-                    className="btn btn-sm btn-outline-secondary px-3 py-2"
-                    disabled={apiPage === 1 || loading}
-                    onClick={handleApiPrevious}
-                  >
-                    <i className="fa-solid fa-angle-left me-1"></i>
-                    Previous
-                  </button>
-
-                  <div
-                    className="px-3 py-2 rounded-pill border text-dark"
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: "600",
-                      minWidth: "90px",
-                      textAlign: "center",
-                    }}
-                  >
-                    Page {apiPage}
+              <div className="page-header">
+                <div className="row align-items-center">
+                  <div className="col-6">
+                    <h3 className="page-title mb-0">Pending Borrowers</h3>
                   </div>
 
-                  <button
-                    className="btn btn-sm btn-outline-primary px-3 py-2"
-                    disabled={loading}
-                    onClick={handleApiNext}
-                  >
-                    Next
-                    <i className="fa-solid fa-angle-right ms-1"></i>
-                  </button>
+                  <div className="col-6">
+                    <div className="d-flex flex-column align-items-end">
+                      <label
+                        className="mb-1"
+                        style={{ fontWeight: "600", fontSize: "13px" }}
+                      >
+                        Select Allocator Name
+                      </label>
+
+                      <select
+                        className="form-control form-control-sm"
+                        style={{ maxWidth: "200px" }}
+                        value={selectedName}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                      >
+                        {defaultNames.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
 
-      {selectedDocumentsBorrower ? (
+              <div className="mb-3">
+                <div className="card-body px-0 py-2">
+                  <div className="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+                    <div className="d-flex flex-column flex-sm-row gap-2 flex-wrap">
+                      <button
+                        className={`btn btn-sm px-4 py-2 d-flex align-items-center justify-content-center shadow-md rounded-md fw-semibold ${
+                          activeTab === "all"
+                            ? "text-dark border-0"
+                            : "btn-light border text-dark"
+                        }`}
+                        onClick={() => handleTabChange("all")}
+                        style={{
+                          background:
+                            activeTab === "all"
+                              ? "linear-gradient(135deg, #f8f9fa, #ffffff)"
+                              : "#ffffff",
+                          minWidth: "140px",
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        <span className="me-1">ALL</span>
+                        <span
+                          className="badge rounded-pill ml-1"
+                          style={{
+                            background:
+                              activeTab === "all" ? "#212529" : "#f1f3f5",
+                            color: activeTab === "all" ? "#ffffff" : "#212529",
+                            fontSize: "11px",
+                            padding: "5px 8px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {borrowers.length}
+                        </span>
+                      </button>
+
+                      <button
+                        className={`btn btn-sm px-4 py-2 d-flex align-items-center justify-content-center shadow-md rounded-md fw-semibold transition-all ${
+                          activeTab === "updated"
+                            ? "text-white border-0"
+                            : "btn-light border text-success"
+                        }`}
+                        onClick={() => handleTabChange("updated")}
+                        style={{
+                          background:
+                            activeTab === "updated"
+                              ? "linear-gradient(135deg, #198754, #157347)"
+                              : "#fff",
+                          minWidth: "190px",
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        <span className="me-1">Comments Updated</span>
+                        <span
+                          className="badge rounded-pill ml-2"
+                          style={{
+                            background:
+                              activeTab === "updated" ? "#ffffff" : "#198754",
+                            color:
+                              activeTab === "updated" ? "#198754" : "#ffffff",
+                            fontSize: "11px",
+                            padding: "5px 8px",
+                          }}
+                        >
+                          {updatedBorrowers.length}
+                        </span>
+                      </button>
+
+                      <button
+                        className={`btn btn-sm px-4 py-2 d-flex align-items-center justify-content-center shadow-md rounded-md fw-semibold transition-all ${
+                          activeTab === "pending"
+                            ? "text-white border-0"
+                            : "btn-light border text-primary"
+                        }`}
+                        onClick={() => handleTabChange("pending")}
+                        style={{
+                          background:
+                            activeTab === "pending"
+                              ? "linear-gradient(135deg, #0d6efd, #0b5ed7)"
+                              : "#fff",
+                          minWidth: "190px",
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        <span className="me-1">Comments Pending</span>
+                        <span
+                          className="badge rounded-pill ml-2"
+                          style={{
+                            background:
+                              activeTab === "pending" ? "#ffffff" : "#0d6efd",
+                            color:
+                              activeTab === "pending" ? "#0d6efd" : "#ffffff",
+                            fontSize: "11px",
+                            padding: "5px 8px",
+                          }}
+                        >
+                          {pendingBorrowers.length}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="d-flex align-items-center justify-content-center justify-content-md-end gap-2 flex-wrap">
+                      <button
+                        className="btn btn-sm btn-outline-secondary px-3 py-2"
+                        disabled={apiPage === 1 || loading}
+                        onClick={handleApiPrevious}
+                      >
+                        <i className="fa-solid fa-angle-left me-1"></i>
+                        Previous
+                      </button>
+
+                      <div
+                        className="px-3 py-2 rounded-pill border text-dark"
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          minWidth: "90px",
+                          textAlign: "center",
+                        }}
+                      >
+                        Page {apiPage}
+                      </div>
+
+                      <button
+                        className="btn btn-sm btn-outline-primary px-3 py-2"
+                        disabled={loading}
+                        onClick={handleApiNext}
+                      >
+                        Next
+                        <i className="fa-solid fa-angle-right ms-1"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {selectedDocumentsBorrower ? (
             <div className="card shadow-sm border-0 animate__animated animate__fadeIn">
               <div className="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                 <div className="d-flex align-items-center gap-3">
@@ -476,6 +515,7 @@ const FailedBorrowers = () => {
               <div className="card-body bg-light-50">
                 <div className="row g-4">
                   <div className="col-12">
+                    {/* Existing list docs */}
                     <div className="d-flex align-items-center gap-2 mb-3">
                       <div
                         className="bg-primary rounded"
@@ -483,8 +523,7 @@ const FailedBorrowers = () => {
                       ></div>
                       <h5 className="mb-0 fw-bold">All Uploaded Documents</h5>
                     </div>
-
-                    <div className="row g-3">
+                    <div className="row g-3 mb-4">
                       {selectedDocumentsBorrower.list &&
                       selectedDocumentsBorrower.list.length > 0 ? (
                         selectedDocumentsBorrower.list.map((doc, idx) => {
@@ -492,7 +531,6 @@ const FailedBorrowers = () => {
                           const fileName = url
                             ? url.split("/").pop()
                             : "Not Uploaded";
-
                           return (
                             <div className="col-md-6 col-lg-4" key={idx}>
                               <div className="card h-100 border-0 shadow-sm hover-shadow-md transition-all">
@@ -504,11 +542,7 @@ const FailedBorrowers = () => {
                                       ).replace(/_/g, " ")}
                                     </h6>
                                     <span
-                                      className={`badge ${
-                                        url
-                                          ? "badge-soft-success"
-                                          : "badge-soft-secondary"
-                                      } small`}
+                                      className={`badge ${url ? "badge-soft-success" : "badge-soft-secondary"} small`}
                                       style={{
                                         backgroundColor: url
                                           ? "#e6fffa"
@@ -521,12 +555,13 @@ const FailedBorrowers = () => {
                                       {url ? "UPLOADED" : "PENDING"}
                                     </span>
                                   </div>
-                                  
                                   <button
                                     className="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2"
                                     disabled={!url}
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.preventDefault();
                                       setPreviewUrl(url);
+                                      setIframeLoading(true);
                                       setShowPreviewModal(true);
                                     }}
                                   >
@@ -547,6 +582,119 @@ const FailedBorrowers = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Upload Aadhar Section */}
+                    <div className="d-flex align-items-center gap-2 mb-3">
+                      <div
+                        className="bg-success rounded"
+                        style={{ width: "4px", height: "24px" }}
+                      ></div>
+                      <h5 className="mb-0 fw-bold">
+                        Upload Borrower Documents
+                      </h5>
+                    </div>
+                    <div className="d-flex align-items-center gap-3 mb-4 flex-wrap">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        className="form-control"
+                        style={{ maxWidth: "320px" }}
+                        accept="image/*,.pdf"
+                        onChange={(e) =>
+                          setUploadFile(e.target.files[0] || null)
+                        }
+                      />
+                      <button
+                        className="btn btn-success px-4"
+                        disabled={!uploadFile || uploading}
+                        onClick={handleUpload}
+                      >
+                        {uploading ? (
+                          "Uploading..."
+                        ) : (
+                          <>
+                            <i className="fa-solid fa-upload me-1"></i>Upload
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* GET API fetched docs */}
+                    <div className="d-flex align-items-center gap-2 mb-3">
+                      <div
+                        className="bg-warning rounded"
+                        style={{ width: "4px", height: "24px" }}
+                      ></div>
+                      <h5 className="mb-0 fw-bold">Borrower Documents</h5>
+                    </div>
+                    {docsLoading ? (
+                      <div className="text-center py-4">
+                        <div
+                          className="spinner-border text-primary"
+                          role="status"
+                        />
+                      </div>
+                    ) : (
+                      <div className="row g-3">
+                        {fetchedDocs.length > 0 ? (
+                          fetchedDocs.map((doc) => {
+                            const url = doc.document;
+                            const fileName = url ? url.split("/").pop() : "—";
+                            return (
+                              <div className="col-md-6 col-lg-4" key={doc.id}>
+                                <div className="card h-100 border-0 shadow-sm">
+                                  <div className="card-body p-3">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                      <h6
+                                        className="fw-bold mb-0"
+                                        style={{
+                                          fontSize: "12px",
+                                          wordBreak: "break-all",
+                                        }}
+                                      >
+                                        {fileName}
+                                      </h6>
+                                      <span
+                                        className="badge"
+                                        style={{
+                                          backgroundColor: "#e6fffa",
+                                          color: "#38b2ac",
+                                          fontSize: "10px",
+                                          padding: "4px 8px",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        UPLOADED
+                                      </span>
+                                    </div>
+                                    <button
+                                      className="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-center gap-2 py-2"
+                                      disabled={!url}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setPreviewUrl(url);
+                                        setIframeLoading(true);
+                                        setShowPreviewModal(true);
+                                      }}
+                                    >
+                                      <i className="fa-solid fa-eye"></i>
+                                      View Document
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="col-12">
+                            <div className="alert alert-info text-center py-4">
+                              <i className="fa-solid fa-folder-open mb-2 d-block fs-3"></i>
+                              No borrower documents uploaded yet.
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -630,7 +778,7 @@ const FailedBorrowers = () => {
                                 <th>Borrower Info</th>
                                 <th>Loan Details</th>
                                 <th>Pending Details</th>
-                               
+
                                 <th>Comments</th>
                                 <th>Action</th>
                               </tr>
@@ -641,12 +789,31 @@ const FailedBorrowers = () => {
                                 <tr key={borrower.id}>
                                   <td>
                                     <div style={{ fontSize: "15px" }}>
-                                      <div>
-                                        <strong>Name:</strong>{" "}
-                                        <strong>{borrower.borrowerName}</strong>
+                                      <div
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "flex-start",
+                                          gap: "4px",
+                                          flexWrap: "wrap",
+                                        }}
+                                      >
+                                        <strong>Name:</strong>
+
+                                        <strong
+                                          style={{
+                                            wordBreak: "break-word",
+                                            overflowWrap: "break-word",
+                                            whiteSpace: "normal",
+                                            flex: 1,
+                                            minWidth: 0,
+                                          }}
+                                        >
+                                          {borrower.borrowerName}
+                                        </strong>
                                       </div>
                                       <div>
-                                        <strong>ID:</strong> {borrower.borrowerId}
+                                        <strong>ID:</strong>{" "}
+                                        {borrower.borrowerId}
                                       </div>
                                       <div>
                                         <strong>Phone:</strong> {borrower.phone}
@@ -700,7 +867,6 @@ const FailedBorrowers = () => {
                                     </div>
                                   </td>
 
-
                                   <td>
                                     <div style={{ fontSize: "15px" }}>
                                       {isValidComment(borrower.comments) ? (
@@ -718,7 +884,7 @@ const FailedBorrowers = () => {
                                   <td>
                                     <div className="d-flex flex-column gap-2">
                                       <button
-                                        className="btn btn-sm btn-info text-white"
+                                        className="btn btn-md btn-info text-white"
                                         onClick={() =>
                                           handleCommentClick(borrower)
                                         }
@@ -730,13 +896,13 @@ const FailedBorrowers = () => {
                                       </button>
 
                                       <button
-                                        className="btn btn-sm btn-primary text-white"
+                                        className="btn btn-md btn-primary text-white"
                                         onClick={() =>
                                           handleDocumentsClick(borrower)
                                         }
                                       >
                                         <i className="fa-solid fa-file-lines me-1"></i>
-                                        Borrower Documents
+                                        View / Upload Documents
                                       </button>
                                     </div>
                                   </td>
@@ -864,7 +1030,10 @@ const FailedBorrowers = () => {
                     <button
                       type="button"
                       className="close text-white border-0 bg-transparent"
-                      onClick={() => setShowPreviewModal(false)}
+                      onClick={() => {
+                        setShowPreviewModal(false);
+                        setIframeLoading(false);
+                      }}
                       style={{ fontSize: "30px", opacity: "0.8" }}
                     >
                       <span aria-hidden="true">&times;</span>
@@ -872,14 +1041,46 @@ const FailedBorrowers = () => {
                   </div>
                   <div
                     className="modal-body p-0 bg-secondary"
-                    style={{ height: "80vh", overflow: "hidden" }}
+                    style={{
+                      height: "80vh",
+                      overflow: "hidden",
+                      position: "relative",
+                    }}
                   >
+                    {iframeLoading && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "rgba(0,0,0,0.6)",
+                          zIndex: 10,
+                          color: "#fff",
+                          gap: "12px",
+                        }}
+                      >
+                        <div
+                          className="spinner-border text-light"
+                          role="status"
+                          style={{ width: "48px", height: "48px" }}
+                        />
+                        <span style={{ fontSize: "14px", fontWeight: 500 }}>
+                          Loading document...
+                        </span>
+                      </div>
+                    )}
                     {previewUrl ? (
-                      previewUrl.toLowerCase().match(/\.(jpg|jpeg|png|gif)$/) ? (
+                      previewUrl
+                        .toLowerCase()
+                        .match(/\.(jpg|jpeg|png|gif)$/) ? (
                         <div className="h-100 d-flex align-items-center justify-content-center p-3">
                           <img
                             src={previewUrl}
                             alt="Document Preview"
+                            onLoad={() => setIframeLoading(false)}
                             style={{
                               maxWidth: "100%",
                               maxHeight: "100%",
@@ -890,11 +1091,12 @@ const FailedBorrowers = () => {
                         </div>
                       ) : (
                         <iframe
-                          src={previewUrl}
+                          src={`https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`}
                           title="Document Preview"
                           width="100%"
                           height="100%"
                           style={{ border: "none" }}
+                          onLoad={() => setIframeLoading(false)}
                         />
                       )
                     ) : (
@@ -924,7 +1126,6 @@ const FailedBorrowers = () => {
               </div>
             </div>
           )}
-
         </div>
 
         <Footer />

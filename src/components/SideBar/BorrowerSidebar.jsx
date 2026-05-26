@@ -390,14 +390,14 @@ const BorrowerSidebar = (props) => {
               </ul>
               {/* /Main Menu*/}
               {/* AI Insights */}
-              <ul>
+              {/* <ul>
                 <li className={`${"/ai/borrower-insights" === pathName ? "active" : ""}`}>
                   <Link to="/ai/borrower-insights">
                     <i className="fa-solid fa-brain"></i>
                     <span>AI Loan Insights</span>
                   </Link>
                 </li>
-              </ul>
+              </ul> */}
               {/* /AI Insights */}
               {/* Management */}
               <ul>
@@ -477,7 +477,7 @@ const BorrowerSidebar = (props) => {
                 </li>
 
                 {/* Marketplace Menu Items */}
-                <li className={`${"/post-loan-request" === pathName ? "active" : ""}`}>
+                {/* <li className={`${"/post-loan-request" === pathName ? "active" : ""}`}>
                   <Link to="/post-loan-request">
                     <i className="fa-solid fa-store"></i>
                     <span>Post Loan Request</span>
@@ -506,7 +506,7 @@ const BorrowerSidebar = (props) => {
                     <i className="fa-solid fa-chart-line"></i>
                     <span>My OxyScore</span>
                   </Link>
-                </li>
+                </li> */}
                 {/* End Marketplace Menu Items */}
 
                 <li className={`${"/" === pathName ? "active" : ""}`}>

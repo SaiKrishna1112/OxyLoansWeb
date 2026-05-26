@@ -175,24 +175,6 @@ const BorrowerDashboard = () => {
 useEffect(() => {
   getCall();   
 },[])
-  const getCall=()=>{
-axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
-  headers:{
-    accessToken: sessionStorage.getItem('accessToken'),
-  }
-})
-.then((response) => {
-  console.log("response", response);
-   setProfileDetails(response.data);
-   if((response.data.city == null || response.data.city == "") && !localStorage.getItem("userCity")){
-    setShow(true);
-   }
-
-})
-.catch((error) => {
-  console.log("error",error)
-})
-  }
 
   const getCall = () => {
     axios
@@ -329,7 +311,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         </li>
                       </ul>
                     </div>
-                    <Link to="/borrower-analytics">
+                    {/* <Link to="/borrower-analytics">
                       <button
                         style={{
                           padding: "6px 16px",
@@ -344,7 +326,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                       >
                         Analytics
                       </button>
-                    </Link>
+                    </Link> */}
                   </div>
                   <p>Track your loan requests, offers, and repayments</p>
                 </div>
@@ -609,7 +591,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           </Modal>
       </div>
       {/* /Main Wrapper */}
-      <FloatingAssistant avatarSrc={logo} />
+      {/* <FloatingAssistant avatarSrc={logo} /> */}
     </>
   );
 };

@@ -9,7 +9,7 @@
 
 const LOCAL_IP = "15.207.239.145"; // test EC2; change to "localhost" for local dev
 
-const ENV = "local"; // "local" | "production"
+const ENV = "production"; // "local" | "production"
 
 const BASE_URL =
   ENV === "local"

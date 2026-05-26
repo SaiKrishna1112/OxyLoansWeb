@@ -172,6 +172,7 @@ import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/
 import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
 import ActiveLendersParticipationPage from "./components/pages/Oxyloans/Admin/ActiveLenders/ActiveLendersParticipationPage.jsx";
 import FailedBorrowers from "./components/pages/Oxyloans/Admin/FailedBorrowers.jsx";
+import DealsInfo from "./components/pages/Oxyloans/Admin/DealsInfo.jsx";
 import CollectionsAdminDashboard from "./components/pages/Oxyloans/Admin/CollectionsAdminDashboard";
 import AgentPortal from "./components/pages/Oxyloans/Admin/AgentPortal";
 import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
@@ -201,8 +202,8 @@ const AppRouter = () => {
     <BrowserRouter>
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
-        <Route path="/" element={<Loginotp />} />
-        <Route path="/login" element={<Loginotp />} />
+        <Route path="/" element={<Login />} />
+        {/* <Route path="/login" element={<Login />} /> */}
         <Route path="/loginotp" element={<Loginotp />} />
         <Route path="/admlogin" element={<Admlogin />} />
         <Route path="/dashboard" element={<AdminDashboard />} />
@@ -528,6 +529,7 @@ const AppRouter = () => {
         <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
         <Route path="/adminProcessingFees" element={<ProcessingFees />} />
         <Route path="/failedborrowers" element={<FailedBorrowers />} />
+        <Route path="/dealsInfo" element={<DealsInfo />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
         {/* MARKETPLACE */}
         <Route path="/post-loan-request" element={<PrivateRoute element={<PostLoanRequest />} />} />

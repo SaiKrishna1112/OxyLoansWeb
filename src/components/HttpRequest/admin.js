@@ -903,3 +903,26 @@ export const getPendingBorrowerList = async (pageNo, pageSize, name) => {
 
   return response;
 };
+
+export const getFailedBorrowerDocuments = async (borrowerId) => {
+  const token = getToken();
+  const response = await axios({
+    method: "GET",
+    url: `${API_BASE_URL}getFailedBorrowerDocuments/${borrowerId}`,
+    headers: { accessToken: token },
+  });
+  return response;
+};
+
+export const uploadBorrowerDocument = async (borrowerId, file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("AADHAR", file);
+  const response = await axios({
+    method: "POST",
+    url: `${API_BASE_URL}borrowerFileUpload/${borrowerId}`,
+    data: formData,
+    headers: { accessToken: token },
+  });
+  return response;
+};

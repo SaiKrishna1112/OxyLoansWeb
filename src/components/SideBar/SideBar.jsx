@@ -111,6 +111,7 @@ const Sidebar = (props) => {
                   <Link to="/ai/portfolio">
                     <i className="fa-solid fa-brain"></i>
                     <span> AI Dashboard </span>
+                    <span className="menu-arrow"></span>
                   </Link>
                 </li>
                 <li className={`${"/dashboard" === pathName ? "active" : ""}`}>
@@ -121,13 +122,13 @@ const Sidebar = (props) => {
                   </Link>
                 </li>
 
-                <li className={`${"/lenderAIDashboard" === pathName ? "active" : ""}`}>
+                {/* <li className={`${"/lenderAIDashboard" === pathName ? "active" : ""}`}>
                   <Link to="/lenderAIDashboard">
                     <i className="fa-solid fa-robot"></i>{" "}
                     <span> AI Portfolio Dashboard </span>
                     <span className="menu-arrow"></span>
                   </Link>
-                </li>
+                </li> */}
 
                 <li
                   className={`${

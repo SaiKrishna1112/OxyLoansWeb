@@ -47,7 +47,7 @@ const SectionCard = ({ title, badge, children }) => (
 const OxyloansAdminDashboard = () => {
   const[userData,setUserData]=useState({})
   const [ActiveLenders, setActiveLenders] = useState({});
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [dots, setDots] = useState('');
 const primaryType=localStorage.getItem('primaryType') || sessionStorage.getItem('primaryType')
   const email = sessionStorage.getItem("email") || localStorage.getItem("email") || "";
@@ -91,6 +91,9 @@ const primaryType=localStorage.getItem('primaryType') || sessionStorage.getItem(
   const fyPrincipals = fyHist.map(f => f.principalReturned);
 
   const chartFont = { fontFamily: "inherit" };
+
+  const capitalize = (text) =>
+  text.charAt(0).toUpperCase() + text.slice(1);
 
   return (
     <div className="main-wrapper">
@@ -356,7 +359,7 @@ const primaryType=localStorage.getItem('primaryType') || sessionStorage.getItem(
         </div>
         <Footer />
       </div>
-      <FloatingAssistant avatarSrc={logo} />
+      {/* <FloatingAssistant avatarSrc={logo} /> */}
     </div>
   );
 };

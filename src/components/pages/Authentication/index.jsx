@@ -76,7 +76,7 @@ const Login = () => {
         sessionStorage.setItem("accessToken", retriveresponse.headers?.accesstoken || retriveresponse.data.accessToken);
         localStorage.setItem("accessToken", retriveresponse.headers?.accesstoken || retriveresponse.data.accessToken);
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
+          history("/ai/portfolio");
         } else if (retriveresponse.data.primaryType == "ADMIN") {
           history("/oxyloansadmindashboard");
         }else if (retriveresponse.data.primaryType == "HELPDESKADMIN") {
