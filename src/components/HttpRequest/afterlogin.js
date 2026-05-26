@@ -3168,3 +3168,27 @@ export const getMyCollectionCases = () =>
 export const syncCollections = () =>
   axios.post(`${MARKETPLACE_BASE}/v1/collections/sync`, {}, { headers: marketplaceHeaders() });
 
+export const getPCreditReportDoc = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/CREDIT_REPORT`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const borrowerSecureInfo = (payload) =>
+  axios.patch(`${API_BASE_URL}borrowerSecureInfo`, payload, {
+    headers: { accessToken: getToken(), "Content-Type": "application/json" },
+  });
+
+export const getBorrowerSecureInfo = () => {
+  const userId = sessionStorage.getItem("userId");
+  return axios.get(`${API_BASE_URL}${userId}/borrower`, {
+    headers: { accessToken: getToken() },
+  });
+};
+
