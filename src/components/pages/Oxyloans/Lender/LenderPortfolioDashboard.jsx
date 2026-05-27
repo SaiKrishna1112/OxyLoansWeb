@@ -376,12 +376,20 @@ const buildFyTabs = () => {
   }));
 };
 
+const currentMonthFilter = () => {
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+  return { mode: "month", fyYear: null, from: `${y}-${m}-01`, to: `${y}-${m}-${lastDay}` };
+};
+
 const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
   const tabs = buildFyTabs();
   const [customFrom, setCustomFrom] = useState(fyFilter.from || "");
   const [customTo,   setCustomTo]   = useState(fyFilter.to   || "");
 
   const isActive = (mode, fyYear) => {
+    if (mode === "month")  return fyFilter.mode === "month";
     if (mode === "all")    return fyFilter.mode === "all";
     if (mode === "fy")     return fyFilter.mode === "fy" && fyFilter.fyYear === fyYear;
     if (mode === "custom") return fyFilter.mode === "custom";
@@ -412,6 +420,9 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 12, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1, marginRight: 4, whiteSpace: "nowrap" }}>Earnings Period</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, background: "#fafafa", borderRadius: 24, padding: "4px 6px", border: "1px solid #f0f0f0" }}>
+          <button style={tabStyle(isActive("month"))} onClick={() => setFyFilter(currentMonthFilter())}>
+            Current Month
+          </button>
           <button style={tabStyle(isActive("all"))} onClick={() => setFyFilter({ mode: "all", fyYear: null, from: "", to: "" })}>
             All Time
           </button>
@@ -1055,7 +1066,7 @@ const LenderPortfolioDashboard = () => {
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dealsShown, setDealsShown] = useState(10);
-  const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
+  const [fyFilter, setFyFilter] = useState(currentMonthFilter());
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [reminderSent, setReminderSent] = useState({});
@@ -1103,7 +1114,7 @@ const LenderPortfolioDashboard = () => {
     const params = new URLSearchParams();
     if (fyFilter.mode === "fy" && fyFilter.fyYear) {
       params.append("fy", fyFilter.fyYear);
-    } else if (fyFilter.mode === "custom" && fyFilter.from && fyFilter.to) {
+    } else if ((fyFilter.mode === "custom" || fyFilter.mode === "month") && fyFilter.from && fyFilter.to) {
       params.append("from", fyFilter.from);
       params.append("to", fyFilter.to);
     }
