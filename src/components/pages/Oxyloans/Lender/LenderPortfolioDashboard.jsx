@@ -1224,12 +1224,21 @@ const LenderPortfolioDashboard = () => {
                 const gapMsg        = data.investableGapMessage || "";
                 const principalThisMonth = data.currentMonthPrincipalReturned || 0;
                 return (
+                  <>
                   <div className="row mb-4 g-3">
                     {/* Tile 1: Interest This Month */}
                     <div className="col-12 col-sm-6 col-lg">
                       <div
                         style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default" }}
-                        onClick={() => interestByDeal.length > 0 && setInterestExpanded(v => !v)}
+                        onClick={() => {
+                          if (interestByDeal.length > 0) {
+                            setInterestExpanded(true);
+                            setTimeout(() => {
+                              const el = document.getElementById("interest-detail-section");
+                              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 50);
+                          }
+                        }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                           <span style={{ fontSize: 20 }}>📈</span>
@@ -1250,17 +1259,7 @@ const LenderPortfolioDashboard = () => {
                           </>
                         )}
                         {interestByDeal.length > 0 && (
-                          <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view breakdown"}</div>
-                        )}
-                        {interestExpanded && interestByDeal.length > 0 && (
-                          <div style={{ marginTop: 10, borderTop: "1px solid #b7eb8f", paddingTop: 8 }}>
-                            {interestByDeal.map((d, i) => (
-                              <div key={i} style={{ fontSize: 12, color: "#237804", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
-                                <span>{d.dealName || ("Deal #" + d.dealId)}</span>
-                                <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                              </div>
-                            ))}
-                          </div>
+                          <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>▼ view deal-wise breakdown</div>
                         )}
                       </div>
                     </div>
@@ -1336,6 +1335,60 @@ const LenderPortfolioDashboard = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Interest Received — deal-wise breakdown table */}
+                  {interestByDeal.length > 0 && (
+                    <div id="interest-detail-section" style={{ background: "#fff", borderRadius: 14, border: "1px solid #b7eb8f", marginBottom: 24, overflow: "hidden", boxShadow: "0 2px 8px rgba(82,196,26,0.08)" }}>
+                      <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                        onClick={() => setInterestExpanded(v => !v)}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 18 }}>📈</span>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: "#237804" }}>
+                            Interest Received — {new Date().toLocaleString("default", { month: "long" })} {new Date().getFullYear()}
+                          </span>
+                          <span style={{ fontSize: 12, color: "#52c41a", marginLeft: 4 }}>({interestByDeal.length} deals)</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: "#237804" }}>₹{fmt(earned)}</span>
+                          <span style={{ fontSize: 13, color: "#389e0d" }}>{interestExpanded ? "▲" : "▼"}</span>
+                        </div>
+                      </div>
+                      {interestExpanded && (
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                            <thead>
+                              <tr style={{ background: "#f6ffed", borderBottom: "2px solid #b7eb8f" }}>
+                                <th style={{ padding: "10px 16px", textAlign: "left", color: "#389e0d", fontWeight: 700 }}>#</th>
+                                <th style={{ padding: "10px 16px", textAlign: "left", color: "#389e0d", fontWeight: 700 }}>Deal Name</th>
+                                <th style={{ padding: "10px 16px", textAlign: "right", color: "#389e0d", fontWeight: 700 }}>Amount</th>
+                                <th style={{ padding: "10px 16px", textAlign: "center", color: "#389e0d", fontWeight: 700 }}>Paid On</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {interestByDeal.map((d, i) => (
+                                <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafff6" }}>
+                                  <td style={{ padding: "9px 16px", color: "#8c8c8c", fontSize: 12 }}>{i + 1}</td>
+                                  <td style={{ padding: "9px 16px", color: "#262626", fontWeight: 500, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={d.dealName}>{d.dealName || ("Deal #" + d.dealId)}</td>
+                                  <td style={{ padding: "9px 16px", textAlign: "right", fontWeight: 700, color: "#237804" }}>₹{fmt(d.amount)}</td>
+                                  <td style={{ padding: "9px 16px", textAlign: "center", color: "#595959" }}>
+                                    {d.paidDate ? new Date(d.paidDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }) : "—"}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr style={{ background: "#f6ffed", borderTop: "2px solid #b7eb8f" }}>
+                                <td colSpan={2} style={{ padding: "10px 16px", fontWeight: 700, color: "#237804" }}>Total</td>
+                                <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 700, color: "#237804", fontSize: 15 }}>₹{fmt(earned)}</td>
+                                <td />
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  </>
                 );
               })()}
 
