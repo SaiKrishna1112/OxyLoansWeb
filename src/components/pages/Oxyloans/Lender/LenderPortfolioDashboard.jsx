@@ -1067,6 +1067,7 @@ const LenderPortfolioDashboard = () => {
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [maturingExpanded, setMaturingExpanded] = useState(false);
+  const [interestExpanded, setInterestExpanded] = useState(false);
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
@@ -1204,16 +1205,21 @@ const LenderPortfolioDashboard = () => {
                 const projected = data.currentMonthInterestProjected || 0;
                 const total     = earned + projected;
                 const earnedPct = total > 0 ? Math.round((earned / total) * 100) : 0;
+                const interestByDeal = data.currentMonthInterestByDeal || [];
                 const maturingCount = data.maturingThisMonthCount || 0;
                 const maturingDeals = data.maturingThisMonthDeals || [];
                 const refCredited   = data.referralThisMonthCredited || 0;
                 const wallet        = data.walletBalance || 0;
                 const gapMsg        = data.investableGapMessage || "";
+                const principalThisMonth = data.currentMonthPrincipalReturned || 0;
                 return (
                   <div className="row mb-4 g-3">
                     {/* Tile 1: Interest This Month */}
-                    <div className="col-12 col-md-3">
-                      <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%" }}>
+                    <div className="col-12 col-sm-6 col-lg">
+                      <div
+                        style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default" }}
+                        onClick={() => interestByDeal.length > 0 && setInterestExpanded(v => !v)}
+                      >
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                           <span style={{ fontSize: 20 }}>📈</span>
                           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#389e0d", fontWeight: 700 }}>Interest This Month</div>
@@ -1232,25 +1238,54 @@ const LenderPortfolioDashboard = () => {
                             <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 4 }}>{earnedPct}% earned of month total</div>
                           </>
                         )}
+                        {interestByDeal.length > 0 && (
+                          <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view breakdown"}</div>
+                        )}
+                        {interestExpanded && interestByDeal.length > 0 && (
+                          <div style={{ marginTop: 10, borderTop: "1px solid #b7eb8f", paddingTop: 8 }}>
+                            {interestByDeal.map((d, i) => (
+                              <div key={i} style={{ fontSize: 12, color: "#237804", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                                <span>{d.dealName || ("Deal #" + d.dealId)}</span>
+                                <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* Tile 2: Ready to Invest */}
-                    <div className="col-12 col-md-3">
+                    {/* Tile 2: Wallet Balance */}
+                    <div className="col-12 col-sm-6 col-lg">
                       <div style={{ background: wallet > 500 ? "linear-gradient(135deg, #e6f7ff, #bae7ff)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: wallet > 500 ? "1px solid #91d5ff" : "1px solid #b7eb8f", height: "100%" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 20 }}>💼</span>
-                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: wallet > 500 ? "#0958d9" : "#389e0d", fontWeight: 700 }}>Ready to Invest</div>
+                          <span style={{ fontSize: 20 }}>💰</span>
+                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: wallet > 500 ? "#0958d9" : "#389e0d", fontWeight: 700 }}>Wallet Balance</div>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: 18, color: wallet > 500 ? "#0050b3" : "#237804", marginBottom: 4 }}>
                           ₹{fmt(wallet)}
                         </div>
-                        <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{gapMsg}</div>
+                        <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{wallet === 0 ? "₹0 — all funds deployed" : gapMsg}</div>
+                      </div>
+                    </div>
+
+                    {/* Tile 2.5: Principal This Month */}
+                    <div className="col-12 col-sm-6 col-lg">
+                      <div style={{ background: "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: "1px solid #adc6ff", height: "100%" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                          <span style={{ fontSize: 20 }}>🏦</span>
+                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#1d39c4", fontWeight: 700 }}>Principal This Month</div>
+                        </div>
+                        <div style={{ fontWeight: 700, fontSize: 18, color: "#10239e", marginBottom: 4 }}>
+                          {principalThisMonth > 0 ? `₹${fmt(principalThisMonth)} returned` : "₹0"}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#1d39c4" }}>
+                          {principalThisMonth > 0 ? "Principal credited this month" : "No principal returned this month"}
+                        </div>
                       </div>
                     </div>
 
                     {/* Tile 3: Maturing This Month */}
-                    <div className="col-12 col-md-3">
+                    <div className="col-12 col-sm-6 col-lg">
                       <div
                         style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default" }}
                         onClick={() => maturingCount > 0 && setMaturingExpanded(v => !v)}
@@ -1277,7 +1312,7 @@ const LenderPortfolioDashboard = () => {
                     </div>
 
                     {/* Tile 4: Referral This Month */}
-                    <div className="col-12 col-md-3">
+                    <div className="col-12 col-sm-6 col-lg">
                       <div style={{ background: "linear-gradient(135deg, #fff0f6, #ffd6e7)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffadd2", height: "100%" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                           <span style={{ fontSize: 20 }}>🎁</span>
