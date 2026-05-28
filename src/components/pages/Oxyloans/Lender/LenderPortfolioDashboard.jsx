@@ -1477,6 +1477,7 @@ const LenderPortfolioDashboard = () => {
                             <thead>
                               <tr style={{ background: "#f6ffed", borderBottom: "2px solid #b7eb8f" }}>
                                 <th style={{ padding: "10px 16px", textAlign: "left", color: "#389e0d", fontWeight: 700 }}>#</th>
+                                <th style={{ padding: "10px 16px", textAlign: "left", color: "#389e0d", fontWeight: 700 }}>Deal ID</th>
                                 <th style={{ padding: "10px 16px", textAlign: "left", color: "#389e0d", fontWeight: 700 }}>Deal Name</th>
                                 <th style={{ padding: "10px 16px", textAlign: "right", color: "#389e0d", fontWeight: 700 }}>Amount</th>
                                 <th style={{ padding: "10px 16px", textAlign: "center", color: "#389e0d", fontWeight: 700 }}>Paid On</th>
@@ -1486,6 +1487,7 @@ const LenderPortfolioDashboard = () => {
                               {interestByDeal.map((d, i) => (
                                 <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafff6" }}>
                                   <td style={{ padding: "9px 16px", color: "#8c8c8c", fontSize: 12 }}>{i + 1}</td>
+                                  <td style={{ padding: "9px 16px", color: "#8c8c8c", fontSize: 12, fontWeight: 600 }}>#{d.dealId}</td>
                                   <td style={{ padding: "9px 16px", color: "#262626", fontWeight: 500, maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={d.dealName}>{d.dealName || ("Deal #" + d.dealId)}</td>
                                   <td style={{ padding: "9px 16px", textAlign: "right", fontWeight: 700, color: "#237804" }}>₹{fmt(d.amount)}</td>
                                   <td style={{ padding: "9px 16px", textAlign: "center", color: "#595959" }}>
@@ -1496,7 +1498,7 @@ const LenderPortfolioDashboard = () => {
                             </tbody>
                             <tfoot>
                               <tr style={{ background: "#f6ffed", borderTop: "2px solid #b7eb8f" }}>
-                                <td colSpan={2} style={{ padding: "10px 16px", fontWeight: 700, color: "#237804" }}>Total</td>
+                                <td colSpan={3} style={{ padding: "10px 16px", fontWeight: 700, color: "#237804" }}>Total</td>
                                 <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 700, color: "#237804", fontSize: 15 }}>₹{fmt(earned)}</td>
                                 <td />
                               </tr>
