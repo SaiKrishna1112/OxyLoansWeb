@@ -1349,7 +1349,35 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#389e0d", fontWeight: 700 }}>Interest This Month</div>
                         </div>
                         <div style={{ fontWeight: 700, fontSize: 22, color: "#237804", marginBottom: 2 }}>₹{fmt(earned)}</div>
-                        <div style={{ fontSize: 12, color: "#52c41a", marginBottom: 8 }}>+ ₹{fmt(projected)} projected</div>
+                        {projected > 0 && (
+                          <div style={{ fontSize: 12, color: "#52c41a", marginBottom: 4 }}>+ ₹{fmt(projected)} projected (monthly)</div>
+                        )}
+                        {(() => {
+                          const nonMonthly = (data.activeDealsWithProgress || []).filter(d => {
+                            const f = (d.payoutFrequency || '').toUpperCase();
+                            return f === 'YEARLY' || f === 'HALFLY' || f === 'QUARTELY';
+                          });
+                          if (!nonMonthly.length) return projected === 0 ? <div style={{ fontSize: 12, color: "#8c8c8c", marginBottom: 4 }}>No payout this month</div> : null;
+                          const groups = {};
+                          nonMonthly.forEach(d => {
+                            const f = (d.payoutFrequency || 'OTHER').toUpperCase();
+                            if (!groups[f]) groups[f] = { count: 0, nextPayout: null };
+                            groups[f].count++;
+                            const np = d.nextPayoutDate;
+                            if (np && (!groups[f].nextPayout || np < groups[f].nextPayout)) groups[f].nextPayout = np;
+                          });
+                          const freqLabel = { YEARLY: 'yearly', HALFLY: 'half-yearly', QUARTELY: 'quarterly' };
+                          return (
+                            <div style={{ marginBottom: 4 }}>
+                              {Object.entries(groups).map(([f, g]) => (
+                                <div key={f} style={{ fontSize: 11, color: "#8c8c8c" }}>
+                                  {g.count} {freqLabel[f] || f.toLowerCase()} deal{g.count > 1 ? 's' : ''}{g.nextPayout ? ` · next: ${fmtDate(g.nextPayout)}` : ''}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                        <div style={{ marginBottom: 4 }} />
                         {total > 0 && (
                           <>
                             <div style={{ background: "#d9f7be", borderRadius: 4, height: 5, overflow: "hidden", marginBottom: 4 }}>
