@@ -1415,12 +1415,13 @@ const LenderPortfolioDashboard = () => {
                     const wallet         = data.walletBalance || 0;
                     const gapMsg         = data.investableGapMessage || "";
                     return (
+                      <>
                       <div className="row mb-4 g-3">
                         {/* Tile 1: Interest This Month */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default" }}
-                            onClick={() => interestByDeal.length > 0 && setInterestExpanded(v => !v)}
+                            style={{ background: interestExpanded ? "linear-gradient(135deg, #d9f7be, #b7eb8f)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: interestExpanded ? "2px solid #52c41a" : "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (interestByDeal.length > 0) { setPrincipalExpanded(false); setMaturingExpanded(false); setInterestExpanded(v => !v); } }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>📈</span>
@@ -1440,27 +1441,14 @@ const LenderPortfolioDashboard = () => {
                             {interestByDeal.length > 0 && (
                               <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
                             )}
-                            {interestExpanded && interestByDeal.length > 0 && (
-                              <div style={{ marginTop: 10, borderTop: "1px solid #b7eb8f", paddingTop: 8 }}>
-                                {interestByDeal.map((d, i) => (
-                                  <div key={i} style={{ fontSize: 12, marginBottom: 5, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                    <div>
-                                      <span style={{ color: "#237804", fontWeight: 600 }}>{d.dealName || ("Deal #" + d.dealId)}</span>
-                                      {d.status === "projected" && <span style={{ fontSize: 10, color: "#fa8c16", marginLeft: 4 }}>projected</span>}
-                                    </div>
-                                    <span style={{ fontWeight: 700, color: "#237804" }}>₹{fmt(d.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
 
                         {/* Tile 2: Principal This Month */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default" }}
-                            onClick={() => principalByDeal.length > 0 && setPrincipalExpanded(v => !v)}
+                            style={{ background: principalExpanded ? "linear-gradient(135deg, #d6e4ff, #adc6ff)" : "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: principalExpanded ? "2px solid #1677ff" : "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (principalByDeal.length > 0) { setInterestExpanded(false); setMaturingExpanded(false); setPrincipalExpanded(v => !v); } }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>🏦</span>
@@ -1474,16 +1462,6 @@ const LenderPortfolioDashboard = () => {
                             </div>
                             {principalByDeal.length > 0 && (
                               <div style={{ fontSize: 11, color: "#1d39c4", marginTop: 6 }}>{principalExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
-                            )}
-                            {principalExpanded && principalByDeal.length > 0 && (
-                              <div style={{ marginTop: 10, borderTop: "1px solid #adc6ff", paddingTop: 8 }}>
-                                {principalByDeal.map((d, i) => (
-                                  <div key={i} style={{ fontSize: 12, color: "#10239e", marginBottom: 5, display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ fontWeight: 600 }}>{d.dealName || ("Deal #" + d.dealId)}</span>
-                                    <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
                             )}
                           </div>
                         </div>
@@ -1503,8 +1481,8 @@ const LenderPortfolioDashboard = () => {
                         {/* Tile 4: Maturing This Month */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default" }}
-                            onClick={() => maturingCount > 0 && setMaturingExpanded(v => !v)}
+                            style={{ background: maturingExpanded ? "linear-gradient(135deg, #ffe7ba, #ffd591)" : "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: maturingExpanded ? "2px solid #fa8c16" : "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setMaturingExpanded(v => !v); } }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>📅</span>
@@ -1512,16 +1490,6 @@ const LenderPortfolioDashboard = () => {
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 28, color: "#ad4e00", marginBottom: 4 }}>{maturingCount}</div>
                             <div style={{ fontSize: 12, color: "#d46b08" }}>{maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} — ${maturingExpanded ? "▲ hide" : "▼ view"}`}</div>
-                            {maturingExpanded && maturingDeals.length > 0 && (
-                              <div style={{ marginTop: 10, borderTop: "1px solid #ffd591", paddingTop: 8 }}>
-                                {maturingDeals.map((d, i) => (
-                                  <div key={i} style={{ fontSize: 12, color: "#7c3900", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ fontWeight: 600 }}>Deal #{d.dealId}</span>
-                                    <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
 
@@ -1569,6 +1537,80 @@ const LenderPortfolioDashboard = () => {
                           );
                         })()}
                       </div>
+
+                      {/* ── Breakdown panel — shown below the strip when a tile is clicked ── */}
+                      {(interestExpanded || principalExpanded || maturingExpanded) && (() => {
+                        const activeTitle  = interestExpanded ? "📈 Interest This Month — Per Deal" : principalExpanded ? "🏦 Principal This Month — Per Deal" : "📅 Maturing This Month — Deal List";
+                        const borderColor  = interestExpanded ? "#52c41a" : principalExpanded ? "#1677ff" : "#fa8c16";
+                        const headerColor  = interestExpanded ? "#237804" : principalExpanded ? "#10239e" : "#ad4e00";
+                        const rows = interestExpanded
+                          ? interestByDeal
+                          : principalExpanded
+                          ? principalByDeal
+                          : maturingDeals;
+                        const onClose = interestExpanded
+                          ? () => setInterestExpanded(false)
+                          : principalExpanded
+                          ? () => setPrincipalExpanded(false)
+                          : () => setMaturingExpanded(false);
+                        return (
+                          <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${borderColor}`, padding: "16px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: headerColor }}>{activeTitle}</div>
+                              <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#8c8c8c", lineHeight: 1 }}>✕</button>
+                            </div>
+                            {rows.length === 0 ? (
+                              <div style={{ fontSize: 13, color: "#8c8c8c" }}>No data available</div>
+                            ) : (
+                              <div style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: `2px solid ${borderColor}`, background: "#fafafa" }}>
+                                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Deal #</th>
+                                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600 }}>Deal Name</th>
+                                      <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Amount</th>
+                                      {interestExpanded && <th style={{ padding: "8px 12px", textAlign: "center", color: "#595959", fontWeight: 600 }}>Status</th>}
+                                      {maturingExpanded && <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Principal</th>}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rows.map((d, i) => (
+                                      <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                                        <td style={{ padding: "8px 12px", color: "#8c8c8c", whiteSpace: "nowrap" }}>#{d.dealId}</td>
+                                        <td style={{ padding: "8px 12px", color: headerColor, fontWeight: 500 }}>{d.dealName || ("Deal #" + d.dealId)}</td>
+                                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
+                                        {interestExpanded && (
+                                          <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                            <span style={{ background: d.status === "projected" ? "#fff7e6" : "#f6ffed", color: d.status === "projected" ? "#d46b08" : "#389e0d", border: `1px solid ${d.status === "projected" ? "#ffd591" : "#b7eb8f"}`, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+                                              {d.status === "projected" ? "Projected" : "Paid"}
+                                            </span>
+                                          </td>
+                                        )}
+                                        {maturingExpanded && (
+                                          <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#ad4e00", whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
+                                        )}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  {rows.length > 1 && (
+                                    <tfoot>
+                                      <tr style={{ borderTop: `2px solid ${borderColor}`, background: "#fafafa" }}>
+                                        <td colSpan={interestExpanded ? 2 : maturingExpanded ? 2 : 2} style={{ padding: "8px 12px", fontWeight: 700, color: headerColor }}>Total</td>
+                                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>
+                                          ₹{fmt(rows.reduce((s, d) => s + (d.amount || 0), 0))}
+                                        </td>
+                                        {interestExpanded && <td />}
+                                        {maturingExpanded && <td />}
+                                      </tr>
+                                    </tfoot>
+                                  )}
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      </>
                     );
                   })() : (
                     <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
