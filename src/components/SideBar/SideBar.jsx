@@ -107,6 +107,14 @@ const Sidebar = (props) => {
             <div id="sidebar-menu" className="sidebar-menu">
               {/* Main Menu */}
               <ul>
+                <li className={`${"/lenderAIDashboard" === pathName || pathName.startsWith("/lenderAIDashboard/") ? "active" : ""}`}>
+                  <Link to="/lenderAIDashboard">
+                    <i className="fa-solid fa-robot"></i>{" "}
+                    <span> AI Dashboard </span>
+                    <span className="menu-arrow"></span>
+                  </Link>
+                </li>
+
                 <li className={`${"/dashboard" === pathName ? "active" : ""}`}>
                   <Link to="/dashboard">
                     <i className="fa-solid fa-gauge"></i>{" "}
@@ -115,10 +123,18 @@ const Sidebar = (props) => {
                   </Link>
                 </li>
 
-                <li className={`${"/lenderAIDashboard" === pathName ? "active" : ""}`}>
-                  <Link to="/lenderAIDashboard">
-                    <i className="fa-solid fa-robot"></i>{" "}
-                    <span> AI Portfolio Dashboard </span>
+                <li className={`${"/ai/lender-earnings" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/lender-earnings">
+                    <i className="fa-solid fa-coins"></i>{" "}
+                    <span> AI Earnings </span>
+                    <span className="menu-arrow"></span>
+                  </Link>
+                </li>
+
+                <li className={`${"/ai/plan" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/plan">
+                    <i className="fa-solid fa-star"></i>{" "}
+                    <span> AI Plan </span>
                     <span className="menu-arrow"></span>
                   </Link>
                 </li>

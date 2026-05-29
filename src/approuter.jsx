@@ -159,6 +159,8 @@ import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
 import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
 import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
+import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -335,6 +337,9 @@ const AppRouter = () => {
         <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolio />} />} />
         <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/plan" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
         <Route path="/admin/collections" element={<PrivateRoute element={<CollectionsAdminDashboard />} />} />
         <Route path="/admin/agent-portal" element={<PrivateRoute element={<AgentPortal />} />} />
         <Route path="/admin/ceo-dashboard" element={<PrivateRoute element={<CeoDashboard />} />} />
