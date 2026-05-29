@@ -83,9 +83,9 @@ const Loginotp = () => {
         localStorage.setItem("primaryType", retriveresponse.data.primaryType)
 
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
-        } else if (retriveresponse.data.primaryType == "ADMIN") {
-          history("/dashboard");
+          history("/lenderAIDashboard");
+        } else if (retriveresponse.data.primaryType == "ADMIN" || retriveresponse.data.primaryType == "HELPDESKADMIN") {
+          history("/oxyloansadmindashboard");
         } else {
           history("/borrowerDashboard");
         }

@@ -1079,6 +1079,7 @@ const LenderPortfolioDashboard = () => {
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [maturingExpanded, setMaturingExpanded] = useState(false);
   const [interestExpanded, setInterestExpanded] = useState(false);
+  const [principalExpanded, setPrincipalExpanded] = useState(false);
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
@@ -1209,135 +1210,6 @@ const LenderPortfolioDashboard = () => {
                 actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
                 onSelect={(t) => setPreviewTier(t)}
               />
-
-              {/* ── THIS MONTH STRIP ── */}
-              {(() => {
-                const earned    = data.currentMonthInterestEarned    || 0;
-                const projected = data.currentMonthInterestProjected || 0;
-                const total     = earned + projected;
-                const earnedPct = total > 0 ? Math.round((earned / total) * 100) : 0;
-                const interestByDeal = data.currentMonthInterestByDeal || [];
-                const maturingCount = data.maturingThisMonthCount || 0;
-                const maturingDeals = data.maturingThisMonthDeals || [];
-                const refCredited   = data.referralThisMonthCredited || 0;
-                const wallet        = data.walletBalance || 0;
-                const gapMsg        = data.investableGapMessage || "";
-                const principalThisMonth = data.currentMonthPrincipalReturned || 0;
-                return (
-                  <div className="row mb-4 g-3">
-                    {/* Tile 1: Interest This Month */}
-                    <div className="col-12 col-sm-6 col-lg">
-                      <div
-                        style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default" }}
-                        onClick={() => interestByDeal.length > 0 && setInterestExpanded(v => !v)}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 20 }}>📈</span>
-                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#389e0d", fontWeight: 700 }}>Interest This Month</div>
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: "#237804", marginBottom: 4 }}>
-                          ₹{fmt(earned)} earned
-                        </div>
-                        <div style={{ fontSize: 12, color: "#52c41a", marginBottom: 8 }}>
-                          + ₹{fmt(projected)} projected
-                        </div>
-                        {total > 0 && (
-                          <>
-                            <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6, overflow: "hidden" }}>
-                              <div style={{ width: `${earnedPct}%`, height: "100%", background: "#52c41a", borderRadius: 4, transition: "width 0.8s ease" }} />
-                            </div>
-                            <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 4 }}>{earnedPct}% earned of month total</div>
-                          </>
-                        )}
-                        {interestByDeal.length > 0 && (
-                          <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view breakdown"}</div>
-                        )}
-                        {interestExpanded && interestByDeal.length > 0 && (
-                          <div style={{ marginTop: 10, borderTop: "1px solid #b7eb8f", paddingTop: 8 }}>
-                            {interestByDeal.map((d, i) => (
-                              <div key={i} style={{ fontSize: 12, color: "#237804", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
-                                <span>{d.dealName || ("Deal #" + d.dealId)}</span>
-                                <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Tile 2: Wallet Balance */}
-                    <div className="col-12 col-sm-6 col-lg">
-                      <div style={{ background: wallet > 500 ? "linear-gradient(135deg, #e6f7ff, #bae7ff)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: wallet > 500 ? "1px solid #91d5ff" : "1px solid #b7eb8f", height: "100%" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 20 }}>💰</span>
-                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: wallet > 500 ? "#0958d9" : "#389e0d", fontWeight: 700 }}>Wallet Balance</div>
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: wallet > 500 ? "#0050b3" : "#237804", marginBottom: 4 }}>
-                          ₹{fmt(wallet)}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{wallet === 0 ? "₹0 — all funds deployed" : gapMsg}</div>
-                      </div>
-                    </div>
-
-                    {/* Tile 2.5: Principal This Month */}
-                    <div className="col-12 col-sm-6 col-lg">
-                      <div style={{ background: "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: "1px solid #adc6ff", height: "100%" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 20 }}>🏦</span>
-                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#1d39c4", fontWeight: 700 }}>Principal This Month</div>
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: "#10239e", marginBottom: 4 }}>
-                          {principalThisMonth > 0 ? `₹${fmt(principalThisMonth)} returned` : "₹0"}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#1d39c4" }}>
-                          {principalThisMonth > 0 ? "Principal credited this month" : "No principal returned this month"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Tile 3: Maturing This Month */}
-                    <div className="col-12 col-sm-6 col-lg">
-                      <div
-                        style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default" }}
-                        onClick={() => maturingCount > 0 && setMaturingExpanded(v => !v)}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 20 }}>📅</span>
-                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#d46b08", fontWeight: 700 }}>Maturing This Month</div>
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 28, color: "#ad4e00", marginBottom: 4 }}>
-                          {maturingCount}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#d46b08" }}>{maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} — ${maturingExpanded ? "▲ hide" : "▼ view"}`}</div>
-                        {maturingExpanded && maturingDeals.length > 0 && (
-                          <div style={{ marginTop: 10, borderTop: "1px solid #ffd591", paddingTop: 8 }}>
-                            {maturingDeals.map((d, i) => (
-                              <div key={i} style={{ fontSize: 12, color: "#7c3900", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
-                                <span>Deal #{d.dealId}</span>
-                                <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Tile 4: Referral This Month */}
-                    <div className="col-12 col-sm-6 col-lg">
-                      <div style={{ background: "linear-gradient(135deg, #fff0f6, #ffd6e7)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffadd2", height: "100%" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                          <span style={{ fontSize: 20 }}>🎁</span>
-                          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#c41d7f", fontWeight: 700 }}>Referral This Month</div>
-                        </div>
-                        <div style={{ fontWeight: 700, fontSize: 18, color: "#9e1068", marginBottom: 4 }}>
-                          ₹{fmt(refCredited)} credited
-                        </div>
-                        <div style={{ fontSize: 12, color: "#c41d7f" }}>{refCredited === 0 ? "₹0 this month" : "Referral bonus paid this month"}</div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
 
               {/* ── 1. HERO ── */}
               <div className="row mb-4">
@@ -1527,7 +1399,181 @@ const LenderPortfolioDashboard = () => {
               {isPro && (
                 <>
                   <FyFilterBar fyFilter={fyFilter} setFyFilter={setFyFilter} loading={earningsLoading} />
-                  <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+
+                  {/* Current Month breakdown — shown only when Current Month tab selected */}
+                  {fyFilter.mode === "month" ? (() => {
+                    const earned         = data.currentMonthInterestEarned    || 0;
+                    const projected      = data.currentMonthInterestProjected || 0;
+                    const total          = earned + projected;
+                    const earnedPct      = total > 0 ? Math.round((earned / total) * 100) : 0;
+                    const interestByDeal = (data.currentMonthInterestByDeal || []).filter(d => d.payoutFrequency !== "YEARLY");
+                    const principalByDeal = data.currentMonthPrincipalByDeal || [];
+                    const principalThisMonth = data.currentMonthPrincipalReturned || 0;
+                    const maturingCount  = data.maturingThisMonthCount || 0;
+                    const maturingDeals  = data.maturingThisMonthDeals || [];
+                    const refCredited    = data.referralThisMonthCredited || 0;
+                    const wallet         = data.walletBalance || 0;
+                    const gapMsg         = data.investableGapMessage || "";
+                    return (
+                      <div className="row mb-4 g-3">
+                        {/* Tile 1: Interest This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default" }}
+                            onClick={() => interestByDeal.length > 0 && setInterestExpanded(v => !v)}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>📈</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#389e0d", fontWeight: 700 }}>Interest This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: "#237804", marginBottom: 2 }}>₹{fmt(earned)} earned</div>
+                            <div style={{ fontSize: 12, color: "#52c41a", marginBottom: 6 }}>+ ₹{fmt(projected)} projected</div>
+                            {total > 0 && (
+                              <>
+                                <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                                  <div style={{ width: `${earnedPct}%`, height: "100%", background: "#52c41a", borderRadius: 4, transition: "width 0.8s ease" }} />
+                                </div>
+                                <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{earnedPct}% earned of month total</div>
+                              </>
+                            )}
+                            {projected > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>Annual payout deals excluded from projection</div>}
+                            {interestByDeal.length > 0 && (
+                              <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
+                            )}
+                            {interestExpanded && interestByDeal.length > 0 && (
+                              <div style={{ marginTop: 10, borderTop: "1px solid #b7eb8f", paddingTop: 8 }}>
+                                {interestByDeal.map((d, i) => (
+                                  <div key={i} style={{ fontSize: 12, marginBottom: 5, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                    <div>
+                                      <span style={{ color: "#237804", fontWeight: 600 }}>{d.dealName || ("Deal #" + d.dealId)}</span>
+                                      {d.status === "projected" && <span style={{ fontSize: 10, color: "#fa8c16", marginLeft: 4 }}>projected</span>}
+                                    </div>
+                                    <span style={{ fontWeight: 700, color: "#237804" }}>₹{fmt(d.amount)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tile 2: Principal This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default" }}
+                            onClick={() => principalByDeal.length > 0 && setPrincipalExpanded(v => !v)}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>🏦</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#1d39c4", fontWeight: 700 }}>Principal This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: "#10239e", marginBottom: 4 }}>
+                              {principalThisMonth > 0 ? `₹${fmt(principalThisMonth)} returned` : "₹0"}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#1d39c4" }}>
+                              {principalThisMonth > 0 ? "Closed deals — principal credited" : "No deals closed this month"}
+                            </div>
+                            {principalByDeal.length > 0 && (
+                              <div style={{ fontSize: 11, color: "#1d39c4", marginTop: 6 }}>{principalExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
+                            )}
+                            {principalExpanded && principalByDeal.length > 0 && (
+                              <div style={{ marginTop: 10, borderTop: "1px solid #adc6ff", paddingTop: 8 }}>
+                                {principalByDeal.map((d, i) => (
+                                  <div key={i} style={{ fontSize: 12, color: "#10239e", marginBottom: 5, display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ fontWeight: 600 }}>{d.dealName || ("Deal #" + d.dealId)}</span>
+                                    <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tile 3: Wallet Balance */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div style={{ background: wallet > 500 ? "linear-gradient(135deg, #e6f7ff, #bae7ff)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: wallet > 500 ? "1px solid #91d5ff" : "1px solid #b7eb8f", height: "100%" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>💰</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: wallet > 500 ? "#0958d9" : "#389e0d", fontWeight: 700 }}>Wallet Balance</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: wallet > 500 ? "#0050b3" : "#237804", marginBottom: 4 }}>₹{fmt(wallet)}</div>
+                            <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{wallet === 0 ? "₹0 — all funds deployed" : gapMsg}</div>
+                          </div>
+                        </div>
+
+                        {/* Tile 4: Maturing This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default" }}
+                            onClick={() => maturingCount > 0 && setMaturingExpanded(v => !v)}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>📅</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#d46b08", fontWeight: 700 }}>Maturing This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 28, color: "#ad4e00", marginBottom: 4 }}>{maturingCount}</div>
+                            <div style={{ fontSize: 12, color: "#d46b08" }}>{maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} — ${maturingExpanded ? "▲ hide" : "▼ view"}`}</div>
+                            {maturingExpanded && maturingDeals.length > 0 && (
+                              <div style={{ marginTop: 10, borderTop: "1px solid #ffd591", paddingTop: 8 }}>
+                                {maturingDeals.map((d, i) => (
+                                  <div key={i} style={{ fontSize: 12, color: "#7c3900", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ fontWeight: 600 }}>Deal #{d.dealId}</span>
+                                    <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tile 5: Referral This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div style={{ background: "linear-gradient(135deg, #fff0f6, #ffd6e7)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffadd2", height: "100%" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>🎁</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#c41d7f", fontWeight: 700 }}>Referral This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: "#9e1068", marginBottom: 4 }}>₹{fmt(refCredited)} credited</div>
+                            <div style={{ fontSize: 12, color: "#c41d7f" }}>{refCredited === 0 ? "₹0 this month" : "Referral bonus paid this month"}</div>
+                          </div>
+                        </div>
+
+                        {/* Tile 6: Deal Participation Rate — backend field: platformDealsLaunchedThisMonth, myDealsThisMonth */}
+                        {(() => {
+                          const launched = data.platformDealsLaunchedThisMonth || 0;
+                          const mine     = data.myDealsThisMonth || 0;
+                          const pct      = launched > 0 ? Math.round((mine / launched) * 100) : null;
+                          return (
+                            <div className="col-12 col-sm-6 col-lg">
+                              <div style={{ background: "linear-gradient(135deg, #f0f5ff, #e8f4fd)", borderRadius: 14, padding: "16px 18px", border: "1px solid #91caff", height: "100%" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                                  <span style={{ fontSize: 20 }}>🏹</span>
+                                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#0958d9", fontWeight: 700 }}>Deal Participation</div>
+                                </div>
+                                {launched > 0 ? (
+                                  <>
+                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 2 }}>{mine} / {launched}</div>
+                                    <div style={{ fontSize: 12, color: "#0958d9", marginBottom: 6 }}>deals you joined vs platform launched</div>
+                                    <div style={{ background: "#e6f4ff", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                                      <div style={{ width: `${pct}%`, height: "100%", background: "#1677ff", borderRadius: 4, transition: "width 0.8s ease" }} />
+                                    </div>
+                                    <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{pct}% participation rate this month</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 4 }}>{mine} deals</div>
+                                    <div style={{ fontSize: 12, color: "#8c8c8c" }}>Platform data coming soon</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    );
+                  })() : (
+                    <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                  )}
+
                   <UpcomingPayoutsSection upcomingData={upcomingData} loading={upcomingLoading} />
                 </>
               )}
