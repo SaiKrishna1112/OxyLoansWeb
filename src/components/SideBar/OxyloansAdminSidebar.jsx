@@ -94,7 +94,7 @@ const OxyloansAdminSidebar = () => {
       key: "adminAIReconciliation",
       label: "AI Reconciliation",
       link: "/adminAIReconciliation",
-      icon: "fa-solid fa-scale-balanced",
+      icon: "fa-solid fa-robot",
       type: ["ADMIN"],
     },
     {

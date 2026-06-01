@@ -1,4 +1,4 @@
-import React, { useState ,useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
@@ -115,8 +115,6 @@ const BorrowerDashboard = () => {
     },
   });
 
-
-
   const [data, setdata] = useState({
     series: [
       {
@@ -202,10 +200,6 @@ const BorrowerDashboard = () => {
       console.log("savingGoogleDistance api failed", error);
     }
   };
-useEffect(() => {
-  getCall();   
-},[])
-
 
   const handleCityChange = (event) => {
     if (event.target.value.trim() === "") {
@@ -234,15 +228,11 @@ useEffect(() => {
       city: selectedCity,
     };
     axios
-      .post(
-        `${base_url}${userId}/city`,
-        data,
-        {
-          headers: {
-            accessToken: sessionStorage.getItem("accessToken"),
-          },
-        }
-      )
+      .post(`${base_url}${userId}/city`, data, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
       .then(function (response) {
         console.log("City saved successfully:", response.data);
         localStorage.setItem("userCity", selectedCity);
@@ -336,9 +326,12 @@ useEffect(() => {
                       </button>
                     </Link> */}
                   </div>
+                  <p>Track your loan requests, offers, and repayments</p>
                 </div>
               </div>
             </div>
+
+           
 
             {/* /Page Header */}
             {/* Overview Section */}
@@ -377,7 +370,7 @@ useEffect(() => {
                         <h6>Active </h6>
                         <h3>
                           {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfActiveDealsCount ?? 0
+                            ? (getdashboardData?.numberOfActiveDealsCount ?? 0)
                             : ""}
                         </h3>
                       </div>
@@ -401,7 +394,7 @@ useEffect(() => {
                         <h6>Closed </h6>
                         <h3>
                           {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfClosedDealsCount ?? 0
+                            ? (getdashboardData?.numberOfClosedDealsCount ?? 0)
                             : ""}
                         </h3>
                       </div>
@@ -483,6 +476,14 @@ useEffect(() => {
                           </Link>
                         </div>
                       </li>
+                      <li>
+                        <div className="report-btn">
+                          <Link to="/nearbyleders" className="btn">
+                            <i className="fa-solid fa-location-dot me-2"></i>
+                            Nearby Lenders
+                          </Link>
+                        </div>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -541,14 +542,14 @@ useEffect(() => {
           {/* Footer */}
           <Footer />
         </div>
-          <Modal
-            show={show}
-            onHide={() => setShow(false)}
-            dialogClassName="custom-small-modal"
-          >
-            <Modal.Header closeButton className="py-2 px-3">
-              <Modal.Title className="h6">Select City</Modal.Title>
-            </Modal.Header>
+        <Modal
+          show={show}
+          onHide={() => setShow(false)}
+          dialogClassName="custom-small-modal"
+        >
+          <Modal.Header closeButton className="py-2 px-3">
+            <Modal.Title className="h6">Select City</Modal.Title>
+          </Modal.Header>
 
             <Modal.Body className="py-2 px-3">
               <div className="mb-2">

@@ -15,6 +15,7 @@ import {
   regular_Api,
   getNoDealsParticipated,
   handelexcelsForNewLenderDashboard,
+  setLatLong,
 } from "../../HttpRequest/afterlogin";
 import { useNavigate } from "react-router-dom";
 
@@ -403,7 +404,7 @@ const AdminDashboard = () => {
     return () => {};
   }, [showParticipatedDeals]);
 
-  useEffect(() => {
+  useEffect( () => {
     const profileskip = localStorage.getItem("profileskip");
     if (profileskip) {
     } else {
@@ -412,6 +413,21 @@ const AdminDashboard = () => {
         const { kycStatus, bankDetailsInfo, personalDetailsInfo, groupName } =
           profileData;
         const isvalidity = membershipdata.ismembershiptrue;
+
+        // if(profileData.latitude === null || profileData.latitude === undefined || profileData.latitude === "" || profileData.longitude === null || profileData.longitude === undefined || profileData.longitude === ""){
+                 try{
+                     setLatLong().then((response) => {
+                      if (response.status === 200) {
+                        console.log("Geolocation data updated successfully");
+                      }else {
+                        console.error("Failed to update geolocation data");
+                      }
+                    });
+                 }
+                  catch(error){
+                    console.error("Error fetching geolocation data:", error);
+                  }
+        // }
 
         if (
           kycStatus === false &&

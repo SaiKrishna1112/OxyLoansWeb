@@ -90,6 +90,23 @@ const OxiBadge = ({ tier }) => {
   );
 };
 
+const MembershipBadge = ({ badge }) => {
+  if (!badge) return null;
+  const configs = {
+    PLATINUM: { bg: "linear-gradient(135deg, #FFD700, #FFA500)", color: "#fff", label: "🏆 Platinum" },
+    GOLD:     { bg: "linear-gradient(135deg, #FFD700, #DAA520)", color: "#fff", label: "🥇 Gold" },
+    SILVER:   { bg: "linear-gradient(135deg, #C0C0C0, #A8A9AD)", color: "#fff", label: "🥈 Silver" },
+    LOYAL:    { bg: "linear-gradient(135deg, #9C27B0, #7B1FA2)", color: "#fff", label: "💜 Loyal" },
+    MEMBER:   { bg: "#e8e8e8", color: "#595959", label: "Member" },
+  };
+  const c = configs[badge?.toUpperCase()] || configs.MEMBER;
+  return (
+    <span style={{ background: c.bg, color: c.color, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, letterSpacing: 0.5, display: "inline-block" }}>
+      {c.label}
+    </span>
+  );
+};
+
 const StatCard = ({ label, value, color, sub }) => (
   <div className="col-6 col-md mb-3">
     <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}>
@@ -359,12 +376,20 @@ const buildFyTabs = () => {
   }));
 };
 
+const currentMonthFilter = () => {
+  const now = new Date();
+  const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+  return { mode: "month", fyYear: null, from: `${y}-${m}-01`, to: `${y}-${m}-${lastDay}` };
+};
+
 const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
   const tabs = buildFyTabs();
   const [customFrom, setCustomFrom] = useState(fyFilter.from || "");
   const [customTo,   setCustomTo]   = useState(fyFilter.to   || "");
 
   const isActive = (mode, fyYear) => {
+    if (mode === "month")  return fyFilter.mode === "month";
     if (mode === "all")    return fyFilter.mode === "all";
     if (mode === "fy")     return fyFilter.mode === "fy" && fyFilter.fyYear === fyYear;
     if (mode === "custom") return fyFilter.mode === "custom";
@@ -395,6 +420,9 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
       <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 12, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1, marginRight: 4, whiteSpace: "nowrap" }}>Earnings Period</span>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, background: "#fafafa", borderRadius: 24, padding: "4px 6px", border: "1px solid #f0f0f0" }}>
+          <button style={tabStyle(isActive("month"))} onClick={() => setFyFilter(currentMonthFilter())}>
+            Current Month
+          </button>
           <button style={tabStyle(isActive("all"))} onClick={() => setFyFilter({ mode: "all", fyYear: null, from: "", to: "" })}>
             All Time
           </button>
@@ -1038,7 +1066,7 @@ const LenderPortfolioDashboard = () => {
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dealsShown, setDealsShown] = useState(10);
-  const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
+  const [fyFilter, setFyFilter] = useState(currentMonthFilter());
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [reminderSent, setReminderSent] = useState({});
@@ -1048,6 +1076,10 @@ const LenderPortfolioDashboard = () => {
   const [previewTier, setPreviewTier] = useState(null);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
+  const [narrativeExpanded, setNarrativeExpanded] = useState(false);
+  const [maturingExpanded, setMaturingExpanded] = useState(false);
+  const [interestExpanded, setInterestExpanded] = useState(false);
+  const [principalExpanded, setPrincipalExpanded] = useState(false);
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
@@ -1083,7 +1115,7 @@ const LenderPortfolioDashboard = () => {
     const params = new URLSearchParams();
     if (fyFilter.mode === "fy" && fyFilter.fyYear) {
       params.append("fy", fyFilter.fyYear);
-    } else if (fyFilter.mode === "custom" && fyFilter.from && fyFilter.to) {
+    } else if ((fyFilter.mode === "custom" || fyFilter.mode === "month") && fyFilter.from && fyFilter.to) {
       params.append("from", fyFilter.from);
       params.append("to", fyFilter.to);
     }
@@ -1186,7 +1218,10 @@ const LenderPortfolioDashboard = () => {
                     <div className="card-body p-4">
                       <div className="d-flex align-items-start mb-3" style={{ flexWrap: "wrap", gap: 12 }}>
                         <div style={{ flex: 1 }}>
-                          <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{data.lenderName}</h4>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{data.lenderName}</h4>
+                            {data.membershipBadge && <MembershipBadge badge={data.membershipBadge} />}
+                          </div>
                           {data.email && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{data.email}</span>}
                           <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
                             {[
@@ -1236,16 +1271,32 @@ const LenderPortfolioDashboard = () => {
                       </div>
                       {isSmart ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                          {(data.narrative || data.aiNarrative || "").split("\n").map((line) => line.trim()).filter((l) => l.length > 0).map((line, idx) => {
+                          {(() => {
+                            const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((line) => line.trim()).filter((l) => l.length > 0);
                             const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
-                            const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
+                            const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 2);
                             return (
-                              <div key={idx} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, border: "1px solid rgba(255,255,255,0.12)" }}>
-                                <span style={{ fontSize: 20, lineHeight: 1 }}>{icons[idx] || "•"}</span>
-                                <span style={{ color: "#fff", fontSize: 15, lineHeight: 1.6 }}>{text}</span>
-                              </div>
+                              <>
+                                {visibleLines.map((line, idx) => {
+                                  const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
+                                  return (
+                                    <div key={idx} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, border: "1px solid rgba(255,255,255,0.12)" }}>
+                                      <span style={{ fontSize: 20, lineHeight: 1 }}>{icons[idx] || "•"}</span>
+                                      <span style={{ color: "#fff", fontSize: 15, lineHeight: 1.6 }}>{text}</span>
+                                    </div>
+                                  );
+                                })}
+                                {allLines.length > 2 && (
+                                  <button
+                                    onClick={() => setNarrativeExpanded(v => !v)}
+                                    style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "rgba(255,255,255,0.85)", fontSize: 13, padding: "6px 16px", cursor: "pointer", alignSelf: "flex-start", fontWeight: 600 }}
+                                  >
+                                    {narrativeExpanded ? "Show less ▲" : `Show more ▼ (${allLines.length - 2} more)`}
+                                  </button>
+                                )}
+                              </>
                             );
-                          })}
+                          })()}
                         </div>
                       ) : (
                         <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
@@ -1348,7 +1399,223 @@ const LenderPortfolioDashboard = () => {
               {isPro && (
                 <>
                   <FyFilterBar fyFilter={fyFilter} setFyFilter={setFyFilter} loading={earningsLoading} />
-                  <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+
+                  {/* Current Month breakdown — shown only when Current Month tab selected */}
+                  {fyFilter.mode === "month" ? (() => {
+                    const earned         = data.currentMonthInterestEarned    || 0;
+                    const projected      = data.currentMonthInterestProjected || 0;
+                    const total          = earned + projected;
+                    const earnedPct      = total > 0 ? Math.round((earned / total) * 100) : 0;
+                    const interestByDeal = (data.currentMonthInterestByDeal || []).filter(d => d.payoutFrequency !== "YEARLY");
+                    const principalByDeal = data.currentMonthPrincipalByDeal || [];
+                    const principalThisMonth = data.currentMonthPrincipalReturned || 0;
+                    const maturingCount  = data.maturingThisMonthCount || 0;
+                    const maturingDeals  = data.maturingThisMonthDeals || [];
+                    const refCredited    = data.referralThisMonthCredited || 0;
+                    const wallet         = data.walletBalance || 0;
+                    const gapMsg         = data.investableGapMessage || "";
+                    return (
+                      <>
+                      <div className="row mb-4 g-3">
+                        {/* Tile 1: Interest This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: interestExpanded ? "linear-gradient(135deg, #d9f7be, #b7eb8f)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: interestExpanded ? "2px solid #52c41a" : "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (interestByDeal.length > 0) { setPrincipalExpanded(false); setMaturingExpanded(false); setInterestExpanded(v => !v); } }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>📈</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#389e0d", fontWeight: 700 }}>Interest This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: "#237804", marginBottom: 2 }}>₹{fmt(earned)} earned</div>
+                            <div style={{ fontSize: 12, color: "#52c41a", marginBottom: 6 }}>+ ₹{fmt(projected)} projected</div>
+                            {total > 0 && (
+                              <>
+                                <div style={{ background: "#f0f0f0", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                                  <div style={{ width: `${earnedPct}%`, height: "100%", background: "#52c41a", borderRadius: 4, transition: "width 0.8s ease" }} />
+                                </div>
+                                <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{earnedPct}% earned of month total</div>
+                              </>
+                            )}
+                            {projected > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>Annual payout deals excluded from projection</div>}
+                            {interestByDeal.length > 0 && (
+                              <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tile 2: Principal This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: principalExpanded ? "linear-gradient(135deg, #d6e4ff, #adc6ff)" : "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: principalExpanded ? "2px solid #1677ff" : "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (principalByDeal.length > 0) { setInterestExpanded(false); setMaturingExpanded(false); setPrincipalExpanded(v => !v); } }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>🏦</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#1d39c4", fontWeight: 700 }}>Principal This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: "#10239e", marginBottom: 4 }}>
+                              {principalThisMonth > 0 ? `₹${fmt(principalThisMonth)} returned` : "₹0"}
+                            </div>
+                            <div style={{ fontSize: 12, color: "#1d39c4" }}>
+                              {principalThisMonth > 0 ? "Closed deals — principal credited" : "No deals closed this month"}
+                            </div>
+                            {principalByDeal.length > 0 && (
+                              <div style={{ fontSize: 11, color: "#1d39c4", marginTop: 6 }}>{principalExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tile 3: Wallet Balance */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div style={{ background: wallet > 500 ? "linear-gradient(135deg, #e6f7ff, #bae7ff)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: wallet > 500 ? "1px solid #91d5ff" : "1px solid #b7eb8f", height: "100%" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>💰</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: wallet > 500 ? "#0958d9" : "#389e0d", fontWeight: 700 }}>Wallet Balance</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: wallet > 500 ? "#0050b3" : "#237804", marginBottom: 4 }}>₹{fmt(wallet)}</div>
+                            <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{wallet === 0 ? "₹0 — all funds deployed" : gapMsg}</div>
+                          </div>
+                        </div>
+
+                        {/* Tile 4: Maturing This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: maturingExpanded ? "linear-gradient(135deg, #ffe7ba, #ffd591)" : "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: maturingExpanded ? "2px solid #fa8c16" : "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setMaturingExpanded(v => !v); } }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>📅</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#d46b08", fontWeight: 700 }}>Maturing This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 28, color: "#ad4e00", marginBottom: 4 }}>{maturingCount}</div>
+                            <div style={{ fontSize: 12, color: "#d46b08" }}>{maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} — ${maturingExpanded ? "▲ hide" : "▼ view"}`}</div>
+                          </div>
+                        </div>
+
+                        {/* Tile 5: Referral This Month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div style={{ background: "linear-gradient(135deg, #fff0f6, #ffd6e7)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffadd2", height: "100%" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>🎁</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#c41d7f", fontWeight: 700 }}>Referral This Month</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 18, color: "#9e1068", marginBottom: 4 }}>₹{fmt(refCredited)} credited</div>
+                            <div style={{ fontSize: 12, color: "#c41d7f" }}>{refCredited === 0 ? "₹0 this month" : "Referral bonus paid this month"}</div>
+                          </div>
+                        </div>
+
+                        {/* Tile 6: Deal Participation Rate — backend field: platformDealsLaunchedThisMonth, myDealsThisMonth */}
+                        {(() => {
+                          const launched = data.platformDealsLaunchedThisMonth || 0;
+                          const mine     = data.myDealsThisMonth || 0;
+                          const pct      = launched > 0 ? Math.round((mine / launched) * 100) : null;
+                          return (
+                            <div className="col-12 col-sm-6 col-lg">
+                              <div style={{ background: "linear-gradient(135deg, #f0f5ff, #e8f4fd)", borderRadius: 14, padding: "16px 18px", border: "1px solid #91caff", height: "100%" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                                  <span style={{ fontSize: 20 }}>🏹</span>
+                                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#0958d9", fontWeight: 700 }}>Deal Participation</div>
+                                </div>
+                                {launched > 0 ? (
+                                  <>
+                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 2 }}>{mine} / {launched}</div>
+                                    <div style={{ fontSize: 12, color: "#0958d9", marginBottom: 6 }}>deals you joined vs platform launched</div>
+                                    <div style={{ background: "#e6f4ff", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                                      <div style={{ width: `${pct}%`, height: "100%", background: "#1677ff", borderRadius: 4, transition: "width 0.8s ease" }} />
+                                    </div>
+                                    <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{pct}% participation rate this month</div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 4 }}>{mine} deals</div>
+                                    <div style={{ fontSize: 12, color: "#8c8c8c" }}>Platform data coming soon</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* ── Breakdown panel — shown below the strip when a tile is clicked ── */}
+                      {(interestExpanded || principalExpanded || maturingExpanded) && (() => {
+                        const activeTitle  = interestExpanded ? "📈 Interest This Month — Per Deal" : principalExpanded ? "🏦 Principal This Month — Per Deal" : "📅 Maturing This Month — Deal List";
+                        const borderColor  = interestExpanded ? "#52c41a" : principalExpanded ? "#1677ff" : "#fa8c16";
+                        const headerColor  = interestExpanded ? "#237804" : principalExpanded ? "#10239e" : "#ad4e00";
+                        const rows = interestExpanded
+                          ? interestByDeal
+                          : principalExpanded
+                          ? principalByDeal
+                          : maturingDeals;
+                        const onClose = interestExpanded
+                          ? () => setInterestExpanded(false)
+                          : principalExpanded
+                          ? () => setPrincipalExpanded(false)
+                          : () => setMaturingExpanded(false);
+                        return (
+                          <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${borderColor}`, padding: "16px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: headerColor }}>{activeTitle}</div>
+                              <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#8c8c8c", lineHeight: 1 }}>✕</button>
+                            </div>
+                            {rows.length === 0 ? (
+                              <div style={{ fontSize: 13, color: "#8c8c8c" }}>No data available</div>
+                            ) : (
+                              <div style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: `2px solid ${borderColor}`, background: "#fafafa" }}>
+                                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Deal #</th>
+                                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600 }}>Deal Name</th>
+                                      <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Amount</th>
+                                      {interestExpanded && <th style={{ padding: "8px 12px", textAlign: "center", color: "#595959", fontWeight: 600 }}>Status</th>}
+                                      {maturingExpanded && <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Principal</th>}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rows.map((d, i) => (
+                                      <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                                        <td style={{ padding: "8px 12px", color: "#8c8c8c", whiteSpace: "nowrap" }}>#{d.dealId}</td>
+                                        <td style={{ padding: "8px 12px", color: headerColor, fontWeight: 500 }}>{d.dealName || ("Deal #" + d.dealId)}</td>
+                                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
+                                        {interestExpanded && (
+                                          <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                            <span style={{ background: d.status === "projected" ? "#fff7e6" : "#f6ffed", color: d.status === "projected" ? "#d46b08" : "#389e0d", border: `1px solid ${d.status === "projected" ? "#ffd591" : "#b7eb8f"}`, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+                                              {d.status === "projected" ? "Projected" : "Paid"}
+                                            </span>
+                                          </td>
+                                        )}
+                                        {maturingExpanded && (
+                                          <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#ad4e00", whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
+                                        )}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  {rows.length > 1 && (
+                                    <tfoot>
+                                      <tr style={{ borderTop: `2px solid ${borderColor}`, background: "#fafafa" }}>
+                                        <td colSpan={interestExpanded ? 2 : maturingExpanded ? 2 : 2} style={{ padding: "8px 12px", fontWeight: 700, color: headerColor }}>Total</td>
+                                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>
+                                          ₹{fmt(rows.reduce((s, d) => s + (d.amount || 0), 0))}
+                                        </td>
+                                        {interestExpanded && <td />}
+                                        {maturingExpanded && <td />}
+                                      </tr>
+                                    </tfoot>
+                                  )}
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      </>
+                    );
+                  })() : (
+                    <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                  )}
+
                   <UpcomingPayoutsSection upcomingData={upcomingData} loading={upcomingLoading} />
                 </>
               )}
@@ -1446,6 +1713,12 @@ const LenderPortfolioDashboard = () => {
                     <div style={{ background: "linear-gradient(135deg, #f9f0ff, #efdbff)", borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontSize: 14, color: "#391085", lineHeight: 1.7 }}>
                       {summaryText}
                     </div>
+                    {data.nextStarTip && (
+                      <div style={{ background: "linear-gradient(135deg, #fffbe6, #fff7cc)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, border: "1px solid #ffe58f", display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 18 }}>🌟</span>
+                        <span style={{ fontSize: 13, color: "#614700", fontWeight: 600 }}>{data.nextStarTip}</span>
+                      </div>
+                    )}
                     <div className="row">
                       <div className="col-12 col-md-4 mb-3">
                         <div style={{ textAlign: "center", padding: 16, background: "#fafafa", borderRadius: 10 }}>
@@ -1585,6 +1858,40 @@ const LenderPortfolioDashboard = () => {
               {!isPro && <LockCard title="Earnings Intelligence — FY Forecast, Monthly Chart &amp; Bank FD Comparison" requiredTier="PRO" />}
               {isPro && <SectionCard title="Earnings Intelligence" collapsible defaultOpen={false} summary="FY forecast & FD comparison">
                 <div className="row">
+                  {/* This Month sub-row */}
+                  {(() => {
+                    const mEarned    = data.currentMonthInterestEarned    || 0;
+                    const mProjected = data.currentMonthInterestProjected || 0;
+                    const mTotal     = mEarned + mProjected;
+                    const mPct       = mTotal > 0 ? Math.round((mEarned / mTotal) * 100) : 0;
+                    return (
+                      <div className="col-12 mb-3">
+                        <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 10, padding: "12px 16px", border: "1px solid #b7eb8f" }}>
+                          <div style={{ fontWeight: 700, fontSize: 12, color: "#389e0d", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>This Month</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", marginBottom: 8 }}>
+                            <div>
+                              <span style={{ fontSize: 11, color: "#8c8c8c" }}>Earned </span>
+                              <span style={{ fontWeight: 700, color: "#237804", fontSize: 16 }}>₹{fmt(mEarned)}</span>
+                            </div>
+                            <div style={{ fontSize: 14, color: "#8c8c8c" }}>+</div>
+                            <div>
+                              <span style={{ fontSize: 11, color: "#8c8c8c" }}>Projected </span>
+                              <span style={{ fontWeight: 700, color: "#52c41a", fontSize: 16 }}>₹{fmt(mProjected)}</span>
+                            </div>
+                          </div>
+                          {mTotal > 0 && (
+                            <>
+                              <div style={{ background: "#d9f7be", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                                <div style={{ width: `${mPct}%`, height: "100%", background: "#52c41a", borderRadius: 4, transition: "width 0.8s ease" }} />
+                              </div>
+                              <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 4 }}>{mPct}% of month earned so far</div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* FY Forecast — explained clearly */}
                   <div className="col-12 col-md-6 mb-3">
                     {(() => {
@@ -2051,6 +2358,41 @@ const LenderPortfolioDashboard = () => {
                   )}
                 </SectionCard>
               )}
+
+              {/* ── PLATFORM HEALTH ── */}
+              {(() => {
+                const ph = data.platformHealth;
+                if (!ph) return null;
+                const chips = [
+                  { icon: "🏦", label: `${ph.dealsAnnouncedThisMonth || 0} Deals Launched` },
+                  { icon: "💰", label: `₹${fmt(ph.dealsValueThisMonth || 0)} Deal Value` },
+                  { icon: "💸", label: `₹${fmt(ph.interestPaidThisMonth || 0)} Interest Paid Out` },
+                  { icon: "🔄", label: `₹${fmt(ph.principalReturnedThisMonth || 0)} Principal Returned` },
+                  { icon: "✅", label: `${ph.platformPaymentPunctualityPct || 0}% On-Time` },
+                  { icon: "👥", label: `${ph.activeLenders || 0} Active Lenders · +${ph.newLendersThisMonth || 0} New` },
+                ];
+                return (
+                  <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #b7eb8f", background: "linear-gradient(135deg, #f6ffed, #e8ffd4)", boxShadow: "0 2px 12px rgba(82,196,26,0.08)" }}>
+                    <div className="card-body">
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                        <span style={{ fontSize: 20 }}>🌿</span>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: "#135200" }}>OxyLoans This Month — Platform Pulse</div>
+                          <div style={{ fontSize: 11, color: "#52c41a" }}>Live platform activity for the current month</div>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                        {chips.map((chip, i) => (
+                          <div key={i} style={{ background: "#fff", border: "1px solid #b7eb8f", borderRadius: 20, padding: "6px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>{chip.icon}</span>
+                            <span>{chip.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="row mb-2">
                 <div className="col-12">
