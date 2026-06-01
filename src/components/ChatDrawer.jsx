@@ -792,29 +792,36 @@ function RichMessage({ data }) {
   return null;
 }
 
-// ─── Text formatter (bold + numbered list) ────────────────────────────────────
+// ─── Text formatter (bold, italic, numbered list) ─────────────────────────────
 
 function FormattedText({ text }) {
   if (!text || typeof text !== "string") return null;
 
-  // Split into bold-marked segments
-  const bold = (str) => {
-    const parts = str.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((p, i) =>
-      p.startsWith("**") && p.endsWith("**")
-        ? <strong key={i} style={{ color: "#0f172a" }}>{p.slice(2, -2)}</strong>
-        : <span key={i}>{p}</span>
-    );
+  // Inline markdown: **bold**, _italic_, and ₹amounts highlighted
+  const inline = (str) => {
+    const parts = str.split(/(\*\*[^*]+\*\*|_[^_]+_|₹[\d,]+(?:\.\d+)?)/g);
+    return parts.map((p, i) => {
+      if (p.startsWith("**") && p.endsWith("**"))
+        return <strong key={i} style={{ color: "#0f172a", fontWeight: 700 }}>{p.slice(2, -2)}</strong>;
+      if (p.startsWith("_") && p.endsWith("_"))
+        return <em key={i} style={{ color: "#64748b", fontStyle: "italic" }}>{p.slice(1, -1)}</em>;
+      if (/^₹[\d,]/.test(p))
+        return <span key={i} style={{ color: "#059669", fontWeight: 700 }}>{p}</span>;
+      return <span key={i}>{p}</span>;
+    });
   };
 
-  // Parse inline "I can help you: 1. ... 2. ... 3. ..." patterns
+  // A line "starts with emoji" when its first codePoint is > U+2600 (covers all finance emojis)
+  const isEmojiLine = (line) => { const c = line.codePointAt(0); return !!c && c > 0x2600; };
+
+  // Parse numbered list patterns: "intro text 1. item 2. item ..."
   const listMatch = text.match(/^(.*?)\s*1\.\s(.+?)(?:\s*2\.\s(.+?))?(?:\s*3\.\s(.+?))?(?:\s*4\.\s(.+?))?$/s);
   if (listMatch && listMatch[2]) {
     const intro = listMatch[1]?.trim();
     const items = [listMatch[2], listMatch[3], listMatch[4], listMatch[5]].filter(Boolean).map(s => s.trim());
     return (
       <div>
-        {intro && <div style={{ marginBottom: 6 }}>{bold(intro)}</div>}
+        {intro && <div style={{ marginBottom: 6, lineHeight: 1.5 }}>{inline(intro)}</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {items.map((item, i) => (
             <div key={i} style={{
@@ -827,7 +834,7 @@ function FormattedText({ text }) {
                 color: "#fff", fontSize: 10, fontWeight: 700, flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>{i + 1}</span>
-              <span style={{ color: "#334155" }}>{bold(item)}</span>
+              <span style={{ color: "#334155" }}>{inline(item)}</span>
             </div>
           ))}
         </div>
@@ -835,11 +842,45 @@ function FormattedText({ text }) {
     );
   }
 
-  // Default: just bold + newlines
+  // Emoji-stat lines: lines starting with an emoji that also contain **bold** get a card treatment
+  const lines = text.split("\n");
+  const hasEmojiStats = lines.some(l => l.trim() && isEmojiLine(l.trim()) && l.includes("**"));
+
+  if (hasEmojiStats) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {lines.map((line, i) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={i} style={{ height: 3 }} />;
+          if (isEmojiLine(trimmed) && trimmed.includes("**")) {
+            return (
+              <div key={i} style={{
+                padding: "8px 12px",
+                background: "linear-gradient(135deg, #f0fdf4, #f0f9ff)",
+                borderRadius: 10, border: "1px solid #bae6fd",
+                fontSize: 13, lineHeight: 1.6,
+              }}>
+                {inline(trimmed)}
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, paddingLeft: 4 }}>
+              {inline(trimmed)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Default: inline formatting + newlines as paragraph breaks
   return (
     <div>
       {text.split("\n").map((line, i) => (
-        <div key={i} style={{ marginBottom: line ? 3 : 6 }}>{bold(line) || " "}</div>
+        <div key={i} style={{ marginBottom: line.trim() ? 3 : 6 }}>
+          {line.trim() ? inline(line) : " "}
+        </div>
       ))}
     </div>
   );
@@ -855,6 +896,8 @@ const DOT_KEYFRAME = `
 `;
 
 // ─── Main component ───────────────────────────────────────────────────────────
+
+export { RichMessage, FormattedText, SuggestedFollowup, TopicBadge };
 
 export default function ChatDrawer({ open, initialMessage, onClose }) {
   const ROLE = localStorage.getItem("primaryType") || "LENDER";

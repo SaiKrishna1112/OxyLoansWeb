@@ -50,8 +50,6 @@ import Withdrawdealfromwallet from "./components/pages/Oxyloans/Lender/Withdrawd
 import Writetous from "./components/pages/Oxyloans/Lender/Writetous";
 import WithdrawalFromWallet from "./components/pages/Oxyloans/Lender/WithdrawalFromWallet";
 import WithdrawdealFounds from "./components/pages/Oxyloans/Lender/WithdrawdealFounds";
-import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges";
-import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees";
 import MembershipHistory from "./components/pages/Oxyloans/Lender/MembershipHistory";
 import Mytransactions from "./components/pages/Oxyloans/Lender/Mytransactions";
 import WalletToWalletHistory from "./components/pages/Oxyloans/Lender/WalletToWalletHistory";
@@ -499,7 +497,7 @@ const AppRouter = () => {
         <Route path="/monthlyReturnedInterest" element={<PrivateRoute element={<MonthlyReturnedInterest />} />} />
         <Route path="/activeLendersParticipation" element={<PrivateRoute element={<ActiveLendersParticipationPage />} />} />
 
-<Route path ="/viewstudentdeals" element={<StudentDeals />} />
+        <Route path ="/viewstudentdeals" element={<StudentDeals />} />
         <Route path ="/viewequitydeals" element={<EquityDeals />} />
         <Route path ="/viewescrowsdeals" element={<EscrowsDeals  />} />
         <Route path="/viewtestsDeals" element={<TestsDeals />} />
@@ -526,8 +524,6 @@ const AppRouter = () => {
         <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
 
         <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
-        <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
-        <Route path="/adminProcessingFees" element={<ProcessingFees />} />
         <Route path="/failedborrowers" element={<FailedBorrowers />} />
         <Route path="/dealsInfo" element={<DealsInfo />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
@@ -556,6 +552,8 @@ const AppRouter = () => {
         <Route path="/agreement/:loanRequestId" element={<PrivateRoute element={<AgreementPage />} />} />
         <Route path="/my-loans" element={<PrivateRoute element={<MyLoans />} />} />
         <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolio />} />} />
+        <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/admin/collections" element={<PrivateRoute element={<CollectionsAdminDashboard />} />} />
         <Route path="/admin/agent-portal" element={<PrivateRoute element={<AgentPortal />} />} />
         <Route path="/admin/ceo-dashboard" element={<PrivateRoute element={<CeoDashboard />} />} />

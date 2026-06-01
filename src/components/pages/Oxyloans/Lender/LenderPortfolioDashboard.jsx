@@ -7,6 +7,7 @@ import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
 import { getToken, getUserId } from "../../../HttpRequest/afterlogin";
 import axios from "axios";
+import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -180,7 +181,7 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.` }
+    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null }
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -192,11 +193,11 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
     }
   }, [messages, open]);
 
-  const sendMessage = async () => {
-    const text = input.trim();
+  const sendMessage = async (overrideText) => {
+    const text = (overrideText !== undefined ? overrideText : input).trim();
     if (!text || sending) return;
-    setInput("");
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    if (overrideText === undefined) setInput("");
+    setMessages((prev) => [...prev, { role: "user", text, data: null }]);
     setSending(true);
     try {
       const token = getToken();
@@ -207,9 +208,11 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       );
       const reply = res.data?.answer
         || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
-      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
+      const responseData = res.data?.responseData || null;
+      const quickReplies = res.data?.quickReplies || null;
+      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData, quickReplies }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again." }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null }]);
     } finally {
       setSending(false);
     }
@@ -237,70 +240,110 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       {open && (
         <div style={{
           position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 360, maxWidth: "calc(100vw - 48px)",
-          background: "#fff", borderRadius: 16,
+          width: 400, maxWidth: "calc(100vw - 48px)",
+          background: "#f8fafc", borderRadius: 16,
           boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
           display: "flex", flexDirection: "column",
-          border: "1px solid #e8e8e8", overflow: "hidden",
+          border: "1px solid #e2e8f0", overflow: "hidden",
+          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
         }}>
           {/* Header */}
           <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 22 }}>🤖</span>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏦</div>
             <div>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>OxyLoans AI Assistant</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Ask about your investments</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>Lender Assistant • Online</div>
             </div>
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", maxHeight: 340, minHeight: 200 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", maxHeight: 420, minHeight: 200, display: "flex", flexDirection: "column", gap: 10 }}>
             {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 12, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+              <div key={i} style={{ display: "flex", alignItems: "flex-end", gap: 6, justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                {m.role === "assistant" && (
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6a1b9a", marginBottom: 4, flexShrink: 0 }} />
+                )}
                 <div style={{
-                  maxWidth: "80%", padding: "10px 14px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                  background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f5f5f5",
+                  maxWidth: m.data ? "96%" : "82%",
+                  padding: m.data ? "10px 10px 8px" : "10px 14px",
+                  borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                  background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#fff",
                   color: m.role === "user" ? "#fff" : "#262626",
                   fontSize: 13, lineHeight: 1.5,
+                  boxShadow: m.role === "assistant" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
                 }}>
-                  {m.text}
+                  {m.role === "assistant" && m.data ? (
+                    <>
+                      <TopicBadge type={m.data.type} />
+                      <div style={{ fontSize: 12, color: "#475569", marginBottom: 2, paddingBottom: 6, borderBottom: "1px dashed #e2e8f0" }}><FormattedText text={m.text} /></div>
+                      <RichMessage data={m.data} />
+                      <SuggestedFollowup type={m.data.type} onSend={(q) => sendMessage(q)} />
+                    </>
+                  ) : m.role === "assistant" ? (
+                    <FormattedText text={m.text} />
+                  ) : (
+                    m.text
+                  )}
+                  {m.role === "assistant" && m.quickReplies && m.quickReplies.length > 0 && (
+                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4, borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>
+                      <div style={{ width: "100%", fontSize: 10, color: "#94a3b8", marginBottom: 4 }}>💡 Quick asks:</div>
+                      {m.quickReplies.map((q, qi) => (
+                        <button key={qi} onClick={() => sendMessage(q)} style={{
+                          fontSize: 10, padding: "3px 9px", borderRadius: 20, cursor: "pointer",
+                          border: "1px solid #6a1b9a30", background: "#f5f3ff", color: "#6a1b9a",
+                          fontFamily: "inherit", transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#6a1b9a"; e.currentTarget.style.color = "#fff"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "#f5f3ff"; e.currentTarget.style.color = "#6a1b9a"; }}>
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
             {sending && (
-              <div style={{ display: "flex", gap: 6, padding: "8px 14px" }}>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#6a1b9a", animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
-                ))}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6a1b9a", flexShrink: 0 }} />
+                <div style={{ background: "#fff", borderRadius: "14px 14px 14px 4px", padding: "8px 13px", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+                  <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6a1b9a", animation: `aiDotBounce 1.4s ${i * 0.2}s ease-in-out infinite` }} />
+                    ))}
+                    <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic", marginLeft: 4 }}>AI is thinking…</span>
+                  </div>
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
           {/* Input */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8 }}>
+          <div style={{ padding: "10px 12px", borderTop: "1px solid #e2e8f0", display: "flex", gap: 8, background: "#fff" }}>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Ask about your deals, earnings…"
-              style={{ flex: 1, border: "1px solid #e8e8e8", borderRadius: 24, padding: "8px 14px", fontSize: 13, outline: "none" }}
+              style={{ flex: 1, border: "1.5px solid #6a1b9a50", borderRadius: 10, padding: "8px 14px", fontSize: 13, outline: "none", background: "#f8fafc" }}
               disabled={sending}
             />
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={sending || !input.trim()}
               style={{
                 background: sending || !input.trim() ? "#d9d9d9" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
-                border: "none", borderRadius: 24, padding: "8px 16px",
+                border: "none", borderRadius: 10, padding: "8px 16px",
                 color: "#fff", cursor: sending || !input.trim() ? "default" : "pointer", fontSize: 13, fontWeight: 600,
               }}
             >
-              Send
+              {sending ? "⏳" : "➤"}
             </button>
           </div>
         </div>
       )}
-      <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }`}</style>
+      <style>{`@keyframes aiDotBounce { 0%,60%,100%{transform:translateY(0);opacity:0.55} 30%{transform:translateY(-7px);opacity:1} }`}</style>
     </>
   );
 };
@@ -998,16 +1041,16 @@ const LenderPortfolioDashboard = () => {
   const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
+  const [reminderSent, setReminderSent] = useState({});
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [previewTier, setPreviewTier] = useState(null);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
-  const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
 
   // Tier — derived at component level so all JSX can reference it
-  const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'PRO')).toUpperCase();
+  const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'SMART' || effectiveTier === 'PRO';
 
@@ -1025,7 +1068,7 @@ const LenderPortfolioDashboard = () => {
   // Auto-set current FY for SMART (not PRO) — they can't pick the filter
   useEffect(() => {
     if (!data) return;
-    const t = (tierOverride || (data.membershipTier || 'PRO')).toUpperCase();
+    const t = (tierOverride || (data.membershipTier || 'FREE')).toUpperCase();
     if (t === 'SMART') {
       const now = new Date();
       const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
@@ -1087,6 +1130,18 @@ const LenderPortfolioDashboard = () => {
     if (!timingDetail[bucket] || !timingDetail[bucket].records) fetchTimingDetail(bucket, 0);
   };
 
+  const sendMaturityReminder = (m) => {
+    axios.post(
+      `${MARKETPLACE_URL}/v1/notifications/maturity-reminder`,
+      { dealId: m.dealId, maturityDate: m.maturityDate, principal: m.principalAmount },
+      { headers: { accessToken: getToken(), "Content-Type": "application/json" } }
+    ).then(() => {
+      setReminderSent(prev => ({ ...prev, [m.dealId]: true }));
+    }).catch(() => {
+      alert("Could not send reminder. Please try again.");
+    });
+  };
+
   const heroBg = isPro
     ? "linear-gradient(135deg, #1a237e 0%, #4a148c 60%, #6a1b9a 100%)"
     : isSmart
@@ -1120,7 +1175,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 0. TIER PREVIEW BANNER ── */}
               <TierPreviewBanner
                 activeTier={effectiveTier}
-                actualTier={(data?.membershipTier || 'PRO').toUpperCase()}
+                actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
                 onSelect={(t) => setPreviewTier(t)}
               />
 
@@ -1483,44 +1538,32 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th><th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {shown.map((m, idx) => {
-                            const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
-                            const nudgeIsPast = nudge && nudge < new Date();
-                            const alreadyReminded = remindedDeals.has(m.dealId);
-                            const sendReminder = () => {
-                              axios.post(`${MARKETPLACE_URL}/v1/notifications/maturity-reminder`, {
-                                dealId: m.dealId,
-                                maturityDate: fmtDate(m.maturityDate),
-                                principal: fmt(m.principalAmount),
-                              }, { headers: { accessToken: getToken() } })
-                                .then(() => setRemindedDeals(prev => new Set([...prev, m.dealId])))
-                                .catch(() => setRemindedDeals(prev => new Set([...prev, m.dealId])));
-                            };
-                            return (
-                              <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td><strong>#{m.dealId}</strong></td>
-                                <td>{fmtDate(m.maturityDate)}</td>
-                                <td>₹{fmt(m.principalAmount)}</td>
-                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
-                                <td>
-                                  {alreadyReminded ? (
-                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
-                                  ) : nudgeIsPast ? (
-                                    <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
-                                      Remind Me
-                                    </button>
-                                  ) : (
-                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
+                          {shown.map((m, idx) => (
+                            <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
+                              <td><strong>#{m.dealId}</strong></td>
+                              <td>{fmtDate(m.maturityDate)}</td>
+                              <td>₹{fmt(m.principalAmount)}</td>
+                              <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                              <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                              <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
+                              <td>
+                                {reminderSent[m.dealId] ? (
+                                  <span style={{ color: "#52c41a", fontSize: 11, fontWeight: 600 }}>✓ Reminder sent</span>
+                                ) : (
+                                  <button
+                                    onClick={() => sendMaturityReminder(m)}
+                                    style={{ background: "#f0f5ff", color: "#2f54eb", border: "1px solid #adc6ff", borderRadius: 4, padding: "2px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                  >
+                                    Remind Me
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>

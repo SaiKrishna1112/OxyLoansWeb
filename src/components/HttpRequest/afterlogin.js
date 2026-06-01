@@ -2569,57 +2569,66 @@ export const borrowerloaslistings = async (pageNo = 1, pageSize = 10) => {
   return response;
 };
 
-export const submitloanRequest = async (postdata) => {
+export const getDisbursementAmount = async () => {
   const token = getToken();
   const userId = getUserId();
-
-  const postdatastring = JSON.stringify({
-    duration: postdata.duration,
-    durationType: postdata.durationType,
-    expectedDate: postdata.expectedDate,
-    loanPurpose: postdata.loanpurpose,
-    loanRequestAmount: postdata.loanamount,
-    rateOfInterest: postdata.roi,
-    repaymentMethod: postdata.repayment,
-  });
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/loan/BORROWER/newrequest`,
+    `getDisbursementAmount/${userId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const generateBorrowerAgreement1 = async (payload) => {
+  const token = getToken();
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "aggrementGenerationforBorrowerSide",
     "POST",
     token,
-    postdatastring
+    JSON.stringify(payload),
   );
 
   return response;
 };
 
-export const editloanNewRequestHold = async (status) => {
+export const showingInterestAmountToBorrower = async (payload) => {
   const token = getToken();
-  const userId = getUserId();
-  const postdatastring = JSON.stringify({
-    status: status,
-  });
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/loan/BORROWER/updateLoanRequest`,
-    "PATCH",
+    `showingInterestAmountToBorrower`,
+    "POST",
     token,
-    postdatastring
+    payload
   );
-
   return response;
 };
 
-export const getPCreditReportDoc = async () => {
+export const getCibilBasedRoi = async () => {
   const token = getToken();
   const userId = getUserId();
-  const res = await handleApiRequestAfterLoginService(
+  const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/download/CREDITREPORT`,
+    `${userId}/getCibilBasedRoi`,
     "GET",
-    token,
+    token
   );
-  return res;
+  return response;
+};
+
+export const getBorrowerEligibleAmount = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerElgibleAmount/${userId}`,
+    "GET",
+    token
+  );
+  return response;
 };
 
 export const getBorrowerRequestAmount = async () => {
@@ -2632,6 +2641,18 @@ export const getBorrowerRequestAmount = async () => {
     `borrowerRequestAmount/${requestedBorrowerId}`,
     "GET",
     token
+  );
+  return response;
+};
+
+export const submitBorrowerLoanRequest = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerLoanRequest`,
+    "PATCH",
+    token,
+    JSON.stringify(payload)
   );
   return response;
 };
@@ -2674,90 +2695,6 @@ export const borrowerLoanExcute = async (payload) => {
   return response;
 };
 
-export const borrowerSecureInfo = async (payload) => {
-  const token = getToken();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `borrowerSecureInfo`,
-    "PATCH",
-    token,
-    JSON.stringify(payload)
-  );
-  return response;
-};
-
-export const getBorrowerSecureInfo = async () => {
-  const token = getToken();
-  const userId = getUserId();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `${userId}/borrower`,
-    "GET",
-    token
-  );
-  return response;
-};
-
-export const submitBorrowerLoanRequest = async (payload) => {
-  const token = getToken();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `borrowerLoanRequest`,
-    "PATCH",
-    token,
-    JSON.stringify(payload)
-  );
-  return response;
-};
-
-export const getCibilBasedRoi = async () => {
-  const token = getToken();
-  const userId = getUserId();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `${userId}/getCibilBasedRoi`,
-    "GET",
-    token
-  );
-  return response;
-};
-
-export const getBorrowerEligibleAmount = async () => {
-  const token = getToken();
-  const userId = getUserId();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `borrowerElgibleAmount/${userId}`,
-    "GET",
-    token
-  );
-  return response;
-};
-
-export const getDisbursementAmount = async () => {
-  const token = getToken();
-  const userId = getUserId();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `getDisbursementAmount/${userId}`,
-    "GET",
-    token
-  );
-  return response;
-};
-
-export const showingInterestAmountToBorrower = async (payload) => {
-  const token = getToken();
-  const response = await handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `showingInterestAmountToBorrower`,
-    "POST",
-    token,
-    payload
-  );
-  return response;
-};
-
 export const getLenderListNearByRedius1 = async (pageNo = 1, pageSize = 20) => {
   const token = getToken();
   const userId = getUserId();
@@ -2776,36 +2713,60 @@ export const getLenderListNearByRedius1 = async (pageNo = 1, pageSize = 20) => {
   return response;
 };
 
-
-export const generateBorrowerAgreement1 = async (payload) => {
+export const submitloanRequest = async (postdata) => {
   const token = getToken();
+  const userId = getUserId();
 
+  const postdatastring = JSON.stringify({
+    duration: postdata.duration,
+    durationType: postdata.durationType,
+    expectedDate: postdata.expectedDate,
+    loanPurpose: postdata.loanpurpose,
+    loanRequestAmount: postdata.loanamount,
+    rateOfInterest: postdata.roi,
+    repaymentMethod: postdata.repayment,
+  });
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    "aggrementGenerationforBorrowerSide",
+    `${userId}/loan/BORROWER/newrequest`,
     "POST",
     token,
-    JSON.stringify(payload),
+    postdatastring
   );
 
   return response;
 };
 
+export const editloanNewRequestHold = async (status) => {
+  const token = getToken();
+  const userId = getUserId();
+  const postdatastring = JSON.stringify({
+    status: status,
+  });
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/BORROWER/updateLoanRequest`,
+    "PATCH",
+    token,
+    postdatastring
+  );
 
-/////////// Lender ///////////
+  return response;
+};
 
 export const chatbotapicall = async (messages) => {
   const token = getToken();
   const userId = getUserId();
   try {
     const response = await axios({
-      url: `${MARKETPLACE_BASE}/v1/ai/chat`,
+      url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
       method: "POST",
       timeout: 30000,
       headers: {
         "Content-Type": "application/json",
         accessToken: token,
         userId: userId,
+        "X-API-KEY": "oxy-ai-prod-key",
       },
       data: { message: messages, primaryType: localStorage.getItem("primaryType") || "LENDER" },
     });
@@ -3580,4 +3541,28 @@ export const getMyCollectionCases = () =>
 
 export const syncCollections = () =>
   axios.post(`${MARKETPLACE_BASE}/v1/collections/sync`, {}, { headers: marketplaceHeaders() });
+
+export const getPCreditReportDoc = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/download/CREDIT_REPORT`,
+    "GET",
+    token
+  );
+  return res;
+};
+
+export const borrowerSecureInfo = (payload) =>
+  axios.patch(`${API_BASE_URL}borrowerSecureInfo`, payload, {
+    headers: { accessToken: getToken(), "Content-Type": "application/json" },
+  });
+
+export const getBorrowerSecureInfo = () => {
+  const userId = sessionStorage.getItem("userId");
+  return axios.get(`${API_BASE_URL}${userId}/borrower`, {
+    headers: { accessToken: getToken() },
+  });
+};
 
