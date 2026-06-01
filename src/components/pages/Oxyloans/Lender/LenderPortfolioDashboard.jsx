@@ -1400,6 +1400,18 @@ const LenderPortfolioDashboard = () => {
                 <>
                   <FyFilterBar fyFilter={fyFilter} setFyFilter={setFyFilter} loading={earningsLoading} />
 
+                  {/* Platform stats — Deals Launched + Deal Value, always visible next to filter */}
+                  {data.platformHealth && (
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                      <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals Launched This Month</span>
+                      </div>
+                      <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>💰</span><span>₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")} Deal Value</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Current Month breakdown — shown only when Current Month tab selected */}
                   {fyFilter.mode === "month" ? (() => {
                     const earned         = data.currentMonthInterestEarned    || 0;
@@ -2359,40 +2371,6 @@ const LenderPortfolioDashboard = () => {
                 </SectionCard>
               )}
 
-              {/* ── PLATFORM HEALTH ── */}
-              {(() => {
-                const ph = data.platformHealth;
-                if (!ph) return null;
-                const chips = [
-                  { icon: "🏦", label: `${ph.dealsAnnouncedThisMonth || 0} Deals Launched` },
-                  { icon: "💰", label: `₹${fmt(ph.dealsValueThisMonth || 0)} Deal Value` },
-                  { icon: "💸", label: `₹${fmt(ph.interestPaidThisMonth || 0)} Interest Paid Out` },
-                  { icon: "🔄", label: `₹${fmt(ph.principalReturnedThisMonth || 0)} Principal Returned` },
-                  { icon: "✅", label: `${ph.platformPaymentPunctualityPct || 0}% On-Time` },
-                  { icon: "👥", label: `${ph.activeLenders || 0} Active Lenders · +${ph.newLendersThisMonth || 0} New` },
-                ];
-                return (
-                  <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #b7eb8f", background: "linear-gradient(135deg, #f6ffed, #e8ffd4)", boxShadow: "0 2px 12px rgba(82,196,26,0.08)" }}>
-                    <div className="card-body">
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                        <span style={{ fontSize: 20 }}>🌿</span>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: "#135200" }}>OxyLoans This Month — Platform Pulse</div>
-                          <div style={{ fontSize: 11, color: "#52c41a" }}>Live platform activity for the current month</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                        {chips.map((chip, i) => (
-                          <div key={i} style={{ background: "#fff", border: "1px solid #b7eb8f", borderRadius: 20, padding: "6px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <span>{chip.icon}</span>
-                            <span>{chip.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
 
               <div className="row mb-2">
                 <div className="col-12">
