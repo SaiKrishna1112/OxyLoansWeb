@@ -71,7 +71,7 @@ const Admlogin = () => {
     if (retriveresponse.request.status == 200) {
       toastrSuccess("Login Success!");
       if (retriveresponse.data.primaryType == "LENDER") {
-        history("/dashboard");
+        history("/ai/portfolio");
       } else if (retriveresponse.data.primaryType == "ADMIN") {
         history("/dashboard");
       } else {

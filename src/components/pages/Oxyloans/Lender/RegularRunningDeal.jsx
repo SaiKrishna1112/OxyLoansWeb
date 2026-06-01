@@ -350,7 +350,7 @@ const RegularRunningDeal = () => {
                                 Tenure : {data.duration} {data.repaymentType == "PERDAY"? data.duration > 1 ? "Days" : "Day" : data.duration > 1 ? "Months" : "Month"}
                               </div>
                               <div className="col-auto col-lg-3">
-                                Deal Value : INR {data.dealAmount}
+                                Deal Value : INR {data.dealAmount.toLocaleString("en-IN")}
                               </div>
                               {/* <div>Status : Open</div> */}
                             </div>
@@ -421,19 +421,19 @@ const RegularRunningDeal = () => {
                                 <div className="col-sm-6 col-lg-2">
                                   <span>Available Limit</span>
                                   <h6 className="mb-0">
-                                    INR {data.remainingAmountToPaticipateInDeal}
+                                    INR {data.remainingAmountToPaticipateInDeal.toLocaleString("en-IN")}
                                   </h6>
                                 </div>
                                 <div className="col-sm-6 col-lg-2">
                                   <span>Min Amount</span>
                                   <h6 className="mb-0">
-                                    INR {data.minimumAmountInDeal}
+                                    INR {data.minimumAmountInDeal.toLocaleString("en-IN")}
                                   </h6>
                                 </div>
                                 <div className="col-sm-6 col-lg-2">
                                   <span>Max Amount</span>
                                   <h6 className="mb-0">
-                                    INR {data.lenderPaticipationLimit}
+                                    INR {data.lenderPaticipationLimit.toLocaleString("en-IN")}
                                   </h6>
                                 </div>
                                 <div className="col-sm-6 col-lg-2">
@@ -531,6 +531,16 @@ const RegularRunningDeal = () => {
                                   >
                                     <i className="fa fa-eye"></i> View borrowers  documents
                                   </span>
+                                </div></>}
+                                {data.dealId >= 740 && <>     <div className="col-auto">
+                                  <Link
+                                    type="button"
+                                    className="badge bg-primary-dark"
+                                    to={data.dealLink}
+                                    target="_blank"
+                                  >
+                                    <i className="fa fa-eye"></i> View borrowers drive link
+                                  </Link>
                                 </div></>}
 
                               </div>

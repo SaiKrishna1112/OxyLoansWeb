@@ -65,7 +65,7 @@ const OxyloansAdminSidebar = () => {
     {
       key: "OxyloansAdminDashboard",
       label: "Dashboard",
-      link: "/OxyloansAdminDashboard",
+      link: "/oxyloansadmindashboard",
       icon: "fa-solid fa-gauge",
       type: ["ADMIN", "HELPDESKADMIN"], // Show to all roles
     },
@@ -77,17 +77,24 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"], // Show to all roles
     },
     {
+      key:"DealsInfo",
+      label:"Deals Info",
+      link:"/dealsInfo",
+      icon:"fa-solid fa-handshake",
+      type:["ADMIN"]
+    },
+    {
       key: "adminAIDashboard",
-      label: "🤖 AI Platform Stats",
+      label: "AI Platform Stats",
       link: "/adminAIDashboard",
       icon: "fa-solid fa-robot",
       type: ["ADMIN"],
     },
     {
       key: "adminAIReconciliation",
-      label: "🤖 AI Reconciliation",
+      label: "AI Reconciliation",
       link: "/adminAIReconciliation",
-      icon: "fa-solid fa-scale-balanced",
+      icon: "fa-solid fa-robot",
       type: ["ADMIN"],
     },
     {
@@ -102,6 +109,13 @@ const OxyloansAdminSidebar = () => {
       link: "/borrowerLoanApplications",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
+    {
+  key: "failedborrowers",
+  label: "Failed borrowers",
+  link: "/failedborrowers",
+  icon: "fa-solid fa-triangle-exclamation",
+  type: ["HELPDESKADMIN", "ADMIN"]
+},
       {
       key: "activeLenders",
       label: "Active Lenders",
@@ -274,6 +288,13 @@ const OxyloansAdminSidebar = () => {
       link: "/marketplace-admin-dashboard",
       icon: "fa-solid fa-store",
       type: ["ADMIN","SUPERADMIN","HELPDESKADMIN"],
+    },
+  {
+      key: "aiReconciliation",
+      label: "AI Reconciliation",
+      link: "/admin/reconciliation",
+      icon: "fa-solid fa-brain",
+      type: ["ADMIN","SUPERADMIN"],
     },
 
   ];

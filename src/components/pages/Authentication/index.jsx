@@ -6,6 +6,7 @@ import FeatherIcon from "feather-icons-react";
 import { userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import { BsWhatsapp } from "react-icons/bs";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -72,14 +73,14 @@ const Login = () => {
         console.log(retriveresponse.data)
         localStorage.setItem("primaryType", retriveresponse.data.primaryType)
         sessionStorage.setItem("email", retriveresponse.data.email);
-        // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
-        // alert(retriveresponse.data.accessToken)
+        sessionStorage.setItem("accessToken", retriveresponse.headers?.accesstoken || retriveresponse.data.accessToken);
+        localStorage.setItem("accessToken", retriveresponse.headers?.accesstoken || retriveresponse.data.accessToken);
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
+          history("/ai/portfolio");
         } else if (retriveresponse.data.primaryType == "ADMIN") {
-          history("/oxyloansAdminDashboard");
+          history("/oxyloansadmindashboard");
         }else if (retriveresponse.data.primaryType == "HELPDESKADMIN") {
-          history("/oxyloansAdminDashboard");
+          history("/oxyloansadmindashboard");
         } 
         else {
           history("/borrowerDashboard");
@@ -201,11 +202,11 @@ const Login = () => {
                   </div>
 
                   <div className="social-login">
-                    {/* <Link to="#">
+                    {/* <Link to="#" className="bg-success text-white">
                       <i className="fab fa-google-plus-g" />
                     </Link> */}
                     <Link to="/whatsapplogin" className="bg-success text-white">
-                      <i className="fa fa-whatsapp" />{" "}
+                       <BsWhatsapp />{" "}
                     </Link>
                     {/* <Link onClick={() => {}} to="#">
                       <i className="fab fa-facebook-f" />

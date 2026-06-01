@@ -210,8 +210,8 @@ const WithdrawalFromWallet = () => {
 
         if (withdrawrequest.isalredyRequested) {
           Info(
-            `Withdrawal request for INR ${withdrawrequest.withdrawarequestedamount
-            } already made. Now adding INR ${withdrawrequest.withdrawAmount
+            `Withdrawal request for INR ${withdrawrequest.withdrawarequestedamount.toLocaleString("en-IN")
+            } already made. Now adding INR ${withdrawrequest.withdrawAmount.toLocaleString("en-IN")
             }, total withdrawal amount will be INR ${parseInt(withdrawrequest.withdrawarequestedamount) +
             parseInt(withdrawrequest.withdrawAmount)
             }.`,

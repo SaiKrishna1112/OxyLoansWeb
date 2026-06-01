@@ -129,7 +129,7 @@ const MyclosedDeals = () => {
       key: data.dealId,
       DealId: data.dealId,
       DealName: data.dealName,
-      Participated: "INR " + data.totalPaticipation,
+      Participated: "INR " + (data.totalPaticipation ? data.totalPaticipation.toLocaleString("en-IN") : null),
       ProcessingFee:
         data.feeStatus === "COMPLETED" ? (
           <button className="btn w-40 btn-primary btn-xs" disabled>

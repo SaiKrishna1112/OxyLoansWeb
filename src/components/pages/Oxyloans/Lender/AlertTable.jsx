@@ -21,7 +21,7 @@ function AlertTable({ data, open: propOpen, sendRunningDealStatement }) {
         tableapi.push({
           key: index + 1,
           upatedDate: api.upatedDate,
-          amount: api.amount,
+          amount: api.amount ? api.amount.toLocaleString("en-IN") : null,
         });
       })
     ) : (

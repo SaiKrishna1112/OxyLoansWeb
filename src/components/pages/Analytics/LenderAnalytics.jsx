@@ -135,6 +135,39 @@ export default function LenderAnalytics() {
   const totalInterest = interestData.reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const totalPrincipal = principalData.reduce((s, r) => s + (Number(r.amount) || 0), 0);
 
+  // Cumulative earnings over time (sorted by date)
+  const cumulativeChart = (() => {
+    const entries = interestData
+      .map(r => ({ d: new Date(r.returedDate || r.date || r.creditedDate || 0), v: Number(r.amount) || 0 }))
+      .filter(e => !isNaN(e.d))
+      .sort((a, b) => a.d - b.d);
+    let running = 0;
+    const labels = [];
+    const values = [];
+    entries.forEach(e => {
+      running += e.v;
+      labels.push(e.d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" }));
+      values.push(running);
+    });
+    return { labels, values };
+  })();
+
+  const cumulativeSeries = [{ name: "Cumulative Earnings", data: cumulativeChart.values }];
+  const cumulativeOptions = {
+    chart: { type: "area", height: 200, toolbar: { show: false }, fontFamily: "Inter, sans-serif", sparkline: { enabled: false } },
+    stroke: { curve: "smooth", width: 2 },
+    colors: ["#f59e0b"],
+    fill: { type: "gradient", gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05 } },
+    dataLabels: { enabled: false },
+    xaxis: { categories: cumulativeChart.labels, labels: { show: cumulativeChart.labels.length <= 10, style: { fontSize: "10px" }, rotate: -30 } },
+    yaxis: { labels: { formatter: v => "₹" + (v >= 100000 ? (v / 100000).toFixed(1) + "L" : v >= 1000 ? (v / 1000).toFixed(0) + "K" : v) } },
+    grid: { borderColor: "#f1f5f9" },
+    tooltip: { y: { formatter: v => fmt(v) } },
+  };
+
+  const totalInvested = participationData.reduce((s, r) => s + (Number(r.participatedAmount) || 0), 0);
+  const roi = totalInvested > 0 ? ((totalInterest / totalInvested) * 100).toFixed(1) : null;
+
   if (loading) return (
     <div style={{ display: "flex" }}>
       <Sidebar />
@@ -170,7 +203,19 @@ export default function LenderAnalytics() {
             <Card label="Closed Deals" value={stats?.numberOfClosedDealsCount ?? "—"} sub={`Amount: ${fmt(stats?.closedDealsAmount)}`} color="#6366f1" />
             <Card label="Total Interest Earned" value={fmt(totalInterest)} sub="All time" color="#f59e0b" />
             <Card label="Principal Returned" value={fmt(totalPrincipal)} sub="All time" color="#10b981" />
+            {roi !== null && (
+              <Card label="Overall ROI" value={`${roi}%`} sub="Interest / Invested" color="#ef4444" />
+            )}
           </div>
+
+          {/* Cumulative earnings chart */}
+          {cumulativeChart.values.length > 1 && (
+            <div style={{ background: "#fff", borderRadius: 12, padding: 20, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "#0f172a", marginBottom: 4 }}>Cumulative Interest Earned</div>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 14 }}>Total growth of your interest income over time</div>
+              <ReactApexChart options={cumulativeOptions} series={cumulativeSeries} type="area" height={200} />
+            </div>
+          )}
 
           {/* Charts Row */}
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 20, marginBottom: 24 }}>

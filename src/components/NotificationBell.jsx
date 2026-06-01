@@ -56,7 +56,8 @@ const NotificationBell = () => {
 
   const fetchCount = () => {
     const userId = getUserId();
-    if (!userId) return;
+    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+    if (!userId || !token || token === "null" || token === "undefined") return;
     axios
       .get(`${BASE}/v1/notifications/count`, { headers: headers() })
       .then((res) => {

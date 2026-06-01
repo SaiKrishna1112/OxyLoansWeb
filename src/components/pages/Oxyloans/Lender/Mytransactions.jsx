@@ -52,8 +52,8 @@ const Mytransactions = () => {
           datasource.push({
             key: Math.random(),
             TransactionDate: data.transactionDate,
-            CreditedAmount: data.creditedAmount,
-            DebitedAmount: data.debitedAmount,
+            CreditedAmount: data.creditedAmount ? data.creditedAmount.toLocaleString("en-IN") : null,
+            DebitedAmount: data.debitedAmount ? data.debitedAmount.toLocaleString("en-IN") : null,
             Status: data.amountFrom == " " ? " No data found" : data.amountFrom,
           });
         })

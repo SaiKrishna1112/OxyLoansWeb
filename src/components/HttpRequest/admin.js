@@ -1,5 +1,10 @@
 import axios from "axios";
 import { API_USER_URL as API_BASE_URL } from "../../config";
+const userisIn = "local"; //local or production
+// const API_BASE_URL =
+//   userisIn == "local"
+//     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
+//     : "https://fintech.oxyloans.com/oxyloans/v1/user/"; 
 
 
 
@@ -784,3 +789,140 @@ export const fetchTopLenders = async ()=>{
   );
   return response;
 }
+
+export const getBorrowerCharges = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerCharges`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const updateBorrowerCharges = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateBorrowerCharges`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getAdminUpdateProcessingFees = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getAdminUpdateProcessingFees`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const adminUpdateProcessingFee = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `adminUpdateProcessingFee`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const adminBorrowerSecureInfo = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerSecureInfo`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const calculateRoiBasedOnCibilScore = async (cibilScore, userId) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `calculateRoiBasedOnCibilScore`,
+    "PATCH",
+    token,
+    { cibilScore: String(cibilScore), userId: String(userId) }
+  );
+  return response;
+};
+
+export const verifyDocument = async (userId, id, status) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `verifyDocuments`,
+    "PATCH",
+    token,
+    { userId: String(userId), id: String(id), status }
+  );
+  return response;
+};
+
+export const updateBorrowerComment = async (id, comments) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "updateComments",
+    "PATCH",
+    token,
+    { id, comments }
+  );
+  return response;
+};
+
+export const getPendingBorrowerList = async (pageNo, pageSize, name) => {
+  const token = getToken();
+  
+  const data = {
+    pageNo: pageNo,
+    pageSize: pageSize,
+    name: name,
+  };
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getPendingBorrowerList",
+    "POST",
+    token,
+    data
+  );
+
+  return response;
+};
+
+export const getFailedBorrowerDocuments = async (borrowerId) => {
+  const token = getToken();
+  const response = await axios({
+    method: "GET",
+    url: `${API_BASE_URL}getFailedBorrowerDocuments/${borrowerId}`,
+    headers: { accessToken: token },
+  });
+  return response;
+};
+
+export const uploadBorrowerDocument = async (borrowerId, file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("AADHAR", file);
+  const response = await axios({
+    method: "POST",
+    url: `${API_BASE_URL}borrowerFileUpload/${borrowerId}`,
+    data: formData,
+    headers: { accessToken: token },
+  });
+  return response;
+};

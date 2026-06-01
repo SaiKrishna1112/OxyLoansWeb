@@ -22,6 +22,7 @@ import {
 import { toastrError } from "../Base UI Elements/Toast";
 import "./user.css";
 import Whatappuser from "./Whatappuser";
+import { BsWhatsapp } from "react-icons/bs";
 
 const Whatapplog = () => {
   let inputRef = useRef();
@@ -244,11 +245,14 @@ const Whatapplog = () => {
                           <i className="fab fa-google-plus-g" />
                         </Link> */}
                             <Link
-                              to="/whatsapplogin"
+                              to="/"
                               className="bg-success text-white"
                             >
-                              <i className="fa fa-whatsapp" />
+                              <i class="fa-solid fa-at"></i>
                             </Link>
+                              <Link to="/loginotp" className="bg-success text-white">
+                          <i class="fa-solid fa-phone"></i>{" "}
+                        </Link>
                             {/* <Link to="#">
                           <i className="fab fa-facebook-f" />
                         </Link>
@@ -300,15 +304,15 @@ const Whatapplog = () => {
                           {/* Social Login */}
                           <div className="social-login">
                             <Link
-                              to="/whatsapplogin"
+                              to="/"
                               className="bg-success text-white"
                             >
-                              <i className="fa fa-whatsapp" />
+                              <i class="fa-solid fa-at"></i>
                             </Link>
-                            {/* <Link to="#">
+                            <Link to="/whatsapplogin" className="bg-success text-white">
 
-                          <i className="fab fa-google-plus-g" />
-                        </Link> */}
+                          <BsWhatsapp />{" "}
+                        </Link>
 
                             {/* <Link to="#">
                           <i className="fab fa-facebook-f" />

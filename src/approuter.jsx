@@ -1,6 +1,9 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
+import LenderAIDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -21,6 +24,10 @@ import Emicalculator from "./components/pages/Oxyloans/Lender/Emicalculator";
 import LoadwaletThroughQr from "./components/pages/Oxyloans/Lender/LoadwaletThroughQr";
 import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/LoadwalletThroughVirtualAccount";
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
+import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
+import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
+import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
+import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
 import MyEarnings from "./components/pages/Oxyloans/Lender/MyEarnings";
@@ -43,6 +50,8 @@ import Withdrawdealfromwallet from "./components/pages/Oxyloans/Lender/Withdrawd
 import Writetous from "./components/pages/Oxyloans/Lender/Writetous";
 import WithdrawalFromWallet from "./components/pages/Oxyloans/Lender/WithdrawalFromWallet";
 import WithdrawdealFounds from "./components/pages/Oxyloans/Lender/WithdrawdealFounds";
+import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges";
+import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees";
 import MembershipHistory from "./components/pages/Oxyloans/Lender/MembershipHistory";
 import Mytransactions from "./components/pages/Oxyloans/Lender/Mytransactions";
 import WalletToWalletHistory from "./components/pages/Oxyloans/Lender/WalletToWalletHistory";
@@ -114,6 +123,15 @@ import EquityDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EquityD
 import EscrowsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/EscrowsDeals.jsx";
 import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
 import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";
+
+import BorrowerLoanRequestCreate from "./components/pages/Oxyloans/Borrower/BorrowerLoanRequestCreate.jsx";
+import BorrowerRequestAmount from "./components/pages/Oxyloans/Borrower/BorrowerRequestAmount.jsx";
+import BorrowerLoansInitiated from "./components/pages/Oxyloans/Borrower/BorrowerLoansInitiated.jsx";
+import BorrowerDisbursementAmount from "./components/pages/Oxyloans/Borrower/BorrowerDisbursementAmount.jsx";
+import BorrowerDisbursementInterestAmount from "./components/pages/Oxyloans/Borrower/BorrowerDisbursementInterestAmount.jsx";
+import BorrowerNearbyLendersPage from "./components/pages/Oxyloans/Borrower/BorrowerNearbyLendersPage.jsx";
+// ********************BORROWER MODULE    ROUTES END ************************** //
+
 import PostLoanRequest from "./components/pages/Oxyloans/Borrower/PostLoanRequest";
 import OpenMarketLoanListings from "./components/pages/Oxyloans/Lender/OpenMarketLoanListings";
 import InterestRateNegotiation from "./components/pages/Oxyloans/Lender/InterestRateNegotiation";
@@ -153,14 +171,17 @@ import TopLendersInfo from "./components/pages/Oxyloans/Admin/TopLendersList/Top
 import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/AllReferreDetails.js";
 import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
 import ActiveLendersParticipationPage from "./components/pages/Oxyloans/Admin/ActiveLenders/ActiveLendersParticipationPage.jsx";
+import FailedBorrowers from "./components/pages/Oxyloans/Admin/FailedBorrowers.jsx";
+import DealsInfo from "./components/pages/Oxyloans/Admin/DealsInfo.jsx";
 import CollectionsAdminDashboard from "./components/pages/Oxyloans/Admin/CollectionsAdminDashboard";
 import AgentPortal from "./components/pages/Oxyloans/Admin/AgentPortal";
 import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
 import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
+import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReconciliationDashboard";
 import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
 import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
-import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
+import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -168,14 +189,25 @@ const isAuthenticated = () =>
 const PrivateRoute = ({ element }) =>
   isAuthenticated() ? element : <Navigate to="/loginotp" replace />;
 
+const CatchAll = () => {
+  if (!isAuthenticated()) return <Navigate to="/loginotp" replace />;
+  const pt = localStorage.getItem("primaryType") || "";
+  if (pt === "ADMIN" || pt === "HELPDESKADMIN") return <Navigate to="/oxyloansadmindashboard" replace />;
+  if (pt === "LENDER") return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/borrowerDashboard" replace />;
+};
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
         <Route path="/" element={<Login />} />
+        {/* <Route path="/login" element={<Login />} /> */}
         <Route path="/loginotp" element={<Loginotp />} />
         <Route path="/admlogin" element={<Admlogin />} />
+        <Route path="/dashboard" element={<AdminDashboard />} />
+        <Route path="/loadwaletThroughQr" element={<LoadwaletThroughQr />} />
         <Route path="/register" element={<LenderRegister />} />
         <Route path="/userType" element={<UserType />} />
         <Route path="/borrower_register" element={<BorrowerRegister />} />
@@ -183,6 +215,163 @@ const AppRouter = () => {
         <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/forgotpassword" element={<ForgotPassword3 />} />
         <Route path="/forgotpassword2" element={<ForgotPassword />} />
+        <Route path="/whatsappuser" element={<Whatappuser />} />
+        <Route path="/escrowDeals" element={<EscrowDeals />} />
+        <Route path="/regularEscrowDeals" element={<RegularEscrowDeals />} />
+        <Route path="top-lenders" element={<TopLendersPage />} />
+        <Route
+          path="/loadwalletThroughVirtualAccount"
+          element={<LoadwalletThroughVirtualAccount />}
+        />
+        <Route
+          path="/withdrawdealfromwallet"
+          element={<Withdrawdealfromwallet />}
+        />
+        <Route path="/mainadmindashboard" element={<MainAdminDashboard />} />
+        <Route
+          path="/oxyloansadmindashboard"
+          element={<OxyloansAdminDashboard />}
+        />
+        <Route
+          path="/walletToWalletHistory"
+          element={<WalletToWalletHistory />}
+        />
+        <Route path="/viewdeals" element={<ViewDeals />} />
+        <Route path="/admintestDeals" element={<TestDeals />} />
+        <Route path="/spining" element={<Spining />} />
+        <Route path="/admlogin" element={<Admlogin />} />
+        <Route
+          path="/withdrawdealfromDeal"
+          element={<WithdrawdealfromDeal />}
+        />
+        <Route
+          path="/transferWalletToWallet"
+          element={<TransferWalletToWallet />}
+        />
+        <Route path="/mywithdrawalHistory" element={<MywithdrawalHistory />} />
+        <Route path="/participatedeal" element={<Participatedeal />} />
+        <Route path="/writetous" element={<Writetous />} />
+        <Route path="/viewTicketHistory" element={<ViewTicketHistory />} />
+        <Route path="/todaydeal" element={<Todaydeal />} />
+        <Route path="/testdeals1" element={<Testdeal1 />} />
+        <Route path="/viewCurrentDayDeals" element={<ViewCurrentDayDeals />} />
+        <Route path="/emicalculator" element={<Emicalculator />} />
+        <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderAIDashboard />} />} />
+        <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderAIDashboard />} />} />
+        <Route path="/adminAIDashboard" element={<PrivateRoute element={<AdminAIDashboard />} />} />
+        <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
+        <Route path="/configautoInvest" element={<ConfigautoInvest />} />
+        <Route path="/membership" element={<Membership />} />
+        <Route
+          path="/referalEaringsMonthWise"
+          element={<ReferalEaringsMonthWise />}
+        />
+        <Route path="/viewAutoHistory" element={<ViewAutoHistory />} />
+        <Route path="/regularRunningDeal" element={<RegularRunningDeal />} />
+        <Route path="/myRunningDeals" element={<MyRunningDeals />} />
+        <Route path="/myclosedDeals" element={<MyclosedDeals />} />
+        <Route path="/myholdamount" element={<Myholdamount />} />
+        <Route
+          path="/mypartiallClosedDeal"
+          element={<MypartiallClosedDeal />}
+        />
+        <Route path="/ticketHistory" element={<TicketHistory />} />
+        <Route path="/Fileconvension" element={<Fileconvension />} />
+        <Route path="/myinterestEarning" element={<MyinterestEarning />} />
+        <Route path="/myhighvalueDeals" element={<MyhighvalueDeals />} />
+        <Route path="/earningCertificate" element={<EarningCertificate />} />
+        <Route path="/myloansStatement" element={<MyloansStatement />} />
+        <Route path="/referaFriend" element={<ReferaFriend />} />
+        <Route path="/myreferalStatus" element={<MyreferalStatus />} />
+        <Route path="/lendercontacts" element={<Mycontacts />} />
+        <Route path="/lendercontacts1" element={<Mycontacts1 />} />
+        <Route
+          path="/walletToWalletHistory"
+          element={<WalletToWalletHistory />}
+        />
+        <Route path="/myEarnings" element={<MyEarnings />} />
+        <Route path="/loanListings" element={<LoanListings />} />
+        <Route path="/proximityLoans" element={<ProximityLoans />} />
+        <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
+        <Route path="/offerGivenList" element={<OfferGivenList />} />
+        <Route path="/disburseLoans" element={<DisburseLoans />} />
+        <Route path="/WalletToWallet" element={<WalletToWallet />} />
+        <Route
+          path="/withdrawalFromWallet"
+          element={<WithdrawalFromWallet />}
+        />
+        <Route path="/withdrawdealFounds" element={<WithdrawdealFounds />} />
+        <Route path="/whatappuser" element={<Whatappuser />} />
+        <Route path="/membershipHistory" element={<MembershipHistory />} />
+        <Route path="/mytransactions" element={<Mytransactions />} />
+        <Route path="/autoInvestHistory" element={<AutoInvestHistory />} />
+        <Route
+          path="/dashboardTransactions"
+          element={<DashboardTransactions />}
+        />
+        <Route
+          path="/loadwalletThroughVirtualAccount"
+          element={<LoadwalletThroughVirtualAccount />}
+        />{" "}
+        <Route path="/interestsDateWise" element={<InterestsDateWise />} />
+        <Route path="/whatsapplogin" element={<Whatapplog />} />
+        <Route
+          path="/walletToWalletTransactionHistory"
+          element={<WalletToWalletTransactionHistory />}
+        />
+        {/* ******************** BORROWER MODULE    ROUTES START **************************  */}
+        <Route path="/borrowerDashboard" element={<BorrowerDashboard />} />
+        <Route path="/borrowerProfile" element={<BorrowerProfile />} />
+        <Route path="/borrowerAgreedLoans" element={<BorrowerAgreedLoans />} />
+        <Route path="/borrowerenach" element={<BorrowerEnach />} />
+        <Route
+          path="/borrowerLoaneligibility"
+          element={<BorrowerLoanEligibility />}
+        />
+        <Route path="/borrowerloanListing" element={<BorrowerLoanListing />} />
+        <Route
+          path="/borrowerloanstatement"
+          element={<BorrowerLoanstatement />}
+        />{" "}
+        <Route path="/updatekyc" element={<Updatekyc />} />
+        <Route path="/borrowermycontacts" element={<Borrowermycontacts />} />
+        <Route path="/borrowermyearnings" element={<BorrowerMyEarnings />} />
+        <Route
+          path="/borrowermyloanApplication"
+          element={<BorrowerMyLoanApplication />}
+        />
+        <Route path="/borrowerpayemi" element={<BorrowerPayEmi />} />
+        <Route path="/loanRequest" element={<LoanRequest />} />
+        <Route path="/borrowerreferfriend" element={<BorrowerReferFriend />} />
+        <Route path="/borrowerreferstatus" element={<BorrowerReferStatus />} />
+        <Route
+          path="/borrowerrunningLoans"
+          element={<BorrowerRunningLoans />}
+        />
+        <Route path="/borrowerwriteTous" element={<BorrowerWriteTous />} />
+        <Route
+          path="/borroweremicalculator"
+          element={<BorrowerEmiCalculator />}
+        />
+        <Route
+          path="/borrowerTicketHistory"
+          element={<BorrowerTicketHistory />}
+        />
+        <Route
+          path="/getListOfBorrowerDetails"
+          element={<GetListOfBorrowerDetails />}
+        />
+        <Route path="/partnerLogin" element={<PartnerLogin />} />
+        <Route path="/patnerdashboard" element={<Patnerdashboard />} />
+        <Route path="/partnerrequestInfo" element={<PartnerrequestInfo />} />
+        <Route path="/Partneraccept" element={<Partneraccept />} />
+        <Route path="/borrowerLoanRequestCreate" element={<BorrowerLoanRequestCreate />} />
+        <Route path="/borrowerRequestAmount" element={<BorrowerRequestAmount />} />
+        <Route path="/borrowerLoansInitiated" element={<BorrowerLoansInitiated />} />
+        <Route path="/borrowerDisbursementAmount" element={<BorrowerDisbursementAmount />} />
+        <Route path="/borrowerDisbursementInterestAmount/:borrowerId/:loanId/:id" element={<BorrowerDisbursementInterestAmount />} />
+        <Route path="/nearbyleders" element={<BorrowerNearbyLendersPage />} />
+        {/* ******************** BORROWER MODULE ROUTES END **************************  */}
         <Route path="/partnerRegister" element={<PartnerRegister />} />
         <Route path="/partnerLogin" element={<PartnerLogin />} />
         <Route path="/whatsapplogin" element={<Whatapplog />} />
@@ -310,6 +499,38 @@ const AppRouter = () => {
         <Route path="/monthlyReturnedInterest" element={<PrivateRoute element={<MonthlyReturnedInterest />} />} />
         <Route path="/activeLendersParticipation" element={<PrivateRoute element={<ActiveLendersParticipationPage />} />} />
 
+<Route path ="/viewstudentdeals" element={<StudentDeals />} />
+        <Route path ="/viewequitydeals" element={<EquityDeals />} />
+        <Route path ="/viewescrowsdeals" element={<EscrowsDeals  />} />
+        <Route path="/viewtestsDeals" element={<TestsDeals />} />
+        <Route path="/viewsalariedDeals" element={<SalariedDeals />} />
+
+        <Route path="/lenderLoanApplications" element={<LenderLoanApplications />} />
+        <Route path="/borrowerLoanApplications" element={<BorrowerLoanApplications />} />
+
+        <Route path="/updateUserDetails" element={<RemoveCredentials />} />
+        <Route path="/assignedUsersforCallers" element={<AssignedUsersforCallers/>}/>
+
+        <Route path="/radhaDashboard" element={<RadhaDashboard/>}/>
+        <Route path="/userCommentDetails" element={<UserCommentDetails/>}/>
+
+        <Route path="/myCalls" element={<CallsDataBasedOnID/>}/>
+        <Route path="/participatedAmountInfo" element={<ParticipatedAmountInfo />}/>
+        <Route path="/uploadFile" element={<UploadFile />}/>
+        <Route path="/MonthlyInterest" element={<MonthlyInterest/>}/>
+        <Route path="/interestDetailsTable" element={<InterestDetailsTable/>}/>
+        <Route path="/participationList" element={<ParticipationList/>}/>
+        <Route path="/userParticipationlist" element={<UserParticipationList />} />
+        <Route path="/topLendersInfo" element={<TopLendersInfo />}/>
+        <Route path="/allReferreDetails" element={<AllReferreDetails />} />
+        <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
+
+        <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
+        <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
+        <Route path="/adminProcessingFees" element={<ProcessingFees />} />
+        <Route path="/failedborrowers" element={<FailedBorrowers />} />
+        <Route path="/dealsInfo" element={<DealsInfo />} />
+        {/* ******************** AdminMODULE ROUTES END **************************  */}
         {/* MARKETPLACE */}
         <Route path="/post-loan-request" element={<PrivateRoute element={<PostLoanRequest />} />} />
         <Route path="/marketplace-loans" element={<PrivateRoute element={<OpenMarketLoanListings />} />} />
@@ -335,17 +556,20 @@ const AppRouter = () => {
         <Route path="/agreement/:loanRequestId" element={<PrivateRoute element={<AgreementPage />} />} />
         <Route path="/my-loans" element={<PrivateRoute element={<MyLoans />} />} />
         <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolio />} />} />
-        <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
-        <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
-        <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
-        <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
-        <Route path="/ai/plan" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
         <Route path="/admin/collections" element={<PrivateRoute element={<CollectionsAdminDashboard />} />} />
         <Route path="/admin/agent-portal" element={<PrivateRoute element={<AgentPortal />} />} />
         <Route path="/admin/ceo-dashboard" element={<PrivateRoute element={<CeoDashboard />} />} />
         <Route path="/admin/marketplace" element={<PrivateRoute element={<MarketplaceAdminDashboard />} />} />
+        <Route path="/smart-loan-match" element={<PrivateRoute element={<SmartLoanMatch />} />} />
         <Route path="/lender-analytics" element={<PrivateRoute element={<LenderAnalytics />} />} />
         <Route path="/borrower-analytics" element={<PrivateRoute element={<BorrowerAnalytics />} />} />
+        <Route path="/admin/reconciliation" element={<PrivateRoute element={<AdminReconciliationDashboard />} />} />
+        <Route path="/ai/portfolio" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/ai/portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
+        <Route path="*" element={<CatchAll />} />
       </Routes>
     </BrowserRouter>
   );
