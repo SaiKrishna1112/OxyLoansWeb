@@ -1519,8 +1519,8 @@ const LenderPortfolioDashboard = () => {
 
                         {/* Tile 6: Deal Participation Rate — backend field: platformDealsLaunchedThisMonth, myDealsThisMonth */}
                         {(() => {
-                          const launched = data.platformDealsLaunchedThisMonth || 0;
                           const mine     = data.myDealsThisMonth || 0;
+                          const launched = data.platformHealth?.dealsAnnouncedThisMonth || 0;
                           const pct      = launched > 0 ? Math.round((mine / launched) * 100) : null;
                           return (
                             <div className="col-12 col-sm-6 col-lg">
@@ -1529,20 +1529,17 @@ const LenderPortfolioDashboard = () => {
                                   <span style={{ fontSize: 20 }}>🏹</span>
                                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#0958d9", fontWeight: 700 }}>Deal Participation</div>
                                 </div>
-                                {launched > 0 ? (
+                                <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 2 }}>{mine} deal{mine !== 1 ? "s" : ""} this month</div>
+                                {launched > 0 && pct !== null ? (
                                   <>
-                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 2 }}>{mine} / {launched}</div>
-                                    <div style={{ fontSize: 12, color: "#0958d9", marginBottom: 6 }}>deals you joined vs platform launched</div>
+                                    <div style={{ fontSize: 12, color: "#0958d9", marginBottom: 6 }}>{mine} of {launched} platform deals</div>
                                     <div style={{ background: "#e6f4ff", borderRadius: 4, height: 6, overflow: "hidden" }}>
                                       <div style={{ width: `${pct}%`, height: "100%", background: "#1677ff", borderRadius: 4, transition: "width 0.8s ease" }} />
                                     </div>
-                                    <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{pct}% participation rate this month</div>
+                                    <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{pct}% of this month's deals</div>
                                   </>
                                 ) : (
-                                  <>
-                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 4 }}>{mine} deals</div>
-                                    <div style={{ fontSize: 12, color: "#8c8c8c" }}>Platform data coming soon</div>
-                                  </>
+                                  <div style={{ fontSize: 12, color: "#8c8c8c" }}>{mine === 0 ? "No new investments this month" : "Invested this month"}</div>
                                 )}
                               </div>
                             </div>
