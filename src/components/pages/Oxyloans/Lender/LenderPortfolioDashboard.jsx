@@ -883,25 +883,31 @@ const DealAnalyticsCharts = ({ data, earningsData, collapsible = false, defaultO
         )}
 
         {/* India's Largest Bank FD comparison inline */}
-        {data?.fdComparison && (
-          <div className="col-12">
-            <ReactApexChart
-              options={{
-                chart: { type: "bar", fontFamily: "inherit", toolbar: { show: false } },
-                xaxis: { categories: ["Your OxyLoans ROI", "Bank FD (avg)"] },
-                yaxis: { title: { text: "Rate (%)" }, max: Math.max(data.fdComparison.oxyloansReturnPct || 0, 8) + 2 },
-                colors: ["#52c41a", "#8c8c8c"],
-                plotOptions: { bar: { borderRadius: 6, columnWidth: "35%", distributed: true } },
-                dataLabels: { enabled: true, formatter: (v) => `${v}%` },
-                legend: { show: false },
-                title: { text: "Your Returns vs Bank FD", align: "left", style: { fontSize: "13px", fontWeight: 700 } },
-              }}
-              series={[{ name: "Rate", data: [data.fdComparison.oxyloansReturnPct || 0, data.fdComparison.sbiFdRate || 6.8] }]}
-              type="bar"
-              height={200}
-            />
-          </div>
-        )}
+        {data?.fdComparison && (() => {
+          const chartAvgRoi = allDeals.length > 0
+            ? parseFloat((allDeals.reduce((s, d) => s + (d.rateOfInterest < 5 ? d.rateOfInterest * 12 : d.rateOfInterest), 0) / allDeals.length).toFixed(1))
+            : 0;
+          const chartOxyRoi = data.fdComparison.oxyloansReturnPct || chartAvgRoi;
+          return (
+            <div className="col-12">
+              <ReactApexChart
+                options={{
+                  chart: { type: "bar", fontFamily: "inherit", toolbar: { show: false } },
+                  xaxis: { categories: ["Your OxyLoans ROI", "Bank FD (avg)"] },
+                  yaxis: { title: { text: "Rate (%)" }, max: Math.max(chartOxyRoi, 8) + 2 },
+                  colors: ["#52c41a", "#8c8c8c"],
+                  plotOptions: { bar: { borderRadius: 6, columnWidth: "35%", distributed: true } },
+                  dataLabels: { enabled: true, formatter: (v) => `${v}%` },
+                  legend: { show: false },
+                  title: { text: "Your Returns vs Bank FD", align: "left", style: { fontSize: "13px", fontWeight: 700 } },
+                }}
+                series={[{ name: "Rate", data: [chartOxyRoi, data.fdComparison.sbiFdRate || 6.8] }]}
+                type="bar"
+                height={200}
+              />
+            </div>
+          );
+        })()}
       </div>
     </SectionCard>
   );
@@ -1937,32 +1943,42 @@ const LenderPortfolioDashboard = () => {
                   </div>
                   {/* FD Comparison — no bank name */}
                   <div className="col-12 col-md-6 mb-3">
-                    {data.fdComparison && (
-                      <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 12, padding: 20, height: "100%" }}>
-                        <div style={{ fontSize: 13, color: "#135200", fontWeight: 700, marginBottom: 12 }}>
-                          How You Compare — Bank FD vs OxyLoans
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>Bank FD (avg)</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: "#8c8c8c" }}>{data.fdComparison.sbiFdRate || 6.8}%</div>
+                    {data.fdComparison && (() => {
+                      const allDealsRaw = data.allDeals || data.deals || [];
+                      const historicalAvgRoi = allDealsRaw.length > 0
+                        ? parseFloat((allDealsRaw.reduce((s, d) => s + (d.rateOfInterest < 5 ? d.rateOfInterest * 12 : d.rateOfInterest), 0) / allDealsRaw.length).toFixed(1))
+                        : 0;
+                      const displayRoi = data.fdComparison.oxyloansReturnPct || historicalAvgRoi;
+                      const isHistorical = !data.fdComparison.oxyloansReturnPct && historicalAvgRoi > 0;
+                      const extraVsFd = parseFloat((displayRoi - (data.fdComparison.sbiFdRate || 6.8)).toFixed(1));
+                      return (
+                        <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 12, padding: 20, height: "100%" }}>
+                          <div style={{ fontSize: 13, color: "#135200", fontWeight: 700, marginBottom: 12 }}>
+                            How You Compare — Bank FD vs OxyLoans
                           </div>
-                          <div style={{ flex: 1, borderTop: "2px dashed #b7eb8f" }} />
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#52c41a", marginBottom: 2 }}>Your OxyLoans ROI</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: "#52c41a" }}>{data.fdComparison.oxyloansReturnPct || 0}%</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>Bank FD (avg)</div>
+                              <div style={{ fontSize: 28, fontWeight: 800, color: "#8c8c8c" }}>{data.fdComparison.sbiFdRate || 6.8}%</div>
+                            </div>
+                            <div style={{ flex: 1, borderTop: "2px dashed #b7eb8f" }} />
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 11, color: "#52c41a", marginBottom: 2 }}>Your OxyLoans ROI</div>
+                              <div style={{ fontSize: 28, fontWeight: 800, color: "#52c41a" }}>{displayRoi}%</div>
+                              {isHistorical && <div style={{ fontSize: 10, color: "#52c41a", fontStyle: "italic" }}>avg across {allDealsRaw.length} deals</div>}
+                            </div>
+                          </div>
+                          {extraVsFd > 0 && (
+                            <div style={{ background: "#52c41a", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
+                              +{extraVsFd}% more than a bank FD
+                            </div>
+                          )}
+                          <div style={{ fontSize: 12, color: "#135200" }}>
+                            Bank FD benchmark is the average of India's top public sector banks. OxyLoans is RBI-registered NBFC-P2P.
                           </div>
                         </div>
-                        {data.fdComparison.extraEarningsVsFd > 0 && (
-                          <div style={{ background: "#52c41a", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
-                            +{data.fdComparison.extraEarningsVsFd}% more than a bank FD
-                          </div>
-                        )}
-                        <div style={{ fontSize: 12, color: "#135200" }}>
-                          Bank FD benchmark is the average of India's top public sector banks. OxyLoans is RBI-registered NBFC-P2P.
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </SectionCard>}
@@ -2182,7 +2198,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 10. DEAL HISTORY — SMART+ only ── */}
               {!isSmart && <LockCard title="Deal History" requiredTier="SMART" />}
               {isSmart && (() => {
-                const allDeals = data.deals || data.allDeals || [];
+                const allDeals = (data.deals || data.allDeals || []).slice().sort((a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0));
                 const activeDeals = allDeals.filter(d => (d.status || "").toUpperCase() === "ACTIVE");
                 const closedDeals = allDeals.filter(d => (d.status || "").toUpperCase() !== "ACTIVE");
                 const filteredDeals = dealHistoryFilter === "ACTIVE" ? activeDeals : dealHistoryFilter === "CLOSED" ? closedDeals : allDeals;
@@ -2369,11 +2385,6 @@ const LenderPortfolioDashboard = () => {
               )}
 
 
-              <div className="row mb-2">
-                <div className="col-12">
-                  <small className="text-muted">Generated at: {data.generatedAt ? new Date(data.generatedAt).toLocaleString("en-IN") : "—"}</small>
-                </div>
-              </div>
             </>
           )}
         </div>
