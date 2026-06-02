@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
@@ -63,24 +63,24 @@ const LockCard = ({ title, requiredTier }) => (
     <div style={{ fontWeight: 700, color: '#262626', fontSize: 15, marginBottom: 6 }}>{title}</div>
     <div style={{ fontSize: 13, marginBottom: 14 }}>
       Available on <strong style={{ color: requiredTier === 'PRO' ? '#722ed1' : '#1890ff' }}>
-        OXI {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
+        OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
       </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
     </div>
     <div style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      Upgrade to OXI {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
+      Upgrade to OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
     </div>
   </div>
 );
 
-const OxiBadge = ({ tier }) => {
+const OxyBadge = ({ tier }) => {
   if (tier === 'PRO') return (
     <span style={{ background: 'linear-gradient(135deg, #4a148c, #6a1b9a)', color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, letterSpacing: 0.5 }}>
-      ✦ OXI Pro
+      ✦ OXY Pro
     </span>
   );
   if (tier === 'SMART') return (
     <span style={{ background: 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, letterSpacing: 0.5 }}>
-      ⚡ OXI Smart
+      ⚡ OXY Smart
     </span>
   );
   return (
@@ -986,7 +986,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
           <span style={{ fontSize: 18 }}>🎯</span>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXI Pro (trial)</strong></div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXY Pro (trial)</strong></div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1034,7 +1034,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
                       </div>
                     )}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXI {info.label}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXY {info.label}</div>
                       {info.price ? (
                         <span style={{ fontSize: 12, fontWeight: 700, color: info.color, background: info.bg, border: `1px solid ${info.border}`, borderRadius: 20, padding: "2px 10px" }}>{info.price}</span>
                       ) : (
@@ -1071,7 +1071,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
             })}
           </div>
           <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
-            💡 <strong>Limited time trial:</strong> All lenders can experience OXI Pro features for free. Subscribe before the trial ends to keep your AI insights.
+            💡 <strong>Limited time trial:</strong> All lenders can experience OXY Pro features for free. Subscribe before the trial ends to keep your AI insights.
           </div>
         </div>
       )}
@@ -1114,6 +1114,7 @@ const LenderPortfolioDashboard = () => {
   const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
 
   // Tier — derived at component level so all JSX can reference it
+  const navigate = useNavigate();
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'SMART' || effectiveTier === 'PRO';
@@ -1289,16 +1290,19 @@ const LenderPortfolioDashboard = () => {
                         )}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-                        <OxiBadge tier={effectiveTier} />
+                        <OxyBadge tier={effectiveTier} />
                         {isSmart && (
                           <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
                             {isPro ? "Full AI intelligence active — updated live" : "AI insights enabled — portfolio analysis active"}
                           </span>
                         )}
                         {!isSmart && (
-                          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                            Upgrade to OXI Smart to unlock AI-powered insights
-                          </span>
+                          <button
+                            onClick={() => navigate("/ai/plans")}
+                            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", borderRadius: 8, padding: "4px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                          >
+                            Upgrade Plan
+                          </button>
                         )}
                       </div>
                       {isSmart ? (
@@ -1336,7 +1340,7 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>AI Portfolio Analysis</div>
                           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 14 }}>Personalized insights on your investments, reinvestment patterns &amp; more</div>
                           <span style={{ background: "linear-gradient(135deg, #0050b3, #1890ff)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                            Upgrade to OXI Smart — ₹500/year
+                            Upgrade to OXY Smart — ₹500/year
                           </span>
                         </div>
                       )}
@@ -1382,7 +1386,7 @@ const LenderPortfolioDashboard = () => {
                       <div className="card-body py-3 px-2 d-flex flex-column align-items-center justify-content-center">
                         <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>Referral Bonus</p>
                         <div style={{ fontSize: 18 }}>🔒</div>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4 }}>OXI Smart</div>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4 }}>OXY Smart</div>
                       </div>
                     </div>
                   </div>
@@ -1435,7 +1439,7 @@ const LenderPortfolioDashboard = () => {
                       ))}
                     </div>
                     <div style={{ background: "#f9f0ff", borderRadius: 10, padding: "12px 16px", textAlign: "center", border: "1px dashed #d3adf7" }}>
-                      <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 4 }}>📊 Month-by-month chart, FY selector &amp; forecast available in OXI Pro</div>
+                      <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 4 }}>📊 Month-by-month chart, FY selector &amp; forecast available in OXY Pro</div>
                       <div style={{ fontSize: 12, color: "#8c8c8c" }}>Upgrade to see earning trends, ROI analysis &amp; ₹1L target planner</div>
                     </div>
                   </div>
@@ -1777,7 +1781,7 @@ const LenderPortfolioDashboard = () => {
                     {!isSmart && allActive.length > DEAL_LIMIT && (
                       <div style={{ marginTop: 10, background: "#f9f0ff", borderRadius: 8, padding: "10px 16px", textAlign: "center", border: "1px dashed #d3adf7" }}>
                         <span style={{ fontSize: 13, color: "#722ed1" }}>
-                          🔒 Upgrade to <strong>OXI Smart</strong> to see all {allActive.length} active deals
+                          🔒 Upgrade to <strong>OXY Smart</strong> to see all {allActive.length} active deals
                         </span>
                       </div>
                     )}
@@ -1840,7 +1844,7 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ textAlign: "center", padding: 16, background: "#fafafa", borderRadius: 10, border: "1px dashed #d9d9d9" }}>
                             <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 6 }}>Reinvest Probability</div>
                             <div style={{ fontSize: 20 }}>🔒</div>
-                            <div style={{ fontSize: 11, color: "#8c8c8c" }}>OXI Pro</div>
+                            <div style={{ fontSize: 11, color: "#8c8c8c" }}>OXY Pro</div>
                           </div>
                         </div>
                       )}
@@ -1878,14 +1882,14 @@ const LenderPortfolioDashboard = () => {
                       <div style={{ fontWeight: 700, color: "#262626", fontSize: 15, marginBottom: 6 }}>Smart Maturity Planner</div>
                       {isSmart && maturingCount > 0 && (
                         <div style={{ fontSize: 13, color: "#fa8c16", fontWeight: 600, marginBottom: 8 }}>
-                          ⚠️ {maturingCount} deal{maturingCount > 1 ? 's' : ''} maturing in next 90 days — plan your reinvestment in OXI Pro
+                          ⚠️ {maturingCount} deal{maturingCount > 1 ? 's' : ''} maturing in next 90 days — plan your reinvestment in OXY Pro
                         </div>
                       )}
                       <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 14 }}>
-                        Available on <strong style={{ color: '#722ed1' }}>OXI Pro</strong> — ₹1,000/year
+                        Available on <strong style={{ color: '#722ed1' }}>OXY Pro</strong> — ₹1,000/year
                       </div>
                       <div style={{ display: "inline-block", background: "linear-gradient(135deg, #4a148c, #6a1b9a)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                        Upgrade to OXI Pro
+                        Upgrade to OXY Pro
                       </div>
                     </div>
                   </div>
@@ -2496,7 +2500,7 @@ const LenderPortfolioDashboard = () => {
                   ) : (
                     <div style={{ background: "#f9f0ff", borderRadius: 8, padding: "10px 16px", textAlign: "center", border: "1px dashed #d3adf7" }}>
                       <span style={{ fontSize: 13, color: "#722ed1" }}>
-                        Paid vs Pending breakdown &amp; monthly table available in <strong>OXI Pro</strong>
+                        Paid vs Pending breakdown &amp; monthly table available in <strong>OXY Pro</strong>
                       </span>
                     </div>
                   )}
