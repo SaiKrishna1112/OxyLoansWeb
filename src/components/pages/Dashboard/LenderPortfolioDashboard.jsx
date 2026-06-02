@@ -56,14 +56,27 @@ const ProgressBar = ({ pct, color }) => (
   </div>
 );
 
-const StatCard = ({ label, value, color, sub }) => (
+const StatCard = ({ label, value, color, sub, onClick, badge }) => (
   <div className="col-6 col-md mb-3">
-    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}>
+    <div
+      className="card text-center h-100"
+      onClick={onClick}
+      style={{
+        borderRadius: 12,
+        border: onClick ? `1.5px solid ${color || "#1890ff"}30` : "1px solid #f0f0f0",
+        cursor: onClick ? "pointer" : "default",
+        transition: "box-shadow 0.2s, transform 0.15s",
+      }}
+      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"; e.currentTarget.style.transform = "translateY(-1px)"; }}}
+      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.transform = ""; }}}
+    >
       <div className="card-body py-3 px-2">
-        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>
+        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
           {label}
+          {onClick && <span style={{ fontSize: 9, color: color || "#1890ff", opacity: 0.7 }}>↓</span>}
         </p>
         <h4 style={{ fontWeight: 700, color: color || "#262626", margin: 0 }}>{value}</h4>
+        {badge && <span style={{ display: "inline-block", marginTop: 4, background: `${color || "#1890ff"}18`, color: color || "#1890ff", borderRadius: 4, fontSize: 10, padding: "1px 6px", fontWeight: 600 }}>{badge}</span>}
         {sub && <p style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4, marginBottom: 0 }}>{sub}</p>}
       </div>
     </div>
@@ -648,6 +661,18 @@ const LenderPortfolioDashboard = () => {
   const [dealsShown, setDealsShown] = useState(10);
   const [fyFilter, setFyFilter] = useState({ mode: "all", fyYear: null, from: "", to: "" });
   const [selectedModel, setSelectedModel] = useState(null);
+  const [maturityFilter, setMaturityFilter] = useState("all"); // 'all' | 'thisMonth' | 'next90'
+  const [closedDealsOpen, setClosedDealsOpen] = useState(false);
+
+  const activeDealsRef  = useRef(null);
+  const maturityRef     = useRef(null);
+  const safetyRef       = useRef(null);
+  const closedDealsRef  = useRef(null);
+
+  const scrollTo = (ref, filter) => {
+    if (filter) filter();
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  };
 
   // Portfolio — reloads when lender or model changes
   useEffect(() => {
@@ -791,20 +816,34 @@ const LenderPortfolioDashboard = () => {
                   sub={data.totalWithdrawn > 0 ? `Net deployed ₹${fmt(data.netInvested)}` : null} />
                 <InterestBreakdownCard data={data} />
                 <StatCard label="Principal Returned" value={`₹${fmt(data.totalPrincipalReturned)}`} color="#13c2c2"
-                  sub={data.closedDeals > 0 ? `Across ${data.closedDeals} closed deals` : null} />
+                  sub={data.closedDeals > 0 ? `Across ${data.closedDeals} closed deals` : null}
+                  onClick={() => scrollTo(closedDealsRef, () => setClosedDealsOpen(true))} />
                 <StatCard label="Wallet Balance" value={`₹${fmt(data.walletBalance)}`} color="#722ed1"
                   sub={data.walletIdleDays > 0 ? `Idle ${Math.round(data.walletIdleDays)} days` : "Active"} />
               </div>
               <div className="row mb-4">
                 <StatCard label="Active Deals" value={data.activeDeals ?? "—"} color="#52c41a"
-                  sub={`${data.closedDeals ?? 0} closed · ${data.totalDeals ?? 0} total`} />
-                <StatCard label="Payments Received" value={fmt(data.emisPaid ?? 0)} color="#faad14"
-                  sub={data.lastPaidDate && data.lastPaidDate !== "N/A" ? `Last: ${fmtDate(data.lastPaidDate)}` : null} />
-                <ReferralBonusCard data={data} />
-                <StatCard label={data.totalWithdrawn > 0 ? "Early Exits" : "On-time Rate"}
-                  value={data.totalWithdrawn > 0 ? `₹${fmt(data.totalWithdrawn)}` : `${data.onTimePaymentRate ?? 100}%`}
-                  color={data.totalWithdrawn > 0 ? "#fa8c16" : "#52c41a"}
-                  sub={data.totalWithdrawn > 0 ? `${data.totalPayments ?? 0} total payments` : `${data.successfulPayments ?? 0} of ${data.totalPayments ?? 0} processed`} />
+                  sub={`${data.closedDeals ?? 0} closed · ${data.totalDeals ?? 0} total`}
+                  onClick={() => scrollTo(activeDealsRef)} />
+                <StatCard
+                  label="Maturing This Month"
+                  value={data.maturingThisMonthCount ?? 0}
+                  color={data.maturingThisMonthCount > 0 ? "#fa8c16" : "#8c8c8c"}
+                  badge={data.maturingThisMonthCount > 0 ? "Action needed" : null}
+                  sub={data.maturingThisMonthCount > 0 ? "Click to view & plan" : "None this month"}
+                  onClick={() => scrollTo(maturityRef, () => setMaturityFilter("thisMonth"))} />
+                <StatCard
+                  label="Payout Reliability"
+                  value={`${data.onTimePaymentRate ?? 100}%`}
+                  color={data.onTimePaymentRate >= 95 ? "#52c41a" : data.onTimePaymentRate >= 80 ? "#faad14" : "#ff4d4f"}
+                  sub={`${data.successfulPayments ?? 0} of ${data.totalPayments ?? 0} on time`}
+                  onClick={() => scrollTo(safetyRef)} />
+                <StatCard
+                  label="Closed Deals"
+                  value={data.closedDeals ?? 0}
+                  color="#8c8c8c"
+                  sub={data.closedDeals > 0 ? `₹${fmt(data.totalPrincipalReturned)} returned` : "No closed deals yet"}
+                  onClick={() => scrollTo(closedDealsRef, () => setClosedDealsOpen(true))} />
               </div>
 
               {/* ── 3. INVESTMENT ANALYTICS (CHARTS) ──────────────────────── */}
@@ -814,6 +853,7 @@ const LenderPortfolioDashboard = () => {
 
               {/* ── 4. ACTIVE DEALS WITH PROGRESS BARS ────────────────────── */}
               {(data.activeDealsWithProgress || []).length > 0 && (
+                <div ref={activeDealsRef}>
                 <SectionCard
                   title={`Active Deals (${data.activeDeals ?? (data.activeDealsWithProgress || []).length})`}
                   badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Live</span>}
@@ -861,6 +901,7 @@ const LenderPortfolioDashboard = () => {
                     ))}
                   </div>
                 </SectionCard>
+                </div>
               )}
 
               {/* ── 5. REINVESTMENT PROFILE ────────────────────────────────── */}
@@ -928,32 +969,74 @@ const LenderPortfolioDashboard = () => {
               })()}
 
               {/* ── 6. SMART MATURITY PLANNER ──────────────────────────────── */}
-              {(data.upcomingMaturities || []).length > 0 && (
-                <SectionCard title="Smart Maturity Planner">
-                  <div className="table-responsive">
-                    <table className="table table-sm mb-0">
-                      <thead className="thead-light">
-                        <tr>
-                          <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Nudge Date</th><th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data.upcomingMaturities || []).map((m, idx) => (
-                          <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                            <td><strong>#{m.dealId}</strong></td>
-                            <td>{fmtDate(m.maturityDate)}</td>
-                            <td>₹{fmt(m.principalAmount)}</td>
-                            <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                            <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
-                            <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
-                            <td>{m.actionNeeded ? <span style={{ background: "#fff1f0", color: "#ff4d4f", border: "1px solid #ffa39e", borderRadius: 4, padding: "2px 8px", fontSize: 11 }}>Plan now</span> : <span style={{ color: "#8c8c8c", fontSize: 11 }}>Monitor</span>}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {(data.upcomingMaturities || []).length > 0 && (() => {
+                const now = new Date();
+                const curMonth = now.getMonth();
+                const curYear  = now.getFullYear();
+                const allMat   = data.upcomingMaturities || [];
+                const filtered = maturityFilter === "thisMonth"
+                  ? allMat.filter((m) => { const d = m.maturityDate ? new Date(m.maturityDate) : null; return d && d.getMonth() === curMonth && d.getFullYear() === curYear; })
+                  : maturityFilter === "next90"
+                  ? allMat.filter((m) => m.daysToMaturity >= 0 && m.daysToMaturity <= 90)
+                  : allMat;
+                const thisMonthCount = allMat.filter((m) => { const d = m.maturityDate ? new Date(m.maturityDate) : null; return d && d.getMonth() === curMonth && d.getFullYear() === curYear; }).length;
+                return (
+                  <div ref={maturityRef}>
+                  <SectionCard
+                    title="Smart Maturity Planner"
+                    badge={thisMonthCount > 0 ? <span style={{ background: "#fff7e6", color: "#fa8c16", border: "1px solid #ffd591", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>{thisMonthCount} maturing this month</span> : null}
+                  >
+                    {/* Filter tabs */}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
+                      {[
+                        { key: "all",       label: `All (${allMat.length})` },
+                        { key: "thisMonth", label: `This Month (${thisMonthCount})` },
+                        { key: "next90",    label: "Next 90 Days" },
+                      ].map(({ key, label }) => (
+                        <button key={key} onClick={() => setMaturityFilter(key)}
+                          style={{
+                            padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer",
+                            fontSize: 12, fontWeight: maturityFilter === key ? 700 : 500,
+                            background: maturityFilter === key ? "linear-gradient(135deg, #fa8c16, #d46b08)" : "#f5f5f5",
+                            color: maturityFilter === key ? "#fff" : "#595959",
+                          }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                    {filtered.length === 0 ? (
+                      <div style={{ textAlign: "center", color: "#8c8c8c", padding: "24px 0", fontSize: 14 }}>
+                        No deals maturing {maturityFilter === "thisMonth" ? "this month" : "in this period"}.{" "}
+                        <button onClick={() => setMaturityFilter("all")} style={{ background: "none", border: "none", color: "#1890ff", cursor: "pointer", fontSize: 14 }}>View all</button>
+                      </div>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-sm mb-0">
+                          <thead className="thead-light">
+                            <tr>
+                              <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Nudge Date</th><th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map((m, idx) => (
+                              <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
+                                <td><strong>#{m.dealId}</strong></td>
+                                <td>{fmtDate(m.maturityDate)}</td>
+                                <td>₹{fmt(m.principalAmount)}</td>
+                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                                <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
+                                <td>{m.actionNeeded ? <span style={{ background: "#fff1f0", color: "#ff4d4f", border: "1px solid #ffa39e", borderRadius: 4, padding: "2px 8px", fontSize: 11 }}>Plan now</span> : <span style={{ color: "#8c8c8c", fontSize: 11 }}>Monitor</span>}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </SectionCard>
                   </div>
-                </SectionCard>
-              )}
+                );
+              })()}
 
               {/* ── 7. EARNINGS INTELLIGENCE ──────────────────────────────── */}
               <SectionCard title="Earnings Intelligence">

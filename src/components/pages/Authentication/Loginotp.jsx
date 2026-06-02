@@ -91,7 +91,7 @@ const Loginotp = () => {
         localStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
 
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/ai/portfolio");
+          history("/lenderAIDashboard");
         } else if (retriveresponse.data.primaryType == "ADMIN" || retriveresponse.data.primaryType == "HELPDESKADMIN") {
           history("/oxyloansadmindashboard");
         } else {
