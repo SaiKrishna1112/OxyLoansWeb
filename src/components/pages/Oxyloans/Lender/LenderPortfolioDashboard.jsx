@@ -227,13 +227,20 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
     const text = (overrideText !== undefined ? overrideText : input).trim();
     if (!text || sending) return;
     if (overrideText === undefined) setInput("");
+
+    // Snapshot history BEFORE appending the new user message (last 4 turns, skip welcome)
+    const history = messages
+      .filter((m, i) => i > 0)          // skip the static welcome message
+      .slice(-4)                          // last 4 turns for context window
+      .map((m) => ({ role: m.role, text: (m.text || "").substring(0, 300) }));
+
     setMessages((prev) => [...prev, { role: "user", text, data: null }]);
     setSending(true);
     try {
       const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, primaryType: "LENDER" },
+        { message: text, primaryType: "LENDER", history },
         { headers: { accessToken: token, "Content-Type": "application/json" } }
       );
       const reply = res.data?.answer
