@@ -107,14 +107,27 @@ const MembershipBadge = ({ badge }) => {
   );
 };
 
-const StatCard = ({ label, value, color, sub }) => (
+const StatCard = ({ label, value, color, sub, onClick, badge }) => (
   <div className="col-6 col-md mb-3">
-    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}>
+    <div
+      className="card text-center h-100"
+      onClick={onClick}
+      style={{
+        borderRadius: 12,
+        border: onClick ? `1.5px solid ${color || "#1890ff"}33` : "1px solid #f0f0f0",
+        cursor: onClick ? "pointer" : "default",
+        transition: "box-shadow 0.2s, transform 0.15s",
+      }}
+      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"; e.currentTarget.style.transform = "translateY(-1px)"; }}}
+      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.transform = ""; }}}
+    >
       <div className="card-body py-3 px-2">
-        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>
+        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
           {label}
+          {onClick && <span style={{ fontSize: 9, color: color || "#1890ff", opacity: 0.7 }}>↓</span>}
         </p>
         <h4 style={{ fontWeight: 700, color: color || "#262626", margin: 0 }}>{value}</h4>
+        {badge && <span style={{ display: "inline-block", marginTop: 4, background: `${color || "#1890ff"}18`, color: color || "#1890ff", borderRadius: 4, fontSize: 10, padding: "1px 6px", fontWeight: 600 }}>{badge}</span>}
         {sub && <p style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4, marginBottom: 0 }}>{sub}</p>}
       </div>
     </div>
@@ -883,25 +896,31 @@ const DealAnalyticsCharts = ({ data, earningsData, collapsible = false, defaultO
         )}
 
         {/* India's Largest Bank FD comparison inline */}
-        {data?.fdComparison && (
-          <div className="col-12">
-            <ReactApexChart
-              options={{
-                chart: { type: "bar", fontFamily: "inherit", toolbar: { show: false } },
-                xaxis: { categories: ["Your OxyLoans ROI", "Bank FD (avg)"] },
-                yaxis: { title: { text: "Rate (%)" }, max: Math.max(data.fdComparison.oxyloansReturnPct || 0, 8) + 2 },
-                colors: ["#52c41a", "#8c8c8c"],
-                plotOptions: { bar: { borderRadius: 6, columnWidth: "35%", distributed: true } },
-                dataLabels: { enabled: true, formatter: (v) => `${v}%` },
-                legend: { show: false },
-                title: { text: "Your Returns vs Bank FD", align: "left", style: { fontSize: "13px", fontWeight: 700 } },
-              }}
-              series={[{ name: "Rate", data: [data.fdComparison.oxyloansReturnPct || 0, data.fdComparison.sbiFdRate || 6.8] }]}
-              type="bar"
-              height={200}
-            />
-          </div>
-        )}
+        {data?.fdComparison && (() => {
+          const chartAvgRoi = allDeals.length > 0
+            ? parseFloat((allDeals.reduce((s, d) => s + (d.rateOfInterest < 5 ? d.rateOfInterest * 12 : d.rateOfInterest), 0) / allDeals.length).toFixed(1))
+            : 0;
+          const chartOxyRoi = data.fdComparison.oxyloansReturnPct || chartAvgRoi;
+          return (
+            <div className="col-12">
+              <ReactApexChart
+                options={{
+                  chart: { type: "bar", fontFamily: "inherit", toolbar: { show: false } },
+                  xaxis: { categories: ["Your OxyLoans ROI", "Bank FD (avg)"] },
+                  yaxis: { title: { text: "Rate (%)" }, max: Math.max(chartOxyRoi, 8) + 2 },
+                  colors: ["#52c41a", "#8c8c8c"],
+                  plotOptions: { bar: { borderRadius: 6, columnWidth: "35%", distributed: true } },
+                  dataLabels: { enabled: true, formatter: (v) => `${v}%` },
+                  legend: { show: false },
+                  title: { text: "Your Returns vs Bank FD", align: "left", style: { fontSize: "13px", fontWeight: 700 } },
+                }}
+                series={[{ name: "Rate", data: [chartOxyRoi, data.fdComparison.sbiFdRate || 6.8] }]}
+                type="bar"
+                height={200}
+              />
+            </div>
+          );
+        })()}
       </div>
     </SectionCard>
   );
@@ -1080,6 +1099,7 @@ const LenderPortfolioDashboard = () => {
   const [maturingExpanded, setMaturingExpanded] = useState(false);
   const [interestExpanded, setInterestExpanded] = useState(false);
   const [principalExpanded, setPrincipalExpanded] = useState(false);
+  const [maturityFilter, setMaturityFilter] = useState("all"); // 'all' | 'thisMonth' | 'next90'
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
@@ -1325,9 +1345,15 @@ const LenderPortfolioDashboard = () => {
               </div>
               <div className="row mb-4">
                 <StatCard label="Active Deals" value={data.activeDeals ?? "—"} color="#52c41a"
-                  sub={`${data.closedDeals ?? 0} closed · ${data.totalDeals ?? 0} total`} />
-                <StatCard label="Payments Received" value={fmt(data.emisPaid ?? 0)} color="#faad14"
-                  sub={data.lastPaidDate && data.lastPaidDate !== "N/A" ? `Last: ${fmtDate(data.lastPaidDate)}` : null} />
+                  sub={`${data.closedDeals ?? 0} closed · ${data.totalDeals ?? 0} total`}
+                  onClick={() => scrollTo("section-active-deals")} />
+                <StatCard
+                  label="Maturing This Month"
+                  value={data.maturingThisMonthCount ?? 0}
+                  color={(data.maturingThisMonthCount ?? 0) > 0 ? "#fa8c16" : "#8c8c8c"}
+                  badge={(data.maturingThisMonthCount ?? 0) > 0 ? "Action needed" : null}
+                  sub={(data.maturingThisMonthCount ?? 0) > 0 ? "Click to view & plan" : "None this month"}
+                  onClick={() => { setMaturityFilter("thisMonth"); setShowAllMaturities(true); scrollTo("section-maturity"); }} />
                 {/* Referral stat: SMART+ gets the expandable card, FREE gets a locked tile */}
                 {isSmart ? (
                   <ReferralBonusCard data={data} />
@@ -1358,7 +1384,8 @@ const LenderPortfolioDashboard = () => {
                     if (early > 0) return `⚡ ${early} early · ✅ ${same + next} on time · ⏰ ${late} late`;
                     if (same + next > 0) return `✅ ${same} same day · +1d: ${next}${late > 0 ? ` · ⏰ ${late} late` : ''}`;
                     return `${data.successfulPayments ?? 0} payments delivered`;
-                  })()} />
+                  })()}
+                  onClick={() => scrollTo("section-payout-reliability")} />
               </div>
 
               {/* ── 3. EARNINGS SECTION ── */}
@@ -1400,6 +1427,18 @@ const LenderPortfolioDashboard = () => {
                 <>
                   <FyFilterBar fyFilter={fyFilter} setFyFilter={setFyFilter} loading={earningsLoading} />
 
+                  {/* Platform stats — Last Month + Current Month deals, always visible next to filter */}
+                  {data.platformHealth && (
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                      <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#873800", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedLastMonth || 0} Deals Last Month · ₹{(data.platformHealth.dealsValueLastMonth || 0).toLocaleString("en-IN")}</span>
+                      </div>
+                      <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals This Month · ₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Current Month breakdown — shown only when Current Month tab selected */}
                   {fyFilter.mode === "month" ? (() => {
                     const earned         = data.currentMonthInterestEarned    || 0;
@@ -1415,12 +1454,13 @@ const LenderPortfolioDashboard = () => {
                     const wallet         = data.walletBalance || 0;
                     const gapMsg         = data.investableGapMessage || "";
                     return (
+                      <>
                       <div className="row mb-4 g-3">
                         {/* Tile 1: Interest This Month */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default" }}
-                            onClick={() => interestByDeal.length > 0 && setInterestExpanded(v => !v)}
+                            style={{ background: interestExpanded ? "linear-gradient(135deg, #d9f7be, #b7eb8f)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: interestExpanded ? "2px solid #52c41a" : "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (interestByDeal.length > 0) { setPrincipalExpanded(false); setMaturingExpanded(false); setInterestExpanded(v => !v); } }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>📈</span>
@@ -1440,27 +1480,14 @@ const LenderPortfolioDashboard = () => {
                             {interestByDeal.length > 0 && (
                               <div style={{ fontSize: 11, color: "#389e0d", marginTop: 6 }}>{interestExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
                             )}
-                            {interestExpanded && interestByDeal.length > 0 && (
-                              <div style={{ marginTop: 10, borderTop: "1px solid #b7eb8f", paddingTop: 8 }}>
-                                {interestByDeal.map((d, i) => (
-                                  <div key={i} style={{ fontSize: 12, marginBottom: 5, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                                    <div>
-                                      <span style={{ color: "#237804", fontWeight: 600 }}>{d.dealName || ("Deal #" + d.dealId)}</span>
-                                      {d.status === "projected" && <span style={{ fontSize: 10, color: "#fa8c16", marginLeft: 4 }}>projected</span>}
-                                    </div>
-                                    <span style={{ fontWeight: 700, color: "#237804" }}>₹{fmt(d.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
 
                         {/* Tile 2: Principal This Month */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default" }}
-                            onClick={() => principalByDeal.length > 0 && setPrincipalExpanded(v => !v)}
+                            style={{ background: principalExpanded ? "linear-gradient(135deg, #d6e4ff, #adc6ff)" : "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: principalExpanded ? "2px solid #1677ff" : "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (principalByDeal.length > 0) { setInterestExpanded(false); setMaturingExpanded(false); setPrincipalExpanded(v => !v); } }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>🏦</span>
@@ -1474,16 +1501,6 @@ const LenderPortfolioDashboard = () => {
                             </div>
                             {principalByDeal.length > 0 && (
                               <div style={{ fontSize: 11, color: "#1d39c4", marginTop: 6 }}>{principalExpanded ? "▲ hide breakdown" : "▼ view per deal"}</div>
-                            )}
-                            {principalExpanded && principalByDeal.length > 0 && (
-                              <div style={{ marginTop: 10, borderTop: "1px solid #adc6ff", paddingTop: 8 }}>
-                                {principalByDeal.map((d, i) => (
-                                  <div key={i} style={{ fontSize: 12, color: "#10239e", marginBottom: 5, display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ fontWeight: 600 }}>{d.dealName || ("Deal #" + d.dealId)}</span>
-                                    <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
                             )}
                           </div>
                         </div>
@@ -1503,8 +1520,8 @@ const LenderPortfolioDashboard = () => {
                         {/* Tile 4: Maturing This Month */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default" }}
-                            onClick={() => maturingCount > 0 && setMaturingExpanded(v => !v)}
+                            style={{ background: maturingExpanded ? "linear-gradient(135deg, #ffe7ba, #ffd591)" : "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: maturingExpanded ? "2px solid #fa8c16" : "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setMaturingExpanded(v => !v); } }}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>📅</span>
@@ -1512,16 +1529,6 @@ const LenderPortfolioDashboard = () => {
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 28, color: "#ad4e00", marginBottom: 4 }}>{maturingCount}</div>
                             <div style={{ fontSize: 12, color: "#d46b08" }}>{maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} — ${maturingExpanded ? "▲ hide" : "▼ view"}`}</div>
-                            {maturingExpanded && maturingDeals.length > 0 && (
-                              <div style={{ marginTop: 10, borderTop: "1px solid #ffd591", paddingTop: 8 }}>
-                                {maturingDeals.map((d, i) => (
-                                  <div key={i} style={{ fontSize: 12, color: "#7c3900", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ fontWeight: 600 }}>Deal #{d.dealId}</span>
-                                    <span style={{ fontWeight: 700 }}>₹{fmt(d.amount)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
                           </div>
                         </div>
 
@@ -1539,8 +1546,8 @@ const LenderPortfolioDashboard = () => {
 
                         {/* Tile 6: Deal Participation Rate — backend field: platformDealsLaunchedThisMonth, myDealsThisMonth */}
                         {(() => {
-                          const launched = data.platformDealsLaunchedThisMonth || 0;
                           const mine     = data.myDealsThisMonth || 0;
+                          const launched = data.platformHealth?.dealsAnnouncedThisMonth || 0;
                           const pct      = launched > 0 ? Math.round((mine / launched) * 100) : null;
                           return (
                             <div className="col-12 col-sm-6 col-lg">
@@ -1549,26 +1556,97 @@ const LenderPortfolioDashboard = () => {
                                   <span style={{ fontSize: 20 }}>🏹</span>
                                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#0958d9", fontWeight: 700 }}>Deal Participation</div>
                                 </div>
-                                {launched > 0 ? (
+                                <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 2 }}>{mine} deal{mine !== 1 ? "s" : ""} this month</div>
+                                {launched > 0 && pct !== null ? (
                                   <>
-                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 2 }}>{mine} / {launched}</div>
-                                    <div style={{ fontSize: 12, color: "#0958d9", marginBottom: 6 }}>deals you joined vs platform launched</div>
+                                    <div style={{ fontSize: 12, color: "#0958d9", marginBottom: 6 }}>{mine} of {launched} platform deals</div>
                                     <div style={{ background: "#e6f4ff", borderRadius: 4, height: 6, overflow: "hidden" }}>
                                       <div style={{ width: `${pct}%`, height: "100%", background: "#1677ff", borderRadius: 4, transition: "width 0.8s ease" }} />
                                     </div>
-                                    <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{pct}% participation rate this month</div>
+                                    <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 3 }}>{pct}% of this month's deals</div>
                                   </>
                                 ) : (
-                                  <>
-                                    <div style={{ fontWeight: 700, fontSize: 18, color: "#003eb3", marginBottom: 4 }}>{mine} deals</div>
-                                    <div style={{ fontSize: 12, color: "#8c8c8c" }}>Platform data coming soon</div>
-                                  </>
+                                  <div style={{ fontSize: 12, color: "#8c8c8c" }}>{mine === 0 ? "No new investments this month" : "Invested this month"}</div>
                                 )}
                               </div>
                             </div>
                           );
                         })()}
                       </div>
+
+                      {/* ── Breakdown panel — shown below the strip when a tile is clicked ── */}
+                      {(interestExpanded || principalExpanded || maturingExpanded) && (() => {
+                        const activeTitle  = interestExpanded ? "📈 Interest This Month — Per Deal" : principalExpanded ? "🏦 Principal This Month — Per Deal" : "📅 Maturing This Month — Deal List";
+                        const borderColor  = interestExpanded ? "#52c41a" : principalExpanded ? "#1677ff" : "#fa8c16";
+                        const headerColor  = interestExpanded ? "#237804" : principalExpanded ? "#10239e" : "#ad4e00";
+                        const rows = interestExpanded
+                          ? interestByDeal
+                          : principalExpanded
+                          ? principalByDeal
+                          : maturingDeals;
+                        const onClose = interestExpanded
+                          ? () => setInterestExpanded(false)
+                          : principalExpanded
+                          ? () => setPrincipalExpanded(false)
+                          : () => setMaturingExpanded(false);
+                        return (
+                          <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${borderColor}`, padding: "16px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: headerColor }}>{activeTitle}</div>
+                              <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#8c8c8c", lineHeight: 1 }}>✕</button>
+                            </div>
+                            {rows.length === 0 ? (
+                              <div style={{ fontSize: 13, color: "#8c8c8c" }}>No data available</div>
+                            ) : (
+                              <div style={{ overflowX: "auto" }}>
+                                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: `2px solid ${borderColor}`, background: "#fafafa" }}>
+                                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Deal #</th>
+                                      <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600 }}>Deal Name</th>
+                                      <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Amount</th>
+                                      {interestExpanded && <th style={{ padding: "8px 12px", textAlign: "center", color: "#595959", fontWeight: 600 }}>Status</th>}
+                                      {maturingExpanded && <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Principal</th>}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {rows.map((d, i) => (
+                                      <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
+                                        <td style={{ padding: "8px 12px", color: "#8c8c8c", whiteSpace: "nowrap" }}>#{d.dealId}</td>
+                                        <td style={{ padding: "8px 12px", color: headerColor, fontWeight: 500 }}>{d.dealName || ("Deal #" + d.dealId)}</td>
+                                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
+                                        {interestExpanded && (
+                                          <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                            <span style={{ background: d.status === "projected" ? "#fff7e6" : "#f6ffed", color: d.status === "projected" ? "#d46b08" : "#389e0d", border: `1px solid ${d.status === "projected" ? "#ffd591" : "#b7eb8f"}`, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
+                                              {d.status === "projected" ? "Projected" : "Paid"}
+                                            </span>
+                                          </td>
+                                        )}
+                                        {maturingExpanded && (
+                                          <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#ad4e00", whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
+                                        )}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                  {rows.length > 1 && (
+                                    <tfoot>
+                                      <tr style={{ borderTop: `2px solid ${borderColor}`, background: "#fafafa" }}>
+                                        <td colSpan={interestExpanded ? 2 : maturingExpanded ? 2 : 2} style={{ padding: "8px 12px", fontWeight: 700, color: headerColor }}>Total</td>
+                                        <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>
+                                          ₹{fmt(rows.reduce((s, d) => s + (d.amount || 0), 0))}
+                                        </td>
+                                        {interestExpanded && <td />}
+                                        {maturingExpanded && <td />}
+                                      </tr>
+                                    </tfoot>
+                                  )}
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                      </>
                     );
                   })() : (
                     <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
@@ -1590,6 +1668,7 @@ const LenderPortfolioDashboard = () => {
                 const shownDeals = showAllDeals ? allActive : allActive.slice(0, DEAL_LIMIT);
                 const dealRemaining = allActive.length - DEAL_LIMIT;
                 return (
+                  <div id="section-active-deals">
                   <SectionCard
                     title={`Active Deals (${data.activeDeals ?? allActive.length})`}
                     badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Live</span>}
@@ -1650,6 +1729,7 @@ const LenderPortfolioDashboard = () => {
                       </div>
                     )}
                   </SectionCard>
+                  </div>
                 );
               })()}
 
@@ -1759,46 +1839,85 @@ const LenderPortfolioDashboard = () => {
                 );
               })()}
               {isPro && (data.upcomingMaturities || []).length > 0 && (() => {
-                const allMat = data.upcomingMaturities || [];
-                const LIMIT = 10;
-                const shown = showAllMaturities ? allMat : allMat.slice(0, LIMIT);
-                const remaining = allMat.length - LIMIT;
+                const allMat  = data.upcomingMaturities || [];
+                const now     = new Date();
+                const curMon  = now.getMonth();
+                const curYr   = now.getFullYear();
+                const thisMonthMat = allMat.filter(m => { const d = m.maturityDate ? new Date(m.maturityDate) : null; return d && d.getMonth() === curMon && d.getFullYear() === curYr; });
+                const filtered = maturityFilter === "thisMonth" ? thisMonthMat
+                               : maturityFilter === "next90"   ? allMat.filter(m => (m.daysToMaturity ?? 999) <= 90)
+                               : allMat;
+                const shown    = maturityFilter === "all" ? (showAllMaturities ? filtered : filtered.slice(0, 10)) : filtered;
+                const remaining = filtered.length - 10;
                 return (
-                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} summary={`${allMat.length} upcoming maturities`}>
-                    <div className="table-responsive">
-                      <table className="table table-sm mb-0">
-                        <thead className="thead-light">
-                          <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th><th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {shown.map((m, idx) => (
-                            <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                              <td><strong>#{m.dealId}</strong></td>
-                              <td>{fmtDate(m.maturityDate)}</td>
-                              <td>₹{fmt(m.principalAmount)}</td>
-                              <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                              <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
-                              <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
-                              <td>
-                                {reminderSent[m.dealId] ? (
-                                  <span style={{ color: "#52c41a", fontSize: 11, fontWeight: 600 }}>✓ Reminder sent</span>
-                                ) : (
-                                  <button
-                                    onClick={() => sendMaturityReminder(m)}
-                                    style={{ background: "#f0f5ff", color: "#2f54eb", border: "1px solid #adc6ff", borderRadius: 4, padding: "2px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
-                                  >
-                                    Remind Me
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <div id="section-maturity">
+                  <SectionCard
+                    title={`Smart Maturity Planner (${allMat.length})`}
+                    collapsible
+                    defaultOpen={maturityFilter !== "all"}
+                    isOpen={maturityFilter !== "all" ? true : undefined}
+                    summary={`${allMat.length} upcoming maturities`}
+                    badge={thisMonthMat.length > 0 ? <span style={{ background: "#fff7e6", color: "#fa8c16", border: "1px solid #ffd591", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>{thisMonthMat.length} maturing this month</span> : null}
+                  >
+                    {/* Filter tabs */}
+                    <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+                      {[
+                        { key: "all",       label: `All (${allMat.length})` },
+                        { key: "thisMonth", label: `This Month (${thisMonthMat.length})` },
+                        { key: "next90",    label: "Next 90 Days" },
+                      ].map(({ key, label }) => (
+                        <button key={key} onClick={() => setMaturityFilter(key)}
+                          style={{
+                            padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer",
+                            fontSize: 12, fontWeight: maturityFilter === key ? 700 : 500,
+                            background: maturityFilter === key ? "linear-gradient(135deg, #fa8c16, #d46b08)" : "#f5f5f5",
+                            color: maturityFilter === key ? "#fff" : "#595959",
+                          }}>
+                          {label}
+                        </button>
+                      ))}
                     </div>
-                    {allMat.length > LIMIT && (
+                    {filtered.length === 0 ? (
+                      <div style={{ textAlign: "center", color: "#8c8c8c", padding: "20px 0", fontSize: 14 }}>
+                        No deals maturing {maturityFilter === "thisMonth" ? "this month" : "in next 90 days"}.{" "}
+                        <button onClick={() => setMaturityFilter("all")} style={{ background: "none", border: "none", color: "#1890ff", cursor: "pointer", fontSize: 14 }}>View all</button>
+                      </div>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-sm mb-0">
+                          <thead className="thead-light">
+                            <tr>
+                              <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th><th>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {shown.map((m, idx) => (
+                              <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
+                                <td><strong>#{m.dealId}</strong></td>
+                                <td>{fmtDate(m.maturityDate)}</td>
+                                <td>₹{fmt(m.principalAmount)}</td>
+                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                                <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
+                                <td>
+                                  {reminderSent[m.dealId] ? (
+                                    <span style={{ color: "#52c41a", fontSize: 11, fontWeight: 600 }}>✓ Reminder sent</span>
+                                  ) : (
+                                    <button
+                                      onClick={() => sendMaturityReminder(m)}
+                                      style={{ background: "#f0f5ff", color: "#2f54eb", border: "1px solid #adc6ff", borderRadius: 4, padding: "2px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                    >
+                                      Remind Me
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {maturityFilter === "all" && filtered.length > 10 && (
                       <div style={{ textAlign: 'center', marginTop: 10 }}>
                         <button
                           onClick={() => setShowAllMaturities(v => !v)}
@@ -1809,6 +1928,7 @@ const LenderPortfolioDashboard = () => {
                       </div>
                     )}
                   </SectionCard>
+                  </div>
                 );
               })()}
 
@@ -1886,32 +2006,42 @@ const LenderPortfolioDashboard = () => {
                   </div>
                   {/* FD Comparison — no bank name */}
                   <div className="col-12 col-md-6 mb-3">
-                    {data.fdComparison && (
-                      <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 12, padding: 20, height: "100%" }}>
-                        <div style={{ fontSize: 13, color: "#135200", fontWeight: 700, marginBottom: 12 }}>
-                          How You Compare — Bank FD vs OxyLoans
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>Bank FD (avg)</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: "#8c8c8c" }}>{data.fdComparison.sbiFdRate || 6.8}%</div>
+                    {data.fdComparison && (() => {
+                      const allDealsRaw = data.allDeals || data.deals || [];
+                      const historicalAvgRoi = allDealsRaw.length > 0
+                        ? parseFloat((allDealsRaw.reduce((s, d) => s + (d.rateOfInterest < 5 ? d.rateOfInterest * 12 : d.rateOfInterest), 0) / allDealsRaw.length).toFixed(1))
+                        : 0;
+                      const displayRoi = data.fdComparison.oxyloansReturnPct || historicalAvgRoi;
+                      const isHistorical = !data.fdComparison.oxyloansReturnPct && historicalAvgRoi > 0;
+                      const extraVsFd = parseFloat((displayRoi - (data.fdComparison.sbiFdRate || 6.8)).toFixed(1));
+                      return (
+                        <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 12, padding: 20, height: "100%" }}>
+                          <div style={{ fontSize: 13, color: "#135200", fontWeight: 700, marginBottom: 12 }}>
+                            How You Compare — Bank FD vs OxyLoans
                           </div>
-                          <div style={{ flex: 1, borderTop: "2px dashed #b7eb8f" }} />
-                          <div style={{ textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#52c41a", marginBottom: 2 }}>Your OxyLoans ROI</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: "#52c41a" }}>{data.fdComparison.oxyloansReturnPct || 0}%</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>Bank FD (avg)</div>
+                              <div style={{ fontSize: 28, fontWeight: 800, color: "#8c8c8c" }}>{data.fdComparison.sbiFdRate || 6.8}%</div>
+                            </div>
+                            <div style={{ flex: 1, borderTop: "2px dashed #b7eb8f" }} />
+                            <div style={{ textAlign: "center" }}>
+                              <div style={{ fontSize: 11, color: "#52c41a", marginBottom: 2 }}>Your OxyLoans ROI</div>
+                              <div style={{ fontSize: 28, fontWeight: 800, color: "#52c41a" }}>{displayRoi}%</div>
+                              {isHistorical && <div style={{ fontSize: 10, color: "#52c41a", fontStyle: "italic" }}>avg across {allDealsRaw.length} deals</div>}
+                            </div>
+                          </div>
+                          {extraVsFd > 0 && (
+                            <div style={{ background: "#52c41a", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
+                              +{extraVsFd}% more than a bank FD
+                            </div>
+                          )}
+                          <div style={{ fontSize: 12, color: "#135200" }}>
+                            Bank FD benchmark is the average of India's top public sector banks. OxyLoans is RBI-registered NBFC-P2P.
                           </div>
                         </div>
-                        {data.fdComparison.extraEarningsVsFd > 0 && (
-                          <div style={{ background: "#52c41a", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
-                            +{data.fdComparison.extraEarningsVsFd}% more than a bank FD
-                          </div>
-                        )}
-                        <div style={{ fontSize: 12, color: "#135200" }}>
-                          Bank FD benchmark is the average of India's top public sector banks. OxyLoans is RBI-registered NBFC-P2P.
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               </SectionCard>}
@@ -1919,6 +2049,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 9. PAYOUT RELIABILITY ── SMART: score+tiles, PRO: full detail+table ── */}
               {!isSmart && <LockCard title="Payout Reliability" requiredTier="SMART" />}
               {isSmart && (data.safetyNarrativeDetails || data.safetyNarrative) && (
+                <div id="section-payout-reliability">
                 <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} summary="Payment track record">
                   {(() => {
                     const early   = data.creditsPaidEarly    ?? 0;
@@ -2126,12 +2257,13 @@ const LenderPortfolioDashboard = () => {
                     );
                   })()}
                 </SectionCard>
+                </div>
               )}
 
               {/* ── 10. DEAL HISTORY — SMART+ only ── */}
               {!isSmart && <LockCard title="Deal History" requiredTier="SMART" />}
               {isSmart && (() => {
-                const allDeals = data.deals || data.allDeals || [];
+                const allDeals = (data.deals || data.allDeals || []).slice().sort((a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0));
                 const activeDeals = allDeals.filter(d => (d.status || "").toUpperCase() === "ACTIVE");
                 const closedDeals = allDeals.filter(d => (d.status || "").toUpperCase() !== "ACTIVE");
                 const filteredDeals = dealHistoryFilter === "ACTIVE" ? activeDeals : dealHistoryFilter === "CLOSED" ? closedDeals : allDeals;
@@ -2317,46 +2449,7 @@ const LenderPortfolioDashboard = () => {
                 </SectionCard>
               )}
 
-              {/* ── PLATFORM HEALTH ── */}
-              {(() => {
-                const ph = data.platformHealth;
-                if (!ph) return null;
-                const chips = [
-                  { icon: "🏦", label: `${ph.dealsAnnouncedThisMonth || 0} Deals Launched` },
-                  { icon: "💰", label: `₹${fmt(ph.dealsValueThisMonth || 0)} Deal Value` },
-                  { icon: "💸", label: `₹${fmt(ph.interestPaidThisMonth || 0)} Interest Paid Out` },
-                  { icon: "🔄", label: `₹${fmt(ph.principalReturnedThisMonth || 0)} Principal Returned` },
-                  { icon: "✅", label: `${ph.platformPaymentPunctualityPct || 0}% On-Time` },
-                  { icon: "👥", label: `${ph.activeLenders || 0} Active Lenders · +${ph.newLendersThisMonth || 0} New` },
-                ];
-                return (
-                  <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #b7eb8f", background: "linear-gradient(135deg, #f6ffed, #e8ffd4)", boxShadow: "0 2px 12px rgba(82,196,26,0.08)" }}>
-                    <div className="card-body">
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                        <span style={{ fontSize: 20 }}>🌿</span>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: "#135200" }}>OxyLoans This Month — Platform Pulse</div>
-                          <div style={{ fontSize: 11, color: "#52c41a" }}>Live platform activity for the current month</div>
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                        {chips.map((chip, i) => (
-                          <div key={i} style={{ background: "#fff", border: "1px solid #b7eb8f", borderRadius: 20, padding: "6px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                            <span>{chip.icon}</span>
-                            <span>{chip.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
 
-              <div className="row mb-2">
-                <div className="col-12">
-                  <small className="text-muted">Generated at: {data.generatedAt ? new Date(data.generatedAt).toLocaleString("en-IN") : "—"}</small>
-                </div>
-              </div>
             </>
           )}
         </div>
