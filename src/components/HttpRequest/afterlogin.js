@@ -1,4 +1,10 @@
 import axios from "axios";
+import { data } from "jquery";
+const userisIn = "production"; //local or production
+// const API_BASE_URL =
+//   userisIn == "local"
+//     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
+//     : "https://fintech.oxyloans.com/oxyloans/v1/user/";
 import { API_USER_URL as API_BASE_URL, MARKETPLACE_URL as MARKETPLACE_BASE } from "../../config";
 
 axios.interceptors.response.use(
@@ -21,9 +27,8 @@ axios.interceptors.response.use(
   }
 );
 
-// Check both sessionStorage (main login flow) and localStorage (admin/alternate login flow)
 export const getToken = () => {
-  return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken") || null;
+  return sessionStorage.getItem("accessToken");
 };
 export const base_url=API_BASE_URL;
 
@@ -2564,6 +2569,150 @@ export const borrowerloaslistings = async (pageNo = 1, pageSize = 10) => {
   return response;
 };
 
+export const getDisbursementAmount = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getDisbursementAmount/${userId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const generateBorrowerAgreement1 = async (payload) => {
+  const token = getToken();
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "aggrementGenerationforBorrowerSide",
+    "POST",
+    token,
+    JSON.stringify(payload),
+  );
+
+  return response;
+};
+
+export const showingInterestAmountToBorrower = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `showingInterestAmountToBorrower`,
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getCibilBasedRoi = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/getCibilBasedRoi`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const getBorrowerEligibleAmount = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerElgibleAmount/${userId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const getBorrowerRequestAmount = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const requestedBorrowerId = userId;
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerRequestAmount/${requestedBorrowerId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const submitBorrowerLoanRequest = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerLoanRequest`,
+    "PATCH",
+    token,
+    JSON.stringify(payload)
+  );
+  return response;
+};
+
+export const getListOfBorrowerLoansInitiated = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const requestedBorrowerId =   userId;
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `listOfBorrowerLoansInitiated/${requestedBorrowerId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const borrowerLoanAcceptOrReject = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerLoanAccepteOrReject`,
+    "PATCH",
+    token,
+    JSON.stringify(payload)
+  );
+  return response;
+};
+
+export const borrowerLoanExcute = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerLoanExcute`,
+    "POST",
+    token,
+    JSON.stringify(payload)
+  );
+  return response;
+};
+
+export const getLenderListNearByRedius1 = async (pageNo = 1, pageSize = 20) => {
+  const token = getToken();
+  const userId = getUserId();
+  const payload = {
+    pageNo,
+    pageSize,
+    userId: String(userId),
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getLenderListNearByRedius1`,
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
 export const submitloanRequest = async (postdata) => {
   const token = getToken();
   const userId = getUserId();
@@ -2610,13 +2759,14 @@ export const chatbotapicall = async (messages) => {
   const userId = getUserId();
   try {
     const response = await axios({
-      url: `${MARKETPLACE_BASE}/v1/ai/chat`,
+      url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
       method: "POST",
       timeout: 30000,
       headers: {
         "Content-Type": "application/json",
         accessToken: token,
         userId: userId,
+        "X-API-KEY": "oxy-ai-prod-key",
       },
       data: { message: messages, primaryType: localStorage.getItem("primaryType") || "LENDER" },
     });
@@ -2630,6 +2780,230 @@ export const chatbotapicall = async (messages) => {
     throw error;
   }
 };
+
+export const setLatLong = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const postdata = {
+    userId: userId,
+  }
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `savingGoogleDistance`,
+    "POST",
+    token,
+    postdata
+  );
+  return response;
+}
+
+export const getBorrowerDocuments = async (borrowerId) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${borrowerId}/documents`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const lenderInterestedBorrowers = async ({ borrowerId, lenderInterestedAmount, roi, duration, lenderComments }) => {
+  const token = getToken();
+  const lenderId = Number(getUserId());
+  const data = {
+    borrowerId: Number(borrowerId),
+    lenderId,
+    lenderInterestedAmount: Number(lenderInterestedAmount),
+    roi: Number(roi),
+    duration: Number(duration),
+    lenderComments: lenderComments || "",
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `lenderInterestedBorrowers`,
+    "POST",
+    token,
+    data
+  );
+  return response;
+};
+
+export const getBorrowerListNearByRedius = async (pageNo, pageSize) => {
+  const token = getToken();
+  const userId = getUserId();
+  let postdatastring = JSON.stringify({
+    "pageNo": pageNo,
+    "pageSize": pageSize,
+    "userId": userId
+  });
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerListNearByRedius1`,
+    "POST",
+    token,
+    postdatastring
+  );
+   return response;
+};
+
+export const brLoanStatusApprovalByLr = async (id, status, loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+  const data = {
+    "loanRequestId":loanRequestId,
+    "LenderId":userId,
+    "lenderStatus":status,
+    "id":id
+}
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `brLoanStatusApprovalByLr`,
+    "PATCH",
+    token,
+    data
+  );
+  return response;
+};
+
+export const loanAmountApproval = async (loanRequestId,id) => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `loanAmountApproval`,
+    "POST",
+    token,
+    { loanId : loanRequestId, id, lenderId: userId }
+  );
+  return response;
+}
+
+export const getLoanAmountDeducted = async () => {
+const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getLoanAmountDeducted`,
+    "POST",
+    token,
+    { lenderId: userId }
+  );
+  return response;
+};
+
+export const getOfferGivenList = async (pageNo = 1, pageSize = 10) => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `lenderLoansInitiated/${userId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const getUserDetailsForBorrower = async (BorrowerId) => {
+  const token = getToken();
+  const userId = getUserId();
+    const postdata = {
+      userId: BorrowerId,
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowersInfo`,
+    "POST",
+    token,
+    postdata
+  );
+  return response;
+};
+
+export const getBorrowerLoanDetails = async (borrowerId, loanId) => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `borrowerRequestAmount/${borrowerId}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const showingInterestAmountToLender = async (borrowerId,loanId) => {
+   const token = getToken();
+  const userId = getUserId();
+  const data = {
+    "borrowerId":borrowerId,
+    "lenderId":userId,
+    "loanId":loanId
+  }
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `showingInterestAmountToLender`,
+    "POST",
+    token,
+    data
+  );
+  return response
+
+}
+
+export const aggrementGenerationforLenderSide = async (payload) => {
+  const token = getToken();
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "aggrementGenerationforLenderSide",
+    "POST",
+    token,
+    payload,
+  );
+
+  return response;
+};
+
+// ── AI Layer API ──────────────────────────────────────────────────────────────
+const AI_BASE_URL =
+  userisIn == "local"
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/ai/"
+    : "https://fintech.oxyloans.com/oxyloans/v1/ai/";
+
+export const getLenderAIPortfolio = async (lenderId) => {
+  const token = getToken();
+  const response = await axios.get(`${AI_BASE_URL}lender/${lenderId}/portfolio`, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getLenderAIEarnings = async (lenderId, fy, from, to) => {
+  let url = `${AI_BASE_URL}lender/${lenderId}/earnings`;
+  const params = [];
+  if (fy)   params.push(`fy=${fy}`);
+  if (from) params.push(`from=${from}`);
+  if (to)   params.push(`to=${to}`);
+  if (params.length) url += "?" + params.join("&");
+  const token = getToken();
+  const response = await axios.get(url, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getAdminAIPlatformStats = async (fy) => {
+  let url = `${AI_BASE_URL}admin/platform-stats`;
+  if (fy) url += `?fy=${fy}`;
+  const token = getToken();
+  const response = await axios.get(url, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getAdminAIReconciliationSummary = async () => {
+  const token = getToken();
+  const response = await axios.get(`${AI_BASE_URL}admin/reconciliation-summary`, { headers: { accessToken: token } });
+  return response;
+};
+
 
 
 

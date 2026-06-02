@@ -775,6 +775,59 @@ const Sidebar = (props) => {
                   )}
                 </li>
 
+                <li
+                  className={`${
+                    "/adminBorrowerCharges" === pathName ||
+                    "/adminProcessingFees" === pathName
+                      ? "active submenu"
+                      : "submenu"
+                  }`}
+                >
+                  <Link
+                    to="#"
+                    className={isSideMenu === "BorrowerFees" ? "subdrop" : ""}
+                    onClick={() =>
+                      toggleSidebar(
+                        isSideMenu === "BorrowerFees" ? "" : "BorrowerFees"
+                      )
+                    }
+                  >
+                    <i className="fa fa-rupee" />
+                    <span> Borrower Fees</span>{" "}
+                    <span className="menu-arrow" />
+                  </Link>
+                  {isSideMenu === "BorrowerFees" ? (
+                    <ul
+                      style={{
+                        display:
+                          isSideMenu === "BorrowerFees" ? "block" : "none",
+                      }}
+                    >
+                      <li>
+                        <Link
+                          to="/adminBorrowerCharges"
+                          className={`${
+                            "/adminBorrowerCharges" === pathName ? "active" : ""
+                          }`}
+                        >
+                          Borrower Charges
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/adminProcessingFees"
+                          className={`${
+                            "/adminProcessingFees" === pathName ? "active" : ""
+                          }`}
+                        >
+                          Processing Fees
+                        </Link>
+                      </li>
+                    </ul>
+                  ) : (
+                    ""
+                  )}
+                </li>
                 {/* Marketplace Menu Items */}
                 <li className={`${"/marketplace-admin-dashboard" === pathName ? "active" : ""}`}>
                   <Link to="/marketplace-admin-dashboard">

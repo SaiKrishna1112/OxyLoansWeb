@@ -1,5 +1,10 @@
 import axios from "axios";
 import { API_USER_URL as API_BASE_URL } from "../../config";
+// const userisIn = "local"; //local or production
+// let API_BASE_URL =
+//   userisIn == "local"
+//     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
+//     : "https://fintech.oxyloans.com/oxyloans/v1/user/";
 
 const handleApiRequestBeforeLogin = async (
   method,
@@ -52,7 +57,7 @@ export const sendotpemail = async (email) => {
 export const Admlog = async (userid, password) => {
   const data = {
     id: userid,
-    password: password,
+    primaryType: password,
   };
   const response = await handleApiRequestBeforeLogin(
     "POST",

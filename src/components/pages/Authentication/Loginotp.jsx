@@ -6,6 +6,7 @@ import { registerImage } from "../../imagepath";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
+import { BsWhatsapp } from "react-icons/bs";
 
 import { handlesenOtp, usersubmitotp } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
@@ -81,11 +82,18 @@ const Loginotp = () => {
         );
         localStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
         localStorage.setItem("primaryType", retriveresponse.data.primaryType)
+        sessionStorage.setItem("tokenTime", retriveresponse.data.tokenGeneratedTime);
+        sessionStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
+        sessionStorage.setItem("email", retriveresponse.data.email || "");
+        localStorage.setItem("primaryType", retriveresponse.data.primaryType);
+        localStorage.setItem("primaryType", retriveresponse.data.primaryType);
+        sessionStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
+        localStorage.setItem("email", retriveresponse.data.email || userLogInInfo.email || "");
 
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
-        } else if (retriveresponse.data.primaryType == "ADMIN") {
-          history("/dashboard");
+          history("/ai/portfolio");
+        } else if (retriveresponse.data.primaryType == "ADMIN" || retriveresponse.data.primaryType == "HELPDESKADMIN") {
+          history("/oxyloansadmindashboard");
         } else {
           history("/borrowerDashboard");
         }
@@ -287,11 +295,11 @@ const Loginotp = () => {
                   </div>
 
                   <div className="social-login">
-                    {/* <Link to="#">
-                      <i className="fab fa-google-plus-g" />
-                    </Link> */}
+                    <Link to="/" className="bg-success text-white">
+                      <i className="fab fa-at" />
+                    </Link>
                     <Link to="/whatsapplogin" className="bg-success text-white">
-                      <i className="fa fa-whatsapp" />{" "}
+                      <BsWhatsapp />{" "}
                     </Link>
                     {/* <Link onClick={() => {}} to="#">
                       <i className="fab fa-facebook-f" />

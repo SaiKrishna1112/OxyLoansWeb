@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import Header from "../../../Header/Header";
+import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
+import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
 import Footer from "../../../Footer/Footer";
 import { getAdminAIPlatformStats } from "../../../HttpRequest/afterlogin";
 
@@ -27,8 +28,10 @@ const AdminAIDashboard = () => {
 
   return (
     <div className="main-wrapper">
-      <Header />
-      <div className="page-wrapper" style={{ marginLeft: 0 }}>
+      <OxyloansAdminHeader />
+      <OxyloansAdminSidebar />
+
+      <div className="page-wrapper">
         <div className="content container-fluid">
           <div className="page-header">
             <div className="row align-items-center">

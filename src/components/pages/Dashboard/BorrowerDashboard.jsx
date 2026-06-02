@@ -33,7 +33,8 @@ const BorrowerDashboard = () => {
   const [show, setShow] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
-  const[profileDetails,setProfileDetails]=useState();
+  const [profileDetails, setProfileDetails] = useState();
+  const [customCity, setCustomCity] = useState("");
 
   const navigate = useNavigate();
   const [treemap, Settreemap] = useState({
@@ -152,27 +153,58 @@ const BorrowerDashboard = () => {
       },
     },
   });
+  useEffect(() => {
+    getCall();
+  }, []);
+
+   const getCall = () => {
+    axios
+      .get(`${base_url}personal/${sessionStorage.getItem("userId")}`, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
+      .then((response) => {
+        console.log("response", response);
+        setProfileDetails(response.data);
+        if (
+          response?.data?.latitude == null ||
+          response?.data?.longitude == null
+        ) {
+          triggerSavingGoogleDistance(
+            response?.data?.userId || sessionStorage.getItem("userId"),
+          );
+        }
+        if (response.data.city == null || response.data.city == "") {
+          setShow(true);
+        }
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
+  };
+
+  const triggerSavingGoogleDistance = async (userId) => {
+    try {
+      await axios.post(
+        `${base_url}savingGoogleDistance`,
+        {
+          userId: String(userId),
+        },
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        },
+      );
+    } catch (error) {
+      // Silent background call - no user popup required.
+      console.log("savingGoogleDistance api failed", error);
+    }
+  };
 useEffect(() => {
   getCall();   
 },[])
-  const getCall=()=>{
-axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
-  headers:{
-    accessToken: sessionStorage.getItem('accessToken'),
-  }
-})
-.then((response) => {
-  console.log("response", response);
-   setProfileDetails(response.data);
-   if(response.data.city == null || response.data.city == ""){
-    setShow(true);
-   }
-
-})
-.catch((error) => {
-  console.log("error",error)
-})
-  }
 
 
   const handleCityChange = (event) => {
@@ -188,6 +220,16 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
     console.log("Selected city:", selectedCity);
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
+    // handleClose();
+    if (selectedCity != "Others") {
+      var data = {
+        city: selectedCity,
+      };
+    } else {
+      var data = {
+        city: customCity,
+      };
+    }
     var data = {
       city: selectedCity,
     };
@@ -203,6 +245,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
       )
       .then(function (response) {
         console.log("City saved successfully:", response.data);
+        localStorage.setItem("userCity", selectedCity);
         setShow(false);
         if (response.status === 200) {
           Swal.fire({
@@ -276,7 +319,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         </li>
                       </ul>
                     </div>
-                    <Link to="/borrower-analytics">
+                    {/* <Link to="/borrower-analytics">
                       <button
                         style={{
                           padding: "6px 16px",
@@ -291,7 +334,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                       >
                         Analytics
                       </button>
-                    </Link>
+                    </Link> */}
                   </div>
                 </div>
               </div>
@@ -545,7 +588,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           </Modal>
       </div>
       {/* /Main Wrapper */}
-      <FloatingAssistant avatarSrc={logo} />
+      {/* <FloatingAssistant avatarSrc={logo} /> */}
     </>
   );
 };

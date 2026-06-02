@@ -205,9 +205,9 @@ const Todaydeal = () => {
                             <div className="col-sm-12 col-lg-3">
                               Borrower Name : {data?.borrowerName}
                             </div>
-                            {/* <div className="col-auto col-lg-3">
-                                Deal Value : {data.dealAmount}
-                              </div> */}
+                            <div className="col-auto col-lg-3">
+                                Deal Value : INR {data.dealAmount.toLocaleString("en-IN")}
+                              </div>
                             {/* <div>Status : Open</div> */}
                           </div>
                           <div className="card-middle row">
@@ -252,13 +252,13 @@ const Todaydeal = () => {
                               <div className="col-sm-6 col-lg-2">
                                 <span>Min Amount</span>
                                 <h6 className="mb-0">
-                                  INR {data.minimumAmountInDeal}
+                                  INR {data.minimumAmountInDeal.toLocaleString("en-IN")}
                                 </h6>
                               </div>
                               <div className="col-sm-6 col-lg-2">
                                 <span>Max Amount</span>
                                 <h6 className="mb-0">
-                                  INR {data.lenderPaticipationLimit}
+                                  INR {data.lenderPaticipationLimit.toLocaleString("en-IN")}
                                 </h6>
                               </div>
                               <div className="col-sm-6 col-lg-3">
