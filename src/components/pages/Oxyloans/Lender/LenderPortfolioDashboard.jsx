@@ -227,13 +227,20 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
     const text = (overrideText !== undefined ? overrideText : input).trim();
     if (!text || sending) return;
     if (overrideText === undefined) setInput("");
+
+    // Snapshot history BEFORE appending the new user message (last 4 turns, skip welcome)
+    const history = messages
+      .filter((m, i) => i > 0)          // skip the static welcome message
+      .slice(-4)                          // last 4 turns for context window
+      .map((m) => ({ role: m.role, text: (m.text || "").substring(0, 300) }));
+
     setMessages((prev) => [...prev, { role: "user", text, data: null }]);
     setSending(true);
     try {
       const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, primaryType: "LENDER" },
+        { message: text, primaryType: "LENDER", history },
         { headers: { accessToken: token, "Content-Type": "application/json" } }
       );
       const reply = res.data?.answer
@@ -485,6 +492,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) =
   const interest  = earningsData.fyInterestEarned   || 0;
   const principal = earningsData.fyPrincipalReturned || 0;
   const total     = earningsData.fyTotalReceived     || 0;
+  const upcoming  = earningsData.upcomingTotal       || 0;
   const label     = earningsData.fyLabel             || "Period";
   const narrative = earningsData.narrative           || "";
 
@@ -502,17 +510,18 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) =
       <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
       <div className="row g-3 mb-3">
         {[
-          { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed" },
-          { label: "Principal Returned", value: `₹${fmt(principal)}`, color: "#1890ff", bg: "#e6f7ff" },
-          { label: "Total Received",     value: `₹${fmt(total)}`,     color: "#722ed1", bg: "#f9f0ff" },
+          { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed",  onClick: () => { onEarningsTileClick(); scrollTo("section-deal-history"); } },
+          { label: "Principal Returned", value: `₹${fmt(principal)}`, color: "#1890ff", bg: "#e6f7ff",  onClick: () => { onEarningsTileClick(); scrollTo("section-deal-history"); } },
+          { label: "Total Received",     value: `₹${fmt(total)}`,     color: "#722ed1", bg: "#f9f0ff",  onClick: () => { onEarningsTileClick(); scrollTo("section-deal-history"); } },
+          { label: "Upcoming (60 days)", value: `₹${fmt(upcoming)}`,  color: "#fa8c16", bg: "#fff7e6",  onClick: null },
         ].map((item) => (
-          <div key={item.label} className="col-6 col-md-4">
+          <div key={item.label} className="col-6 col-md-3">
             <div
-              onClick={() => { onEarningsTileClick(); scrollTo("section-deal-history"); }}
-              style={{ background: item.bg, borderRadius: 10, padding: "12px 14px", textAlign: "center", cursor: "pointer", transition: "box-shadow 0.15s" }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.12)"}
+              onClick={item.onClick || undefined}
+              style={{ background: item.bg, borderRadius: 10, padding: "12px 14px", textAlign: "center", cursor: item.onClick ? "pointer" : "default", transition: "box-shadow 0.15s" }}
+              onMouseEnter={e => { if (item.onClick) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.12)"; }}
               onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
-              title="Click to see active deals"
+              title={item.onClick ? "Click to see active deals" : undefined}
             >
               <div style={{ fontSize: 11, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{item.label}</div>
               <div style={{ fontWeight: 700, fontSize: 18, color: item.color }}>{item.value}</div>
@@ -1100,6 +1109,9 @@ const LenderPortfolioDashboard = () => {
   const [interestExpanded, setInterestExpanded] = useState(false);
   const [principalExpanded, setPrincipalExpanded] = useState(false);
   const [maturityFilter, setMaturityFilter] = useState("all"); // 'all' | 'thisMonth' | 'next90'
+  const [payoutSectionOpen, setPayoutSectionOpen] = useState(false);
+  const [referralSectionOpen, setReferralSectionOpen] = useState(false);
+  const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
@@ -1336,7 +1348,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 2. STATS — all tiers see basic numbers ── */}
               <div className="row mb-2">
                 <StatCard label="Total Invested" value={`₹${fmt(data.totalInvested)}`} color="#1890ff"
-                  sub={data.totalWithdrawn > 0 ? `Net deployed ₹${fmt(data.netInvested)}` : null} />
+                  sub={`${data.totalDeals ?? 0} deals · ${data.activeDeals ?? 0} active · ${data.closedDeals ?? 0} closed`} />
                 <InterestBreakdownCard data={data} />
                 <StatCard label="Principal Returned" value={`₹${fmt(data.totalPrincipalReturned)}`} color="#13c2c2"
                   sub={data.closedDeals > 0 ? `Across ${data.closedDeals} closed deals` : null} />
@@ -1345,18 +1357,25 @@ const LenderPortfolioDashboard = () => {
               </div>
               <div className="row mb-4">
                 <StatCard label="Active Deals" value={data.activeDeals ?? "—"} color="#52c41a"
-                  sub={`${data.closedDeals ?? 0} closed · ${data.totalDeals ?? 0} total`}
+                  sub={`₹${fmt(data.earningsForecast?.totalActiveAmount)} deployed`}
                   onClick={() => scrollTo("section-active-deals")} />
-                <StatCard
-                  label="Maturing This Month"
-                  value={data.maturingThisMonthCount ?? 0}
-                  color={(data.maturingThisMonthCount ?? 0) > 0 ? "#fa8c16" : "#8c8c8c"}
-                  badge={(data.maturingThisMonthCount ?? 0) > 0 ? "Action needed" : null}
-                  sub={(data.maturingThisMonthCount ?? 0) > 0 ? "Click to view & plan" : "None this month"}
-                  onClick={() => { setMaturityFilter("thisMonth"); setShowAllMaturities(true); scrollTo("section-maturity"); }} />
-                {/* Referral stat: SMART+ gets the expandable card, FREE gets a locked tile */}
+                <StatCard label="Payments Received" value={fmt(data.emisPaid ?? 0)} color="#faad14"
+                  sub={data.lastPaidDate && data.lastPaidDate !== "N/A" ? `Last: ${fmtDate(data.lastPaidDate)}` : null} />
+                {/* Referral: SMART+ clicks to referral section, FREE shows locked */}
                 {isSmart ? (
-                  <ReferralBonusCard data={data} />
+                  <StatCard
+                    label="Referral Bonus"
+                    value={`₹${fmt(data.referralEarnings ?? 0)}`}
+                    color="#f759ab"
+                    sub={(() => {
+                      const paid   = data.referralPaidAmount   ?? 0;
+                      const unpaid = data.referralUnpaidAmount ?? 0;
+                      const count  = data.referredLendersCount ?? 0;
+                      if (count === 0) return "No referrals yet";
+                      return `${count} referral${count > 1 ? "s" : ""} · ₹${fmt(paid)} paid${unpaid > 0 ? ` · ₹${fmt(unpaid)} pending` : ""}`;
+                    })()}
+                    onClick={() => { setReferralSectionOpen(true); scrollTo("section-referral"); }}
+                  />
                 ) : (
                   <div className="col-6 col-md mb-3">
                     <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px dashed #d9d9d9", background: "#fafafa" }}>
@@ -1385,7 +1404,7 @@ const LenderPortfolioDashboard = () => {
                     if (same + next > 0) return `✅ ${same} same day · +1d: ${next}${late > 0 ? ` · ⏰ ${late} late` : ''}`;
                     return `${data.successfulPayments ?? 0} payments delivered`;
                   })()}
-                  onClick={() => scrollTo("section-payout-reliability")} />
+                  onClick={() => { setPayoutSectionOpen(true); scrollTo("section-payout-reliability"); }} />
               </div>
 
               {/* ── 3. EARNINGS SECTION ── */}
@@ -1517,18 +1536,40 @@ const LenderPortfolioDashboard = () => {
                           </div>
                         </div>
 
-                        {/* Tile 4: Maturing This Month */}
+                        {/* Tile 3b: Active Deals — click → Deal History ACTIVE filter */}
                         <div className="col-12 col-sm-6 col-lg">
                           <div
-                            style={{ background: maturingExpanded ? "linear-gradient(135deg, #ffe7ba, #ffd591)" : "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: maturingExpanded ? "2px solid #fa8c16" : "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
-                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setMaturingExpanded(v => !v); } }}
+                            style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: "pointer", transition: "all 0.2s" }}
+                            onClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); scrollTo("section-deal-history"); }}
+                            onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 14px rgba(82,196,26,0.2)"}
+                            onMouseLeave={e => e.currentTarget.style.boxShadow = ""}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                              <span style={{ fontSize: 20 }}>📊</span>
+                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#389e0d", fontWeight: 700 }}>Active Deals</div>
+                            </div>
+                            <div style={{ fontWeight: 700, fontSize: 28, color: "#237804", marginBottom: 2 }}>{data.activeDeals ?? 0}</div>
+                            <div style={{ fontSize: 12, color: "#389e0d", marginBottom: 4 }}>₹{fmt(data.earningsForecast?.totalActiveAmount)} deployed</div>
+                            <div style={{ fontSize: 11, color: "#52c41a" }}>▼ view active deals</div>
+                          </div>
+                        </div>
+
+                        {/* Tile 4: Maturing This Month — click scrolls to planner filtered to this month */}
+                        <div className="col-12 col-sm-6 col-lg">
+                          <div
+                            style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setDealParticipationExpanded(false); setMaturityFilter("thisMonth"); setShowAllMaturities(true); scrollTo("section-maturity"); } }}
+                            onMouseEnter={e => { if (maturingCount > 0) e.currentTarget.style.boxShadow = "0 4px 14px rgba(250,140,22,0.25)"; }}
+                            onMouseLeave={e => e.currentTarget.style.boxShadow = ""}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>📅</span>
                               <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#d46b08", fontWeight: 700 }}>Maturing This Month</div>
                             </div>
                             <div style={{ fontWeight: 700, fontSize: 28, color: "#ad4e00", marginBottom: 4 }}>{maturingCount}</div>
-                            <div style={{ fontSize: 12, color: "#d46b08" }}>{maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} — ${maturingExpanded ? "▲ hide" : "▼ view"}`}</div>
+                            <div style={{ fontSize: 12, color: "#d46b08" }}>
+                              {maturingCount === 0 ? "No deals maturing" : `deal${maturingCount > 1 ? "s" : ""} ↓ view in planner`}
+                            </div>
                           </div>
                         </div>
 
@@ -1551,7 +1592,10 @@ const LenderPortfolioDashboard = () => {
                           const pct      = launched > 0 ? Math.round((mine / launched) * 100) : null;
                           return (
                             <div className="col-12 col-sm-6 col-lg">
-                              <div style={{ background: "linear-gradient(135deg, #f0f5ff, #e8f4fd)", borderRadius: 14, padding: "16px 18px", border: "1px solid #91caff", height: "100%" }}>
+                              <div
+                                style={{ background: dealParticipationExpanded ? "linear-gradient(135deg, #d6e4ff, #adc6ff)" : "linear-gradient(135deg, #f0f5ff, #e8f4fd)", borderRadius: 14, padding: "16px 18px", border: dealParticipationExpanded ? "2px solid #1677ff" : "1px solid #91caff", height: "100%", cursor: mine > 0 ? "pointer" : "default", transition: "all 0.2s" }}
+                                onClick={() => { if (mine > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setDealParticipationExpanded(v => !v); } }}
+                              >
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                                   <span style={{ fontSize: 20 }}>🏹</span>
                                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#0958d9", fontWeight: 700 }}>Deal Participation</div>
@@ -1568,6 +1612,7 @@ const LenderPortfolioDashboard = () => {
                                 ) : (
                                   <div style={{ fontSize: 12, color: "#8c8c8c" }}>{mine === 0 ? "No new investments this month" : "Invested this month"}</div>
                                 )}
+                                {mine > 0 && <div style={{ fontSize: 11, color: "#1677ff", marginTop: 6 }}>{dealParticipationExpanded ? "▲ hide details" : "▼ view deals"}</div>}
                               </div>
                             </div>
                           );
@@ -1575,20 +1620,27 @@ const LenderPortfolioDashboard = () => {
                       </div>
 
                       {/* ── Breakdown panel — shown below the strip when a tile is clicked ── */}
-                      {(interestExpanded || principalExpanded || maturingExpanded) && (() => {
-                        const activeTitle  = interestExpanded ? "📈 Interest This Month — Per Deal" : principalExpanded ? "🏦 Principal This Month — Per Deal" : "📅 Maturing This Month — Deal List";
-                        const borderColor  = interestExpanded ? "#52c41a" : principalExpanded ? "#1677ff" : "#fa8c16";
-                        const headerColor  = interestExpanded ? "#237804" : principalExpanded ? "#10239e" : "#ad4e00";
+                      {(interestExpanded || principalExpanded || dealParticipationExpanded) && (() => {
+                        const activeTitle  = interestExpanded ? "📈 Interest This Month — Per Deal" : principalExpanded ? "🏦 Principal This Month — Per Deal" : "🏹 Deal Participation This Month";
+                        const borderColor  = interestExpanded ? "#52c41a" : principalExpanded ? "#1677ff" : "#1677ff";
+                        const headerColor  = interestExpanded ? "#237804" : principalExpanded ? "#10239e" : "#003eb3";
+                        // Deal participation: filter deals whose startDate is this month
+                        const now = new Date();
+                        const thisMonthDeals = (data.deals || data.allDeals || []).filter(d => {
+                          if (!d.startDate) return false;
+                          const sd = new Date(d.startDate);
+                          return sd.getMonth() === now.getMonth() && sd.getFullYear() === now.getFullYear();
+                        });
                         const rows = interestExpanded
                           ? interestByDeal
                           : principalExpanded
                           ? principalByDeal
-                          : maturingDeals;
+                          : thisMonthDeals;
                         const onClose = interestExpanded
                           ? () => setInterestExpanded(false)
                           : principalExpanded
                           ? () => setPrincipalExpanded(false)
-                          : () => setMaturingExpanded(false);
+                          : () => setDealParticipationExpanded(false);
                         return (
                           <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${borderColor}`, padding: "16px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -1606,14 +1658,15 @@ const LenderPortfolioDashboard = () => {
                                       <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600 }}>Deal Name</th>
                                       <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Amount</th>
                                       {interestExpanded && <th style={{ padding: "8px 12px", textAlign: "center", color: "#595959", fontWeight: 600 }}>Status</th>}
-                                      {maturingExpanded && <th style={{ padding: "8px 12px", textAlign: "right", color: "#595959", fontWeight: 600, whiteSpace: "nowrap" }}>Principal</th>}
+                                      {dealParticipationExpanded && <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600 }}>Date</th>}
+                                      {dealParticipationExpanded && <th style={{ padding: "8px 12px", textAlign: "left", color: "#595959", fontWeight: 600 }}>ROI</th>}
                                     </tr>
                                   </thead>
                                   <tbody>
                                     {rows.map((d, i) => (
                                       <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
                                         <td style={{ padding: "8px 12px", color: "#8c8c8c", whiteSpace: "nowrap" }}>#{d.dealId}</td>
-                                        <td style={{ padding: "8px 12px", color: headerColor, fontWeight: 500 }}>{d.dealName || ("Deal #" + d.dealId)}</td>
+                                        <td style={{ padding: "8px 12px", color: headerColor, fontWeight: 500 }}>{d.dealName || d.name || ("Deal #" + d.dealId)}</td>
                                         <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
                                         {interestExpanded && (
                                           <td style={{ padding: "8px 12px", textAlign: "center" }}>
@@ -1622,21 +1675,21 @@ const LenderPortfolioDashboard = () => {
                                             </span>
                                           </td>
                                         )}
-                                        {maturingExpanded && (
-                                          <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: "#ad4e00", whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
-                                        )}
+                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#595959" }}>{fmtDate(d.startDate)}</td>}
+                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{d.rateOfInterest < 5 ? `${(d.rateOfInterest * 12).toFixed(1)}%` : `${d.rateOfInterest}%`} p.a.</td>}
                                       </tr>
                                     ))}
                                   </tbody>
                                   {rows.length > 1 && (
                                     <tfoot>
                                       <tr style={{ borderTop: `2px solid ${borderColor}`, background: "#fafafa" }}>
-                                        <td colSpan={interestExpanded ? 2 : maturingExpanded ? 2 : 2} style={{ padding: "8px 12px", fontWeight: 700, color: headerColor }}>Total</td>
+                                        <td colSpan={2} style={{ padding: "8px 12px", fontWeight: 700, color: headerColor }}>Total</td>
                                         <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>
                                           ₹{fmt(rows.reduce((s, d) => s + (d.amount || 0), 0))}
                                         </td>
                                         {interestExpanded && <td />}
-                                        {maturingExpanded && <td />}
+                                        {dealParticipationExpanded && <td />}
+                                        {dealParticipationExpanded && <td />}
                                       </tr>
                                     </tfoot>
                                   )}
@@ -2050,7 +2103,7 @@ const LenderPortfolioDashboard = () => {
               {!isSmart && <LockCard title="Payout Reliability" requiredTier="SMART" />}
               {isSmart && (data.safetyNarrativeDetails || data.safetyNarrative) && (
                 <div id="section-payout-reliability">
-                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} summary="Payment track record">
+                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible isOpen={payoutSectionOpen} onToggle={() => setPayoutSectionOpen(o => !o)} summary="Payment track record">
                   {(() => {
                     const early   = data.creditsPaidEarly    ?? 0;
                     const same    = data.creditsPaidSameDay  ?? 0;
@@ -2355,7 +2408,8 @@ const LenderPortfolioDashboard = () => {
                 <LockCard title="Referral Earnings" requiredTier="SMART" />
               )}
               {isSmart && (data.referredLendersCount > 0 || data.referralEarnings > 0) && (
-                <SectionCard title="Referral Earnings" collapsible defaultOpen={false} summary={`₹${fmt(data.referralEarnings)} earned · ${data.referredLendersCount || 0} referred`}>
+                <div id="section-referral">
+                <SectionCard title="Referral Earnings" collapsible isOpen={referralSectionOpen} onToggle={() => setReferralSectionOpen(o => !o)} summary={`₹${fmt(data.referralEarnings)} earned · ${data.referredLendersCount || 0} referred`}>
                   {/* Stat tiles — consistent grid */}
                   <div className="row g-3 mb-3">
                     {[
@@ -2447,6 +2501,7 @@ const LenderPortfolioDashboard = () => {
                     </div>
                   )}
                 </SectionCard>
+                </div>
               )}
 
 

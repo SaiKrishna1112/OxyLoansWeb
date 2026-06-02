@@ -52,7 +52,7 @@ export const sendotpemail = async (email) => {
     email: email,
   };
   try {
-    const response = await axios.post(API_BASE_URL + "/resetpassword", data, {
+    const response = await axios.post(API_BASE_URL + "resetpassword", data, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -78,7 +78,7 @@ export const verifypannumber = async (pannumber, address, time, id, date) => {
   };
   try {
     const response = await axios.patch(
-      API_BASE_URL + "/emailVerification",
+      API_BASE_URL + "emailVerification",
       data,
       {
         headers: {
@@ -150,7 +150,7 @@ export const validateotpsubmit = async (moblie, otp) => {
   };
   try {
     const response = await axios.post(
-      API_BASE_URL + "/login?grantType=PWD",
+      API_BASE_URL + "login?grantType=PWD",
       data,
       {
         headers: {
@@ -174,7 +174,7 @@ export const RegisterUser = async (moblie) => {
   };
   try {
     const response = await axios.post(
-      API_BASE_URL + "/newUserRegistration",
+      API_BASE_URL + "newUserRegistration",
       data
     );
     return response.data.mobileOtpSession;
@@ -246,7 +246,7 @@ export const vaildateotp = async (
   }
   try {
     const response = await axios.post(
-      API_BASE_URL + "/newUserRegistration",
+      API_BASE_URL + "newUserRegistration",
       data
     );
 

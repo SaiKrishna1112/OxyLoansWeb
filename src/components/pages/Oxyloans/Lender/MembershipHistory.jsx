@@ -177,7 +177,7 @@ const MembershipHistory = () => {
       key: data.transactionNumber || Math.random(),
       PaymentDate: data.paymentDate,
       TransactionNumber: data.transactionNumber,
-      Amount: data.amount,
+      Amount: data.amount ? data.amount.toLocaleString("en-IN") : null,
       PaidThrough: data.paidType,
       DealId: data.dealId,
     }));

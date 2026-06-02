@@ -1,4 +1,4 @@
-import React, { useState ,useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
@@ -33,7 +33,8 @@ const BorrowerDashboard = () => {
   const [show, setShow] = useState(false);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedCityerror, setSelectedCityerror] = useState(false);
-  const[profileDetails,setProfileDetails]=useState();
+  const [profileDetails, setProfileDetails] = useState();
+  const [customCity, setCustomCity] = useState("");
 
   const navigate = useNavigate();
   const [treemap, Settreemap] = useState({
@@ -114,8 +115,6 @@ const BorrowerDashboard = () => {
     },
   });
 
-
-
   const [data, setdata] = useState({
     series: [
       {
@@ -152,28 +151,85 @@ const BorrowerDashboard = () => {
       },
     },
   });
+  useEffect(() => {
+    getCall();
+  }, []);
+
+   const getCall = () => {
+    axios
+      .get(`${base_url}personal/${sessionStorage.getItem("userId")}`, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
+      .then((response) => {
+        console.log("response", response);
+        setProfileDetails(response.data);
+        if (
+          response?.data?.latitude == null ||
+          response?.data?.longitude == null
+        ) {
+          triggerSavingGoogleDistance(
+            response?.data?.userId || sessionStorage.getItem("userId"),
+          );
+        }
+        if (response.data.city == null || response.data.city == "") {
+          setShow(true);
+        }
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
+  };
+
+  const triggerSavingGoogleDistance = async (userId) => {
+    try {
+      await axios.post(
+        `${base_url}savingGoogleDistance`,
+        {
+          userId: String(userId),
+        },
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        },
+      );
+    } catch (error) {
+      // Silent background call - no user popup required.
+      console.log("savingGoogleDistance api failed", error);
+    }
+  };
 useEffect(() => {
   getCall();   
 },[])
-  const getCall=()=>{
-axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
-  headers:{
-    accessToken: sessionStorage.getItem('accessToken'),
-  }
-})
-.then((response) => {
-  console.log("response", response);
-   setProfileDetails(response.data);
-   if((response.data.city == null || response.data.city == "") && !localStorage.getItem("userCity")){
-    setShow(true);
-   }
 
-})
-.catch((error) => {
-  console.log("error",error)
-})
-  }
-
+  const getCall = () => {
+    axios
+      .get(`${base_url}personal/${sessionStorage.getItem("userId")}`, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
+      .then((response) => {
+        console.log("response", response);
+        setProfileDetails(response.data);
+        if (
+          response?.data?.latitude == null ||
+          response?.data?.longitude == null
+        ) {
+          triggerSavingGoogleDistance(
+            response?.data?.userId || sessionStorage.getItem("userId"),
+          );
+        }
+        if (response.data.city == null || response.data.city == "") {
+          setShow(true);
+        }
+      })
+      .catch((error) => {
+        console.log("error", error);
+      });
+  };
 
   const handleCityChange = (event) => {
     if (event.target.value.trim() === "") {
@@ -188,19 +244,25 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
     console.log("Selected city:", selectedCity);
     const userId = sessionStorage.getItem("userId");
     console.log("User ID:", userId);
+    // handleClose();
+    if (selectedCity != "Others") {
+      var data = {
+        city: selectedCity,
+      };
+    } else {
+      var data = {
+        city: customCity,
+      };
+    }
     var data = {
       city: selectedCity,
     };
     axios
-      .post(
-        `${base_url}${userId}/city`,
-        data,
-        {
-          headers: {
-            accessToken: sessionStorage.getItem("accessToken"),
-          },
-        }
-      )
+      .post(`${base_url}${userId}/city`, data, {
+        headers: {
+          accessToken: sessionStorage.getItem("accessToken"),
+        },
+      })
       .then(function (response) {
         console.log("City saved successfully:", response.data);
         localStorage.setItem("userCity", selectedCity);
@@ -277,7 +339,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         </li>
                       </ul>
                     </div>
-                    <Link to="/borrower-analytics">
+                    {/* <Link to="/borrower-analytics">
                       <button
                         style={{
                           padding: "6px 16px",
@@ -292,11 +354,14 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                       >
                         Analytics
                       </button>
-                    </Link>
+                    </Link> */}
                   </div>
+                  <p>Track your loan requests, offers, and repayments</p>
                 </div>
               </div>
             </div>
+
+           
 
             {/* /Page Header */}
             {/* Overview Section */}
@@ -335,7 +400,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         <h6>Active </h6>
                         <h3>
                           {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfActiveDealsCount ?? 0
+                            ? (getdashboardData?.numberOfActiveDealsCount ?? 0)
                             : ""}
                         </h3>
                       </div>
@@ -359,7 +424,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                         <h6>Closed </h6>
                         <h3>
                           {getdashboardData?.length !== 0
-                            ? getdashboardData?.numberOfClosedDealsCount ?? 0
+                            ? (getdashboardData?.numberOfClosedDealsCount ?? 0)
                             : ""}
                         </h3>
                       </div>
@@ -441,6 +506,14 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
                           </Link>
                         </div>
                       </li>
+                      <li>
+                        <div className="report-btn">
+                          <Link to="/nearbyleders" className="btn">
+                            <i className="fa-solid fa-location-dot me-2"></i>
+                            Nearby Lenders
+                          </Link>
+                        </div>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -499,14 +572,14 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           {/* Footer */}
           <Footer />
         </div>
-          <Modal
-            show={show}
-            onHide={() => setShow(false)}
-            dialogClassName="custom-small-modal"
-          >
-            <Modal.Header closeButton className="py-2 px-3">
-              <Modal.Title className="h6">Select City</Modal.Title>
-            </Modal.Header>
+        <Modal
+          show={show}
+          onHide={() => setShow(false)}
+          dialogClassName="custom-small-modal"
+        >
+          <Modal.Header closeButton className="py-2 px-3">
+            <Modal.Title className="h6">Select City</Modal.Title>
+          </Modal.Header>
 
             <Modal.Body className="py-2 px-3">
               <div className="mb-2">
@@ -546,7 +619,7 @@ axios.get(`${base_url}personal/${sessionStorage.getItem('userId')}`,{
           </Modal>
       </div>
       {/* /Main Wrapper */}
-      <FloatingAssistant avatarSrc={logo} />
+      {/* <FloatingAssistant avatarSrc={logo} /> */}
     </>
   );
 };

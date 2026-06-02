@@ -384,7 +384,7 @@ const BorrowerLoanRequestCreate = () => {
                 padding: "12px 16px",
               }}
             >
-              <div className="text-muted small mb-1">Processing Fee</div>
+              <div className="text-muted small mb-1">Fixed Obligation to Income Ratio</div>
               <div className="fw-bold fs-5" style={{ color: "#3d1a7a" }}>
                 {isEligibleLoading
                   ? "Loading..."

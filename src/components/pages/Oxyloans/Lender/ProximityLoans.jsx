@@ -411,7 +411,7 @@ const MapView = ({
               Nearby Borrowers
             </h6>
             <small className="text-muted">
-              View and fund loan requests from borrowers near your location.
+              Explore and invest in loan opportunities from borrowers in your vicinity.
             </small>
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
@@ -1109,28 +1109,15 @@ const ProximityLoans = () => {
                 marginBottom: 20,
               }}
             >
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div className="d-flex align-items-center gap-3">
-                  <button
-                    className="btn btn-sm"
-                    style={{
-                      border: "1px solid #d0d5dd",
-                      color: "#374151",
-                      background: "#fff",
-                      fontWeight: 500,
-                      borderRadius: 6,
-                      padding: "6px 14px",
-                    }}
-                    onClick={() => setSelectedBorrower(null)}
-                  >
-                    <i className="fa fa-arrow-left me-1" /> Back to List
-                  </button>
-                  <h4 className="mb-0 fw-bold" style={{ color: "#111827" }}>
-                    Borrower Profile & Loan Request
-                  </h4>
-                </div>
-                
-                <div className="d-flex gap-2">
+              {/* ROW 1 */}
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                {/* Title (Left) */}
+                <h4 className="mb-0 fw-bold" style={{ color: "#111827" }}>
+                  Borrower Profile & Loan Request
+                </h4>
+
+                {/* Buttons (Right) */}
+                <div className="d-flex flex-wrap gap-2">
                   <button
                     className="btn"
                     style={{
@@ -1138,8 +1125,9 @@ const ProximityLoans = () => {
                       color: "#fff",
                       fontWeight: 600,
                       borderRadius: 8,
-                      padding: "8px 22px",
-                      fontSize: 14,
+                      padding: "8px 18px",
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
                     }}
                     onClick={() => {
                       setShowOffer(true);
@@ -1158,20 +1146,49 @@ const ProximityLoans = () => {
                     <i className="fa fa-paper-plane me-1" />
                     Send Loan Offer
                   </button>
+
                   <Link
                     to="/offerGivenList"
                     className="btn btn-outline-secondary"
                     style={{
                       borderRadius: 8,
-                      padding: "8px 18px",
-                      fontSize: 14,
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    <i className="fa fa-list-alt me-1" /> View My Offers
+                    <i className="fa fa-list-alt me-1" />
+                    View My Offers
                   </Link>
                 </div>
               </div>
-              <span className="text-muted"> Review borrower details to assess risk and make a confident lending decision. </span>
+
+              {/* ROW 2 */}
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
+                {/* Subtext (Left) */}
+                <span className="text-muted" style={{ fontSize: 13 }}>
+                  Review borrower details to assess risk and make a confident
+                  lending decision.
+                </span>
+
+                {/* Back Button (Right) */}
+                <button
+                  className="btn btn-sm"
+                  style={{
+                    border: "1px solid #d0d5dd",
+                    color: "#374151",
+                    background: "#fff",
+                    fontWeight: 500,
+                    borderRadius: 8,
+                    padding: "6px 14px",
+                    whiteSpace: "nowrap",
+                  }}
+                  onClick={() => setSelectedBorrower(null)}
+                >
+                  <i className="fa fa-arrow-left me-1" />
+                  Back
+                </button>
+              </div>
             </div>
 
             {detailLoading && (
@@ -1382,9 +1399,7 @@ const ProximityLoans = () => {
                                   fontSize: 11,
                                 }}
                               >
-                                Read and acknowledge all{" "}
-                                
-                                 consents to proceed
+                                Read and acknowledge all consents to proceed
                               </small>
                             </div>
                             <div
@@ -1652,7 +1667,7 @@ const ProximityLoans = () => {
                       ) : (
                         <>
                           <i className="fa fa-paper-plane me-1" />
-                          Send Offer
+                          Send Loan Offer
                         </>
                       )}
                     </button>
@@ -1765,78 +1780,90 @@ const ProximityLoans = () => {
                           ) : null,
                         )}
                       </div>
-                     <hr />
+                      <hr />
 
-<div
-  className="mb-3 p-3 rounded"
-  style={{
-    background: "linear-gradient(135deg, #eef4ff 0%, #ffffff 100%)",
-    border: `1.5px solid ${PRIMARY}40`,
-    boxShadow: "0 4px 14px rgba(61, 94, 225, 0.08)",
-  }}
->
-  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-    <div>
-      <h6 className="fw-bold mb-1" style={{ color: "#1a1f36" }}>
-        {/* <i className="fa fa-handshake-o me-2" style={{ color: PRIMARY }} /> */}
-        Borrower Loan Request Details
-      </h6>
-      {/* <small className="text-muted ">
+                      <div
+                        className="mb-3 p-3 rounded"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, #eef4ff 0%, #ffffff 100%)",
+                          border: `1.5px solid ${PRIMARY}40`,
+                          boxShadow: "0 4px 14px rgba(61, 94, 225, 0.08)",
+                        }}
+                      >
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                          <div>
+                            <h6
+                              className="fw-bold mb-1"
+                              style={{ color: "#1a1f36" }}
+                            >
+                              {/* <i className="fa fa-handshake-o me-2" style={{ color: PRIMARY }} /> */}
+                              Borrower Loan Request Details
+                            </h6>
+                            {/* <small className="text-muted ">
          <i className="fa fa-handshake-o me-2" style={{ color: PRIMARY }} />
         This borrower has requested a loan. Review the requested amount and pending amount before sending your offer.
       </small> */}
-    </div>
+                          </div>
+                        </div>
 
-  </div>
-
-  {loanDetails?.length > 0 ? (
-    loanDetails.map((loan, index) => (
-      <div
-        key={loan.id || index}
-        className="mb-2 p-3 rounded"
-        style={{
-          background: "#fff",
-          border: "1px solid #e5e7eb",
-        }}
-      >
-        
-        <div className="row">
-          {[
-            [
-              "Requested Loan Amount",
-              loan.requestAmount
-                ? `₹${Number(loan.requestAmount).toLocaleString()}`
-                : null,
-            ],
-            [
-              "Current Loan Status",
-              loan.loanRequestStatus === "PARTIALLYPROCESSING"
-                ? "Partially Processing"
-                : loan.loanRequestStatus,
-            ],
-            [
-              "Amount Still Needed",
-              loan.partiallyPendingAmount
-                ? `₹${Number(loan.partiallyPendingAmount).toLocaleString()}`
-                : null,
-            ],
-          ].map(([label, value]) =>
-            value ? (
-              <div className="col-md-4 mb-2" key={label}>
-                <small className="text-muted d-block">{label}</small>
-                <strong style={{ color: "#111827", fontSize: 15 }}>
-                  {value}
-                </strong>
-              </div>
-            ) : null,
-          )}
-        </div>
-      </div>
-    ))
-  ) : (
-    <p className="text-muted mb-0">No loan request details available.</p>
-  )}
-</div>
+                        {loanDetails?.length > 0 ? (
+                          loanDetails.map((loan, index) => (
+                            <div
+                              key={loan.id || index}
+                              className="mb-2 p-3 rounded"
+                              style={{
+                                background: "#fff",
+                                border: "1px solid #e5e7eb",
+                              }}
+                            >
+                              <div className="row">
+                                {[
+                                  [
+                                    "Requested Loan Amount",
+                                    loan.requestAmount
+                                      ? `₹${Number(loan.requestAmount).toLocaleString()}`
+                                      : null,
+                                  ],
+                                  [
+                                    "Current Loan Status",
+                                    loan.loanRequestStatus ===
+                                    "PARTIALLYPROCESSING"
+                                      ? "Partially Processing"
+                                      : loan.loanRequestStatus,
+                                  ],
+                                  [
+                                    "Amount Still Needed",
+                                    loan.partiallyPendingAmount
+                                      ? `₹${Number(loan.partiallyPendingAmount).toLocaleString()}`
+                                      : null,
+                                  ],
+                                ].map(([label, value]) =>
+                                  value ? (
+                                    <div className="col-md-4 mb-2" key={label}>
+                                      <small className="text-muted d-block">
+                                        {label}
+                                      </small>
+                                      <strong
+                                        style={{
+                                          color: "#111827",
+                                          fontSize: 15,
+                                        }}
+                                      >
+                                        {value}
+                                      </strong>
+                                    </div>
+                                  ) : null,
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-muted mb-0">
+                            No loan request details available.
+                          </p>
+                        )}
+                      </div>
                     </>
                   ) : (
                     !detailLoading && (
@@ -2132,16 +2159,23 @@ const ProximityLoans = () => {
           <div className="page-header mb-2">
             <div className="row align-items-center">
               <div className="col">
-                <h3 className="page-title">Proximity Loans</h3>
+                <h3 className="page-title">Proximity Nearby Loans</h3>
                 <ul className="breadcrumb">
                   <li className="breadcrumb-item">
                     <Link to="/dashboard">Dashboard</Link>
                   </li>
-                  <li className="breadcrumb-item active">Proximity Loans</li>
+                  <li className="breadcrumb-item active">
+                    Proximity Nearby Loans
+                  </li>
                 </ul>
               </div>
-              <div className="col-auto d-flex align-items-center gap-2">
-                {/* View toggle */}
+            </div>
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mt-2">
+              <span className="text-muted">
+                Discover and invest in loan opportunities from borrowers near you.
+              </span>
+
+              <div className="d-flex flex-wrap align-items-center gap-2 ms-md-auto">
                 <div
                   style={{
                     display: "flex",
@@ -2166,6 +2200,7 @@ const ProximityLoans = () => {
                     <i className="fa fa-map-marker me-1" />
                     Map View
                   </button>
+
                   <button
                     className="btn btn-sm"
                     style={{
@@ -2184,6 +2219,7 @@ const ProximityLoans = () => {
                     List View
                   </button>
                 </div>
+
                 <Link
                   to="/offerGivenList"
                   className="btn"
@@ -2194,6 +2230,7 @@ const ProximityLoans = () => {
                     borderRadius: 8,
                     padding: "7px 18px",
                     fontSize: 13,
+                    whiteSpace: "nowrap",
                   }}
                 >
                   <i className="fa fa-list-alt me-1" />
@@ -2201,7 +2238,6 @@ const ProximityLoans = () => {
                 </Link>
               </div>
             </div>
-            <span className="text-muted">View and fund loan requests from borrowers near your location. </span>
           </div>
         </div>
 

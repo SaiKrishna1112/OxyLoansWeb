@@ -10,7 +10,7 @@ const Table1 = ({ data }) => {
         key: index,
         so: index + 1,
         date: dataItem.returnedDate,
-        amount: dataItem.amountReturned,
+        amount: dataItem.amountReturned ? dataItem.amountReturned.toLocaleString("en-IN") : null,
         noOfDays:dataItem.noOfDays,
       
       });
