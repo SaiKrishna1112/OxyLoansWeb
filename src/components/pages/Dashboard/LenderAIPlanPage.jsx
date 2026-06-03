@@ -102,12 +102,11 @@ export default function LenderAIPlanPage() {
       const sessionId = res.data?.payment_session_id;
       if (!sessionId) throw new Error("Could not initiate payment");
 
-      if (window.Cashfree) {
-        const cf = new window.Cashfree({ mode: "sandbox" });
-        cf.checkout({ paymentSessionId: sessionId, returnUrl: res.data?.order_meta?.return_url || window.location.href });
-      } else {
-        setError("Cashfree SDK not loaded. Please refresh and try again.");
-      }
+      const cashfree = Cashfree({ mode: "sandbox" });
+      cashfree.checkout({
+        paymentSessionId: sessionId,
+        redirectTarget: "_self",
+      });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");
     } finally {
