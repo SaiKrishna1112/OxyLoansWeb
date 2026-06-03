@@ -102,11 +102,8 @@ export default function LenderAIPlanPage() {
       const sessionId = res.data?.payment_session_id;
       if (!sessionId) throw new Error("Could not initiate payment");
 
-      const cashfree = Cashfree({ mode: "production" });
-      cashfree.checkout({
-        paymentSessionId: sessionId,
-        redirectTarget: "_self",
-      });
+      // Direct redirect to Cashfree hosted payment page — no domain whitelisting needed
+      window.location.href = "https://payments.cashfree.com/order/#" + sessionId;
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");
     } finally {
