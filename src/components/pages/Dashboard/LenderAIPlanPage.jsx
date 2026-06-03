@@ -102,7 +102,7 @@ export default function LenderAIPlanPage() {
       const sessionId = res.data?.payment_session_id;
       if (!sessionId) throw new Error("Could not initiate payment");
 
-      const cashfree = Cashfree({ mode: "sandbox" });
+      const cashfree = Cashfree({ mode: "production" });
       cashfree.checkout({
         paymentSessionId: sessionId,
         redirectTarget: "_self",
