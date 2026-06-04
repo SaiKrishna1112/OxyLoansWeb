@@ -69,8 +69,10 @@ export default function LenderAIPlanPage() {
   const navigate = useNavigate();
   const [currentTier, setCurrentTier] = useState("FREE");
   const [validUntil, setValidUntil] = useState(null);
+  const [pendingOrderId, setPendingOrderId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(null);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
 
   const userId = getUserId();
@@ -85,10 +87,34 @@ export default function LenderAIPlanPage() {
       .then((r) => {
         setCurrentTier(r.data.tier || "FREE");
         setValidUntil(r.data.validUntil);
+        if (r.data.pendingOrderId) setPendingOrderId(r.data.pendingOrderId);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [userId, token]);
+
+  const handleVerify = async () => {
+    if (!pendingOrderId) return;
+    setVerifying(true);
+    setError(null);
+    try {
+      const res = await axios.post(
+        `${MARKETPLACE_URL}/v1/ai/subscription/verify?orderId=${pendingOrderId}`,
+        {},
+        { headers: { accessToken: token } }
+      );
+      if (res.data.success) {
+        setCurrentTier(res.data.tier);
+        setPendingOrderId(null);
+      } else {
+        setError("Payment not confirmed yet by Cashfree. Please wait a moment and try again.");
+      }
+    } catch (e) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleUpgrade = async (plan) => {
     setPaying(plan);
@@ -155,6 +181,20 @@ export default function LenderAIPlanPage() {
 
           {error && (
             <div className="alert alert-danger text-center">{error}</div>
+          )}
+
+          {pendingOrderId && currentTier === "FREE" && (
+            <div className="alert text-center mb-4" style={{ background: "#fff7e6", border: "1px solid #ffa940", borderRadius: 12, padding: "16px 20px" }}>
+              <strong>Payment detected!</strong> You have a recent payment pending verification.{" "}
+              <button
+                onClick={handleVerify}
+                disabled={verifying}
+                className="btn btn-sm ms-2"
+                style={{ background: "#fa8c16", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, padding: "4px 16px" }}
+              >
+                {verifying ? "Verifying…" : "Activate Subscription"}
+              </button>
+            </div>
           )}
 
           <div className="row justify-content-center">
