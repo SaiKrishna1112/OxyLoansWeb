@@ -1298,7 +1298,7 @@ const LenderPortfolioDashboard = () => {
                         )}
                         {!isSmart && (
                           <button
-                            onClick={() => navigate("/ai/plans")}
+                            onClick={() => {}}
                             style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", borderRadius: 8, padding: "4px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                           >
                             Upgrade Plan
