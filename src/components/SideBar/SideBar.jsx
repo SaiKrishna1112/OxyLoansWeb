@@ -107,14 +107,13 @@ const Sidebar = (props) => {
             <div id="sidebar-menu" className="sidebar-menu">
               {/* Main Menu */}
               <ul>
-                <li className={`${"/lenderAIDashboard" === pathName || pathName.startsWith("/lenderAIDashboard/") ? "active" : ""}`}>
-                  <Link to="/lenderAIDashboard">
-                    <i className="fa-solid fa-robot"></i>{" "}
+                <li className={`${"/ai/portfolio" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/portfolio">
+                    <i className="fa-solid fa-brain"></i>
                     <span> AI Dashboard </span>
                     <span className="menu-arrow"></span>
                   </Link>
                 </li>
-
                 <li className={`${"/dashboard" === pathName ? "active" : ""}`}>
                   <Link to="/dashboard">
                     <i className="fa-solid fa-gauge"></i>{" "}

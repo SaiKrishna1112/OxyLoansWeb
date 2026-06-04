@@ -13,9 +13,9 @@ const ENV = "production"; // "local" | "test" | "production" — change to "prod
 
 const BASE_URL =
   ENV === "local"
-    ? `http://${LOCAL_IP}:8080/oxyloans`
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
     : ENV === "test"
-    ? `http://${LOCAL_IP}:8080/oxyloans`
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
     : "https://fintech.oxyloans.com/oxyloans";
 
 export const API_USER_URL = BASE_URL + "/v1/user/";

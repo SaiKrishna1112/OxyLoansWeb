@@ -50,8 +50,6 @@ import Withdrawdealfromwallet from "./components/pages/Oxyloans/Lender/Withdrawd
 import Writetous from "./components/pages/Oxyloans/Lender/Writetous";
 import WithdrawalFromWallet from "./components/pages/Oxyloans/Lender/WithdrawalFromWallet";
 import WithdrawdealFounds from "./components/pages/Oxyloans/Lender/WithdrawdealFounds";
-import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges";
-import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees";
 import MembershipHistory from "./components/pages/Oxyloans/Lender/MembershipHistory";
 import Mytransactions from "./components/pages/Oxyloans/Lender/Mytransactions";
 import WalletToWalletHistory from "./components/pages/Oxyloans/Lender/WalletToWalletHistory";
@@ -256,9 +254,9 @@ const AppRouter = () => {
         <Route path="/testdeals1" element={<Testdeal1 />} />
         <Route path="/viewCurrentDayDeals" element={<ViewCurrentDayDeals />} />
         <Route path="/emicalculator" element={<Emicalculator />} />
-        <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderAIDashboard />} />} />
-        <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderAIDashboard />} />} />
-        <Route path="/adminAIDashboard" element={<PrivateRoute element={<AdminAIDashboard />} />} />
+        <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
+        <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
+        <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
         <Route path="/configautoInvest" element={<ConfigautoInvest />} />
         <Route path="/membership" element={<Membership />} />
@@ -554,6 +552,8 @@ const AppRouter = () => {
         <Route path="/agreement/:loanRequestId" element={<PrivateRoute element={<AgreementPage />} />} />
         <Route path="/my-loans" element={<PrivateRoute element={<MyLoans />} />} />
         <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolio />} />} />
+        <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/admin/collections" element={<PrivateRoute element={<CollectionsAdminDashboard />} />} />
         <Route path="/admin/agent-portal" element={<PrivateRoute element={<AgentPortal />} />} />
         <Route path="/admin/ceo-dashboard" element={<PrivateRoute element={<CeoDashboard />} />} />
