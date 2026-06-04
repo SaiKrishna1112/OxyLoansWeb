@@ -128,6 +128,12 @@ export default function LenderAIPlanPage() {
       const sessionId = res.data?.payment_session_id;
       if (!sessionId) throw new Error("Could not initiate payment");
 
+      // Bypass mode (test only) — subscription already activated, just reload
+      if (sessionId === "BYPASS_SESSION") {
+        window.location.reload();
+        return;
+      }
+
       // Direct redirect to Cashfree hosted payment page — no domain whitelisting needed
       window.location.href = "https://payments.cashfree.com/order/#" + sessionId;
     } catch (e) {
