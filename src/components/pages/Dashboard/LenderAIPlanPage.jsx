@@ -296,7 +296,10 @@ export default function LenderAIPlanPage() {
                               border: "none",
                             }}
                           >
-                            {paying === plan.key ? "Processing…" : `Upgrade to ${plan.label} — ₹${plan.price}/yr`}
+                            {paying === plan.key ? "Processing…"
+                              : (plan.key === "PRO" && currentTier === "SMART")
+                                ? "Upgrade to Pro — ₹500 more/yr"
+                                : `Upgrade to ${plan.label} — ₹${plan.price}/yr`}
                           </button>
                         )}
                       </div>
