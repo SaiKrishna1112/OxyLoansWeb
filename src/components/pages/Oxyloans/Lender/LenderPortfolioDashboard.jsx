@@ -1285,32 +1285,8 @@ const LenderPortfolioDashboard = () => {
                   onClick={() => scrollTo("section-active-deals")} />
                 <StatCard label="Payments Received" value={fmt(data.emisPaid ?? 0)} color="#faad14"
                   sub={data.lastPaidDate && data.lastPaidDate !== "N/A" ? `Last: ${fmtDate(data.lastPaidDate)}` : null} />
-                {/* Referral: SMART+ clicks to referral section, FREE shows locked */}
-                {isSmart ? (
-                  <StatCard
-                    label="Referral Bonus"
-                    value={`₹${fmt(data.referralEarnings ?? 0)}`}
-                    color="#f759ab"
-                    sub={(() => {
-                      const paid   = data.referralPaidAmount   ?? 0;
-                      const unpaid = data.referralUnpaidAmount ?? 0;
-                      const count  = data.referredLendersCount ?? 0;
-                      if (count === 0) return "No referrals yet";
-                      return `${count} referral${count > 1 ? "s" : ""} · ₹${fmt(paid)} paid${unpaid > 0 ? ` · ₹${fmt(unpaid)} pending` : ""}`;
-                    })()}
-                    onClick={() => { setReferralSectionOpen(true); scrollTo("section-referral"); }}
-                  />
-                ) : (
-                  <div className="col-6 col-md mb-3">
-                    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px dashed #d9d9d9", background: "#fafafa" }}>
-                      <div className="card-body py-3 px-2 d-flex flex-column align-items-center justify-content-center">
-                        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>Referral Bonus</p>
-                        <div style={{ fontSize: 18 }}>🔒</div>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4 }}>OXY Smart</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Referral bonus strip */}
+                <ReferralBonusCard data={data} />
                 <StatCard label="Payout Reliability"
                   value={(() => {
                     const timed = (data.creditsPaidEarly ?? 0) + (data.creditsPaidSameDay ?? 0) + (data.creditsPaidNextDay ?? 0) + (data.creditsPaidLate ?? 0);
