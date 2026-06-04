@@ -989,7 +989,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
       </div>
       {actualTier === "FREE" && (
         <button
-          onClick={() => navigate("/ai/plans")}
+          onClick={() => {}}
           style={{ background: "#722ed1", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
         >
           Upgrade Plan
