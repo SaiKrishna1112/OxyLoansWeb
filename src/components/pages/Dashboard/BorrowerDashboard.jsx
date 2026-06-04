@@ -200,37 +200,6 @@ const BorrowerDashboard = () => {
       console.log("savingGoogleDistance api failed", error);
     }
   };
-useEffect(() => {
-  getCall();   
-},[])
-
-  const getCall = () => {
-    axios
-      .get(`${base_url}personal/${sessionStorage.getItem("userId")}`, {
-        headers: {
-          accessToken: sessionStorage.getItem("accessToken"),
-        },
-      })
-      .then((response) => {
-        console.log("response", response);
-        setProfileDetails(response.data);
-        if (
-          response?.data?.latitude == null ||
-          response?.data?.longitude == null
-        ) {
-          triggerSavingGoogleDistance(
-            response?.data?.userId || sessionStorage.getItem("userId"),
-          );
-        }
-        if (response.data.city == null || response.data.city == "") {
-          setShow(true);
-        }
-      })
-      .catch((error) => {
-        console.log("error", error);
-      });
-  };
-
   const handleCityChange = (event) => {
     if (event.target.value.trim() === "") {
       setSelectedCityerror(true);

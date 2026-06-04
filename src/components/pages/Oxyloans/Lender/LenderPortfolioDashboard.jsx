@@ -935,7 +935,7 @@ const DealAnalyticsCharts = ({ data, earningsData, collapsible = false, defaultO
   );
 };
 
-// ── TIER PREVIEW BANNER ────────────────────────────────────────────────────
+// ── TIER INFO (kept for feature list references) ──────────────────────────
 const TIER_INFO = {
   FREE: {
     label: "Free",
@@ -974,106 +974,26 @@ const TIER_INFO = {
 };
 
 const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
-  const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
+  const tierColor = actualTier === "PRO" ? "#722ed1" : actualTier === "SMART" ? "#0050b3" : "#595959";
+  const tierLabel = actualTier === "PRO" ? "OXY Pro" : actualTier === "SMART" ? "OXY Smart" : "Free";
   return (
-    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, overflow: "hidden" }}>
-      {/* Top bar */}
-      <div
-        onClick={() => setExpanded(v => !v)}
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", cursor: "pointer", background: "#fafafa", borderBottom: expanded ? "1px solid #f0f0f0" : "none" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 18 }}>🎯</span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXY Pro (trial)</strong></div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Mini tier pill indicators */}
-          {["FREE", "SMART", "PRO"].map(t => (
-            <span
-              key={t}
-              onClick={e => { e.stopPropagation(); onSelect(t); if (!expanded) setExpanded(true); }}
-              style={{
-                padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: `1px solid ${TIER_INFO[t].border}`,
-                background: activeTier === t ? (t === "PRO" ? "#722ed1" : t === "SMART" ? "#0050b3" : "#595959") : TIER_INFO[t].bg,
-                color: activeTier === t ? "#fff" : TIER_INFO[t].color,
-                transition: "all 0.15s",
-              }}
-            >
-              {TIER_INFO[t].icon} {TIER_INFO[t].label}
-            </span>
-          ))}
-          <span style={{ fontSize: 13, color: "#8c8c8c", marginLeft: 4 }}>{expanded ? "▲" : "▼"}</span>
-        </div>
+    <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${tierColor}33`, marginBottom: 24, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ background: tierColor, color: "#fff", borderRadius: 20, padding: "3px 14px", fontSize: 12, fontWeight: 700 }}>
+          {tierLabel}
+        </span>
+        <span style={{ fontSize: 13, color: "#8c8c8c" }}>
+          {actualTier === "FREE" ? "Upgrade to unlock AI insights" : "AI insights active"}
+        </span>
       </div>
-
-      {/* Expanded comparison cards */}
-      {expanded && (
-        <div style={{ padding: "16px 20px" }}>
-          <div className="row g-3">
-            {["FREE", "SMART", "PRO"].map(t => {
-              const info = TIER_INFO[t];
-              const isActive = activeTier === t;
-              return (
-                <div key={t} className="col-12 col-md-4">
-                  <div
-                    onClick={() => onSelect(t)}
-                    style={{
-                      borderRadius: 12, padding: "18px 16px", cursor: "pointer", transition: "all 0.2s",
-                      border: isActive ? `2px solid ${info.color}` : `1px solid ${info.border}`,
-                      background: isActive ? info.bg : "#fff",
-                      boxShadow: isActive ? `0 4px 16px ${info.color}22` : "none",
-                      position: "relative",
-                    }}
-                  >
-                    {isActive && (
-                      <div style={{ position: "absolute", top: -1, right: 12, background: info.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "0 0 8px 8px", padding: "2px 10px", letterSpacing: 0.5 }}>
-                        PREVIEWING
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXY {info.label}</div>
-                      {info.price ? (
-                        <span style={{ fontSize: 12, fontWeight: 700, color: info.color, background: info.bg, border: `1px solid ${info.border}`, borderRadius: 20, padding: "2px 10px" }}>{info.price}</span>
-                      ) : (
-                        <span style={{ fontSize: 12, color: "#8c8c8c" }}>Free</span>
-                      )}
-                    </div>
-                    <div style={{ marginBottom: 10 }}>
-                      {info.features.map(f => (
-                        <div key={f} style={{ fontSize: 12, color: "#389e0d", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                          <span style={{ fontWeight: 700 }}>✓</span> {f}
-                        </div>
-                      ))}
-                      {info.locked?.map(f => (
-                        <div key={f} style={{ fontSize: 12, color: "#bfbfbf", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                          <span>🔒</span> {f}
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); onSelect(t); }}
-                      style={{
-                        width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
-                        background: isActive ? info.color : info.bg,
-                        color: isActive ? "#fff" : info.color,
-                        border: `1px solid ${info.border}`,
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {isActive ? "Currently Previewing" : `Preview ${info.label}`}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
-            💡 <strong>Limited time trial:</strong> All lenders can experience OXY Pro features for free. Subscribe before the trial ends to keep your AI insights.
-          </div>
-        </div>
+      {actualTier === "FREE" && (
+        <button
+          onClick={() => navigate("/ai/plans")}
+          style={{ background: "#722ed1", color: "#fff", border: "none", borderRadius: 8, padding: "6px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
+          Upgrade Plan
+        </button>
       )}
     </div>
   );
@@ -1237,11 +1157,11 @@ const LenderPortfolioDashboard = () => {
 
           {!loading && data && (
             <>
-              {/* ── 0. TIER PREVIEW BANNER ── */}
+              {/* ── 0. TIER BANNER ── */}
               <TierPreviewBanner
                 activeTier={effectiveTier}
                 actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
-                onSelect={(t) => setPreviewTier(t)}
+                onSelect={() => {}}
               />
 
               {/* ── 1. HERO ── */}
