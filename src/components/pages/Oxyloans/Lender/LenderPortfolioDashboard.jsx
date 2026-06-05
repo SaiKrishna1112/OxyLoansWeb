@@ -30,14 +30,30 @@ const reinvestColor = (classification) => {
   return "#ff4d4f";
 };
 
+const MembershipBadge = ({ badge }) => {
+  if (!badge) return null;
+  const configs = {
+    PLATINUM: { bg: "linear-gradient(135deg, #FFD700, #FFA500)", color: "#fff", label: "🏆 Platinum" },
+    GOLD:     { bg: "linear-gradient(135deg, #FFD700, #DAA520)", color: "#fff", label: "🥇 Gold" },
+    SILVER:   { bg: "linear-gradient(135deg, #C0C0C0, #A8A9AD)", color: "#fff", label: "🥈 Silver" },
+    LOYAL:    { bg: "linear-gradient(135deg, #9C27B0, #7B1FA2)", color: "#fff", label: "💜 Loyal" },
+    MEMBER:   { bg: "#e8e8e8", color: "#595959", label: "Member" },
+  };
+  const c = configs[badge?.toUpperCase()] || configs.MEMBER;
+  return (
+    <span style={{ background: c.bg, color: c.color, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, letterSpacing: 0.5, display: "inline-block" }}>
+      {c.label}
+    </span>
+  );
+};
+
 const StarRating = ({ rating }) => {
   const count = parseInt((rating || "1").split(" ")[0]) || 1;
   return (
-    <span>
+    <span title={rating}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ color: i <= count ? "#faad14" : "#d9d9d9", fontSize: 20 }}>★</span>
+        <span key={i} style={{ color: i <= count ? "#faad14" : "#d9d9d9", fontSize: 16 }}>★</span>
       ))}
-      <span style={{ fontSize: 12, color: "#8c8c8c", marginLeft: 6 }}>{rating}</span>
     </span>
   );
 };
@@ -1149,7 +1165,10 @@ const LenderPortfolioDashboard = () => {
                     <div className="card-body p-4">
                       <div className="d-flex align-items-start mb-3" style={{ flexWrap: "wrap", gap: 12 }}>
                         <div style={{ flex: 1 }}>
-                          <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{data.lenderName}</h4>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                            <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{data.lenderName}</h4>
+                            {data.membershipBadge && <MembershipBadge badge={data.membershipBadge} />}
+                          </div>
                           {data.email && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{data.email}</span>}
                           <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
                             {[
@@ -1556,7 +1575,14 @@ const LenderPortfolioDashboard = () => {
                       </>
                     );
                   })() : (
-                    <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                    <SectionCard
+                      title="Earnings Summary"
+                      collapsible
+                      defaultOpen={true}
+                      summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
+                    >
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                    </SectionCard>
                   )}
 
                   <UpcomingPayoutsSection upcomingData={upcomingData} loading={upcomingLoading} />
@@ -1656,6 +1682,36 @@ const LenderPortfolioDashboard = () => {
                     <div style={{ background: "linear-gradient(135deg, #f9f0ff, #efdbff)", borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontSize: 14, color: "#391085", lineHeight: 1.7 }}>
                       {summaryText}
                     </div>
+
+                    {/* How we rate you */}
+                    <div style={{ background: "#fffbe6", border: "1px solid #ffe58f", borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "#874d00", marginBottom: 8 }}>How your star rating is calculated</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {[
+                          { stars: "⭐", label: "1 star", desc: "New lender or no reinvestment yet" },
+                          { stars: "⭐⭐", label: "2 stars", desc: "At least 1 reinvestment after a maturity" },
+                          { stars: "⭐⭐⭐", label: "3 stars", desc: "40% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "100% of returned principal reinvested" },
+                        ].map((item) => {
+                          const myCount = parseInt((data.reinvestmentStarRating || "1").split(" ")[0]) || 1;
+                          const itemCount = item.stars.split("⭐").length - 1;
+                          const isYours = myCount === itemCount;
+                          return (
+                            <div key={item.label} style={{ background: isYours ? "#fff7e6" : "#fafafa", border: isYours ? "2px solid #faad14" : "1px solid #f0f0f0", borderRadius: 8, padding: "6px 12px", minWidth: 150, flex: "1 1 150px" }}>
+                              <div style={{ fontSize: 13 }}>{item.stars}</div>
+                              <div style={{ fontWeight: isYours ? 700 : 500, fontSize: 12, color: isYours ? "#d46b08" : "#595959" }}>{item.label} {isYours ? "← you" : ""}</div>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>{item.desc}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {data.nextStarTip && (
+                        <div style={{ marginTop: 10, fontSize: 13, color: "#d46b08", fontWeight: 600 }}>
+                          Next: {data.nextStarTip}
+                        </div>
+                      )}
+                    </div>
                     <div className="row">
                       <div className="col-12 col-md-4 mb-3">
                         <div style={{ textAlign: "center", padding: 16, background: "#fafafa", borderRadius: 10 }}>
@@ -1709,6 +1765,32 @@ const LenderPortfolioDashboard = () => {
                         <div style={{ fontWeight: 600 }}>{totalReturns} interest payments</div>
                       </div>
                     </div>
+
+                    {/* Membership badge explanation */}
+                    {data.membershipBadge && (
+                      <div style={{ background: "#f0f5ff", border: "1px solid #adc6ff", borderRadius: 10, padding: "12px 16px", marginTop: 8 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: "#1a237e", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                          Your Badge: <MembershipBadge badge={data.membershipBadge} />
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {[
+                            { badge: "MEMBER",   label: "Member",   desc: "Total invested < ₹50,000" },
+                            { badge: "LOYAL",    label: "💜 Loyal",  desc: "< 18 months & < ₹1.5L invested" },
+                            { badge: "SILVER",   label: "🥈 Silver", desc: "18+ months & ₹50K+ invested" },
+                            { badge: "GOLD",     label: "🥇 Gold",   desc: "₹1.5L+ total invested" },
+                            { badge: "PLATINUM", label: "🏆 Platinum", desc: "₹5L+ total invested" },
+                          ].map((item) => {
+                            const isYours = data.membershipBadge?.toUpperCase() === item.badge;
+                            return (
+                              <div key={item.badge} style={{ background: isYours ? "#e6f7ff" : "#fafafa", border: isYours ? "2px solid #1677ff" : "1px solid #f0f0f0", borderRadius: 8, padding: "6px 12px", minWidth: 140, flex: "1 1 140px" }}>
+                                <div style={{ fontWeight: isYours ? 700 : 500, fontSize: 12, color: isYours ? "#0050b3" : "#595959" }}>{item.label} {isYours ? "← you" : ""}</div>
+                                <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>{item.desc}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </SectionCard>
                 );
               })()}
