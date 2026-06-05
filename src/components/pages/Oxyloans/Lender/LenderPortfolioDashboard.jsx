@@ -1036,6 +1036,8 @@ const LenderPortfolioDashboard = () => {
   // Earnings — reloads when lender or FY filter changes
   useEffect(() => {
     if (!resolvedLenderId) return;
+    // Don't fetch while user is in custom mode but hasn't applied dates yet
+    if (fyFilter.mode === "custom" && (!fyFilter.from || !fyFilter.to)) return;
     setEarningsLoading(true);
     const params = new URLSearchParams();
     if (fyFilter.mode === "fy" && fyFilter.fyYear) {
