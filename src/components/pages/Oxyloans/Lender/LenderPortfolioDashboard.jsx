@@ -1913,12 +1913,21 @@ const LenderPortfolioDashboard = () => {
               })()}
 
               {/* ── 11. REFERRAL EARNINGS — FREE: locked, SMART: totals, PRO: full breakdown with FY filter ── */}
-              {!isSmart && (data.referredLendersCount > 0 || data.referralEarnings > 0) && (
+              {!isSmart && (
                 <LockCard title="Referral Earnings" requiredTier="SMART" />
               )}
-              {isSmart && (data.referredLendersCount > 0 || data.referralEarnings > 0) && (
-                <SectionCard title="Referral Earnings" collapsible defaultOpen={false} summary={`₹${fmt(data.referralEarnings)} earned · ${data.referredLendersCount || 0} referred`}>
+              {isSmart && (
+                <SectionCard title="Referral Earnings" collapsible defaultOpen={false} summary={data.referredLendersCount > 0 ? `₹${fmt(data.referralEarnings)} earned · ${data.referredLendersCount} referred` : "No referrals yet"}>
+                  {/* No referrals yet — show prompt */}
+                  {(data.referredLendersCount === 0 && data.referralEarnings === 0) && (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "#8c8c8c" }}>
+                      <div style={{ fontSize: 28, marginBottom: 8 }}>🤝</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: "#262626", marginBottom: 4 }}>No referrals yet</div>
+                      <div style={{ fontSize: 12 }}>Refer a friend to OxyLoans and earn a bonus when they invest.</div>
+                    </div>
+                  )}
                   {/* Stat tiles — consistent grid */}
+                  {(data.referredLendersCount > 0 || data.referralEarnings > 0) && (
                   <div className="row g-3 mb-3">
                     {[
                       { label: "Lenders Referred",  value: String(data.referredLendersCount || 0), color: "#722ed1", bg: "#f9f0ff", target: null },
@@ -1945,6 +1954,7 @@ const LenderPortfolioDashboard = () => {
                       </div>
                     ))}
                   </div>
+                  )} {/* end stats grid wrapper */}
 
                   {isPro ? (
                     <div>
