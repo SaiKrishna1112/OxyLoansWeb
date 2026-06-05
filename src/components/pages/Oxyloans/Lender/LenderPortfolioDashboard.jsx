@@ -1034,6 +1034,7 @@ const LenderPortfolioDashboard = () => {
   const [maturingExpanded, setMaturingExpanded] = useState(false);
   const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
   const [maturityFilter, setMaturityFilter] = useState("all");
+  const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
@@ -1217,18 +1218,32 @@ const LenderPortfolioDashboard = () => {
                         )}
                       </div>
                       {isSmart ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                          {(data.narrative || data.aiNarrative || "").split("\n").map((line) => line.trim()).filter((l) => l.length > 0).map((line, idx) => {
-                            const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
-                            const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
-                            return (
-                              <div key={idx} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, border: "1px solid rgba(255,255,255,0.12)" }}>
-                                <span style={{ fontSize: 20, lineHeight: 1 }}>{icons[idx] || "•"}</span>
-                                <span style={{ color: "#fff", fontSize: 15, lineHeight: 1.6 }}>{text}</span>
+                        (() => {
+                          const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+                          const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
+                          const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
+                          return (
+                            <div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                {visibleLines.map((line, idx) => {
+                                  const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
+                                  return (
+                                    <div key={idx} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, border: "1px solid rgba(255,255,255,0.12)" }}>
+                                      <span style={{ fontSize: 20, lineHeight: 1 }}>{icons[idx] || "•"}</span>
+                                      <span style={{ color: "#fff", fontSize: 15, lineHeight: 1.6 }}>{text}</span>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
-                        </div>
+                              {allLines.length > 3 && (
+                                <button onClick={() => setNarrativeExpanded(v => !v)}
+                                  style={{ marginTop: 10, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 20, padding: "5px 18px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+                                  {narrativeExpanded ? "Show less ▲" : `Show more (${allLines.length - 3} more) ▼`}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                         <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
                           <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
@@ -1354,7 +1369,10 @@ const LenderPortfolioDashboard = () => {
                     const principalThisMonth = data.currentMonthPrincipalReturned || 0;
                     const maturingCount  = data.maturingThisMonthCount || 0;
                     const refCredited    = data.referralThisMonthCredited || 0;
+                    const monthLabel = new Date().toLocaleString("en-IN", { month: "long", year: "numeric" });
                     return (
+                      <SectionCard title={`This Month — ${monthLabel}`} collapsible defaultOpen={true}
+                        summary={`₹${fmt(earned + projected)} interest · ${maturingCount} maturing · ${data.activeDeals ?? 0} active deals`}>
                       <>
                       {/* Row 1: Interest, Principal, Active Deals */}
                       <div className="row mb-3 g-3">
@@ -1573,6 +1591,7 @@ const LenderPortfolioDashboard = () => {
                         );
                       })()}
                       </>
+                      </SectionCard>
                     );
                   })() : (
                     <SectionCard
