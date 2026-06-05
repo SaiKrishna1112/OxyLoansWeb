@@ -1064,6 +1064,7 @@ const LenderPortfolioDashboard = () => {
   // Earnings — reloads when lender or FY filter changes
   useEffect(() => {
     if (!resolvedLenderId) return;
+    if (fyFilter.mode === "custom" && (!fyFilter.from || !fyFilter.to)) return;
     setEarningsLoading(true);
     const params = new URLSearchParams();
     if (fyFilter.mode === "fy" && fyFilter.fyYear) {
