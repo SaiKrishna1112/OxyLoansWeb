@@ -1037,7 +1037,7 @@ const LenderPortfolioDashboard = () => {
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
-  const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
+  const [remindedDeals, setRemindedDeals] = useState(new Set());
 
   // Tier — derived at component level so all JSX can reference it
   const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'PRO')).toUpperCase();
@@ -1050,7 +1050,13 @@ const LenderPortfolioDashboard = () => {
     setLoading(true);
     setError(null);
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
-      .then((res) => setData(res.data))
+      .then((res) => {
+        setData(res.data);
+        const alreadySent = new Set(
+          (res.data.upcomingMaturities || []).filter(m => m.reminderSent).map(m => m.dealId)
+        );
+        setRemindedDeals(alreadySent);
+      })
       .catch((err) => setError(err?.response?.data?.error || err.message || "Failed to load portfolio"))
       .finally(() => setLoading(false));
   }, [resolvedLenderId]);
