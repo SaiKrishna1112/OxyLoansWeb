@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
-import LenderAIDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
@@ -177,7 +177,7 @@ import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
 import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
 import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReconciliationDashboard";
-import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 
