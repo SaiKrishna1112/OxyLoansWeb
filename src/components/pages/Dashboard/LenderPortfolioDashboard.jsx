@@ -859,7 +859,7 @@ const LenderPortfolioDashboard = () => {
                   badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Live</span>}
                 >
                   <div className="row">
-                    {(data.activeDealsWithProgress || []).map((deal, idx) => (
+                    {[...(data.activeDealsWithProgress || [])].sort((a, b) => (b.dealId || 0) - (a.dealId || 0)).map((deal, idx) => (
                       <div key={idx} className="col-12 col-md-6 mb-3">
                         <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: "1px solid #f0f0f0" }}>
                           <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1133,7 +1133,7 @@ const LenderPortfolioDashboard = () => {
 
               {/* ── 9. DEAL HISTORY TABLE ─────────────────────────────────── */}
               {(() => {
-                const allDeals = data.deals || data.allDeals || [];
+                const allDeals = [...(data.deals || data.allDeals || [])].sort((a, b) => (b.dealId || 0) - (a.dealId || 0));
                 const visibleDeals = allDeals.slice(0, dealsShown);
                 return (
                   <SectionCard title="Deal History" badge={<span style={{ fontSize: 12, color: "#8c8c8c" }}>{allDeals.length} deals</span>}>
