@@ -1206,54 +1206,36 @@ const LenderPortfolioDashboard = () => {
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
                         <OxiBadge tier={effectiveTier} />
-                        {isSmart && (
-                          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
-                            {isPro ? "Full AI intelligence active — updated live" : "AI insights enabled — portfolio analysis active"}
-                          </span>
-                        )}
-                        {!isSmart && (
-                          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                            Upgrade to OXY Smart to unlock AI-powered insights
-                          </span>
-                        )}
+                        <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 12 }}>
+                          {isPro ? "Full AI intelligence active — updated live" : isSmart ? "AI insights enabled — portfolio analysis active" : "AI portfolio analysis active"}
+                        </span>
                       </div>
-                      {isSmart ? (
-                        (() => {
-                          const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
-                          const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
-                          const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
-                          return (
-                            <div>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                                {visibleLines.map((line, idx) => {
-                                  const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
-                                  return (
-                                    <div key={idx} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, border: "1px solid rgba(255,255,255,0.12)" }}>
-                                      <span style={{ fontSize: 20, lineHeight: 1 }}>{icons[idx] || "•"}</span>
-                                      <span style={{ color: "#fff", fontSize: 15, lineHeight: 1.6 }}>{text}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              {allLines.length > 3 && (
-                                <button onClick={() => setNarrativeExpanded(v => !v)}
-                                  style={{ marginTop: 10, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 20, padding: "5px 18px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
-                                  {narrativeExpanded ? "Show less ▲" : `Show more (${allLines.length - 3} more) ▼`}
-                                </button>
-                              )}
+                      {(() => {
+                        const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+                        const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
+                        const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
+                        return (
+                          <div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                              {visibleLines.map((line, idx) => {
+                                const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
+                                return (
+                                  <div key={idx} style={{ background: "rgba(255,255,255,0.09)", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "flex-start", gap: 12, border: "1px solid rgba(255,255,255,0.12)" }}>
+                                    <span style={{ fontSize: 20, lineHeight: 1 }}>{icons[idx] || "•"}</span>
+                                    <span style={{ color: "#fff", fontSize: 15, lineHeight: 1.6 }}>{text}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })()
-                      ) : (
-                        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
-                          <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
-                          <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>AI Portfolio Analysis</div>
-                          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 14 }}>Personalized insights on your investments, reinvestment patterns &amp; more</div>
-                          <span style={{ background: "linear-gradient(135deg, #0050b3, #1890ff)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                            Upgrade to OXY Smart — ₹500/year
-                          </span>
-                        </div>
-                      )}
+                            {allLines.length > 3 && (
+                              <button onClick={() => setNarrativeExpanded(v => !v)}
+                                style={{ marginTop: 10, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 20, padding: "5px 18px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+                                {narrativeExpanded ? "Show less ▲" : `Show more (${allLines.length - 3} more) ▼`}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
