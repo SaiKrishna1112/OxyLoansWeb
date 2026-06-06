@@ -200,6 +200,7 @@ const BorrowerDashboard = () => {
       console.log("savingGoogleDistance api failed", error);
     }
   };
+
   const handleCityChange = (event) => {
     if (event.target.value.trim() === "") {
       setSelectedCityerror(true);

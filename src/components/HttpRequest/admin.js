@@ -926,3 +926,4 @@ export const uploadBorrowerDocument = async (borrowerId, file) => {
   });
   return response;
 };
+

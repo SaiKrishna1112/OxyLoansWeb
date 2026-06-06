@@ -1,4 +1,15 @@
-const ENV = "test"; // "local" | "test" | "production"
+// ================================================================
+// SINGLE SOURCE OF TRUTH FOR API URLs
+// ================================================================
+// To switch environments, change ONE value: LOCAL_IP (local) or ENV ("production")
+//
+// Local:      http://<LOCAL_IP>:8182
+// Production: https://fintech.oxyloans.com/oxyloans
+// ================================================================
+
+const LOCAL_IP = "15.207.239.145"; // test EC2; change to "localhost" for local dev
+
+const ENV = "production"; // "local" | "test" | "production" — change to "production" before prod deploy
 
 const BASE_URL =
   ENV === "local"

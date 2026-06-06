@@ -206,7 +206,7 @@ const Profile = () => {
   const sendWhatsappOtpapi1 = () => {
 
     console.log(typeof (value))
-    if (value && value !== "" && value.length >= 13) {
+    if (value && value !== "") {
 
       console.log("whatapp pass")
       console.log(value)
