@@ -1604,7 +1604,7 @@ const LenderPortfolioDashboard = () => {
 
               {/* ── 5. ACTIVE DEALS ── */}
               {(data.activeDealsWithProgress || []).length > 0 && (() => {
-                const allActive = data.activeDealsWithProgress || [];
+                const allActive = [...(data.activeDealsWithProgress || [])].sort((a, b) => (b.dealId || 0) - (a.dealId || 0));
                 const shownDeals = showAllDeals ? allActive : allActive.slice(0, DEAL_LIMIT);
                 const dealRemaining = allActive.length - DEAL_LIMIT;
                 return (
@@ -2178,7 +2178,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 10. DEAL HISTORY — SMART+ only ── */}
               {!isSmart && <LockCard title="Deal History" requiredTier="SMART" />}
               {isSmart && (() => {
-                const allDeals = data.deals || data.allDeals || [];
+                const allDeals = [...(data.deals || data.allDeals || [])].sort((a, b) => (b.dealId || 0) - (a.dealId || 0));
                 const activeDeals = allDeals.filter(d => (d.status || "").toUpperCase() === "ACTIVE");
                 const closedDeals = allDeals.filter(d => (d.status || "").toUpperCase() !== "ACTIVE");
                 const filteredDeals = dealHistoryFilter === "ACTIVE" ? activeDeals : dealHistoryFilter === "CLOSED" ? closedDeals : allDeals;
