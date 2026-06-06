@@ -1351,10 +1351,10 @@ const LenderPortfolioDashboard = () => {
                   {data.platformHealth && (
                     <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                       <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#873800", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedLastMonth || 0} Deals Last Month · ₹{(data.platformHealth.dealsValueLastMonth || 0).toLocaleString("en-IN")}</span>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedLastMonth || 0} Deals Launched Last Month · ₹{(data.platformHealth.dealsValueLastMonth || 0).toLocaleString("en-IN")}</span>
                       </div>
                       <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals This Month · ₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")}</span>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals Launched This Month · ₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")}</span>
                       </div>
                     </div>
                   )}
