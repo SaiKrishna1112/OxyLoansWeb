@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
@@ -72,20 +72,25 @@ const ProgressBar = ({ pct, color }) => (
   </div>
 );
 
-const LockCard = ({ title, requiredTier }) => (
-  <div style={{ background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 12, padding: '32px 24px', textAlign: 'center', color: '#8c8c8c', marginBottom: 24 }}>
-    <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
-    <div style={{ fontWeight: 700, color: '#262626', fontSize: 15, marginBottom: 6 }}>{title}</div>
-    <div style={{ fontSize: 13, marginBottom: 14 }}>
-      Available on <strong style={{ color: requiredTier === 'PRO' ? '#722ed1' : '#1890ff' }}>
-        OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
-      </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
+const LockCard = ({ title, requiredTier }) => {
+  const nav = useNavigate();
+  return (
+    <div style={{ background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 12, padding: '32px 24px', textAlign: 'center', color: '#8c8c8c', marginBottom: 24 }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
+      <div style={{ fontWeight: 700, color: '#262626', fontSize: 15, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 13, marginBottom: 14 }}>
+        Available on <strong style={{ color: requiredTier === 'PRO' ? '#722ed1' : '#1890ff' }}>
+          OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
+        </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
+      </div>
+      <div
+        onClick={() => nav('/ai/plans')}
+        style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+        Upgrade to OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
+      </div>
     </div>
-    <div style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      Upgrade to OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
-    </div>
-  </div>
-);
+  );
+};
 
 const OxiBadge = ({ tier }) => {
   if (tier === 'PRO') return (

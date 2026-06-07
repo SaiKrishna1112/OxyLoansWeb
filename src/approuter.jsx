@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
+import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
+import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSuccess";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
@@ -564,6 +566,8 @@ const AppRouter = () => {
         <Route path="/admin/reconciliation" element={<PrivateRoute element={<AdminReconciliationDashboard />} />} />
         <Route path="/ai/portfolio" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/ai/portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/ai/plans" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
+        <Route path="/ai/subscription-success" element={<PrivateRoute element={<AISubscriptionSuccess />} />} />
         <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
         <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />

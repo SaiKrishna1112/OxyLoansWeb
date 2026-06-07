@@ -99,7 +99,7 @@ export default function LenderAIPlanPage() {
     setError(null);
     try {
       const res = await axios.post(
-        `${MARKETPLACE_URL}/v1/ai/subscription/verify?orderId=${pendingOrderId}`,
+        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscription/verify?orderId=${pendingOrderId}`,
         {},
         { headers: { accessToken: token } }
       );
