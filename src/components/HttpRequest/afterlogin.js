@@ -3151,10 +3151,7 @@ export const aggrementGenerationforLenderSide = async (payload) => {
 };
 
 // ── AI Layer API ──────────────────────────────────────────────────────────────
-const AI_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/ai/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/ai/";
+const AI_BASE_URL = MARKETPLACE_BASE + "/v1/ai/";
 
 export const getLenderAIPortfolio = async (lenderId) => {
   const token = getToken();
