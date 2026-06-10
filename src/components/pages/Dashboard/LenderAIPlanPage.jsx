@@ -134,8 +134,8 @@ export default function LenderAIPlanPage() {
         return;
       }
 
-      // Open Cashfree checkout using the SDK (same approach as Membership.jsx)
-      const cashfree = window.Cashfree({ mode: "production" });
+      // Open Cashfree checkout using the SDK (sandbox on test, production on prod)
+      const cashfree = window.Cashfree({ mode: "sandbox" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");
