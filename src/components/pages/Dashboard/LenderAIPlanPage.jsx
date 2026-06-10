@@ -134,8 +134,9 @@ export default function LenderAIPlanPage() {
         return;
       }
 
-      // Direct redirect to Cashfree hosted payment page — no domain whitelisting needed
-      window.location.href = "https://payments.cashfree.com/order/#" + sessionId;
+      // Open Cashfree checkout using the SDK (same approach as Membership.jsx)
+      const cashfree = window.Cashfree({ mode: "production" });
+      cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");
     } finally {
