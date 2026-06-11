@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { MARKETPLACE_URL } from "../../../config";
-import { getToken } from "../../HttpRequest/afterlogin";
+import { getToken, getUserId } from "../../HttpRequest/afterlogin";
 
 export default function AISubscriptionSuccess() {
   const [params] = useSearchParams();
@@ -12,10 +12,11 @@ export default function AISubscriptionSuccess() {
 
   useEffect(() => {
     const orderId = params.get("order_id");
-    if (!orderId) { setStatus("error"); return; }
+    const userId = getUserId();
+    if (!orderId || !userId) { setStatus("error"); return; }
 
     axios
-      .post(`${MARKETPLACE_URL}/v1/ai/subscription/verify?orderId=${orderId}`, {}, {
+      .post(`${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscription/verify?orderId=${orderId}`, {}, {
         headers: { accessToken: getToken() },
       })
       .then((r) => {
