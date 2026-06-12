@@ -4,6 +4,7 @@ import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/Esc
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
 import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSuccess";
+import AITestAdmin from "./components/pages/Dashboard/AITestAdmin";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
@@ -567,6 +568,7 @@ const AppRouter = () => {
         <Route path="/ai/portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/ai/plans" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
         <Route path="/ai/subscription-success" element={<PrivateRoute element={<AISubscriptionSuccess />} />} />
+        <Route path="/ai/test-admin" element={<PrivateRoute element={<AITestAdmin />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
         <Route path="*" element={<CatchAll />} />
       </Routes>
