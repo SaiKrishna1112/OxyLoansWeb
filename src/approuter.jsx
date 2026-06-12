@@ -180,7 +180,6 @@ import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
 import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReconciliationDashboard";
 import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
-import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 
 const isAuthenticated = () =>
@@ -568,8 +567,6 @@ const AppRouter = () => {
         <Route path="/ai/portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/ai/plans" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
         <Route path="/ai/subscription-success" element={<PrivateRoute element={<AISubscriptionSuccess />} />} />
-        <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
-        <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
         <Route path="*" element={<CatchAll />} />
       </Routes>

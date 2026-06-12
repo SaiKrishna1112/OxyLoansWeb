@@ -863,156 +863,10 @@ const DealAnalyticsCharts = ({ data, earningsData, collapsible = false, defaultO
   );
 };
 
-// ── TIER PREVIEW BANNER ────────────────────────────────────────────────────
-const TIER_INFO = {
-  FREE: {
-    label: "Free",
-    icon: "📊",
-    color: "#595959",
-    bg: "#fafafa",
-    border: "#d9d9d9",
-    activeBg: "#f5f5f5",
-    activeText: "#262626",
-    features: ["Portfolio stats", "Active & closed deals", "Payout history"],
-    locked: ["AI insights", "Earnings intelligence", "Charts & analytics", "Maturity planner"],
-  },
-  SMART: {
-    label: "Smart",
-    icon: "⚡",
-    color: "#0050b3",
-    bg: "#e6f7ff",
-    border: "#91d5ff",
-    activeBg: "linear-gradient(135deg, #0d2b6e, #0050b3)",
-    activeText: "#fff",
-    features: ["Everything in Free", "AI narrative insights", "Current FY earnings", "Reinvestment profile", "Referral tracking"],
-    locked: ["FY filter & custom range", "Investment charts", "Smart maturity planner", "Earnings intelligence"],
-    price: "₹500/year",
-  },
-  PRO: {
-    label: "Pro",
-    icon: "✦",
-    color: "#722ed1",
-    bg: "#f9f0ff",
-    border: "#d3adf7",
-    activeBg: "linear-gradient(135deg, #4a148c, #6a1b9a)",
-    activeText: "#fff",
-    features: ["Everything in Smart", "FY filter & custom range", "Investment analytics charts", "Smart maturity planner", "Full earnings intelligence"],
-    price: "₹1,000/year",
-  },
-};
-
-const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, overflow: "hidden" }}>
-      {/* Top bar */}
-      <div
-        onClick={() => setExpanded(v => !v)}
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", cursor: "pointer", background: "#fafafa", borderBottom: expanded ? "1px solid #f0f0f0" : "none" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 18 }}>🎯</span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXY Pro (trial)</strong></div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Mini tier pill indicators */}
-          {["FREE", "SMART", "PRO"].map(t => (
-            <span
-              key={t}
-              onClick={e => { e.stopPropagation(); onSelect(t); if (!expanded) setExpanded(true); }}
-              style={{
-                padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: `1px solid ${TIER_INFO[t].border}`,
-                background: activeTier === t ? (t === "PRO" ? "#722ed1" : t === "SMART" ? "#0050b3" : "#595959") : TIER_INFO[t].bg,
-                color: activeTier === t ? "#fff" : TIER_INFO[t].color,
-                transition: "all 0.15s",
-              }}
-            >
-              {TIER_INFO[t].icon} {TIER_INFO[t].label}
-            </span>
-          ))}
-          <span style={{ fontSize: 13, color: "#8c8c8c", marginLeft: 4 }}>{expanded ? "▲" : "▼"}</span>
-        </div>
-      </div>
-
-      {/* Expanded comparison cards */}
-      {expanded && (
-        <div style={{ padding: "16px 20px" }}>
-          <div className="row g-3">
-            {["FREE", "SMART", "PRO"].map(t => {
-              const info = TIER_INFO[t];
-              const isActive = activeTier === t;
-              return (
-                <div key={t} className="col-12 col-md-4">
-                  <div
-                    onClick={() => onSelect(t)}
-                    style={{
-                      borderRadius: 12, padding: "18px 16px", cursor: "pointer", transition: "all 0.2s",
-                      border: isActive ? `2px solid ${info.color}` : `1px solid ${info.border}`,
-                      background: isActive ? info.bg : "#fff",
-                      boxShadow: isActive ? `0 4px 16px ${info.color}22` : "none",
-                      position: "relative",
-                    }}
-                  >
-                    {isActive && (
-                      <div style={{ position: "absolute", top: -1, right: 12, background: info.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: "0 0 8px 8px", padding: "2px 10px", letterSpacing: 0.5 }}>
-                        PREVIEWING
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXY {info.label}</div>
-                      {info.price ? (
-                        <span style={{ fontSize: 12, fontWeight: 700, color: info.color, background: info.bg, border: `1px solid ${info.border}`, borderRadius: 20, padding: "2px 10px" }}>{info.price}</span>
-                      ) : (
-                        <span style={{ fontSize: 12, color: "#8c8c8c" }}>Free</span>
-                      )}
-                    </div>
-                    <div style={{ marginBottom: 10 }}>
-                      {info.features.map(f => (
-                        <div key={f} style={{ fontSize: 12, color: "#389e0d", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                          <span style={{ fontWeight: 700 }}>✓</span> {f}
-                        </div>
-                      ))}
-                      {info.locked?.map(f => (
-                        <div key={f} style={{ fontSize: 12, color: "#bfbfbf", display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                          <span>🔒</span> {f}
-                        </div>
-                      ))}
-                    </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); onSelect(t); }}
-                      style={{
-                        width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
-                        background: isActive ? info.color : info.bg,
-                        color: isActive ? "#fff" : info.color,
-                        border: `1px solid ${info.border}`,
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {isActive ? "Currently Previewing" : `Preview ${info.label}`}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
-            💡 <strong>Limited time trial:</strong> All lenders can experience OXY Pro features for free. Subscribe before the trial ends to keep your AI insights.
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
   const resolvedLenderId = paramLenderId || getUserId();
-  // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
-  const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
   const [data, setData] = useState(null);
   const [earningsData, setEarningsData] = useState(null);
@@ -1028,7 +882,6 @@ const LenderPortfolioDashboard = () => {
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
-  const [previewTier, setPreviewTier] = useState(null);
   const [interestExpanded, setInterestExpanded] = useState(false);
   const [principalExpanded, setPrincipalExpanded] = useState(false);
   const [maturingExpanded, setMaturingExpanded] = useState(false);
@@ -1040,7 +893,7 @@ const LenderPortfolioDashboard = () => {
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
 
   // Tier — derived at component level so all JSX can reference it
-  const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'PRO')).toUpperCase();
+  const effectiveTier = (data?.membershipTier || 'FREE').toUpperCase();
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'SMART' || effectiveTier === 'PRO';
 
@@ -1058,7 +911,7 @@ const LenderPortfolioDashboard = () => {
   // Auto-set current FY for SMART (not PRO) — they can't pick the filter
   useEffect(() => {
     if (!data) return;
-    const t = (tierOverride || (data.membershipTier || 'PRO')).toUpperCase();
+    const t = (data.membershipTier || 'FREE').toUpperCase();
     if (t === 'SMART') {
       const now = new Date();
       const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
@@ -1152,13 +1005,6 @@ const LenderPortfolioDashboard = () => {
 
           {!loading && data && (
             <>
-              {/* ── 0. TIER PREVIEW BANNER ── */}
-              <TierPreviewBanner
-                activeTier={effectiveTier}
-                actualTier={(data?.membershipTier || 'PRO').toUpperCase()}
-                onSelect={(t) => setPreviewTier(t)}
-              />
-
               {/* ── 1. HERO ── */}
               <div className="row mb-4">
                 <div className="col-12">
