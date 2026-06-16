@@ -1044,10 +1044,10 @@ const LenderPortfolioDashboard = () => {
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
 
-  // Tier — derived at component level so all JSX can reference it
-  const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'PRO')).toUpperCase();
-  const isPro   = effectiveTier === 'PRO';
-  const isSmart = effectiveTier === 'SMART' || effectiveTier === 'PRO';
+  // All lenders on the main dashboard see full PRO experience
+  const effectiveTier = 'PRO';
+  const isPro   = true;
+  const isSmart = true;
 
   // Portfolio
   useEffect(() => {
@@ -1060,16 +1060,7 @@ const LenderPortfolioDashboard = () => {
       .finally(() => setLoading(false));
   }, [resolvedLenderId]);
 
-  // Auto-set current FY for SMART (not PRO) — they can't pick the filter
-  useEffect(() => {
-    if (!data) return;
-    const t = (tierOverride || (data.membershipTier || 'PRO')).toUpperCase();
-    if (t === 'SMART') {
-      const now = new Date();
-      const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-      setFyFilter({ mode: 'fy', fyYear, from: '', to: '' });
-    }
-  }, [data]);
+  // All lenders are PRO — no SMART-tier FY auto-set needed
 
   // Earnings — reloads when lender or FY filter changes
   useEffect(() => {
