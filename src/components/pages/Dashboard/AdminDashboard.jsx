@@ -244,7 +244,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const primaryType = localStorage.getItem("primaryType");
-    const fetchProfile = primaryType === "LENDER" ? getUserDetails1 : getUserDetails;
+    const fetchProfile = primaryType === "LENDER" ? getUserDetails : getUserDetails;
     fetchProfile().then((data) => {
       if (data?.request?.status === 200) {
         setdashboarddata({ ...dashboarddata, profileData: data });

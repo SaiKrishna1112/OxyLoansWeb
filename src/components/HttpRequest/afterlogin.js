@@ -3471,11 +3471,11 @@ export const getMyNotifications = async () => {
   });
 };
 
-export const getNotificationCount = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/notifications/count`, {
-    headers: marketplaceHeaders(),
-  });
-};
+// export const getNotificationCount = async () => {
+//   return axios.get(`${MARKETPLACE_BASE}/v1/notifications/count`, {
+//     headers: marketplaceHeaders(),
+//   });
+// };
 
 export const markNotificationRead = async (id) => {
   return axios.put(

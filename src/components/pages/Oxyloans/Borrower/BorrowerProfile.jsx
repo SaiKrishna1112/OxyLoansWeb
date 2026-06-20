@@ -1163,11 +1163,9 @@ const BorrowerProfile = () => {
 
 
   const handleprofileUpdate = () => {
-
+    console.log("userProfile", userProfile);
     setUserProfile({
       ...userProfile,
-      addresserror:
-        userProfile.address === "" ? "Please enter the address" : "",
       cityer: userProfile.city === ("" || null) ? "Please enter the city" : "",
       doberror: userProfile.dob === "" ? "Please enter the dob" : "",
       fatherNameerror:
@@ -1178,16 +1176,16 @@ const BorrowerProfile = () => {
         userProfile.panNumber === "" ? "Please enter the panNumber" : "",
       panNumbererror:
         userProfile.panNumber.length !== 10 ? "Invalid panNumber" : "",
-residenceAddresserror: userProfile.address === "" ? "Please enter Residence Address" : "",
-  permanentAddresserror: userProfile.permanentAddress === "" ? "Please Enter The Permenant Address" : "",
+      residenceAddresserror: userProfile.residenceAddress === null ? "Please enter Residence Address" : "",
+      permanentAddresserror: userProfile.permanentAddress === "" ? "Please Enter The Permenant Address" : "",
       cityer: userProfile.city === "" ? "Please Enter The city" : "",
       pinCodeerror:
         userProfile.pinCode === "" ? "Please Enter The Pincode" : "",
       stateerror: userProfile.state === "" ? "Please Enter The State" : "",
       whatsAppNumbererror:
         userProfile.whatsAppNumber === "" ||
-          userProfile.whatsAppNumber === null ||
-          userProfile.whatsAppNumber.length < 10
+          userProfile.whatsAppNumber === null 
+          // || userProfile.whatsAppNumber.length < 10
           ? " WhatsApp Number should be 10 digits"
           : "",
 
@@ -1231,7 +1229,7 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       userProfile.doberror === "" &&
       userProfile.mobileNumber !== null &&
       userProfile.mobileNumber !== "" &&
-      userProfile.mobileNumber.length >= 10 &&
+      userProfile.mobileNumber?.length >= 10 &&
       userProfile.whatsAppNumber !== null &&
       userProfile.whatsAppNumber !== "" &&
       userProfile.pinCode !== null &&
@@ -1239,19 +1237,15 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       userProfile.fatherName !== null &&
       userProfile.residenceAddress !== null &&
       userProfile.residenceAddress !== "" &&
-       userProfile.address !== null &&
-      userProfile.address !== "" &&
       userProfile.permanentAddress !== null &&
       userProfile.permanentAddress !== "" &&
-      userProfile.whatsAppNumber.length >= 10 &&
+      userProfile.whatsAppNumber?.length >= 10 &&
       userProfile.fatherName !== "" &&
       userProfile.state !== null &&
       userProfile.state !== "" &&
       userProfile.panNumber !== null &&
       userProfile.panNumber !== "" &&
       userProfile.panNumber.length === 10 &&
-      userProfile.address !== null &&
-      userProfile.address !== "" &&
       userProfile.city !== null &&
       userProfile.city !== ""
     ) {
@@ -1266,29 +1260,49 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
         }
       });
     } else {
-      console.log(userProfile.email,
-        userProfile.email,
-        userProfile.firstName,
-        userProfile.firstName,
-        userProfile.doberror,
-        userProfile.mobileNumber,
-        userProfile.mobileNumber,
-        userProfile.mobileNumber.length,
-        userProfile.whatsAppNumber,
-        userProfile.whatsAppNumber,
-        userProfile.pinCode,
-        userProfile.pinCode,
-        userProfile.fatherName,
-        userProfile.whatsAppNumber.length,
-        userProfile.fatherName,
-        userProfile.state,
-        userProfile.state,
-        userProfile.panNumber,
-        userProfile.panNumber,
-        userProfile.address,
-        userProfile.address,
-        userProfile.city,
-        userProfile.city)
+      // console.log(
+      //   userProfile.email,
+      //   userProfile.firstName,
+      //   userProfile.doberror,
+      //   userProfile.mobileNumber,
+      //   userProfile.mobileNumber?.length,
+      //   userProfile.whatsAppNumber,
+      //   userProfile.whatsAppNumber?.length,
+      //   userProfile.pinCode,
+      //   userProfile.fatherName,
+      //   userProfile.state,
+      //   userProfile.panNumber,
+      //   userProfile.address,
+      //   userProfile.city)
+      console.log( userProfile.email !== null &&
+      userProfile.email !== "" &&
+      userProfile.firstName !== null &&
+      userProfile.firstName !== "" &&
+      userProfile.doberror === "" &&
+      userProfile.mobileNumber !== null &&
+      userProfile.mobileNumber !== "" &&
+      userProfile.mobileNumber?.length >= 10 &&
+      userProfile.whatsAppNumber !== null &&
+      userProfile.whatsAppNumber !== "" &&
+      userProfile.pinCode !== null &&
+      userProfile.pinCode !== "" &&
+      userProfile.fatherName !== null &&
+      userProfile.residenceAddress !== null &&
+      userProfile.residenceAddress !== "" &&
+      userProfile.permanentAddress !== null &&
+      userProfile.permanentAddress !== "" &&
+      userProfile.whatsAppNumber?.length >= 10 &&
+      userProfile.fatherName !== "" &&
+      userProfile.state !== null &&
+      userProfile.state !== "" &&
+      userProfile.panNumber !== null &&
+      userProfile.panNumber !== "" &&
+      userProfile.panNumber.length === 10 &&
+      userProfile.address !== null &&
+      userProfile.address !== "" &&
+      userProfile.city !== null &&
+      userProfile.city !== "")
+        console.log("fill the mandatory fields", userProfile)
       toastrWarning("fill the mandatory fields");
     }
   };
@@ -1459,6 +1473,7 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
 
       if (data.status == 200) {
       localStorage.setItem("userType", data.data.userDisplayId);
+      console.log("data",data.data);
       setdashboarddata({
         ...dashboarddata,
         profileData: data,

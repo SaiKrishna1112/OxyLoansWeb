@@ -139,7 +139,7 @@ export const sendwhatappotp = async (value1) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "sendWhatsappOtp",
+    "whatsapp-login-otp",
     data
   );
   return response;
@@ -219,7 +219,7 @@ export const verifywhatappotp = async (api, whatsapploginotp) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "verifyWhatsappOtp",
+    "whatsapp-login-otp-verification",
     data
   );
   return response;
