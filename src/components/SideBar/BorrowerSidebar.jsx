@@ -83,6 +83,42 @@ const BorrowerSidebar = (props) => {
 
   let pathName = useLocation().pathname;
 
+  useEffect(() => {
+    if (
+      "/borrowerLoanRequestCreate" === pathName ||
+      "/borrowerRequestAmount" === pathName ||
+      "/borrowerLoansInitiated" === pathName ||
+      "/borrowerDisbursementAmount" === pathName ||
+      "/borrowerDisbursementInterestAmount" === pathName
+    ) {
+      setSideMenu("borrowerLoanRequests");
+    } else if (
+      "/borrowerenach" === pathName ||
+      "/borrowerloanstatement" === pathName ||
+      "/borrowerAgreedLoans" === pathName ||
+      "/borrowermyloanApplication" === pathName
+    ) {
+      setSideMenu("myborrowings");
+    } else if (
+      "/writetous" === pathName ||
+      "/emicalculator" === pathName ||
+      "/ticketHistory" === pathName ||
+      "/borrowerwriteTous" === pathName ||
+      "/borroweremicalculator" === pathName ||
+      "/borrowerTicketHistory" === pathName
+    ) {
+      setSideMenu("HelpDesk");
+    } else if (
+      "/borrowerreferfriend" === pathName ||
+      "/borrowerreferstatus" === pathName ||
+      "/borrowerrunningLoans" === pathName ||
+      "/borrowermycontacts" === pathName ||
+      "/borrowermyearnings" === pathName
+    ) {
+      setSideMenu("MyNetwork");
+    }
+  }, [pathName]);
+
   return (
     <>
       <div className="sidebar" id="sidebar">
@@ -226,7 +262,7 @@ const BorrowerSidebar = (props) => {
                       : "submenu"
                   }`}
                 >
-                  <Link
+                  {/* <Link
                     to="#"
                     className={isSideMenu == "myborrowings" ? "subdrop" : ""}
                     onClick={() =>
@@ -237,7 +273,7 @@ const BorrowerSidebar = (props) => {
                   >
                     <i className="fa-solid fa-network-wired"></i>
                     <span> My Borrowings </span> <span className="menu-arrow" />
-                  </Link>
+                  </Link> */}
                   {isSideMenu == "myborrowings" ? (
                     <ul
                       style={{
@@ -297,7 +333,7 @@ const BorrowerSidebar = (props) => {
                   )}
                 </li>
 
-                <li
+                {/* <li
                   className={`${
                     "/borrowerloanListing" === pathName ? "active" : ""
                   }`}
@@ -307,9 +343,9 @@ const BorrowerSidebar = (props) => {
                     <span> Loan Listing </span>
                     <span className="menu-arrow"></span>
                   </Link>
-                </li>
+                </li> */}
 
-                <li
+                {/* <li
                   className={`${
                     "/borrowerpayemi" === pathName ? "active" : ""
                   }`}
@@ -319,7 +355,7 @@ const BorrowerSidebar = (props) => {
                     <span> Pay EMI </span>
                     <span className="menu-arrow"></span>
                   </Link>
-                </li>
+                </li> */}
 
                 <li
                   className={`${

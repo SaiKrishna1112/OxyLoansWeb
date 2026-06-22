@@ -86,6 +86,74 @@ const Sidebar = (props) => {
   let pathName = useLocation().pathname;
 
   useEffect(() => {
+    if (
+      "/loadwaletThroughQr" === pathName ||
+      "/loadwalletThroughVirtualAccount" === pathName
+    ) {
+      setSideMenu("LoadYourWallet");
+    } else if (
+      "/regularRunningDeal" === pathName ||
+      "/regularEscrowDeals" === pathName ||
+      "/regularPersonalDeal" === pathName ||
+      "/todaydeal" === pathName ||
+      "todaydeal" === pathName ||
+      "/viewCurrentDayDeals" === pathName
+    ) {
+      setSideMenu("Subjects");
+    } else if (
+      "/myinterestEarning" === pathName ||
+      "/myhighvalueDeals" === pathName ||
+      "/myRunningDeals" === pathName ||
+      "/myclosedDeals" === pathName ||
+      "/myholdamount" === pathName ||
+      "/mypartiallClosedDeal" === pathName
+    ) {
+      setSideMenu("Invoices");
+    } else if (
+      "/loanListings" === pathName ||
+      "/proximityLoans" === pathName
+    ) {
+      setSideMenu("P2PLoans");
+    } else if (
+      "/WalletToWallet" === pathName ||
+      "/walletToWalletHistory" === pathName
+    ) {
+      setSideMenu("WalletToWallet");
+    } else if (
+      "/withdrawalFromWallet" === pathName ||
+      "/withdrawdealFounds" === pathName ||
+      "/withdrawdealfromDeal" === pathName
+    ) {
+      setSideMenu("WithdrawFunds");
+    } else if (
+      "/mytransactions" === pathName ||
+      "/walletToWalletTransactionHistory" === pathName ||
+      "/interestsDateWise" === pathName ||
+      "/dashboardTransactions" === pathName
+    ) {
+      setSideMenu("WalletTrans");
+    } else if (
+      "/referaFriend" === pathName ||
+      "/myreferalStatus" === pathName ||
+      "/lendercontacts" === pathName ||
+      "/lendercontacts1" === pathName
+    ) {
+      setSideMenu("MyNetwork");
+    } else if (
+      "/writetous" === pathName ||
+      "/viewTicketHistory" === pathName
+    ) {
+      setSideMenu("HelpDesk");
+    } else if (
+      "/configautoInvest" === pathName ||
+      "/autoInvestHistory" === pathName ||
+      "/viewAutoHistory" === pathName
+    ) {
+      setSideMenu("AutoInvest");
+    }
+  }, [pathName]);
+
+  useEffect(() => {
     ReactGA.pageview(window.location.pathname + window.location.search);
   }, [window.location.pathname]);
 

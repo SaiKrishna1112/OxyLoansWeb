@@ -1,5 +1,6 @@
 import axios from "axios";
 import { data } from "jquery";
+import Swal from "sweetalert2";
 const userisIn = "production"; //local or production
 // const API_BASE_URL =
 //   userisIn == "local"
@@ -16,11 +17,64 @@ axios.interceptors.response.use(
       const onAuthPage = path.includes("login") || path.includes("register") || path === "/";
 
       if (hasToken && !onAuthPage) {
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("userId");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("userId");
-        window.location.href = "/loginotp";
+        if (!window.isSessionAlertOpen) {
+          window.isSessionAlertOpen = true;
+          Swal.fire({
+            title: "Session Expired",
+            text: "Your session has expired. Do you want to regenerate token to continue or exit to home?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Continue",
+            cancelButtonText: "Exit",
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+          }).then(async (result) => {
+            window.isSessionAlertOpen = false;
+            if (result.isConfirmed) {
+              try {
+                Swal.fire({
+                  title: "Renewing Session...",
+                  text: "Please wait while we regenerate your session.",
+                  allowOutsideClick: false,
+                  didOpen: () => {
+                    Swal.showLoading();
+                  }
+                });
+                await getNewSessionTime();
+                Swal.fire({
+                  title: "Success",
+                  text: "Session regenerated successfully. Reloading...",
+                  icon: "success",
+                  showConfirmButton: false,
+                  timer: 2000
+                });
+              } catch (err) {
+                console.error("Failed to regenerate session token", err);
+                sessionStorage.removeItem("accessToken");
+                sessionStorage.removeItem("userId");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("userId");
+                Swal.fire({
+                  title: "Error",
+                  text: "Failed to renew session. Redirecting to login...",
+                  icon: "error",
+                  timer: 2000,
+                  showConfirmButton: false
+                }).then(() => {
+                  window.location.href = "/";
+                });
+              }
+            } else {
+              sessionStorage.removeItem("accessToken");
+              sessionStorage.removeItem("userId");
+              localStorage.removeItem("accessToken");
+              localStorage.removeItem("userId");
+              window.location.href = "/";
+            }
+          });
+        }
       }
     }
     return Promise.reject(error);

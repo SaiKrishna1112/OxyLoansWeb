@@ -180,6 +180,8 @@ import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReco
 import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
+import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges.jsx";
+import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees.jsx";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -526,6 +528,8 @@ const AppRouter = () => {
         <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
         <Route path="/failedborrowers" element={<FailedBorrowers />} />
         <Route path="/dealsInfo" element={<DealsInfo />} />
+        <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
+        <Route path="/adminProcessingFees" element={<ProcessingFees />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
         {/* MARKETPLACE */}
         <Route path="/post-loan-request" element={<PrivateRoute element={<PostLoanRequest />} />} />

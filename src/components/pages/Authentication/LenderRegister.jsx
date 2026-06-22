@@ -7,6 +7,10 @@ import * as api from "./api";
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import OtpInput from "./OtpInput";
 import { toastrWarning } from "../Base UI Elements/Toast";
+import Swal from "sweetalert2";
+import { API_USER_URL } from "../../../config";
+import axios from "axios";
+
 export default function LenderRegister() {
   let inputRef = useRef();
   let inputRef2 = useRef();
@@ -52,6 +56,7 @@ export default function LenderRegister() {
 
   const handlechange = (event) => {
     const { name, value } = event.target;
+    setError("");
     if (event.target.value.trim() === "LR100001") {
       setRegistrationField({
         ...registrationField,
@@ -135,9 +140,7 @@ export default function LenderRegister() {
 
     if (validationError) {
       setError(validationError);
-      setTimeout(() => {
-        setError("");
-      }, 0);
+      toastrWarning(validationError);
       return;
     }
     if (
@@ -156,11 +159,45 @@ export default function LenderRegister() {
         setfield(false);
         setError(null);
       } catch (error) {
-        console.error("Error:", error.response.data.errorMessage);
-        setError(error.response.data.errorMessage);
-        setTimeout(() => {
-          setError("");
-        }, 0);
+        console.error("Error:", error.response?.data?.errorMessage);
+        const errData = error.response?.data;
+        if (errData && (errData.errorCode === "113" || String(errData.errorCode) === "113")) {
+          // Parse user id & email from errorMessage
+          const errMsg = errData.errorMessage || "";
+          const idMatch = errMsg.match(/id=(\d+)/);
+          const userId = idMatch ? idMatch[1] : null;
+          
+          const emailMatch = errMsg.match(/email=([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+          const email = emailMatch ? emailMatch[1] : registrationField.email;
+
+          Swal.fire({
+            title: "Email Verification Required",
+            html: `Your email <strong>${email}</strong> has not been verified yet.<br/><br/>Would you like us to resend the activation link?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, resend link",
+            cancelButtonText: "Cancel",
+          }).then((result) => {
+            if (result.isConfirmed && userId) {
+              axios
+                .post(API_USER_URL + "sendingEmailActivationLink", {
+                  userId: userId,
+                })
+                .then((res) => {
+                  Swal.fire("Sent!", "Email activation link has been resent successfully.", "success");
+                })
+                .catch((err) => {
+                  Swal.fire("Error!", err.response?.data?.errorMessage || "Failed to resend activation link. Please try again.", "error");
+                });
+            }
+          });
+        } else {
+          const errMsg = errData?.errorMessage || "Registration failed";
+          setError(errMsg);
+          toastrWarning(errMsg);
+        }
       }
     }
   };
@@ -190,20 +227,19 @@ export default function LenderRegister() {
         // navigate("/register_active_proceed");
       } else {
         setError("Please enter a valid OTP");
+        toastrWarning("Please enter a valid OTP");
       }
     } catch (error) {
       console.log("enter error");
-
       console.error(
         "Error:",
         error.response ? error.response.data.errorMessage : error.message
       );
-
-      setError(
-        error.response
-          ? error.response.data.errorMessage
-          : "An error occurred during OTP validation"
-      );
+      const errMsg = error.response
+        ? error.response.data.errorMessage
+        : "An error occurred during OTP validation";
+      setError(errMsg);
+      toastrWarning(errMsg);
     }
   };
 
@@ -427,7 +463,7 @@ export default function LenderRegister() {
                         </div>
                         {error && (
                           <div className="errormessage">
-                            {toastrWarning(error)}
+                            {error}
                           </div>
                         )}
 

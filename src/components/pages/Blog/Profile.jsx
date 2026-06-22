@@ -7,6 +7,7 @@ import FeatherIcon from "feather-icons-react";
 import PhoneInput from "react-phone-number-input";
 import { useState, useEffect } from "react";
 import { Success, WarningBackendApi } from "../Base UI Elements/SweetAlert";
+import axios from "axios";
 import {
   notifications1,
   notificationssucces,
@@ -32,6 +33,7 @@ import {
   handlepincodeapicall,
   sendWhatsappOtpapi,
   verifyWhatsappOtpapi,
+  base_url,
 } from "../../HttpRequest/afterlogin";
 
 import { useSelector } from "react-redux";
@@ -1070,11 +1072,28 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     });
   };
 
+    const triggerSavingGoogleDistance = async (userId) => {
+    try {
+      await axios.post(
+        `${base_url}savingGoogleDistance`,
+        {
+          userId: String(userId),
+        },
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        },
+      );
+    } catch (error) {
+      // Silent background call - no user popup required.
+      console.log("savingGoogleDistance api failed", error);
+    }
+  };
+
   const handleprofileUpdate = () => {
     setUserProfile({
       ...userProfile,
-      addresserror:
-        userProfile.address === "" || userProfile.address === null ? "Please enter the address" : "",
       cityer: userProfile.city === "" || userProfile.city === null ? "Please enter the city" : "",
       doberror: userProfile.dob === "" ? "Please enter the dob" : "",
       fatherNameerror:
@@ -1130,8 +1149,6 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       userProfile.panNumber !== null &&
       userProfile.panNumber !== "" &&
       userProfile.panNumber.length === 10 &&
-      userProfile.address !== null &&
-      userProfile.address !== "" &&
       userProfile.city !== null &&
       userProfile.city !== ""
     ) {
@@ -1139,6 +1156,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       response.then((data) => {
         if (data.request.status == 200) {
           Success("success", "Personal Details Saved Successfully");
+          triggerSavingGoogleDistance(data.data.userId);
         } else if (data.response.data.errorCode != "200") {
           // WarningBackendApi("warning", data.response.data.errorMessage);
           toastrSuccess(data.response.data.errorMessage, "top-right")

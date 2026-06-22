@@ -320,7 +320,7 @@ const BorrowerHeader = (profile) => {
               <Link className="dropdown-item" to="/borrowerProfile">
                 My Profile
               </Link>
-              <Link className="dropdown-item" to="/myRunningDeals">
+              <Link className="dropdown-item" to="/borrowerRequestAmount">
                 My Application
               </Link>
 
