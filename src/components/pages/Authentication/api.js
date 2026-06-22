@@ -21,6 +21,7 @@ export const loginUser = async (email, password, dataIpv4, dataIpv6) => {
     const accessTokenFromHeader = response.headers["accesstoken"];
     console.log("Access Token API:", accessTokenFromHeader);
     localStorage.setItem("token", accessTokenFromHeader);
+    localStorage.setItem("primaryType", response.data.primaryType);
 
     if (!accessTokenFromHeader) {
       throw new Error("Access token not found in response headers");

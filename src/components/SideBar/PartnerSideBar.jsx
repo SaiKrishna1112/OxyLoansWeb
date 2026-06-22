@@ -84,6 +84,37 @@ const PartnerSideBar = (props) => {
 
   let pathName = useLocation().pathname;
 
+  useEffect(() => {
+    if (
+      "/referaFriend" === pathName ||
+      "/myreferalStatus" === pathName ||
+      "/lendercontacts" === pathName ||
+      "/lendercontacts1" === pathName
+    ) {
+      setSideMenu("Deals");
+    } else if (
+      "/loadwaletThroughQr" === pathName ||
+      "/loadwalletThroughVirtualAccount" === pathName
+    ) {
+      setSideMenu("LoadYourWallet");
+    } else if (
+      "/myinterestEarning" === pathName ||
+      "/myhighvalueDeals" === pathName ||
+      "/myRunningDeals" === pathName ||
+      "/myholdamount" === pathName ||
+      "/earningCertificate" === pathName ||
+      "/loansStatement" === pathName ||
+      "/myclosedDeals" === pathName
+    ) {
+      setSideMenu("Invoices");
+    } else if (
+      "/referaFriend" === pathName ||
+      "/myreferalStatus" === pathName
+    ) {
+      setSideMenu("MyNetwork");
+    }
+  }, [pathName]);
+
   return (
     <>
       <div className="sidebar" id="sidebar">

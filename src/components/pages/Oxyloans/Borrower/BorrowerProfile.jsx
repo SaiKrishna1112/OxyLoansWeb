@@ -45,6 +45,7 @@ import {
   getPCreditReportDoc,
   borrowerSecureInfo,
   getBorrowerSecureInfo,
+  base_url,
 
 } from "../../../HttpRequest/afterlogin";
 
@@ -124,6 +125,9 @@ const BorrowerProfile = () => {
     studentOrNot: "",
   });
   const [localityOptions, setLocalityOptions] = useState([]);
+  const [isVerifyingPan, setIsVerifyingPan] = useState(false);
+  const [isPanVerified, setIsPanVerified] = useState(false);
+  const [panVerificationStatus, setPanVerificationStatus] = useState("");
   const [bankaccountprofile, setBankaccountProfile] = useState({
     sendMobileOtp: "",
     moblieNumber: "",
@@ -1044,7 +1048,10 @@ const BorrowerProfile = () => {
   }
 };
   const handlechange = async(event) => {
-    const { name, value } = event.target;
+    let { name, value } = event.target;
+    if (name === "panNumber" && value) {
+      value = value.toUpperCase();
+    }
 
     // if (name === "pinCode") {
     //   // Validate input to allow only numeric characters
@@ -1127,6 +1134,16 @@ const BorrowerProfile = () => {
     ...(name === "locality" && { localityerror: "" }), // Clear locality error on selection
   }));
 
+  if (name === "panNumber" || name === "firstName") {
+    setIsPanVerified(false);
+    setPanVerificationStatus("");
+    setUserProfile((prev) => ({
+      ...prev,
+      panNumbererror: "",
+      firstNamrror: "",
+    }));
+  }
+
   // Handle pin code changes to fetch localities
   if (name === "pinCode") {
     handlePinCodeChange(name, value);
@@ -1161,13 +1178,29 @@ const BorrowerProfile = () => {
     }
   };
 
+    const triggerSavingGoogleDistance = async (userId) => {
+      try {
+        await axios.post(
+          `${base_url}savingGoogleDistance`,
+          {
+            userId: String(userId),
+          },
+          {
+            headers: {
+              accessToken: sessionStorage.getItem("accessToken"),
+            },
+          },
+        );
+      } catch (error) {
+        // Silent background call - no user popup required.
+        console.log("savingGoogleDistance api failed", error);
+      }
+    };
 
   const handleprofileUpdate = () => {
-
+    console.log("userProfile", userProfile);
     setUserProfile({
       ...userProfile,
-      addresserror:
-        userProfile.address === "" ? "Please enter the address" : "",
       cityer: userProfile.city === ("" || null) ? "Please enter the city" : "",
       doberror: userProfile.dob === "" ? "Please enter the dob" : "",
       fatherNameerror:
@@ -1178,16 +1211,16 @@ const BorrowerProfile = () => {
         userProfile.panNumber === "" ? "Please enter the panNumber" : "",
       panNumbererror:
         userProfile.panNumber.length !== 10 ? "Invalid panNumber" : "",
-residenceAddresserror: userProfile.address === "" ? "Please enter Residence Address" : "",
-  permanentAddresserror: userProfile.permanentAddress === "" ? "Please Enter The Permenant Address" : "",
+      residenceAddresserror: userProfile.residenceAddress === null ? "Please enter Residence Address" : "",
+      permanentAddresserror: userProfile.permanentAddress === "" ? "Please Enter The Permenant Address" : "",
       cityer: userProfile.city === "" ? "Please Enter The city" : "",
       pinCodeerror:
         userProfile.pinCode === "" ? "Please Enter The Pincode" : "",
       stateerror: userProfile.state === "" ? "Please Enter The State" : "",
       whatsAppNumbererror:
         userProfile.whatsAppNumber === "" ||
-          userProfile.whatsAppNumber === null ||
-          userProfile.whatsAppNumber.length < 10
+          userProfile.whatsAppNumber === null 
+          // || userProfile.whatsAppNumber.length < 10
           ? " WhatsApp Number should be 10 digits"
           : "",
 
@@ -1231,7 +1264,7 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       userProfile.doberror === "" &&
       userProfile.mobileNumber !== null &&
       userProfile.mobileNumber !== "" &&
-      userProfile.mobileNumber.length >= 10 &&
+      userProfile.mobileNumber?.length >= 10 &&
       userProfile.whatsAppNumber !== null &&
       userProfile.whatsAppNumber !== "" &&
       userProfile.pinCode !== null &&
@@ -1239,11 +1272,65 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       userProfile.fatherName !== null &&
       userProfile.residenceAddress !== null &&
       userProfile.residenceAddress !== "" &&
-       userProfile.address !== null &&
-      userProfile.address !== "" &&
       userProfile.permanentAddress !== null &&
       userProfile.permanentAddress !== "" &&
-      userProfile.whatsAppNumber.length >= 10 &&
+      userProfile.whatsAppNumber?.length >= 10 &&
+      userProfile.fatherName !== "" &&
+      userProfile.state !== null &&
+      userProfile.state !== "" &&
+      userProfile.panNumber !== null &&
+      userProfile.panNumber !== "" &&
+      userProfile.panNumber.length === 10 &&
+      userProfile.city !== null &&
+      userProfile.city !== ""
+    ) {
+      const response = profileupadate(userProfile,formData,category);
+      response.then((data) => {
+        console.log({data})
+        if (data.request.status == 200) {
+          Success("success", "Personal Details Saved Successfully");
+          // save distance
+          triggerSavingGoogleDistance(data.data.userId);
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else if (data.response.data.errorCode != "200") {
+          WarningBackendApi("warning", data.response.data.errorMessage);
+        }
+      });
+    } else {
+      // console.log(
+      //   userProfile.email,
+      //   userProfile.firstName,
+      //   userProfile.doberror,
+      //   userProfile.mobileNumber,
+      //   userProfile.mobileNumber?.length,
+      //   userProfile.whatsAppNumber,
+      //   userProfile.whatsAppNumber?.length,
+      //   userProfile.pinCode,
+      //   userProfile.fatherName,
+      //   userProfile.state,
+      //   userProfile.panNumber,
+      //   userProfile.address,
+      //   userProfile.city)
+      console.log( userProfile.email !== null &&
+      userProfile.email !== "" &&
+      userProfile.firstName !== null &&
+      userProfile.firstName !== "" &&
+      userProfile.doberror === "" &&
+      userProfile.mobileNumber !== null &&
+      userProfile.mobileNumber !== "" &&
+      userProfile.mobileNumber?.length >= 10 &&
+      userProfile.whatsAppNumber !== null &&
+      userProfile.whatsAppNumber !== "" &&
+      userProfile.pinCode !== null &&
+      userProfile.pinCode !== "" &&
+      userProfile.fatherName !== null &&
+      userProfile.residenceAddress !== null &&
+      userProfile.residenceAddress !== "" &&
+      userProfile.permanentAddress !== null &&
+      userProfile.permanentAddress !== "" &&
+      userProfile.whatsAppNumber?.length >= 10 &&
       userProfile.fatherName !== "" &&
       userProfile.state !== null &&
       userProfile.state !== "" &&
@@ -1253,43 +1340,76 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       userProfile.address !== null &&
       userProfile.address !== "" &&
       userProfile.city !== null &&
-      userProfile.city !== ""
-    ) {
-      const response = profileupadate(userProfile,formData,category);
-      response.then((data) => {
-        console.log({data})
-        if (data.request.status == 200) {
-          Success("success", "Personal Details Saved Successfully");
-            window.location.reload();
-        } else if (data.response.data.errorCode != "200") {
-          WarningBackendApi("warning", data.response.data.errorMessage);
-        }
-      });
-    } else {
-      console.log(userProfile.email,
-        userProfile.email,
-        userProfile.firstName,
-        userProfile.firstName,
-        userProfile.doberror,
-        userProfile.mobileNumber,
-        userProfile.mobileNumber,
-        userProfile.mobileNumber.length,
-        userProfile.whatsAppNumber,
-        userProfile.whatsAppNumber,
-        userProfile.pinCode,
-        userProfile.pinCode,
-        userProfile.fatherName,
-        userProfile.whatsAppNumber.length,
-        userProfile.fatherName,
-        userProfile.state,
-        userProfile.state,
-        userProfile.panNumber,
-        userProfile.panNumber,
-        userProfile.address,
-        userProfile.address,
-        userProfile.city,
-        userProfile.city)
+      userProfile.city !== "")
+        console.log("fill the mandatory fields", userProfile)
       toastrWarning("fill the mandatory fields");
+    }
+  };
+
+  const handleVerifyPan = async () => {
+    if (!userProfile.panNumber || userProfile.panNumber.length !== 10) {
+      setUserProfile((prev) => ({
+        ...prev,
+        panNumbererror: "Please enter a valid 10-digit PAN number",
+      }));
+      return;
+    }
+    if (!userProfile.firstName) {
+      setUserProfile((prev) => ({
+        ...prev,
+        firstNamrror: "First name is required to verify PAN",
+      }));
+      return;
+    }
+
+    setIsVerifyingPan(true);
+    setPanVerificationStatus("");
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/verifyPan?name=${encodeURIComponent(userProfile.firstName)}&pan=${encodeURIComponent(userProfile.panNumber)}`,
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        }
+      );
+      if (response.status === 200 && (response.data?.valid === "true" || response.data?.valid === true || response.data?.valid === undefined)) {
+        setIsPanVerified(true);
+        setPanVerificationStatus("PAN card verified successfully!");
+        if (response.data && response.data.registered_name) {
+          setUserProfile((prev) => ({
+            ...prev,
+            firstName: response.data.registered_name,
+            firstNamrror: "",
+          }));
+        }
+        Swal.fire({
+          icon: "success",
+          title: "PAN Verified!",
+          text: "Your PAN details are verified successfully.",
+        });
+      } else {
+        setIsPanVerified(false);
+        const errMsg = response.data?.message || response.data?.errorMessage || "PAN verification failed. Please check name and PAN.";
+        setPanVerificationStatus(errMsg);
+        Swal.fire({
+          icon: "error",
+          title: "PAN Verification Failed",
+          text: errMsg,
+        });
+      }
+    } catch (err) {
+      console.log("Error verifying PAN", err);
+      setIsPanVerified(false);
+      const errMsg = err.response?.data?.errorMessage || "Error verifying PAN. Please try again.";
+      setPanVerificationStatus(errMsg);
+      Swal.fire({
+        icon: "error",
+        title: "PAN Verification Error",
+        text: errMsg,
+      });
+    } finally {
+      setIsVerifyingPan(false);
     }
   };
 
@@ -1459,6 +1579,7 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
 
       if (data.status == 200) {
       localStorage.setItem("userType", data.data.userDisplayId);
+      console.log("data",data.data);
       setdashboarddata({
         ...dashboarddata,
         profileData: data,
@@ -1492,6 +1613,10 @@ residenceAddresserror: userProfile.address === "" ? "Please enter Residence Addr
       
 
       });
+      if (data.data.panStatus && data.data.panStatus.toUpperCase() === "VERIFIED") {
+        setIsPanVerified(true);
+        setPanVerificationStatus("PAN card verified successfully!");
+      }
       console.log("Employemnt",data.data.employment)
       setCategory(data.data.studentOrNot==true?"STUDENT":data.data.employment);
       setFormData
@@ -1709,11 +1834,14 @@ console.log("data",data.status);
                             ? dashboarddata.profileData.data.userId
                             : "BR18"}
                         {`, ${
-                          reduxStoreData.length != 0
-                            ? reduxStoreData.groupName
-                            : dashboarddata.profileData != null
-                              ? dashboarddata.profileData.data.groupName
-                              : "NewLender"
+                          // reduxStoreData.length != 0
+                          //   ? reduxStoreData.groupName
+                          //   :
+                             dashboarddata.profileData != null
+                              ? dashboarddata.profileData.data.primaryType === "LENDER"
+                                ? dashboarddata.profileData.data.groupName
+                                : dashboarddata.profileData.data.primaryType
+                              : ""
                         }`}
                       </h6>
                       <div className="user-Location">
@@ -2492,19 +2620,45 @@ console.log("data",data.status);
                                   Pan Number
                                   <span className="login-danger">*</span>
                                 </label>
-                                <input
-                                  type="tel"
-                                  className="form-control"
-                                  placeholder="Enter PAN Number"
-                                  onChange={handlechange}
-                                  value={userProfile.panNumber}
-                                  maxLength={10}
-                                  name="panNumber"
-                                />
+                                <div className="input-group">
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Enter PAN Number"
+                                    onChange={handlechange}
+                                    value={userProfile.panNumber}
+                                    maxLength={10}
+                                    name="panNumber"
+                                    style={{ textTransform: "uppercase" }}
+                                  />
+                                  <button
+                                    className={`btn ${isPanVerified ? "btn-success" : "btn-primary"}`}
+                                    type="button"
+                                    onClick={handleVerifyPan}
+                                    disabled={isVerifyingPan || isPanVerified}
+                                    style={{ zIndex: 100 }}
+                                  >
+                                    {isVerifyingPan ? (
+                                      <>
+                                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        Verifying...
+                                      </>
+                                    ) : isPanVerified ? (
+                                      "Verified"
+                                    ) : (
+                                      "Verify"
+                                    )}
+                                  </button>
+                                </div>
 
                                 {userProfile.panNumbererror && (
-                                  <div className="text-danger">
+                                  <div className="text-danger mt-1 small">
                                     {userProfile.panNumbererror}
+                                  </div>
+                                )}
+                                {panVerificationStatus && (
+                                  <div className={`mt-1 small ${isPanVerified ? "text-success" : "text-danger"}`}>
+                                    {panVerificationStatus}
                                   </div>
                                 )}
                               </div>
