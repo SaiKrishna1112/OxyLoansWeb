@@ -1,22 +1,26 @@
 // ================================================================
-// SINGLE SOURCE OF TRUTH FOR API URLs
+// SINGLE SOURCE OF TRUTH FOR API URLs — auto-detects environment
 // ================================================================
-// To switch environments, change ONE value: LOCAL_IP (local) or ENV ("production")
-//
-// Local:      http://<LOCAL_IP>:8182
-// Production: https://fintech.oxyloans.com/oxyloans
+// Local dev:   http://localhost:8182/oxyloans
+// Test server: http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans
+// Production:  https://fintech.oxyloans.com/oxyloans
 // ================================================================
 
-const LOCAL_IP = "15.207.239.145"; // test EC2; change to "localhost" for local dev
-
-const ENV = "test"; // "local" | "test" | "production" — change to "production" before prod deploy
+const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
 
 const BASE_URL =
-  ENV === "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
-    : ENV === "test"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
+  hostname === "localhost" || hostname === "127.0.0.1"
+    ? "http://localhost:8182/oxyloans"
+    : hostname === "15.207.239.145" || hostname.includes("ap-south-1.compute.amazonaws.com")
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8181/oxyloans"
     : "https://fintech.oxyloans.com/oxyloans";
+
+const ENV =
+  hostname === "localhost" || hostname === "127.0.0.1"
+    ? "local"
+    : hostname === "15.207.239.145" || hostname.includes("ap-south-1.compute.amazonaws.com")
+    ? "test"
+    : "production";
 
 export const API_USER_URL = BASE_URL + "/v1/user/";
 export const MARKETPLACE_URL = BASE_URL;

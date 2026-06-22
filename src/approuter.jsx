@@ -72,7 +72,7 @@ import WalletToWalletTransactionHistory from "./components/pages/Oxyloans/Lender
 import RegularEscrowDeals from "./components/pages/Oxyloans/Lender/RegularEscrowDeals";
 import TopLendersPage from "./components/pages/Oxyloans/Lender/TopLendersPage.jsx";
 import Whatappuser from "./components/pages/Authentication/Whatappuser";
-import BorrowerDashboard from "./components/pages/Dashboard/BorrowerDashboard";
+import BorrowerDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 import BorrowerProfile from "./components/pages/Oxyloans/Borrower/BorrowerProfile";
 import BorrowerAgreedLoans from "./components/pages/Oxyloans/Borrower/AgreedLoan";
 import BorrowerEnach from "./components/pages/Oxyloans/Borrower/Enach";
