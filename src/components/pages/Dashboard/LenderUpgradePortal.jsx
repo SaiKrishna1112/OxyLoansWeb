@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { MARKETPLACE_URL, API_USER_URL } from "../../../config";
+import { MARKETPLACE_URL, API_USER_URL, ENV } from "../../../config";
 
 const PLANS = [
   {
@@ -187,7 +187,7 @@ export default function LenderUpgradePortal() {
         return;
       }
 
-      const cashfree = window.Cashfree({ mode: "production" });
+      const cashfree = window.Cashfree({ mode: ENV === "production" ? "production" : "sandbox" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setPlanError(e?.response?.data?.error || e.message || "Payment initiation failed");

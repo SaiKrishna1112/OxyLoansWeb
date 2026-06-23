@@ -12,7 +12,7 @@ const BASE_URL =
   hostname === "localhost" || hostname === "127.0.0.1"
     ? "http://localhost:8182/oxyloans"
     : hostname === "15.207.239.145" || hostname.includes("ap-south-1.compute.amazonaws.com")
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8181/oxyloans"
+    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
     : "https://fintech.oxyloans.com/oxyloans";
 
 const ENV =
