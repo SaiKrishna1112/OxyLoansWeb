@@ -4,15 +4,19 @@ import { chatbotapicall } from "./HttpRequest/afterlogin";
 const QUICK_REPLIES = {
   LENDER: [
     "Show my wallet balance",
+    "Which deal earned me the highest ROI?",
+    "Compare my earnings this month vs last month",
+    "How much will I earn in the next 30 days?",
     "What is my total interest earned this year?",
-    "Which deals can I participate in today?",
+    "How long have I been investing with OxyLoans?",
+    "What is my average ROI across all deals?",
+    "How much have I invested in total?",
+    "In which deal did I invest recently?",
     "Show my active deals",
     "How much principal has been returned to me?",
     "Show my upcoming interest payments",
-    "What are the RBI lending limits?",
     "Show my referral bonus history",
-    "Which deal has the highest interest rate?",
-    "How does OxyLoans work for lenders?",
+    "Which deals can I participate in today?",
   ],
   BORROWER: [
     "What is the status of my loan application?",
@@ -44,6 +48,7 @@ const ROLE_CONFIG = {
 const FOLLOWUP = {
   LENDER_PROFILE:           ["Show my active deals", "What interest did I earn this year?", "Show my upcoming payments"],
   DEALS_STATISTICS:         ["Show my running deals", "Show upcoming payments", "Show interest history"],
+  LENDER_LATEST_DEAL:       ["Show my active deals", "Which deal earned me highest ROI?", "Show my wallet balance"],
   LENDER_RUNNING_DEALS:     ["Show my wallet balance", "Show upcoming interest payments", "Which deal has the highest rate?"],
   OPEN_DEALS:               ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
   INTEREST_HISTORY:         ["Show my principal returned", "Show upcoming payments", "How much is in my wallet?"],
@@ -57,6 +62,7 @@ const FOLLOWUP = {
 
 const TYPE_META = {
   LENDER_PROFILE:           { icon: "💰", label: "Wallet", color: "#16a34a" },
+  LENDER_LATEST_DEAL:       { icon: "🆕", label: "Latest Deal", color: "#2563eb" },
   LENDER_RUNNING_DEALS:     { icon: "📊", label: "Deals",  color: "#2563eb" },
   OPEN_DEALS:               { icon: "🎯", label: "Marketplace", color: "#7c3aed" },
   INTEREST_HISTORY:         { icon: "💵", label: "Earnings", color: "#0ea5a1" },
@@ -734,6 +740,22 @@ function RichMessage({ data }) {
   // Lender types
   if (type === "LENDER_PROFILE")    return <LenderProfileView data={data} />;
   if (type === "DEALS_STATISTICS")  return <DealStatisticsView data={data} />;
+
+  if (type === "LENDER_LATEST_DEAL")
+    return (
+      <div style={{ background: "#f0f9ff", borderRadius: 10, padding: "12px 16px", border: "1.5px solid #bae6fd" }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, color: "#0369a1" }}>Your Most Recent Deal</div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <tbody>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Deal Name</td><td style={{ fontWeight: 700, textAlign: "right" }}>{data.dealName || "—"}</td></tr>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Invested</td><td style={{ fontWeight: 700, textAlign: "right", color: "#2563eb" }}>{fmtINR(data.participatedAmount)}</td></tr>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Rate</td><td style={{ fontWeight: 700, textAlign: "right", color: "#16a34a" }}>{data.rateOfInterest}% p.a.</td></tr>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Status</td><td style={{ fontWeight: 600, textAlign: "right" }}>{data.status || "—"}</td></tr>
+            <tr><td style={{ color: "#64748b" }}>Joined On</td><td style={{ fontWeight: 600, textAlign: "right" }}>{data.joinedOn || "—"}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    );
 
   if (type === "LENDER_RUNNING_DEALS")
     return <LenderRunningDealsView deals={data.deals || []} />;
