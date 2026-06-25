@@ -798,17 +798,33 @@ function RichMessage({ data }) {
 
   if (type === "REFERRAL_HISTORY")
     return (
-      <LenderHistoryView
-        items={data.items || []}
-        totalLabel="Total Referral Bonus"
-        totalValue={data.totalBonus}
-        accentColor="#7c3aed"
-        columns={[
-          { key: "referredName", label: "Referred User" },
-          { key: "bonusDate",    label: "Date" },
-          { key: "amount",       label: "Bonus", fmt: fmtINR, style: { fontWeight: 700, color: "#7c3aed" } },
-        ]}
-      />
+      <div style={{ background: "#faf5ff", borderRadius: 10, padding: "12px 16px", border: "1.5px solid #ddd6fe" }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: "#7c3aed" }}>Referral Earnings Timeline</div>
+        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>
+          Total Paid: <strong style={{ color: "#7c3aed" }}>{fmtINR(data.totalBonus)}</strong>
+        </div>
+        {(data.items || []).length === 0
+          ? <div style={{ color: "#94a3b8", fontSize: 13 }}>No paid referral bonuses yet.</div>
+          : <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1.5px solid #ddd6fe" }}>
+                  <th style={{ textAlign: "left", paddingBottom: 6, color: "#7c3aed", fontWeight: 600 }}>Date</th>
+                  <th style={{ textAlign: "center", paddingBottom: 6, color: "#7c3aed", fontWeight: 600 }}>Referees</th>
+                  <th style={{ textAlign: "right", paddingBottom: 6, color: "#7c3aed", fontWeight: 600 }}>Bonus Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.items || []).map((it, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #ede9fe" }}>
+                    <td style={{ padding: "5px 0", color: "#374151" }}>{it.date || "—"}</td>
+                    <td style={{ padding: "5px 0", textAlign: "center", color: "#64748b" }}>{it.refereeCount || 0}</td>
+                    <td style={{ padding: "5px 0", textAlign: "right", fontWeight: 700, color: "#7c3aed" }}>{fmtINR(it.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        }
+      </div>
     );
 
   return null;
