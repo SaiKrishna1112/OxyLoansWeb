@@ -458,47 +458,88 @@ function LenderProfileView({ data }) {
 // ─── Lender: Deal statistics ──────────────────────────────────────────────────
 
 function DealStatisticsView({ data }) {
-  const stats = [
-    { label: "Active", value: data.activeDeals ?? 0, color: "#2563eb", bg: "#dbeafe" },
-    { label: "Disbursed", value: data.disbursedDeals ?? 0, color: "#16a34a", bg: "#dcfce7" },
-    { label: "Closed", value: data.closedDeals ?? 0, color: "#64748b", bg: "#f1f5f9" },
-  ];
-  const amounts = [
-    { label: "Total Invested", value: data.totalInvested, color: "#0ea5a1" },
-    { label: "Total Repaid", value: data.totalRepaid, color: "#16a34a" },
-    { label: "Pending Repayment", value: data.pendingRepayment, color: "#ea580c" },
-  ].filter(a => a.value != null);
+  const totalDeals    = data.totalDeals ?? 0;
+  const totalInvested = data.totalInvested ?? 0;
+  const activeDeployed = data.activeDeployed ?? 0;
+  const completed     = totalInvested - activeDeployed;
 
   return (
     <div style={{ marginTop: 8 }}>
-      {/* Deal counts */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 8 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{
-            textAlign: "center", padding: "10px 4px", borderRadius: 10,
-            background: s.bg, border: `1px solid ${s.color}30`,
+      {/* Hero stat */}
+      <div style={{
+        background: "linear-gradient(135deg, #0ea5a1 0%, #059890 100%)",
+        borderRadius: 12, padding: "14px 16px", marginBottom: 8,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Lifetime Investment</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{fmtINR(totalInvested)}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Deals</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#fff" }}>{totalDeals}</div>
+        </div>
+      </div>
+
+      {/* Active vs Completed */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ background: "#dbeafe", borderRadius: 10, padding: "10px 12px", border: "1px solid #93c5fd30" }}>
+          <div style={{ fontSize: 9, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Active Deployed</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{fmtINR(activeDeployed)}</div>
+        </div>
+        <div style={{ background: "#dcfce7", borderRadius: 10, padding: "10px 12px", border: "1px solid #86efac30" }}>
+          <div style={{ fontSize: 9, color: "#15803d", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Completed</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#15803d" }}>{fmtINR(completed > 0 ? completed : 0)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Lender: Upcoming payout breakdown ───────────────────────────────────────
+
+function UpcomingBreakdownView({ data }) {
+  const rows = [
+    data.monthly    && { label: "Next Month",    amount: data.monthly,    deals: data.monthlyDeals,    color: "#0ea5a1", icon: "📅" },
+    data.quarterly  && { label: "Next Quarter",  amount: data.quarterly,  deals: data.quarterlyDeals,  color: "#2563eb", icon: "🗓️" },
+    data.halfYearly && { label: "Next 6 Months", amount: data.halfYearly, deals: data.halfYearlyDeals, color: "#7c3aed", icon: "📆" },
+    data.yearly     && { label: "Next Year",     amount: data.yearly,     deals: data.yearlyDeals,     color: "#f97316", icon: "🎯" },
+  ].filter(Boolean);
+
+  const totalExpected = rows.reduce((s, r) => s + (r.amount || 0), 0);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10,
+        padding: "8px 12px", marginBottom: 8,
+      }}>
+        <span style={{ fontSize: 11, color: "#9a3412" }}>Expected Interest Income</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#ea580c" }}>{fmtINR(totalExpected)}</span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 14px", background: "#fff", borderRadius: 10,
+            border: `1.5px solid ${r.color}30`, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 2 }}>{s.label}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20 }}>{r.icon}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>{r.label}</div>
+                <div style={{ fontSize: 10, color: "#94a3b8" }}>{r.deals} deal{r.deals > 1 ? "s" : ""}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: r.color }}>~{fmtINR(r.amount)}</div>
           </div>
         ))}
       </div>
-
-      {/* Amount breakdown */}
-      {amounts.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {amounts.map(a => (
-            <div key={a.label} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "7px 11px", background: "#f8fafc", borderRadius: 8,
-              border: "1px solid #e2e8f0",
-            }}>
-              <span style={{ fontSize: 11, color: "#64748b" }}>{a.label}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: a.color }}>{fmtINR(a.value)}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 6, textAlign: "center" }}>
+        Estimated based on your active deals · exact dates vary
+      </div>
     </div>
   );
 }
@@ -766,6 +807,9 @@ function RichMessage({ data }) {
   if (type === "LENDER_UPCOMING_INTEREST")
     return <LenderUpcomingInterestView items={data.items || []} totalUpcoming={data.totalUpcoming} />;
 
+  if (type === "LENDER_UPCOMING_BREAKDOWN")
+    return <UpcomingBreakdownView data={data} />;
+
   if (type === "INTEREST_HISTORY")
     return (
       <LenderHistoryView
@@ -912,10 +956,38 @@ function FormattedText({ text }) {
     );
   }
 
+  // Bullet list: lines starting with "- " render as styled bullets
+  const hasBullets = lines.some(l => l.trim().startsWith("- "));
+  if (hasBullets) {
+    return (
+      <div>
+        {lines.map((line, i) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={i} style={{ height: 4 }} />;
+          if (trimmed.startsWith("- ")) {
+            return (
+              <div key={i} style={{
+                display: "flex", gap: 8, alignItems: "flex-start",
+                padding: "5px 10px", marginBottom: 4,
+                background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0",
+              }}>
+                <span style={{ color: "#0ea5a1", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>•</span>
+                <span style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{inline(trimmed.slice(2))}</span>
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{ marginBottom: 6, fontSize: 13, lineHeight: 1.5 }}>{inline(trimmed)}</div>
+          );
+        })}
+      </div>
+    );
+  }
+
   // Default: inline formatting + newlines as paragraph breaks
   return (
     <div>
-      {text.split("\n").map((line, i) => (
+      {lines.map((line, i) => (
         <div key={i} style={{ marginBottom: line.trim() ? 3 : 6 }}>
           {line.trim() ? inline(line) : " "}
         </div>
