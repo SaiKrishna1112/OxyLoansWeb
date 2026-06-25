@@ -769,6 +769,69 @@ function TopicBadge({ type }) {
 
 // ─── Rich message dispatcher ──────────────────────────────────────────────────
 
+function MonthOnMonthView({ data }) {
+  const up = (data.difference ?? 0) >= 0;
+  const color = up ? "#16a34a" : "#dc2626";
+  const icon = up ? "📈" : "📉";
+  const closed = data.dealsClosedLastMonth || [];
+  const added  = data.dealsAddedThisMonth  || [];
+  return (
+    <div style={{ marginTop: 8 }}>
+      {/* Hero comparison bar */}
+      <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", borderRadius: 12, padding: "14px 16px", marginBottom: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 3 }}>{data.lastMonthName || "Last Month"}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#f8fafc" }}>{fmtINR(data.lastMonth)}</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px 12px", textAlign: "center", border: `1.5px solid ${color}44` }}>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 3 }}>{data.thisMonthName || "This Month"}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#f8fafc" }}>{fmtINR(data.thisMonth)}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${color}22`, borderRadius: 8, padding: "8px 12px" }}>
+          <span style={{ fontSize: 18 }}>{icon}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color }}>
+            {up ? "+" : ""}{fmtINR(data.difference ?? 0)} vs last month
+          </span>
+        </div>
+      </div>
+
+      {/* Deal changes */}
+      {(closed.length > 0 || added.length > 0) && (
+        <div style={{ display: "grid", gridTemplateColumns: closed.length > 0 && added.length > 0 ? "1fr 1fr" : "1fr", gap: 6 }}>
+          {closed.length > 0 && (
+            <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#c2410c", marginBottom: 4 }}>
+                Closed in {data.lastMonthName} ({closed.length})
+              </div>
+              {closed.slice(0, 3).map((d, i) => (
+                <div key={i} style={{ fontSize: 11, color: "#374151", padding: "2px 0", borderBottom: i < Math.min(closed.length, 3) - 1 ? "1px solid #fed7aa" : "none" }}>
+                  {d.dealName || d} — {fmtINR(d.participatedAmount || 0)} @ {d.rateOfInterest || 0}%
+                </div>
+              ))}
+              {closed.length > 3 && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>+{closed.length - 3} more</div>}
+            </div>
+          )}
+          {added.length > 0 && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 4 }}>
+                Added in {data.thisMonthName} ({added.length})
+              </div>
+              {added.slice(0, 3).map((d, i) => (
+                <div key={i} style={{ fontSize: 11, color: "#374151", padding: "2px 0", borderBottom: i < Math.min(added.length, 3) - 1 ? "1px solid #bbf7d0" : "none" }}>
+                  {d.dealName || d} — {fmtINR(d.participatedAmount || 0)} @ {d.rateOfInterest || 0}%
+                </div>
+              ))}
+              {added.length > 3 && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>+{added.length - 3} more</div>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RichMessage({ data }) {
   if (!data) return null;
   const { type } = data;
@@ -839,6 +902,9 @@ function RichMessage({ data }) {
         ]}
       />
     );
+
+  if (type === "LENDER_MOM_COMPARISON")
+    return <MonthOnMonthView data={data} />;
 
   if (type === "REFERRAL_HISTORY")
     return (
