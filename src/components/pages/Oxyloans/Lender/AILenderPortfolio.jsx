@@ -217,6 +217,7 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [chipsOpen, setChipsOpen] = useState(true);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -230,6 +231,7 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
     if (!msg || sending) return;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: msg, data: null }]);
+    setChipsOpen(false);
     setSending(true);
     try {
       const res = await axios.post(
@@ -315,19 +317,31 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick question chips — always visible, wrapped */}
-          <div style={{ padding: "8px 10px 6px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
-            <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>Quick questions</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {DEFAULT_QUESTIONS.map((q, i) => (
-                <button key={i} onClick={() => sendMessage(q)} disabled={sending} style={{
-                  background: "#fff", border: "1px solid #c7d2fe",
-                  borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#3730a3",
-                  cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}>{q}</button>
-              ))}
-            </div>
+          {/* Quick questions — collapsible drawer */}
+          <div style={{ borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
+            <button
+              onClick={() => setChipsOpen((v) => !v)}
+              style={{
+                width: "100%", background: "none", border: "none", padding: "7px 12px",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                cursor: "pointer", color: "#6a1b9a", fontSize: 11, fontWeight: 600,
+              }}
+            >
+              <span>💡 Quick Questions</span>
+              <span style={{ fontSize: 10, color: "#aaa" }}>{chipsOpen ? "▲ hide" : "▼ show"}</span>
+            </button>
+            {chipsOpen && (
+              <div style={{ padding: "0 10px 8px", display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {DEFAULT_QUESTIONS.map((q, i) => (
+                  <button key={i} onClick={() => sendMessage(q)} disabled={sending} style={{
+                    background: "#fff", border: "1px solid #c7d2fe",
+                    borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#3730a3",
+                    cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                  }}>{q}</button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Input */}
