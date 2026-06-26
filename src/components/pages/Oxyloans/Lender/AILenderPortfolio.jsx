@@ -7,6 +7,7 @@ import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
 import { getToken, getUserId } from "../../../HttpRequest/afterlogin";
 import axios from "axios";
+import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -198,10 +199,21 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
 };
 
 // ── AI CHAT WIDGET ─────────────────────────────────────────────────────────
+const DEFAULT_QUESTIONS = [
+  "How much did I earn this year?",
+  "Show my wallet balance",
+  "Show my active deals",
+  "Compare my earnings month on month",
+  "What is my highest interest amount received till now",
+  "Show upcoming payments",
+  "What is my average ROI?",
+  "Show my principal returned",
+];
+
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.` }
+    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null }
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -213,24 +225,23 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
     }
   }, [messages, open]);
 
-  const sendMessage = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
+  const sendMessage = async (text) => {
+    const msg = (text || input).trim();
+    if (!msg || sending) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessages((prev) => [...prev, { role: "user", text: msg, data: null }]);
     setSending(true);
     try {
-      const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, primaryType: "LENDER" },
-        { headers: { accessToken: token, "Content-Type": "application/json" } }
+        { message: msg, primaryType: "LENDER" },
+        { headers: { accessToken: getToken(), "Content-Type": "application/json" } }
       );
-      const reply = res.data?.answer
-        || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
-      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
+      const reply = res.data?.answer || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
+      const responseData = res.data?.responseData || null;
+      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again." }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null }]);
     } finally {
       setSending(false);
     }
@@ -258,14 +269,15 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       {open && (
         <div style={{
           position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 360, maxWidth: "calc(100vw - 48px)",
+          width: 380, maxWidth: "calc(100vw - 48px)",
           background: "#fff", borderRadius: 16,
           boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
           display: "flex", flexDirection: "column",
           border: "1px solid #e8e8e8", overflow: "hidden",
+          maxHeight: "80vh",
         }}>
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
             <span style={{ fontSize: 22 }}>🤖</span>
             <div>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>OxyLoans AI Assistant</div>
@@ -274,21 +286,27 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", maxHeight: 340, minHeight: 200 }}>
+          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", minHeight: 200 }}>
             {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 12, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                <div style={{
-                  maxWidth: "80%", padding: "10px 14px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                  background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f5f5f5",
-                  color: m.role === "user" ? "#fff" : "#262626",
-                  fontSize: 13, lineHeight: 1.5,
-                }}>
-                  {m.text}
+              <div key={i} style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                  <div style={{
+                    maxWidth: "85%", padding: "10px 14px",
+                    borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                    background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f5f5f5",
+                    color: m.role === "user" ? "#fff" : "#262626",
+                    fontSize: 13, lineHeight: 1.5,
+                  }}>
+                    {m.data ? <TopicBadge type={m.data.type} /> : null}
+                    <FormattedText text={m.text} />
+                  </div>
                 </div>
+                {m.data && <div style={{ marginTop: 6 }}><RichMessage data={m.data} /></div>}
               </div>
             ))}
+
             {sending && (
-              <div style={{ display: "flex", gap: 6, padding: "8px 14px" }}>
+              <div style={{ display: "flex", gap: 6, padding: "8px 4px" }}>
                 {[0, 1, 2].map((i) => (
                   <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#6a1b9a", animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
                 ))}
@@ -297,8 +315,23 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
             <div ref={bottomRef} />
           </div>
 
+          {/* Quick question chips — always visible, wrapped */}
+          <div style={{ padding: "8px 10px 6px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
+            <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>Quick questions</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {DEFAULT_QUESTIONS.map((q, i) => (
+                <button key={i} onClick={() => sendMessage(q)} disabled={sending} style={{
+                  background: "#fff", border: "1px solid #c7d2fe",
+                  borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#3730a3",
+                  cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                }}>{q}</button>
+              ))}
+            </div>
+          </div>
+
           {/* Input */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8 }}>
+          <div style={{ padding: "8px 12px 10px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0 }}>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -308,7 +341,7 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
               disabled={sending}
             />
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={sending || !input.trim()}
               style={{
                 background: sending || !input.trim() ? "#d9d9d9" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
@@ -1043,6 +1076,8 @@ const LenderPortfolioDashboard = () => {
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
+  const [momFilter, setMomFilter] = useState("6M");
+  const [momData, setMomData] = useState(null);
 
   // All lenders on the main dashboard see full PRO experience
   const effectiveTier = 'PRO';
@@ -1081,6 +1116,14 @@ const LenderPortfolioDashboard = () => {
       .catch(() => {})
       .finally(() => setEarningsLoading(false));
   }, [resolvedLenderId, fyFilter]);
+
+  // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
+  useEffect(() => {
+    if (!resolvedLenderId) return;
+    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings`, { headers: { accessToken: getToken() } })
+      .then((res) => setMomData(res.data))
+      .catch(() => {});
+  }, [resolvedLenderId]);
 
   // Upcoming payouts — loads once on mount, independent of FY filter
   useEffect(() => {
@@ -1303,7 +1346,105 @@ const LenderPortfolioDashboard = () => {
                   })()} />
               </div>
 
-              {/* ── 3. EARNINGS SECTION ── */}
+              {/* ── 3. MONTH-ON-MONTH EARNINGS — always visible ── */}
+              {(() => {
+                const allMonths = momData ? [...(momData.monthlyEarnings || [])].reverse() : [];
+
+                // Apply filter to allMonths (already sorted oldest→newest after reverse)
+                const now = new Date();
+                const curYear  = now.getFullYear();
+                const curMonth = now.getMonth() + 1; // 1-based
+                // FY starts April of current or previous year
+                const fyStartYear = curMonth >= 4 ? curYear : curYear - 1;
+
+                const months = (() => {
+                  if (momFilter === "3M") return allMonths.slice(-3);
+                  if (momFilter === "6M") return allMonths.slice(-6);
+                  if (momFilter === "FY") return allMonths.filter(m =>
+                    (m.year > fyStartYear) ||
+                    (m.year === fyStartYear && m.month >= 4)
+                  );
+                  return allMonths; // All
+                })();
+
+                const labels    = months.map(m => m.monthLabel || `${m.month}/${m.year}`);
+                const interest  = months.map(m => Math.round(m.interestAmount || 0));
+                const principal = months.map(m => Math.round(m.principalReturned || 0));
+                const totalInterest = interest.reduce((s,v) => s+v, 0);
+
+                const momOptions = {
+                  chart: { type: "bar", stacked: false, fontFamily: "inherit", toolbar: { show: false }, zoom: { enabled: false } },
+                  plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                  colors: ["#0ea5a1", "#2563eb"],
+                  dataLabels: { enabled: false },
+                  xaxis: { categories: labels, labels: { style: { fontSize: "11px" } } },
+                  yaxis: { labels: { formatter: v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}` } },
+                  legend: { position: "top", fontSize: "12px" },
+                  tooltip: { y: { formatter: v => `₹${v.toLocaleString("en-IN")}` } },
+                  grid: { borderColor: "#f0f0f0" },
+                };
+
+                const filterBtnStyle = (f) => ({
+                  padding: "3px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none",
+                  background: momFilter === f ? "#0ea5a1" : "#f0f0f0",
+                  color: momFilter === f ? "#fff" : "#595959",
+                  transition: "background 0.15s",
+                });
+
+                return (
+                  <SectionCard
+                    title="Month-on-Month Earnings"
+                    badge={<span style={{ background: "#e6f7ff", color: "#096dd9", border: "1px solid #91d5ff", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Trend</span>}
+                    collapsible defaultOpen={true}
+                    summary={allMonths.length > 0 ? `₹${fmt(totalInterest)} interest · ${months.length} months` : "Loading…"}
+                  >
+                    {!momData && (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "#8c8c8c", fontSize: 14 }}>Loading earnings data…</div>
+                    )}
+                    {momData && allMonths.length === 0 && (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "#8c8c8c", fontSize: 14 }}>No earnings records found for this account.</div>
+                    )}
+                    {allMonths.length > 0 && (
+                      <>
+                        {/* Filter tabs */}
+                        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                          {["3M","6M","FY","All"].map(f => (
+                            <button key={f} style={filterBtnStyle(f)} onClick={() => setMomFilter(f)}>{f === "FY" ? `FY ${fyStartYear}-${String(fyStartYear+1).slice(2)}` : f}</button>
+                          ))}
+                        </div>
+
+                        {/* Recent month tiles — top 3 from filtered set */}
+                        <div style={{ marginBottom: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                          {[...months].reverse().slice(0, 3).map((m, i) => (
+                            <div key={i} style={{ background: i === 0 ? "#e6f7ff" : "#fafafa", border: `1px solid ${i === 0 ? "#91d5ff" : "#f0f0f0"}`, borderRadius: 8, padding: "8px 14px", minWidth: 110 }}>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>{m.monthLabel}</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#0ea5a1" }}>₹{fmt(m.interestAmount)}</div>
+                              <div style={{ fontSize: 11, color: "#595959" }}>interest</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {months.length === 0 ? (
+                          <div style={{ textAlign: "center", padding: "24px 0", color: "#8c8c8c", fontSize: 13 }}>No data for this period. Try a wider filter.</div>
+                        ) : (
+                          <ReactApexChart
+                            key={momFilter}
+                            options={momOptions}
+                            series={[
+                              { name: "Interest Earned", data: interest },
+                              { name: "Principal Returned", data: principal },
+                            ]}
+                            type="bar"
+                            height={240}
+                          />
+                        )}
+                      </>
+                    )}
+                  </SectionCard>
+                );
+              })()}
+
+              {/* ── 4. EARNINGS SECTION ── */}
               {/* FREE: locked */}
               {!isSmart && (
                 <LockCard title="Earnings Intelligence — Interest, Principal & Period Summary" requiredTier="SMART" />
@@ -1603,54 +1744,6 @@ const LenderPortfolioDashboard = () => {
                   <UpcomingPayoutsSection upcomingData={upcomingData} loading={upcomingLoading} />
                 </>
               )}
-
-              {/* ── 4. MONTH-ON-MONTH EARNINGS — always visible ── */}
-              {earningsData && (earningsData.monthlyEarnings || []).length > 0 && (() => {
-                const months = [...(earningsData.monthlyEarnings || [])].reverse();
-                const labels   = months.map(m => m.monthLabel || `${m.month}/${m.year}`);
-                const interest = months.map(m => Math.round(m.interestAmount || 0));
-                const principal = months.map(m => Math.round(m.principalReturned || 0));
-                const momOptions = {
-                  chart: { type: "bar", stacked: false, fontFamily: "inherit", toolbar: { show: false },
-                    zoom: { enabled: false } },
-                  plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
-                  colors: ["#0ea5a1", "#2563eb"],
-                  dataLabels: { enabled: false },
-                  xaxis: { categories: labels, labels: { style: { fontSize: "11px" } } },
-                  yaxis: { labels: { formatter: v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}` } },
-                  legend: { position: "top", fontSize: "12px" },
-                  tooltip: { y: { formatter: v => `₹${v.toLocaleString("en-IN")}` } },
-                  grid: { borderColor: "#f0f0f0" },
-                };
-                const totalInterest = interest.reduce((s,v) => s+v, 0);
-                return (
-                  <SectionCard
-                    title="Month-on-Month Earnings"
-                    badge={<span style={{ background: "#e6f7ff", color: "#096dd9", border: "1px solid #91d5ff", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Trend</span>}
-                    collapsible defaultOpen={true}
-                    summary={`₹${fmt(totalInterest)} interest across ${months.length} months`}
-                  >
-                    <div style={{ marginBottom: 8, display: "flex", gap: 16, flexWrap: "wrap" }}>
-                      {months.slice(-3).reverse().map((m, i) => (
-                        <div key={i} style={{ background: i === 0 ? "#e6f7ff" : "#fafafa", border: `1px solid ${i === 0 ? "#91d5ff" : "#f0f0f0"}`, borderRadius: 8, padding: "8px 14px", minWidth: 110 }}>
-                          <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>{m.monthLabel}</div>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: "#0ea5a1" }}>₹{fmt(m.interestAmount)}</div>
-                          <div style={{ fontSize: 11, color: "#595959" }}>interest</div>
-                        </div>
-                      ))}
-                    </div>
-                    <ReactApexChart
-                      options={momOptions}
-                      series={[
-                        { name: "Interest Earned", data: interest },
-                        { name: "Principal Returned", data: principal },
-                      ]}
-                      type="bar"
-                      height={240}
-                    />
-                  </SectionCard>
-                );
-              })()}
 
               {/* ── 5. INVESTMENT ANALYTICS — PRO only ── */}
               {!isPro && (

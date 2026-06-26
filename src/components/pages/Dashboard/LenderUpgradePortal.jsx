@@ -25,7 +25,7 @@ const PLANS = [
   {
     key: "SMART",
     label: "Smart",
-    price: 500,
+    price: 1,
     color: "#1890ff",
     badge: "Popular",
     features: [
@@ -45,7 +45,7 @@ const PLANS = [
   {
     key: "PRO",
     label: "Pro",
-    price: 1000,
+    price: 2,
     color: "#722ed1",
     badge: "Full AI",
     features: [

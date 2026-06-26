@@ -55,7 +55,8 @@ const FOLLOWUP = {
   PRINCIPAL_HISTORY:          ["Show my wallet balance", "Show my referral earnings", "Compare my earnings month on month"],
   LENDER_UPCOMING_INTEREST:   ["Show my wallet balance", "What interest have I earned?", "Compare my earnings month on month"],
   LENDER_UPCOMING_BREAKDOWN:  ["Show my active deals", "What interest have I earned?", "Compare my earnings month on month"],
-  LENDER_MOM_COMPARISON:      ["Show my active deals", "What interest did I earn this year?", "Show upcoming payments"],
+  LENDER_MOM_COMPARISON:        ["Show my active deals", "What interest did I earn this year?", "Show upcoming payments"],
+  LENDER_HIGHEST_INTEREST:      ["Compare my earnings month on month", "Show my active deals", "What interest did I earn this year?"],
   REFERRAL_HISTORY:           ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
   EMI_SCHEDULE:               ["Show my active loans", "What interest rate am I paying?", "How does repayment work?"],
   LOAN_APPLICATIONS:          ["Show my active loans", "How long does loan approval take?", "What documents are required?"],
@@ -71,7 +72,8 @@ const TYPE_META = {
   PRINCIPAL_HISTORY:        { icon: "🏦", label: "Principal", color: "#16a34a" },
   LENDER_UPCOMING_INTEREST:  { icon: "📅", label: "Upcoming",    color: "#f97316" },
   LENDER_UPCOMING_BREAKDOWN: { icon: "📅", label: "Payouts",     color: "#f97316" },
-  LENDER_MOM_COMPARISON:     { icon: "📊", label: "Month-on-Month", color: "#0ea5a1" },
+  LENDER_MOM_COMPARISON:        { icon: "📊", label: "Month-on-Month",  color: "#0ea5a1" },
+  LENDER_HIGHEST_INTEREST:      { icon: "💰", label: "Interest Earned", color: "#16a34a" },
   REFERRAL_HISTORY:          { icon: "🎁", label: "Referral",    color: "#7c3aed" },
   DEALS_STATISTICS:          { icon: "📈", label: "Stats",       color: "#2563eb" },
   EMI_SCHEDULE:             { icon: "📅", label: "EMI",    color: "#f97316" },
@@ -836,6 +838,27 @@ function MonthOnMonthView({ data }) {
   );
 }
 
+function HighestInterestView({ data }) {
+  const tiles = [
+    { label: "Total Interest Received", value: fmtINR(data.totalInterest), color: "#16a34a", bg: "#f0fdf4", border: "#86efac" },
+    { label: `Best Month (${data.bestMonthLabel || "—"})`, value: fmtINR(data.bestMonthInterest), color: "#0ea5a1", bg: "#f0fdfa", border: "#99f6e4" },
+    { label: "Last Month Interest", value: fmtINR(data.lastMonthInterest), color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+    { label: "Total Deals", value: data.dealCount ?? 0, color: "#7c3aed", bg: "#faf5ff", border: "#ddd6fe" },
+  ];
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 6 }}>
+        {tiles.map((t, i) => (
+          <div key={i} style={{ background: t.bg, border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 3 }}>{t.label}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: t.color }}>{typeof t.value === "number" ? t.value : t.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function RichMessage({ data }) {
   if (!data) return null;
   const { type } = data;
@@ -909,6 +932,9 @@ function RichMessage({ data }) {
 
   if (type === "LENDER_MOM_COMPARISON")
     return <MonthOnMonthView data={data} />;
+
+  if (type === "LENDER_HIGHEST_INTEREST")
+    return <HighestInterestView data={data} />;
 
   if (type === "REFERRAL_HISTORY")
     return (
