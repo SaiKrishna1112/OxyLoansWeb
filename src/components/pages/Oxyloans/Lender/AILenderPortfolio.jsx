@@ -1604,7 +1604,55 @@ const LenderPortfolioDashboard = () => {
                 </>
               )}
 
-              {/* ── 4. INVESTMENT ANALYTICS — PRO only ── */}
+              {/* ── 4. MONTH-ON-MONTH EARNINGS — always visible ── */}
+              {earningsData && (earningsData.monthlyEarnings || []).length > 0 && (() => {
+                const months = [...(earningsData.monthlyEarnings || [])].reverse();
+                const labels   = months.map(m => m.monthLabel || `${m.month}/${m.year}`);
+                const interest = months.map(m => Math.round(m.interestAmount || 0));
+                const principal = months.map(m => Math.round(m.principalReturned || 0));
+                const momOptions = {
+                  chart: { type: "bar", stacked: false, fontFamily: "inherit", toolbar: { show: false },
+                    zoom: { enabled: false } },
+                  plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                  colors: ["#0ea5a1", "#2563eb"],
+                  dataLabels: { enabled: false },
+                  xaxis: { categories: labels, labels: { style: { fontSize: "11px" } } },
+                  yaxis: { labels: { formatter: v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}` } },
+                  legend: { position: "top", fontSize: "12px" },
+                  tooltip: { y: { formatter: v => `₹${v.toLocaleString("en-IN")}` } },
+                  grid: { borderColor: "#f0f0f0" },
+                };
+                const totalInterest = interest.reduce((s,v) => s+v, 0);
+                return (
+                  <SectionCard
+                    title="Month-on-Month Earnings"
+                    badge={<span style={{ background: "#e6f7ff", color: "#096dd9", border: "1px solid #91d5ff", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Trend</span>}
+                    collapsible defaultOpen={true}
+                    summary={`₹${fmt(totalInterest)} interest across ${months.length} months`}
+                  >
+                    <div style={{ marginBottom: 8, display: "flex", gap: 16, flexWrap: "wrap" }}>
+                      {months.slice(-3).reverse().map((m, i) => (
+                        <div key={i} style={{ background: i === 0 ? "#e6f7ff" : "#fafafa", border: `1px solid ${i === 0 ? "#91d5ff" : "#f0f0f0"}`, borderRadius: 8, padding: "8px 14px", minWidth: 110 }}>
+                          <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>{m.monthLabel}</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: "#0ea5a1" }}>₹{fmt(m.interestAmount)}</div>
+                          <div style={{ fontSize: 11, color: "#595959" }}>interest</div>
+                        </div>
+                      ))}
+                    </div>
+                    <ReactApexChart
+                      options={momOptions}
+                      series={[
+                        { name: "Interest Earned", data: interest },
+                        { name: "Principal Returned", data: principal },
+                      ]}
+                      type="bar"
+                      height={240}
+                    />
+                  </SectionCard>
+                );
+              })()}
+
+              {/* ── 5. INVESTMENT ANALYTICS — PRO only ── */}
               {!isPro && (
                 <LockCard title="Investment Analytics — ROI Charts, Deal Distribution &amp; Earnings Trends" requiredTier="PRO" />
               )}
