@@ -3,7 +3,10 @@ import "./ActiveLendersParticipationPage.css";
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import { API_USER_URL } from "../../../../../config";
-
+import { Modal } from "react-bootstrap";
+import {Button} from "antd";
+import { handleComments, handlegetComments } from "../../../../HttpRequest/admin";
+import Swal from "sweetalert2";
 const LIST_API = `${API_USER_URL}activLendersParicipationAmount`;
 
 const SEARCH_API = (lenderId) =>
@@ -88,6 +91,13 @@ export default function ActiveLendersParticipationPage() {
   const [summaryByLenderId, setSummaryByLenderId] = useState({});
   const inFlightSummaryRef = useRef(new Set());
 
+  // To update commments
+    const [comments, setComments] = useState("");
+    const [commentsError, setCommentsError] = useState('');
+    const [getComments,setGetComments]=useState([])
+    const [selectedRecord, setSelectedRecord] = useState(null);
+    const [showComments, setShowComments] = useState(false);
+
   const fetchList = useCallback(async () => {
     setLoading(true);
     setErr("");
@@ -116,7 +126,7 @@ export default function ActiveLendersParticipationPage() {
     } finally {
       setLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken]); 
 
   const searchByLenderId = async () => {
     const id = normalizeLenderId(lenderIdInput);
@@ -583,6 +593,104 @@ export default function ActiveLendersParticipationPage() {
     );
   };
 
+  //Function to get Comments
+  const getCommentsfun=async(record)=>{
+    console.log("View comments for:", record);
+    const response =await handlegetComments(record)
+    console.log(response.data)
+    if(response.status==200){
+      setGetComments(response.data)
+    }
+    else{
+      if (response.response.status == 401) {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: response.response.data.errorMessage,
+          confirmButtonText: "Go to Login",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/");
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: response.response.data.errorMessage,
+          confirmButtonText: "OK",
+        });
+      }
+    }
+  
+  }
+
+  const writeComments = (record) => {
+    console.log("View comments for:", record);
+    // Implement comments view functionality
+    setSelectedRecord(record);
+    getCommentsfun(record)
+    setShowComments(true);
+  };
+
+    const commentsFunc = async () => {
+      // console.log("comments", comments);
+      const today = new Date();
+      const formattedDate = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()} ${String(today.getHours()).padStart(2, '0')}:${String(today.getMinutes()).padStart(2, '0')}:${String(today.getSeconds()).padStart(2, '0')}`;
+      // console.log({formattedDate})
+      if (!comments.trim()) {
+        setCommentsError('Comments are required');
+        return
+      } 
+      if (selectedRecord) {
+        try {
+          // console.log("selectedRecord", selectedRecord);
+          const response = await handleComments(selectedRecord, comments,formattedDate);
+          console.log("response", response);
+          setShowComments(false);
+          setComments('')
+          if (response.status == 200) {
+            Swal.fire(
+              "Success!",
+              `The comments has been successfully added`,
+              "success"
+            );
+            
+            // Refresh data after action
+            fetchLoanData();
+          } else {
+            if (response.response.status == 401) {
+              Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: response.response.data.errorMessage,
+                confirmButtonText: "Go to Login",
+              }).then((result) => {
+                if (result.isConfirmed) {
+                  navigate("/");
+                }
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: response.response.data.errorMessage,
+                confirmButtonText: "OK",
+              });
+            }
+          }
+        } catch (error) {
+          // console.error("Error in adding comments:", error);
+          setComments('');
+          setShowComments(false);
+        }
+      }
+    };
+
+    const handleClose = () => {
+      setShowComments(false)
+    };
+
   return (
     <div className="main-wrapper">
       <OxyloansAdminSidebar />
@@ -707,7 +815,9 @@ export default function ActiveLendersParticipationPage() {
                         <th style={{ width: "110px" }}>Lender ID</th>
                         <th style={{ width: "320px" }}>Name</th>
                         <th style={{ width: "300px" }}>Address Info</th>
-                        <th style={{ width: "180px" }}>Total Participation Amount</th>
+                        <th style={{ width: "180px" }}>
+                          Total Participation Amount
+                        </th>
                         <th style={{ width: "280px" }}>Action</th>
                       </tr>
                     </thead>
@@ -746,13 +856,24 @@ export default function ActiveLendersParticipationPage() {
                           const isSumLoading = !!s?.loading;
                           const sumErr = s?.error;
 
-                          const totalVal = isSumLoading ? "…" : safeText(s?.total ?? 0);
-                          const regVal = isSumLoading ? "…" : safeText(s?.registered ?? 0);
-                          const lentVal = isSumLoading ? "…" : safeText(s?.lent ?? 0);
-                          const invVal = isSumLoading ? "…" : safeText(s?.invited ?? 0);
+                          const totalVal = isSumLoading
+                            ? "…"
+                            : safeText(s?.total ?? 0);
+                          const regVal = isSumLoading
+                            ? "…"
+                            : safeText(s?.registered ?? 0);
+                          const lentVal = isSumLoading
+                            ? "…"
+                            : safeText(s?.lent ?? 0);
+                          const invVal = isSumLoading
+                            ? "…"
+                            : safeText(s?.invited ?? 0);
 
                           return (
-                            <tr key={x.lenderId} style={{ verticalAlign: "top" }}>
+                            <tr
+                              key={x.lenderId}
+                              style={{ verticalAlign: "top" }}
+                            >
                               <td>
                                 <div className="lender-id-text">
                                   LR{safeText(x.lenderId)}
@@ -835,7 +956,9 @@ export default function ActiveLendersParticipationPage() {
                                     value={totalVal}
                                     tone="TOTAL"
                                     disabled={!sid}
-                                    title={sumErr ? sumErr : "Open Total referrals"}
+                                    title={
+                                      sumErr ? sumErr : "Open Total referrals"
+                                    }
                                     onClick={() => openReferModal(x, "TOTAL")}
                                   />
                                   <StatChip
@@ -844,7 +967,9 @@ export default function ActiveLendersParticipationPage() {
                                     tone="REGISTERED"
                                     disabled={!sid}
                                     title={
-                                      sumErr ? sumErr : "Open Registered referrals"
+                                      sumErr
+                                        ? sumErr
+                                        : "Open Registered referrals"
                                     }
                                     onClick={() =>
                                       openReferModal(x, "REGISTERED")
@@ -855,7 +980,9 @@ export default function ActiveLendersParticipationPage() {
                                     value={lentVal}
                                     tone="LENT"
                                     disabled={!sid}
-                                    title={sumErr ? sumErr : "Open Lent referrals"}
+                                    title={
+                                      sumErr ? sumErr : "Open Lent referrals"
+                                    }
                                     onClick={() => openReferModal(x, "LENT")}
                                   />
                                   <StatChip
@@ -869,7 +996,17 @@ export default function ActiveLendersParticipationPage() {
                                     onClick={() => openReferModal(x, "INVITED")}
                                   />
                                 </div>
-
+                                <StatChip
+                                  label="Add Comments"
+                                  value={
+                                    modalSummary.loading
+                                      ? "…"
+                                      : safeText(modalSummary.comments)
+                                  }
+                                  tone="COMMENTS"
+                                  active={selectedStatus === "COMMENTS"}
+                                  onClick={() => writeComments(x)}
+                                />
                                 {sumErr ? (
                                   <div
                                     style={{
@@ -1056,28 +1193,44 @@ export default function ActiveLendersParticipationPage() {
                     >
                       <StatusCard
                         label="Total"
-                        value={modalSummary.loading ? "…" : safeText(modalSummary.total)}
+                        value={
+                          modalSummary.loading
+                            ? "…"
+                            : safeText(modalSummary.total)
+                        }
                         tone="TOTAL"
                         active={selectedStatus === "TOTAL"}
                         onClick={() => setSelectedStatus("TOTAL")}
                       />
                       <StatusCard
                         label="Registered"
-                        value={modalSummary.loading ? "…" : safeText(modalSummary.registered)}
+                        value={
+                          modalSummary.loading
+                            ? "…"
+                            : safeText(modalSummary.registered)
+                        }
                         tone="REGISTERED"
                         active={selectedStatus === "REGISTERED"}
                         onClick={() => setSelectedStatus("REGISTERED")}
                       />
                       <StatusCard
                         label="Lent"
-                        value={modalSummary.loading ? "…" : safeText(modalSummary.lent)}
+                        value={
+                          modalSummary.loading
+                            ? "…"
+                            : safeText(modalSummary.lent)
+                        }
                         tone="LENT"
                         active={selectedStatus === "LENT"}
                         onClick={() => setSelectedStatus("LENT")}
                       />
                       <StatusCard
                         label="Invited"
-                        value={modalSummary.loading ? "…" : safeText(modalSummary.invited)}
+                        value={
+                          modalSummary.loading
+                            ? "…"
+                            : safeText(modalSummary.invited)
+                        }
                         tone="INVITED"
                         active={selectedStatus === "INVITED"}
                         onClick={() => setSelectedStatus("INVITED")}
@@ -1170,7 +1323,10 @@ export default function ActiveLendersParticipationPage() {
                         marginTop: "10px",
                       }}
                     >
-                      <table className="data-table" style={{ minWidth: "980px" }}>
+                      <table
+                        className="data-table"
+                        style={{ minWidth: "980px" }}
+                      >
                         <thead>
                           <tr>
                             <th>Referee</th>
@@ -1211,7 +1367,9 @@ export default function ActiveLendersParticipationPage() {
                             </tr>
                           ) : (
                             filteredRefRows.map((r, idx) => {
-                              const bonus = Array.isArray(r.lenderReferenceAmountResponse)
+                              const bonus = Array.isArray(
+                                r.lenderReferenceAmountResponse,
+                              )
                                 ? r.lenderReferenceAmountResponse
                                 : [];
 
@@ -1238,13 +1396,17 @@ export default function ActiveLendersParticipationPage() {
                                   <td>
                                     <div className="info-cell">
                                       <div className="info-row">
-                                        <span className="label-bold">Email:</span>{" "}
+                                        <span className="label-bold">
+                                          Email:
+                                        </span>{" "}
                                         <span className="val-medium">
                                           {safeText(r.refereeEmail)}
                                         </span>
                                       </div>
                                       <div className="info-row">
-                                        <span className="label-bold">Mobile:</span>{" "}
+                                        <span className="label-bold">
+                                          Mobile:
+                                        </span>{" "}
                                         <span className="val-medium">
                                           {safeText(r.refereeMobileNumber)}
                                         </span>
@@ -1268,14 +1430,18 @@ export default function ActiveLendersParticipationPage() {
 
                                   <td>
                                     {bonus.length === 0 ? (
-                                      <span style={{ color: "#475569" }}>-</span>
+                                      <span style={{ color: "#475569" }}>
+                                        -
+                                      </span>
                                     ) : (
                                       <div>
                                         {bonus.slice(0, 2).map((b, i) => (
                                           <div key={i} className="bonus-item">
                                             <div className="bonus-row-grid">
                                               <span>
-                                                <span className="label-bold">Deal:</span>{" "}
+                                                <span className="label-bold">
+                                                  Deal:
+                                                </span>{" "}
                                                 {safeText(b.dealId)}
                                               </span>
                                               <span>
@@ -1288,7 +1454,9 @@ export default function ActiveLendersParticipationPage() {
                                                 <span className="label-bold">
                                                   Status:
                                                 </span>{" "}
-                                                {safeText(b.paymentStatus ?? "-")}
+                                                {safeText(
+                                                  b.paymentStatus ?? "-",
+                                                )}
                                               </span>
                                             </div>
                                           </div>
@@ -1320,7 +1488,8 @@ export default function ActiveLendersParticipationPage() {
                           marginBottom: "6px",
                         }}
                       >
-                        Deal Details & Earning Amounts (Status: {selectedStatus})
+                        Deal Details & Earning Amounts (Status: {selectedStatus}
+                        )
                       </div>
 
                       <div
@@ -1330,7 +1499,10 @@ export default function ActiveLendersParticipationPage() {
                           borderRadius: "0.25rem",
                         }}
                       >
-                        <table className="data-table" style={{ minWidth: "980px" }}>
+                        <table
+                          className="data-table"
+                          style={{ minWidth: "980px" }}
+                        >
                           <thead>
                             <tr>
                               <th>Referee</th>
@@ -1374,7 +1546,9 @@ export default function ActiveLendersParticipationPage() {
                                   </td>
                                   <td>{safeText(d.dealId)}</td>
                                   <td>{safeText(d.participatedOn)}</td>
-                                  <td>{formatNumber(d.participatedAmount ?? null)}</td>
+                                  <td>
+                                    {formatNumber(d.participatedAmount ?? null)}
+                                  </td>
                                   <td>{safeText(d.bonusAmount ?? "-")}</td>
                                   <td>{safeText(d.paymentStatus ?? "-")}</td>
                                   <td>{safeText(d.transferredOn ?? "-")}</td>
@@ -1419,7 +1593,9 @@ export default function ActiveLendersParticipationPage() {
                             <button
                               className="btn-page"
                               disabled={dealPage <= 1}
-                              onClick={() => setDealPage((p) => Math.max(1, p - 1))}
+                              onClick={() =>
+                                setDealPage((p) => Math.max(1, p - 1))
+                              }
                               title="Prev"
                             >
                               ←
@@ -1429,7 +1605,7 @@ export default function ActiveLendersParticipationPage() {
                               disabled={dealPage >= dealTotalPages}
                               onClick={() =>
                                 setDealPage((p) =>
-                                  Math.min(dealTotalPages, p + 1)
+                                  Math.min(dealTotalPages, p + 1),
                                 )
                               }
                               title="Next"
@@ -1488,7 +1664,10 @@ export default function ActiveLendersParticipationPage() {
                         borderRadius: "0.25rem",
                       }}
                     >
-                      <table className="data-table" style={{ minWidth: "760px" }}>
+                      <table
+                        className="data-table"
+                        style={{ minWidth: "760px" }}
+                      >
                         <thead>
                           <tr>
                             <th>Deal ID</th>
@@ -1519,7 +1698,9 @@ export default function ActiveLendersParticipationPage() {
                               <tr key={i}>
                                 <td>{safeText(b.dealId)}</td>
                                 <td>{safeText(b.participatedOn)}</td>
-                                <td>{formatNumber(b.participatedAmount ?? null)}</td>
+                                <td>
+                                  {formatNumber(b.participatedAmount ?? null)}
+                                </td>
                                 <td>{safeText(b.amount ?? "-")}</td>
                                 <td>{safeText(b.paymentStatus ?? "-")}</td>
                                 <td>{safeText(b.transferredOn ?? "-")}</td>
@@ -1538,7 +1719,9 @@ export default function ActiveLendersParticipationPage() {
                       }}
                     >
                       Total Deals:{" "}
-                      <span style={{ fontWeight: 600 }}>{bonusRows.length}</span>
+                      <span style={{ fontWeight: 600 }}>
+                        {bonusRows.length}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1548,6 +1731,83 @@ export default function ActiveLendersParticipationPage() {
           </div>
         </div>
       </div>
+      {/* Write Comments */}
+      <Modal show={showComments} onHide={handleClose} top>
+        <Modal.Header closeButton>
+          <Modal.Title>Comments</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          <div className="col-12 col-sm-12">
+            {/* Display Comments Section */}
+            {getComments?.length > 0 && (
+              <div
+                className={`comment-section ${getComments.length > 2 ? "scrollable-comments" : ""}`}
+                style={{
+                  margin: "20px 0",
+                  border: "1px solid #dee2e6",
+                  borderRadius: "8px",
+                  padding: "10px",
+                }}
+              >
+                {getComments.map((comment, index) => {
+                  const isLast = index === getComments.length - 1;
+                  const showBorder = getComments.length > 1 && !isLast;
+
+                  return (
+                    <div
+                      key={index}
+                      className={`single-comment mb-3 pb-2 ${showBorder ? "border-bottom" : ""}`}
+                    >
+                      <p className="comment-user fw-bold mb-1">
+                        {comment.updatedByName}
+                      </p>
+                      <p className="comment-text mb-1">{comment.comment}</p>
+                      {/* <p className="comment-date text-muted small">{new Date(comment.commentedDate).toLocaleString()}</p> */}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Input Comment Box */}
+            <div className="form-group local-forms">
+              <label>
+                Comments <span className="login-danger">*</span>
+              </label>
+              <textarea
+                type="text"
+                name="withdrawFeedback"
+                className="form-control"
+                value={comments}
+                onChange={(e) => {
+                  setComments(e.target.value);
+                  if (commentsError) setCommentsError("");
+                }}
+                placeholder="Enter Comments"
+              />
+              {commentsError && (
+                <small className="text-danger">{commentsError}</small>
+              )}
+            </div>
+          </div>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            No
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              commentsFunc();
+              // Perform some action
+            }}
+          >
+            Yes
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

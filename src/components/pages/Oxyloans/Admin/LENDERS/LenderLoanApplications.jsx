@@ -66,7 +66,7 @@ const LenderLoanApplications = () => {
   const [interestStatus, setInterestStatus] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsError, setCommentsError] = useState('');
-  const[getComments,setGetComments]=useState([])
+  const [getComments,setGetComments]=useState([])
   const [showComments, setShowComments] = useState(false);
   const [dobModal, setDobModal] = useState(false);
   const [userDob, setUserDob] = useState("");
@@ -1021,9 +1021,11 @@ const getCommentsfun=async(record)=>{
         name="withdrawFeedback"
         className="form-control"
         value={comments}
-        onChange={(e) => {setComments(e.target.value);
-                 if (commentsError) setCommentsError('');
-        }}
+        onChange={(e) => {
+                            setComments(e.target.value);
+                            if (commentsError) setCommentsError('');
+                          }
+                    }
         placeholder="Enter Comments"
       />
         {commentsError && (

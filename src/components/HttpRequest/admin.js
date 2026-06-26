@@ -411,24 +411,22 @@ export const handleComments=async(value1,value2,formattedDate)=>{
   const userId = getUserId();
   const email=getEmail()
   console.log("handleComments value",value1)
-  console.log(value1.lenderUser.mobileNumber)
+  // console.log(value1.lenderUser.mobileNumber)
   // console.log(email.split("@")[0])
 
-  let data={
-    // comments: value2
-    loanRequestId: value1.loanRequestId,
-    updatedByUserId: Number(value1.userDisplayId),
-    updatedByName: email.split("@")[0],
+  let data = {
+    loanRequestId: value1.loanRequestId || 0,
+    updatedByUserId: Number(value1.userDisplayId ?? value1.lenderId ?? 0),
+    updatedByName: email?.split("@")[0] || "",
     comment: value2,
-    created_at:formattedDate,
-    telecallinguserid:userId,
-    userName:value1.user.firstName,
-    userMobileNumber:value1.lenderUser.mobileNumber,
-
-  }
+    created_at: formattedDate,
+    telecallinguserid: userId,
+    userName: value1.user?.firstName || value1.lenderName,
+    userMobileNumber: value1.lenderUser?.mobileNumber || value1.mobileNumber,
+  };
   console.log({data})
 
-   const response = await handleApiRequestAfterLoginService(
+  const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `commentshistory`,
     "POST",
@@ -443,17 +441,17 @@ export const handleComments=async(value1,value2,formattedDate)=>{
 export const handlegetComments=async(value)=>{
   const token = getToken();
   const userId = getUserId();
-console.log("value",value.userDisplayId )
+  console.log("value",value.userDisplayId  || value.lenderId)
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `commentshistorygetting/${value.userDisplayId}`,
+    `commentshistorygetting/${value.userDisplayId || value.lenderId}`,
     "get",
     token,
     // data
     // postdatastring
   );
 
-   return response;
+  return response;
 
 }
 
