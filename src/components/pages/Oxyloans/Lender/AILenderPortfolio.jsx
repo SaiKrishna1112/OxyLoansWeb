@@ -213,6 +213,7 @@ const CHIPS_VISIBLE = 3;
 
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
+  const [panelSize, setPanelSize] = useState("normal"); // "normal" | "maximized" | "minimized"
   const [messages, setMessages] = useState([
     { role: "assistant", text: `Hi ${lenderName || "there"}! 👋 I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null, ts: Date.now() }
   ]);
@@ -223,12 +224,12 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (open) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
-  }, [messages, open]);
+    if (open && panelSize !== "minimized") setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+  }, [messages, open, panelSize]);
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 120);
-  }, [open]);
+    if (open && panelSize !== "minimized") setTimeout(() => inputRef.current?.focus(), 120);
+  }, [open, panelSize]);
 
   const sendMessage = async (text) => {
     const msg = (text || input).trim();
@@ -257,11 +258,40 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
   const hiddenCount = DEFAULT_QUESTIONS.length - CHIPS_VISIBLE;
   const fmtTime = (ts) => new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
+  const panelStyles = {
+    normal: {
+      position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+      width: 390, maxWidth: "calc(100vw - 32px)",
+      height: "min(600px, 84vh)",
+    },
+    maximized: {
+      position: "fixed", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)", zIndex: 9998,
+      width: "min(860px, 94vw)",
+      height: "min(720px, 90vh)",
+    },
+    minimized: {
+      position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+      width: 340, maxWidth: "calc(100vw - 32px)",
+      height: "auto",
+    },
+  };
+
+  const headerBtn = (onClick, title, label) => (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, width: 26, height: 26, color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.15s" }}
+      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
+      onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+    >{label}</button>
+  );
+
   return (
     <>
       {/* Floating button */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); setPanelSize("normal"); }}
         style={{
           position: "fixed", bottom: 28, right: 28, zIndex: 9999,
           width: 56, height: 56, borderRadius: "50%",
@@ -277,33 +307,45 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
         {open ? "✕" : "🤖"}
       </button>
 
-      {/* Chat panel — fixed height; messages area scrolls */}
+      {/* Chat panel */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 390, maxWidth: "calc(100vw - 32px)",
+          ...panelStyles[panelSize],
           background: "#fff", borderRadius: 20,
           boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 4px 16px rgba(106,27,154,0.12)",
           display: "flex", flexDirection: "column",
           border: "1px solid #e8e8e8", overflow: "hidden",
-          height: "min(600px, 84vh)",
+          transition: "width 0.25s, height 0.25s",
         }}>
 
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "13px 18px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🤖</div>
+          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "13px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: panelSize === "minimized" ? "pointer" : "default" }}
+            onClick={() => panelSize === "minimized" && setPanelSize("normal")}
+          >
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>🤖</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>OxyLoans AI Assistant</div>
-              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#52c41a", display: "inline-block", boxShadow: "0 0 5px #52c41a" }} />
-                Online · Ask about earnings, ROI, deals
-              </div>
+              {panelSize !== "minimized" && (
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#52c41a", display: "inline-block", boxShadow: "0 0 5px #52c41a" }} />
+                  Online · Ask about earnings, ROI, deals
+                </div>
+              )}
+              {panelSize === "minimized" && (
+                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{messages.length - 1} message{messages.length !== 2 ? "s" : ""} · click to expand</div>
+              )}
             </div>
-            <button onClick={() => setOpen(false)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 28, height: 28, color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
+            <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+              {panelSize !== "minimized" && headerBtn(() => setPanelSize("minimized"), "Minimise", "⎯")}
+              {panelSize === "normal"    && headerBtn(() => setPanelSize("maximized"), "Maximise", "⤢")}
+              {panelSize === "maximized" && headerBtn(() => setPanelSize("normal"),    "Restore",  "⊡")}
+              {panelSize === "minimized" && headerBtn(() => setPanelSize("maximized"), "Maximise", "⤢")}
+              {headerBtn(() => { setOpen(false); setPanelSize("normal"); }, "Close", "✕")}
+            </div>
           </div>
 
           {/* Messages — primary space, scrollable */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 6px", display: "flex", flexDirection: "column" }}>
+          {panelSize !== "minimized" && <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 6px", display: "flex", flexDirection: "column" }}>
             {messages.map((m, i) => (
               <div key={i} style={{ marginBottom: 14 }}>
                 <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 7 }}>
@@ -344,73 +386,74 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
               </div>
             )}
             <div ref={bottomRef} />
-          </div>
+          </div>}
 
-          {/* Quick chips — always visible, 3 + "＋N more" toggle */}
-          <div style={{ padding: "7px 12px 5px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
-              {visibleChips.map((q, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(q)}
-                  disabled={sending}
-                  style={{
-                    background: "#fff", border: "1px solid #c7d2fe",
-                    borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#3730a3",
-                    cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)", lineHeight: 1.4, opacity: sending ? 0.6 : 1,
-                  }}
-                >{q}</button>
-              ))}
-              {!chipsExpanded && hiddenCount > 0 && (
-                <button
-                  onClick={() => setChipsExpanded(true)}
-                  style={{
-                    background: "linear-gradient(135deg, #f0f5ff, #f5f0ff)",
-                    border: "1px solid #c7d2fe", borderRadius: 20,
-                    padding: "4px 12px", fontSize: 11, color: "#6a1b9a",
-                    cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600, lineHeight: 1.4,
-                  }}
-                >＋{hiddenCount} more ›</button>
-              )}
-              {chipsExpanded && (
-                <button
-                  onClick={() => setChipsExpanded(false)}
-                  style={{
-                    background: "none", border: "1px solid #e8e8e8",
-                    borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#8c8c8c",
-                    cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4,
-                  }}
-                >‹ less</button>
-              )}
+          {/* Quick chips + input — hidden when minimized */}
+          {panelSize !== "minimized" && <>
+            <div style={{ padding: "7px 12px 5px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+                {visibleChips.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => sendMessage(q)}
+                    disabled={sending}
+                    style={{
+                      background: "#fff", border: "1px solid #c7d2fe",
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#3730a3",
+                      cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)", lineHeight: 1.4, opacity: sending ? 0.6 : 1,
+                    }}
+                  >{q}</button>
+                ))}
+                {!chipsExpanded && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setChipsExpanded(true)}
+                    style={{
+                      background: "linear-gradient(135deg, #f0f5ff, #f5f0ff)",
+                      border: "1px solid #c7d2fe", borderRadius: 20,
+                      padding: "4px 12px", fontSize: 11, color: "#6a1b9a",
+                      cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600, lineHeight: 1.4,
+                    }}
+                  >＋{hiddenCount} more ›</button>
+                )}
+                {chipsExpanded && (
+                  <button
+                    onClick={() => setChipsExpanded(false)}
+                    style={{
+                      background: "none", border: "1px solid #e8e8e8",
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#8c8c8c",
+                      cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4,
+                    }}
+                  >‹ less</button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Input row */}
-          <div style={{ padding: "8px 12px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0, background: "#fff" }}>
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Ask about your deals, earnings…"
-              style={{ flex: 1, border: "1.5px solid #e8e8e8", borderRadius: 24, padding: "9px 16px", fontSize: 13, outline: "none", background: "#fafafa", transition: "border-color 0.15s" }}
-              onFocus={e => e.target.style.borderColor = "#6a1b9a"}
-              onBlur={e => e.target.style.borderColor = "#e8e8e8"}
-              disabled={sending}
-            />
-            <button
-              onClick={() => sendMessage()}
-              disabled={sending || !input.trim()}
-              style={{
-                background: sending || !input.trim() ? "#e8e8e8" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
-                border: "none", borderRadius: 24, padding: "9px 20px",
-                color: sending || !input.trim() ? "#aaa" : "#fff",
-                cursor: sending || !input.trim() ? "default" : "pointer",
-                fontSize: 15, fontWeight: 700, transition: "all 0.2s", flexShrink: 0,
-              }}
-            >↑</button>
-          </div>
+            <div style={{ padding: "8px 12px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0, background: "#fff" }}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Ask about your deals, earnings…"
+                style={{ flex: 1, border: "1.5px solid #e8e8e8", borderRadius: 24, padding: "9px 16px", fontSize: 13, outline: "none", background: "#fafafa", transition: "border-color 0.15s" }}
+                onFocus={e => e.target.style.borderColor = "#6a1b9a"}
+                onBlur={e => e.target.style.borderColor = "#e8e8e8"}
+                disabled={sending}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={sending || !input.trim()}
+                style={{
+                  background: sending || !input.trim() ? "#e8e8e8" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
+                  border: "none", borderRadius: 24, padding: "9px 20px",
+                  color: sending || !input.trim() ? "#aaa" : "#fff",
+                  cursor: sending || !input.trim() ? "default" : "pointer",
+                  fontSize: 15, fontWeight: 700, transition: "all 0.2s", flexShrink: 0,
+                }}
+              >↑</button>
+            </div>
+          </>}
         </div>
       )}
       <style>{`
