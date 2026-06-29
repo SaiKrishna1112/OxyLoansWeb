@@ -3,6 +3,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
+import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
@@ -257,6 +259,8 @@ const AppRouter = () => {
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/adminAICreatedDeals" element={<AdminAICreatedDealsPage />} />
+        <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
         <Route path="/configautoInvest" element={<ConfigautoInvest />} />
         <Route path="/membership" element={<Membership />} />
