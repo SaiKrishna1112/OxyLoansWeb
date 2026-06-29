@@ -1,8 +1,8 @@
-const ENV = "test"; // "local" | "test" | "production"
+const ENV = "local"; // "local" | "test" | "production"
 
 const BASE_URL =
   ENV === "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
+    ? "http://localhost:8181/oxyloans"
     : ENV === "test"
     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
     : "https://fintech.oxyloans.com/oxyloans";

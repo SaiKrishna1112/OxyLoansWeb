@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ReactApexChart from "react-apexcharts";
-import { FaChartLine, FaUserClock, FaUsers, FaLayerGroup, FaFileExcel } from "react-icons/fa";
+import { FaChartLine, FaUserClock, FaUsers, FaLayerGroup, FaFileExcel, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import {
   getAdminAILenderAnalyticsSummary,
@@ -8,6 +8,7 @@ import {
   downloadAdminAILenderAnalyticsExcel,
   fetchAllLenderAnalyticsForExport,
 } from "../../../HttpRequest/admin";
+import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
 const pickNumber = (...values) => {
@@ -110,7 +111,18 @@ const SEGMENT_LABELS = {
   hundredPlus: "100+ Deals",
 };
 
-const MetricCard = ({ label, value, purpose, subMeta, accent = "blue", active, onClick, onExport, exporting }) => (
+const MetricCard = ({
+  label,
+  value,
+  purpose,
+  subMeta,
+  accent = "blue",
+  active,
+  onClick,
+  onExport,
+  exporting,
+  onCampaign,
+}) => (
   <div className={`admin-ai-pro-kpi admin-ai-pro-kpi-metric admin-ai-pro-kpi--${accent} ${active ? "is-active" : ""}`}>
     <div className="admin-ai-pro-kpi-header admin-ai-pro-kpi-header--metric">
       <span className="admin-ai-pro-kpi-label">{label}</span>
@@ -120,18 +132,42 @@ const MetricCard = ({ label, value, purpose, subMeta, accent = "blue", active, o
       {purpose ? <small className="admin-ai-pro-kpi-purpose">{purpose}</small> : null}
       {subMeta ? <small className="admin-ai-pro-kpi-meta">{subMeta}</small> : null}
     </button>
-    <button
-      type="button"
-      className="admin-ai-pro-kpi-export-btn"
-      title="Download Excel"
-      disabled={exporting}
-      onClick={(event) => {
-        event.stopPropagation();
-        onExport?.();
-      }}
-    >
-      <FaFileExcel /> {exporting ? "..." : "Excel"}
-    </button>
+    <div className="admin-ai-pro-kpi-metric-actions">
+      <button
+        type="button"
+        className="admin-ai-pro-kpi-campaign-btn"
+        title="Email campaign"
+        onClick={(event) => {
+          event.stopPropagation();
+          onCampaign?.("email");
+        }}
+      >
+        <FaEnvelope /> Email
+      </button>
+      <button
+        type="button"
+        className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn--whatsapp"
+        title="WhatsApp campaign"
+        onClick={(event) => {
+          event.stopPropagation();
+          onCampaign?.("whatsapp");
+        }}
+      >
+        <FaWhatsapp /> WhatsApp
+      </button>
+      <button
+        type="button"
+        className="admin-ai-pro-kpi-export-btn"
+        title="Download Excel"
+        disabled={exporting}
+        onClick={(event) => {
+          event.stopPropagation();
+          onExport?.();
+        }}
+      >
+        <FaFileExcel /> {exporting ? "..." : "Excel"}
+      </button>
+    </div>
   </div>
 );
 
@@ -161,6 +197,7 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
   const [lendersLoading, setLendersLoading] = useState(false);
   const [exportingSegment, setExportingSegment] = useState("");
   const [exportMessage, setExportMessage] = useState("");
+  const [campaignState, setCampaignState] = useState(null);
   const pageSize = 20;
 
   const loadSummary = async () => {
@@ -222,6 +259,15 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
 
   const openSegment = (segment, label) => {
     loadLenders(segment, 1, label);
+  };
+
+  const openCampaign = (segment, label, count, channel) => {
+    setCampaignState({
+      segment,
+      segmentLabel: label || SEGMENT_LABELS[segment] || segment,
+      recipientCount: pickNumber(count),
+      channel: channel || "email",
+    });
   };
 
   const downloadSegmentExcel = async (segment, label) => {
@@ -291,7 +337,8 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
         <strong>What this section shows:</strong> Counts of <em>real lenders</em> (not borrowers) who accepted or updated
         deal participation. Data from <code>oxy_lenders_accepted_deals</code> and{" "}
         <code>lenders_paticipation_updation</code>. Indian FY runs Apr 1 – Mar 31.
-        Click a card to see lender list, or <strong>Excel</strong> to download full details.
+        Click a card to see lender list, or use <strong>Email</strong> / <strong>WhatsApp</strong> for automated campaigns
+        (no Excel upload). Use <strong>Excel</strong> to download full details.
       </div>
       {exportMessage ? <div className="admin-ai-pro-export-msg">{exportMessage}</div> : null}
 
@@ -299,10 +346,10 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
         <h5><FaUsers /> Active Lender Windows</h5>
         <p className="admin-ai-analytics-hint">Lenders with deal participation in each rolling time period.</p>
         <div className="admin-ai-pro-grid admin-ai-pro-grid-analytics">
-          <MetricCard label="All Time Active" value={rolling.allTime} purpose="Lenders who participated in at least one deal, ever" accent="teal" active={selectedSegment === "allTime"} onClick={() => openSegment("allTime", "All Time Active")} onExport={() => downloadSegmentExcel("allTime", "All Time Active")} exporting={exportingSegment === "allTime"} />
-          <MetricCard label="Last 3 Months" value={rolling.last3Months} purpose="Participated in any deal in the last 90 days" accent="cyan" active={selectedSegment === "last3Months"} onClick={() => openSegment("last3Months", "Last 3 Months Active")} onExport={() => downloadSegmentExcel("last3Months", "Last 3 Months Active")} exporting={exportingSegment === "last3Months"} />
-          <MetricCard label="Last 6 Months" value={rolling.last6Months} purpose="Participated in any deal in the last 6 months" accent="blue" active={selectedSegment === "last6Months"} onClick={() => openSegment("last6Months", "Last 6 Months Active")} onExport={() => downloadSegmentExcel("last6Months", "Last 6 Months Active")} exporting={exportingSegment === "last6Months"} />
-          <MetricCard label="Last 1 Year" value={rolling.last1Year} purpose="Participated in any deal in the last 12 months" accent="indigo" active={selectedSegment === "last1Year"} onClick={() => openSegment("last1Year", "Last 1 Year Active")} onExport={() => downloadSegmentExcel("last1Year", "Last 1 Year Active")} exporting={exportingSegment === "last1Year"} />
+          <MetricCard label="All Time Active" value={rolling.allTime} purpose="Lenders who participated in at least one deal, ever" accent="teal" active={selectedSegment === "allTime"} onClick={() => openSegment("allTime", "All Time Active")} onExport={() => downloadSegmentExcel("allTime", "All Time Active")} exporting={exportingSegment === "allTime"} onCampaign={(channel) => openCampaign("allTime", "All Time Active", rolling.allTime, channel)} />
+          <MetricCard label="Last 3 Months" value={rolling.last3Months} purpose="Participated in any deal in the last 90 days" accent="cyan" active={selectedSegment === "last3Months"} onClick={() => openSegment("last3Months", "Last 3 Months Active")} onExport={() => downloadSegmentExcel("last3Months", "Last 3 Months Active")} exporting={exportingSegment === "last3Months"} onCampaign={(channel) => openCampaign("last3Months", "Last 3 Months Active", rolling.last3Months, channel)} />
+          <MetricCard label="Last 6 Months" value={rolling.last6Months} purpose="Participated in any deal in the last 6 months" accent="blue" active={selectedSegment === "last6Months"} onClick={() => openSegment("last6Months", "Last 6 Months Active")} onExport={() => downloadSegmentExcel("last6Months", "Last 6 Months Active")} exporting={exportingSegment === "last6Months"} onCampaign={(channel) => openCampaign("last6Months", "Last 6 Months Active", rolling.last6Months, channel)} />
+          <MetricCard label="Last 1 Year" value={rolling.last1Year} purpose="Participated in any deal in the last 12 months" accent="indigo" active={selectedSegment === "last1Year"} onClick={() => openSegment("last1Year", "Last 1 Year Active")} onExport={() => downloadSegmentExcel("last1Year", "Last 1 Year Active")} exporting={exportingSegment === "last1Year"} onCampaign={(channel) => openCampaign("last1Year", "Last 1 Year Active", rolling.last1Year, channel)} />
         </div>
       </div>
 
@@ -310,8 +357,8 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
         <h5><FaUserClock /> Inactive Lenders</h5>
         <p className="admin-ai-analytics-hint">Previously active lenders with no recent deal participation.</p>
         <div className="admin-ai-pro-grid admin-ai-pro-grid-analytics admin-ai-pro-grid-compact">
-          <MetricCard label="Inactive 6+ Months" value={inactive.inactive6Months} purpose="No participation in last 6 months, but participated before" accent="amber" active={selectedSegment === "inactive6Months"} onClick={() => openSegment("inactive6Months", "Inactive 6+ Months")} onExport={() => downloadSegmentExcel("inactive6Months", "Inactive 6+ Months")} exporting={exportingSegment === "inactive6Months"} />
-          <MetricCard label="Inactive 1+ Year" value={inactive.inactive1Year} purpose="No participation in last 1 year, but participated before" accent="orange" active={selectedSegment === "inactive1Year"} onClick={() => openSegment("inactive1Year", "Inactive 1+ Year")} onExport={() => downloadSegmentExcel("inactive1Year", "Inactive 1+ Year")} exporting={exportingSegment === "inactive1Year"} />
+          <MetricCard label="Inactive 6+ Months" value={inactive.inactive6Months} purpose="No participation in last 6 months, but participated before" accent="amber" active={selectedSegment === "inactive6Months"} onClick={() => openSegment("inactive6Months", "Inactive 6+ Months")} onExport={() => downloadSegmentExcel("inactive6Months", "Inactive 6+ Months")} exporting={exportingSegment === "inactive6Months"} onCampaign={(channel) => openCampaign("inactive6Months", "Inactive 6+ Months", inactive.inactive6Months, channel)} />
+          <MetricCard label="Inactive 1+ Year" value={inactive.inactive1Year} purpose="No participation in last 1 year, but participated before" accent="orange" active={selectedSegment === "inactive1Year"} onClick={() => openSegment("inactive1Year", "Inactive 1+ Year")} onExport={() => downloadSegmentExcel("inactive1Year", "Inactive 1+ Year")} exporting={exportingSegment === "inactive1Year"} onCampaign={(channel) => openCampaign("inactive1Year", "Inactive 1+ Year", inactive.inactive1Year, channel)} />
         </div>
       </div>
 
@@ -357,6 +404,7 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
               onClick={() => openSegment(row.segment, `FY ${row.fyLabel}`)}
               onExport={() => downloadSegmentExcel(row.segment, `FY ${row.fyLabel}`)}
               exporting={exportingSegment === row.segment}
+              onCampaign={(channel) => openCampaign(row.segment, `FY ${row.fyLabel}`, row.count, channel)}
             />
             );
           })}
@@ -367,11 +415,11 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
         <h5><FaLayerGroup /> Participation Frequency (by distinct deals)</h5>
         <p className="admin-ai-analytics-hint">How many separate deals each lender has participated in (lifetime count).</p>
         <div className="admin-ai-pro-grid admin-ai-pro-grid-analytics">
-          <MetricCard label="1 Deal Only" value={buckets.oneTime} purpose="Participated in exactly 1 distinct deal" accent="slate" active={selectedSegment === "oneTime"} onClick={() => openSegment("oneTime", "1 Deal Participated")} onExport={() => downloadSegmentExcel("oneTime", "1 Deal Participated")} exporting={exportingSegment === "oneTime"} />
-          <MetricCard label="2–9 Deals" value={buckets.twoToNine} purpose="Participated in 2 to 9 distinct deals" accent="teal" active={selectedSegment === "twoToNine"} onClick={() => openSegment("twoToNine", "2–9 Deals")} onExport={() => downloadSegmentExcel("twoToNine", "2–9 Deals")} exporting={exportingSegment === "twoToNine"} />
-          <MetricCard label="10–49 Deals" value={buckets.tenToFortyNine} purpose="Participated in 10 to 49 distinct deals" accent="blue" active={selectedSegment === "tenToFortyNine"} onClick={() => openSegment("tenToFortyNine", "10–49 Deals")} onExport={() => downloadSegmentExcel("tenToFortyNine", "10–49 Deals")} exporting={exportingSegment === "tenToFortyNine"} />
-          <MetricCard label="50–99 Deals" value={buckets.fiftyToNinetyNine} purpose="Participated in 50 to 99 distinct deals" accent="indigo" active={selectedSegment === "fiftyToNinetyNine"} onClick={() => openSegment("fiftyToNinetyNine", "50–99 Deals")} onExport={() => downloadSegmentExcel("fiftyToNinetyNine", "50–99 Deals")} exporting={exportingSegment === "fiftyToNinetyNine"} />
-          <MetricCard label="100+ Deals" value={buckets.hundredPlus} purpose="Participated in 100 or more distinct deals" accent="violet" active={selectedSegment === "hundredPlus"} onClick={() => openSegment("hundredPlus", "100+ Deals")} onExport={() => downloadSegmentExcel("hundredPlus", "100+ Deals")} exporting={exportingSegment === "hundredPlus"} />
+          <MetricCard label="1 Deal Only" value={buckets.oneTime} purpose="Participated in exactly 1 distinct deal" accent="slate" active={selectedSegment === "oneTime"} onClick={() => openSegment("oneTime", "1 Deal Participated")} onExport={() => downloadSegmentExcel("oneTime", "1 Deal Participated")} exporting={exportingSegment === "oneTime"} onCampaign={(channel) => openCampaign("oneTime", "1 Deal Participated", buckets.oneTime, channel)} />
+          <MetricCard label="2–9 Deals" value={buckets.twoToNine} purpose="Participated in 2 to 9 distinct deals" accent="teal" active={selectedSegment === "twoToNine"} onClick={() => openSegment("twoToNine", "2–9 Deals")} onExport={() => downloadSegmentExcel("twoToNine", "2–9 Deals")} exporting={exportingSegment === "twoToNine"} onCampaign={(channel) => openCampaign("twoToNine", "2–9 Deals", buckets.twoToNine, channel)} />
+          <MetricCard label="10–49 Deals" value={buckets.tenToFortyNine} purpose="Participated in 10 to 49 distinct deals" accent="blue" active={selectedSegment === "tenToFortyNine"} onClick={() => openSegment("tenToFortyNine", "10–49 Deals")} onExport={() => downloadSegmentExcel("tenToFortyNine", "10–49 Deals")} exporting={exportingSegment === "tenToFortyNine"} onCampaign={(channel) => openCampaign("tenToFortyNine", "10–49 Deals", buckets.tenToFortyNine, channel)} />
+          <MetricCard label="50–99 Deals" value={buckets.fiftyToNinetyNine} purpose="Participated in 50 to 99 distinct deals" accent="indigo" active={selectedSegment === "fiftyToNinetyNine"} onClick={() => openSegment("fiftyToNinetyNine", "50–99 Deals")} onExport={() => downloadSegmentExcel("fiftyToNinetyNine", "50–99 Deals")} exporting={exportingSegment === "fiftyToNinetyNine"} onCampaign={(channel) => openCampaign("fiftyToNinetyNine", "50–99 Deals", buckets.fiftyToNinetyNine, channel)} />
+          <MetricCard label="100+ Deals" value={buckets.hundredPlus} purpose="Participated in 100 or more distinct deals" accent="violet" active={selectedSegment === "hundredPlus"} onClick={() => openSegment("hundredPlus", "100+ Deals")} onExport={() => downloadSegmentExcel("hundredPlus", "100+ Deals")} exporting={exportingSegment === "hundredPlus"} onCampaign={(channel) => openCampaign("hundredPlus", "100+ Deals", buckets.hundredPlus, channel)} />
         </div>
       </div>
 
@@ -383,6 +431,20 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
               <p>{fmtNum(lendersTotal)} lenders in this segment</p>
             </div>
             <div className="admin-ai-analytics-detail-actions">
+              <button
+                type="button"
+                className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn-lg"
+                onClick={() => openCampaign(selectedSegment, selectedLabel, lendersTotal, "email")}
+              >
+                <FaEnvelope /> Email Campaign
+              </button>
+              <button
+                type="button"
+                className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn-lg admin-ai-pro-kpi-campaign-btn--whatsapp"
+                onClick={() => openCampaign(selectedSegment, selectedLabel, lendersTotal, "whatsapp")}
+              >
+                <FaWhatsapp /> WhatsApp Campaign
+              </button>
               <button
                 type="button"
                 className="admin-ai-pro-kpi-export-btn admin-ai-pro-kpi-export-btn-lg"
@@ -448,6 +510,15 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
           />
         </div>
       )}
+
+      <AdminAILenderCampaignModal
+        open={Boolean(campaignState)}
+        onClose={() => setCampaignState(null)}
+        segment={campaignState?.segment}
+        segmentLabel={campaignState?.segmentLabel}
+        recipientCount={campaignState?.recipientCount}
+        initialChannel={campaignState?.channel}
+      />
     </section>
   );
 };

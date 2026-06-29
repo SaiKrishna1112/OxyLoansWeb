@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_USER_URL as API_BASE_URL } from "../../config";
+import { API_USER_URL as API_BASE_URL, BASE_URL } from "../../config";
 const userisIn = "local"; //local or production
 // const API_BASE_URL =
 //   userisIn == "local"
@@ -1032,6 +1032,45 @@ export const downloadAdminAILenderAnalyticsExcel = async (segment) => {
     timeout: 300000,
   });
   return response;
+};
+
+export const generateAdminAILenderCampaignMessage = async (payload) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/generate-message`,
+    payload,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+    }
+  );
+  return response.data;
+};
+
+export const sendAdminAILenderSegmentCampaign = async (payload) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/send`,
+    payload,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: payload?.channel === "whatsapp" ? 3600000 : 600000,
+    }
+  );
+  return response.data;
+};
+
+export const uploadAdminAILenderCampaignImage = async (file) => {
+  const formData = new FormData();
+  formData.append("BULKINVITE", file);
+  const response = await axios.post(`${API_BASE_URL}downloadCampaignUrl`, formData, {
+    headers: adminRegisteredUsersHeaders(),
+    timeout: 120000,
+  });
+  const payload = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+  const url = payload?.downloadUrl || payload?.url;
+  if (!url) {
+    throw new Error("Image upload did not return a URL.");
+  }
+  return url;
 };
 
 export const fetchAllLenderAnalyticsForExport = async (segment, onProgress) => {
