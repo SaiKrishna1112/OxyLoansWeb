@@ -200,38 +200,42 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
 
 // ── AI CHAT WIDGET ─────────────────────────────────────────────────────────
 const DEFAULT_QUESTIONS = [
-  "How much did I earn this year?",
   "Show my wallet balance",
-  "Show my active deals",
-  "Compare my earnings month on month",
-  "What is my highest interest amount received till now",
-  "Show upcoming payments",
   "What is my average ROI?",
+  "How much have I invested in total?",
+  "How much did I earn this year?",
+  "Show my active deals",
   "Show my principal returned",
+  "Show upcoming payments",
+  "In which deal did I invest recently?",
 ];
+const CHIPS_VISIBLE = 3;
 
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null }
+    { role: "assistant", text: `Hi ${lenderName || "there"}! 👋 I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null, ts: Date.now() }
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-  const [chipsOpen, setChipsOpen] = useState(true);
+  const [chipsExpanded, setChipsExpanded] = useState(false);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (open && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    if (open) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
   }, [messages, open]);
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 120);
+  }, [open]);
 
   const sendMessage = async (text) => {
     const msg = (text || input).trim();
     if (!msg || sending) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: msg, data: null }]);
-    setChipsOpen(false);
+    setChipsExpanded(false);
+    setMessages((prev) => [...prev, { role: "user", text: msg, data: null, ts: Date.now() }]);
     setSending(true);
     try {
       const res = await axios.post(
@@ -241,13 +245,17 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       );
       const reply = res.data?.answer || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
       const responseData = res.data?.responseData || null;
-      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData, ts: Date.now() }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null, ts: Date.now() }]);
     } finally {
       setSending(false);
     }
   };
+
+  const visibleChips = chipsExpanded ? DEFAULT_QUESTIONS : DEFAULT_QUESTIONS.slice(0, CHIPS_VISIBLE);
+  const hiddenCount = DEFAULT_QUESTIONS.length - CHIPS_VISIBLE;
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <>
@@ -260,115 +268,157 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
           background: "linear-gradient(135deg, #1a237e, #6a1b9a)",
           border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(106,27,154,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontSize: 24,
+          color: "#fff", fontSize: 24, transition: "transform 0.2s",
         }}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
         title="Ask AI"
       >
         {open ? "✕" : "🤖"}
       </button>
 
-      {/* Chat panel */}
+      {/* Chat panel — fixed height; messages area scrolls */}
       {open && (
         <div style={{
           position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 380, maxWidth: "calc(100vw - 48px)",
-          background: "#fff", borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+          width: 390, maxWidth: "calc(100vw - 32px)",
+          background: "#fff", borderRadius: 20,
+          boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 4px 16px rgba(106,27,154,0.12)",
           display: "flex", flexDirection: "column",
           border: "1px solid #e8e8e8", overflow: "hidden",
-          maxHeight: "80vh",
+          height: "min(600px, 84vh)",
         }}>
+
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <span style={{ fontSize: 22 }}>🤖</span>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>OxyLoans AI Assistant</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Ask about your investments</div>
+          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "13px 18px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🤖</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>OxyLoans AI Assistant</div>
+              <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#52c41a", display: "inline-block", boxShadow: "0 0 5px #52c41a" }} />
+                Online · Ask about earnings, ROI, deals
+              </div>
             </div>
+            <button onClick={() => setOpen(false)} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 28, height: 28, color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
           </div>
 
-          {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", minHeight: 200 }}>
+          {/* Messages — primary space, scrollable */}
+          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 6px", display: "flex", flexDirection: "column" }}>
             {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 7 }}>
+                  {m.role === "assistant" && (
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginBottom: 2 }}>🤖</div>
+                  )}
                   <div style={{
-                    maxWidth: "85%", padding: "10px 14px",
-                    borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                    background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f5f5f5",
-                    color: m.role === "user" ? "#fff" : "#262626",
-                    fontSize: 13, lineHeight: 1.5,
+                    maxWidth: "76%", padding: "10px 14px",
+                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                    background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f4f4f6",
+                    color: m.role === "user" ? "#fff" : "#1a1a2e",
+                    fontSize: 13, lineHeight: 1.55,
+                    boxShadow: m.role === "user" ? "0 3px 10px rgba(26,35,126,0.28)" : "0 1px 4px rgba(0,0,0,0.07)",
                   }}>
                     {m.data ? <TopicBadge type={m.data.type} /> : null}
                     <FormattedText text={m.text} />
                   </div>
                 </div>
-                {m.data && <div style={{ marginTop: 6 }}><RichMessage data={m.data} /></div>}
+                {m.data && (
+                  <div style={{ marginLeft: m.role === "assistant" ? 35 : 0, marginTop: 6 }}>
+                    <RichMessage data={m.data} />
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: "#c0c0c0", marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: m.role === "assistant" ? 35 : 0 }}>
+                  {fmtTime(m.ts)}
+                </div>
               </div>
             ))}
 
             {sending && (
-              <div style={{ display: "flex", gap: 6, padding: "8px 4px" }}>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#6a1b9a", animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
-                ))}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 7, marginBottom: 14 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
+                <div style={{ background: "#f4f4f6", borderRadius: "4px 18px 18px 18px", padding: "12px 16px", display: "flex", gap: 5, alignItems: "center" }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6a1b9a", animation: `chatBounce 1.2s ${i * 0.18}s infinite` }} />
+                  ))}
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick questions — collapsible drawer */}
-          <div style={{ borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
-            <button
-              onClick={() => setChipsOpen((v) => !v)}
-              style={{
-                width: "100%", background: "none", border: "none", padding: "7px 12px",
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                cursor: "pointer", color: "#6a1b9a", fontSize: 11, fontWeight: 600,
-              }}
-            >
-              <span>💡 Quick Questions</span>
-              <span style={{ fontSize: 10, color: "#aaa" }}>{chipsOpen ? "▲ hide" : "▼ show"}</span>
-            </button>
-            {chipsOpen && (
-              <div style={{ padding: "0 10px 8px", display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {DEFAULT_QUESTIONS.map((q, i) => (
-                  <button key={i} onClick={() => sendMessage(q)} disabled={sending} style={{
+          {/* Quick chips — always visible, 3 + "＋N more" toggle */}
+          <div style={{ padding: "7px 12px 5px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+              {visibleChips.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => sendMessage(q)}
+                  disabled={sending}
+                  style={{
                     background: "#fff", border: "1px solid #c7d2fe",
-                    borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#3730a3",
+                    borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#3730a3",
                     cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                  }}>{q}</button>
-                ))}
-              </div>
-            )}
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)", lineHeight: 1.4, opacity: sending ? 0.6 : 1,
+                  }}
+                >{q}</button>
+              ))}
+              {!chipsExpanded && hiddenCount > 0 && (
+                <button
+                  onClick={() => setChipsExpanded(true)}
+                  style={{
+                    background: "linear-gradient(135deg, #f0f5ff, #f5f0ff)",
+                    border: "1px solid #c7d2fe", borderRadius: 20,
+                    padding: "4px 12px", fontSize: 11, color: "#6a1b9a",
+                    cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600, lineHeight: 1.4,
+                  }}
+                >＋{hiddenCount} more ›</button>
+              )}
+              {chipsExpanded && (
+                <button
+                  onClick={() => setChipsExpanded(false)}
+                  style={{
+                    background: "none", border: "1px solid #e8e8e8",
+                    borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#8c8c8c",
+                    cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4,
+                  }}
+                >‹ less</button>
+              )}
+            </div>
           </div>
 
-          {/* Input */}
-          <div style={{ padding: "8px 12px 10px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0 }}>
+          {/* Input row */}
+          <div style={{ padding: "8px 12px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0, background: "#fff" }}>
             <input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Ask about your deals, earnings…"
-              style={{ flex: 1, border: "1px solid #e8e8e8", borderRadius: 24, padding: "8px 14px", fontSize: 13, outline: "none" }}
+              style={{ flex: 1, border: "1.5px solid #e8e8e8", borderRadius: 24, padding: "9px 16px", fontSize: 13, outline: "none", background: "#fafafa", transition: "border-color 0.15s" }}
+              onFocus={e => e.target.style.borderColor = "#6a1b9a"}
+              onBlur={e => e.target.style.borderColor = "#e8e8e8"}
               disabled={sending}
             />
             <button
               onClick={() => sendMessage()}
               disabled={sending || !input.trim()}
               style={{
-                background: sending || !input.trim() ? "#d9d9d9" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
-                border: "none", borderRadius: 24, padding: "8px 16px",
-                color: "#fff", cursor: sending || !input.trim() ? "default" : "pointer", fontSize: 13, fontWeight: 600,
+                background: sending || !input.trim() ? "#e8e8e8" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
+                border: "none", borderRadius: 24, padding: "9px 20px",
+                color: sending || !input.trim() ? "#aaa" : "#fff",
+                cursor: sending || !input.trim() ? "default" : "pointer",
+                fontSize: 15, fontWeight: 700, transition: "all 0.2s", flexShrink: 0,
               }}
-            >
-              Send
-            </button>
+            >↑</button>
           </div>
         </div>
       )}
-      <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }`}</style>
+      <style>{`
+        @keyframes chatBounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+          40% { transform: translateY(-6px); opacity: 1; }
+        }
+      `}</style>
     </>
   );
 };
