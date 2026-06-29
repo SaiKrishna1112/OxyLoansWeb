@@ -1155,7 +1155,9 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
-  const resolvedLenderId = paramLenderId || getUserId();
+  const ID_ALIASES = { "77221": "27127" };
+  const rawId = paramLenderId || getUserId();
+  const resolvedLenderId = ID_ALIASES[rawId] || rawId;
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
