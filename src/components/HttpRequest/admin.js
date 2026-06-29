@@ -927,6 +927,7 @@ export const uploadBorrowerDocument = async (borrowerId, file) => {
   return response;
 };
 
+<<<<<<< HEAD
 const adminRegisteredUsersHeaders = () => {
   const token = getToken();
   return token ? { accessToken: token } : {};
@@ -1352,3 +1353,5 @@ export const getAdminAIActiveLenderReferralDeals = async (lenderId, refereeId) =
   );
   return response.data;
 };
+=======
+>>>>>>> 5c6465d21d62b3d4655bb66e268b110b90c7c780

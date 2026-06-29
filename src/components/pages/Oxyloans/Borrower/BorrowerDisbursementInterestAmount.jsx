@@ -132,7 +132,7 @@ const BorrowerDisbursementInterestAmount = () => {
       );
 
     if (interestBreakup.errorMessage)
-      return <div className="alert alert-danger">{interestBreakup.errorMessage}</div>;
+      return <div className="alert alert-danger">Interest details are unavailable as the loan disbursement has not been completed.</div>;
 
     if (!interestBreakup.data)
       return <p className="text-muted mb-0">No breakup data available for this disbursement.</p>;

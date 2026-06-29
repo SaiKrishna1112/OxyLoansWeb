@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
@@ -31,14 +31,30 @@ const reinvestColor = (classification) => {
   return "#ff4d4f";
 };
 
+const MembershipBadge = ({ badge }) => {
+  if (!badge) return null;
+  const configs = {
+    PLATINUM: { bg: "linear-gradient(135deg, #FFD700, #FFA500)", color: "#fff", label: "🏆 Platinum" },
+    GOLD:     { bg: "linear-gradient(135deg, #FFD700, #DAA520)", color: "#fff", label: "🥇 Gold" },
+    SILVER:   { bg: "linear-gradient(135deg, #C0C0C0, #A8A9AD)", color: "#fff", label: "🥈 Silver" },
+    LOYAL:    { bg: "linear-gradient(135deg, #9C27B0, #7B1FA2)", color: "#fff", label: "💜 Loyal" },
+    MEMBER:   { bg: "#e8e8e8", color: "#595959", label: "Member" },
+  };
+  const c = configs[badge?.toUpperCase()] || configs.MEMBER;
+  return (
+    <span style={{ background: c.bg, color: c.color, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, letterSpacing: 0.5, display: "inline-block" }}>
+      {c.label}
+    </span>
+  );
+};
+
 const StarRating = ({ rating }) => {
   const count = parseInt((rating || "1").split(" ")[0]) || 1;
   return (
-    <span>
+    <span title={rating}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} style={{ color: i <= count ? "#faad14" : "#d9d9d9", fontSize: 20 }}>★</span>
+        <span key={i} style={{ color: i <= count ? "#faad14" : "#d9d9d9", fontSize: 16 }}>★</span>
       ))}
-      <span style={{ fontSize: 12, color: "#8c8c8c", marginLeft: 6 }}>{rating}</span>
     </span>
   );
 };
@@ -57,30 +73,35 @@ const ProgressBar = ({ pct, color }) => (
   </div>
 );
 
-const LockCard = ({ title, requiredTier }) => (
-  <div style={{ background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 12, padding: '32px 24px', textAlign: 'center', color: '#8c8c8c', marginBottom: 24 }}>
-    <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
-    <div style={{ fontWeight: 700, color: '#262626', fontSize: 15, marginBottom: 6 }}>{title}</div>
-    <div style={{ fontSize: 13, marginBottom: 14 }}>
-      Available on <strong style={{ color: requiredTier === 'PRO' ? '#722ed1' : '#1890ff' }}>
-        OXI {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
-      </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
+const LockCard = ({ title, requiredTier }) => {
+  const nav = useNavigate();
+  return (
+    <div style={{ background: '#fafafa', border: '1px dashed #d9d9d9', borderRadius: 12, padding: '32px 24px', textAlign: 'center', color: '#8c8c8c', marginBottom: 24 }}>
+      <div style={{ fontSize: 28, marginBottom: 10 }}>🔒</div>
+      <div style={{ fontWeight: 700, color: '#262626', fontSize: 15, marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 13, marginBottom: 14 }}>
+        Available on <strong style={{ color: requiredTier === 'PRO' ? '#722ed1' : '#1890ff' }}>
+          OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
+        </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
+      </div>
+      <div
+        onClick={() => nav('/ai/plans')}
+        style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+        Upgrade to OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
+      </div>
     </div>
-    <div style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-      Upgrade to OXI {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
-    </div>
-  </div>
-);
+  );
+};
 
 const OxiBadge = ({ tier }) => {
   if (tier === 'PRO') return (
     <span style={{ background: 'linear-gradient(135deg, #4a148c, #6a1b9a)', color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, letterSpacing: 0.5 }}>
-      ✦ OXI Pro
+      ✦ OXY Pro
     </span>
   );
   if (tier === 'SMART') return (
     <span style={{ background: 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700, letterSpacing: 0.5 }}>
-      ⚡ OXI Smart
+      ⚡ OXY Smart
     </span>
   );
   return (
@@ -90,44 +111,14 @@ const OxiBadge = ({ tier }) => {
   );
 };
 
-const MembershipBadge = ({ badge }) => {
-  if (!badge) return null;
-  const configs = {
-    PLATINUM: { bg: "linear-gradient(135deg, #FFD700, #FFA500)", color: "#fff", label: "🏆 Platinum" },
-    GOLD:     { bg: "linear-gradient(135deg, #FFD700, #DAA520)", color: "#fff", label: "🥇 Gold" },
-    SILVER:   { bg: "linear-gradient(135deg, #C0C0C0, #A8A9AD)", color: "#fff", label: "🥈 Silver" },
-    LOYAL:    { bg: "linear-gradient(135deg, #9C27B0, #7B1FA2)", color: "#fff", label: "💜 Loyal" },
-    MEMBER:   { bg: "#e8e8e8", color: "#595959", label: "Member" },
-  };
-  const c = configs[badge?.toUpperCase()] || configs.MEMBER;
-  return (
-    <span style={{ background: c.bg, color: c.color, borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 700, letterSpacing: 0.5, display: "inline-block" }}>
-      {c.label}
-    </span>
-  );
-};
-
-const StatCard = ({ label, value, color, sub, onClick, badge }) => (
+const StatCard = ({ label, value, color, sub }) => (
   <div className="col-6 col-md mb-3">
-    <div
-      className="card text-center h-100"
-      onClick={onClick}
-      style={{
-        borderRadius: 12,
-        border: onClick ? `1.5px solid ${color || "#1890ff"}33` : "1px solid #f0f0f0",
-        cursor: onClick ? "pointer" : "default",
-        transition: "box-shadow 0.2s, transform 0.15s",
-      }}
-      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"; e.currentTarget.style.transform = "translateY(-1px)"; }}}
-      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.boxShadow = ""; e.currentTarget.style.transform = ""; }}}
-    >
+    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}>
       <div className="card-body py-3 px-2">
-        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+        <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>
           {label}
-          {onClick && <span style={{ fontSize: 9, color: color || "#1890ff", opacity: 0.7 }}>↓</span>}
         </p>
         <h4 style={{ fontWeight: 700, color: color || "#262626", margin: 0 }}>{value}</h4>
-        {badge && <span style={{ display: "inline-block", marginTop: 4, background: `${color || "#1890ff"}18`, color: color || "#1890ff", borderRadius: 4, fontSize: 10, padding: "1px 6px", fontWeight: 600 }}>{badge}</span>}
         {sub && <p style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4, marginBottom: 0 }}>{sub}</p>}
       </div>
     </div>
@@ -208,66 +199,109 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
 };
 
 // ── AI CHAT WIDGET ─────────────────────────────────────────────────────────
+const DEFAULT_QUESTIONS = [
+  "Show my wallet balance",
+  "What is my average ROI?",
+  "How much have I invested in total?",
+  "How much did I earn this year?",
+  "Show my active deals",
+  "Show my principal returned",
+  "Show upcoming payments",
+  "In which deal did I invest recently?",
+];
+const CHIPS_VISIBLE = 3;
+
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
+  const [panelSize, setPanelSize] = useState("normal"); // "normal" | "maximized" | "minimized"
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null }
+    { role: "assistant", text: `Hi ${lenderName || "there"}! 👋 I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null, ts: Date.now() }
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [chipsExpanded, setChipsExpanded] = useState(false);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (open && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, open]);
+    if (open && panelSize !== "minimized") setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+  }, [messages, open, panelSize]);
 
-  const sendMessage = async (overrideText) => {
-    const text = (overrideText !== undefined ? overrideText : input).trim();
-    if (!text || sending) return;
-    if (overrideText === undefined) setInput("");
+  useEffect(() => {
+    if (open && panelSize !== "minimized") setTimeout(() => inputRef.current?.focus(), 120);
+  }, [open, panelSize]);
 
-    // Snapshot history BEFORE appending the new user message (last 4 turns, skip welcome)
-    const history = messages
-      .filter((m, i) => i > 0)          // skip the static welcome message
-      .slice(-4)                          // last 4 turns for context window
-      .map((m) => ({ role: m.role, text: (m.text || "").substring(0, 300) }));
-
-    setMessages((prev) => [...prev, { role: "user", text, data: null }]);
+  const sendMessage = async (text) => {
+    const msg = (text || input).trim();
+    if (!msg || sending) return;
+    setInput("");
+    setChipsExpanded(false);
+    setMessages((prev) => [...prev, { role: "user", text: msg, data: null, ts: Date.now() }]);
     setSending(true);
     try {
-      const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, primaryType: "LENDER", history },
-        { headers: { accessToken: token, "Content-Type": "application/json" } }
+        { message: msg, primaryType: "LENDER" },
+        { headers: { accessToken: getToken(), "Content-Type": "application/json" } }
       );
-      const reply = res.data?.answer
-        || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
+      const reply = res.data?.answer || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
       const responseData = res.data?.responseData || null;
-      const quickReplies = res.data?.quickReplies || null;
-      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData, quickReplies }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData, ts: Date.now() }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null, ts: Date.now() }]);
     } finally {
       setSending(false);
     }
   };
 
+  const visibleChips = chipsExpanded ? DEFAULT_QUESTIONS : DEFAULT_QUESTIONS.slice(0, CHIPS_VISIBLE);
+  const hiddenCount = DEFAULT_QUESTIONS.length - CHIPS_VISIBLE;
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  const panelStyles = {
+    normal: {
+      position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+      width: 390, maxWidth: "calc(100vw - 32px)",
+      height: "min(600px, 84vh)",
+    },
+    maximized: {
+      position: "fixed", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)", zIndex: 9998,
+      width: "min(860px, 94vw)",
+      height: "min(720px, 90vh)",
+    },
+    minimized: {
+      position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+      width: 340, maxWidth: "calc(100vw - 32px)",
+      height: "auto",
+    },
+  };
+
+  const headerBtn = (onClick, title, label) => (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, width: 26, height: 26, color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.15s" }}
+      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
+      onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+    >{label}</button>
+  );
+
   return (
     <>
       {/* Floating button */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); setPanelSize("normal"); }}
         style={{
           position: "fixed", bottom: 28, right: 28, zIndex: 9999,
           width: 56, height: 56, borderRadius: "50%",
           background: "linear-gradient(135deg, #1a237e, #6a1b9a)",
           border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(106,27,154,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontSize: 24,
+          color: "#fff", fontSize: 24, transition: "transform 0.2s",
         }}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
         title="Ask AI"
       >
         {open ? "✕" : "🤖"}
@@ -276,111 +310,158 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       {/* Chat panel */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 400, maxWidth: "calc(100vw - 48px)",
-          background: "#f8fafc", borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+          ...panelStyles[panelSize],
+          background: "#fff", borderRadius: 20,
+          boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 4px 16px rgba(106,27,154,0.12)",
           display: "flex", flexDirection: "column",
-          border: "1px solid #e2e8f0", overflow: "hidden",
-          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
+          border: "1px solid #e8e8e8", overflow: "hidden",
+          transition: "width 0.25s, height 0.25s",
         }}>
+
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🏦</div>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>OxyLoans AI Assistant</div>
-              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>Lender Assistant • Online</div>
+          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "13px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: panelSize === "minimized" ? "pointer" : "default" }}
+            onClick={() => panelSize === "minimized" && setPanelSize("normal")}
+          >
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>🤖</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>OxyLoans AI Assistant</div>
+              {panelSize !== "minimized" && (
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#52c41a", display: "inline-block", boxShadow: "0 0 5px #52c41a" }} />
+                  Online · Ask about earnings, ROI, deals
+                </div>
+              )}
+              {panelSize === "minimized" && (
+                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{messages.length - 1} message{messages.length !== 2 ? "s" : ""} · click to expand</div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+              {panelSize !== "minimized" && headerBtn(() => setPanelSize("minimized"), "Minimise", "⎯")}
+              {panelSize === "normal"    && headerBtn(() => setPanelSize("maximized"), "Maximise", "⤢")}
+              {panelSize === "maximized" && headerBtn(() => setPanelSize("normal"),    "Restore",  "⊡")}
+              {panelSize === "minimized" && headerBtn(() => setPanelSize("maximized"), "Maximise", "⤢")}
+              {headerBtn(() => { setOpen(false); setPanelSize("normal"); }, "Close", "✕")}
             </div>
           </div>
 
-          {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", maxHeight: 420, minHeight: 200, display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Messages — primary space, scrollable */}
+          {panelSize !== "minimized" && <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 6px", display: "flex", flexDirection: "column" }}>
             {messages.map((m, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "flex-end", gap: 6, justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                {m.role === "assistant" && (
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6a1b9a", marginBottom: 4, flexShrink: 0 }} />
-                )}
-                <div style={{
-                  maxWidth: m.data ? "96%" : "82%",
-                  padding: m.data ? "10px 10px 8px" : "10px 14px",
-                  borderRadius: m.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                  background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#fff",
-                  color: m.role === "user" ? "#fff" : "#262626",
-                  fontSize: 13, lineHeight: 1.5,
-                  boxShadow: m.role === "assistant" ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                }}>
-                  {m.role === "assistant" && m.data ? (
-                    <>
-                      <TopicBadge type={m.data.type} />
-                      <div style={{ fontSize: 12, color: "#475569", marginBottom: 2, paddingBottom: 6, borderBottom: "1px dashed #e2e8f0" }}><FormattedText text={m.text} /></div>
-                      <RichMessage data={m.data} />
-                      <SuggestedFollowup type={m.data.type} onSend={(q) => sendMessage(q)} />
-                    </>
-                  ) : m.role === "assistant" ? (
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 7 }}>
+                  {m.role === "assistant" && (
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginBottom: 2 }}>🤖</div>
+                  )}
+                  <div style={{
+                    maxWidth: "76%", padding: "10px 14px",
+                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                    background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f4f4f6",
+                    color: m.role === "user" ? "#fff" : "#1a1a2e",
+                    fontSize: 13, lineHeight: 1.55,
+                    boxShadow: m.role === "user" ? "0 3px 10px rgba(26,35,126,0.28)" : "0 1px 4px rgba(0,0,0,0.07)",
+                  }}>
+                    {m.data ? <TopicBadge type={m.data.type} /> : null}
                     <FormattedText text={m.text} />
-                  ) : (
-                    m.text
-                  )}
-                  {m.role === "assistant" && m.quickReplies && m.quickReplies.length > 0 && (
-                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4, borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>
-                      <div style={{ width: "100%", fontSize: 10, color: "#94a3b8", marginBottom: 4 }}>💡 Quick asks:</div>
-                      {m.quickReplies.map((q, qi) => (
-                        <button key={qi} onClick={() => sendMessage(q)} style={{
-                          fontSize: 10, padding: "3px 9px", borderRadius: 20, cursor: "pointer",
-                          border: "1px solid #6a1b9a30", background: "#f5f3ff", color: "#6a1b9a",
-                          fontFamily: "inherit", transition: "all 0.15s",
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "#6a1b9a"; e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "#f5f3ff"; e.currentTarget.style.color = "#6a1b9a"; }}>
-                          {q}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  </div>
+                </div>
+                {m.data && (
+                  <div style={{ marginLeft: m.role === "assistant" ? 35 : 0, marginTop: 6 }}>
+                    <RichMessage data={m.data} />
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: "#c0c0c0", marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: m.role === "assistant" ? 35 : 0 }}>
+                  {fmtTime(m.ts)}
                 </div>
               </div>
             ))}
+
             {sending && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6a1b9a", flexShrink: 0 }} />
-                <div style={{ background: "#fff", borderRadius: "14px 14px 14px 4px", padding: "8px 13px", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
-                  <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6a1b9a", animation: `aiDotBounce 1.4s ${i * 0.2}s ease-in-out infinite` }} />
-                    ))}
-                    <span style={{ fontSize: 11, color: "#94a3b8", fontStyle: "italic", marginLeft: 4 }}>AI is thinking…</span>
-                  </div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 7, marginBottom: 14 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
+                <div style={{ background: "#f4f4f6", borderRadius: "4px 18px 18px 18px", padding: "12px 16px", display: "flex", gap: 5, alignItems: "center" }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6a1b9a", animation: `chatBounce 1.2s ${i * 0.18}s infinite` }} />
+                  ))}
                 </div>
               </div>
             )}
             <div ref={bottomRef} />
-          </div>
+          </div>}
 
-          {/* Input */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #e2e8f0", display: "flex", gap: 8, background: "#fff" }}>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Ask about your deals, earnings…"
-              style={{ flex: 1, border: "1.5px solid #6a1b9a50", borderRadius: 10, padding: "8px 14px", fontSize: 13, outline: "none", background: "#f8fafc" }}
-              disabled={sending}
-            />
-            <button
-              onClick={() => sendMessage()}
-              disabled={sending || !input.trim()}
-              style={{
-                background: sending || !input.trim() ? "#d9d9d9" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
-                border: "none", borderRadius: 10, padding: "8px 16px",
-                color: "#fff", cursor: sending || !input.trim() ? "default" : "pointer", fontSize: 13, fontWeight: 600,
-              }}
-            >
-              {sending ? "⏳" : "➤"}
-            </button>
-          </div>
+          {/* Quick chips + input — hidden when minimized */}
+          {panelSize !== "minimized" && <>
+            <div style={{ padding: "7px 12px 5px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+                {visibleChips.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => sendMessage(q)}
+                    disabled={sending}
+                    style={{
+                      background: "#fff", border: "1px solid #c7d2fe",
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#3730a3",
+                      cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)", lineHeight: 1.4, opacity: sending ? 0.6 : 1,
+                    }}
+                  >{q}</button>
+                ))}
+                {!chipsExpanded && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setChipsExpanded(true)}
+                    style={{
+                      background: "linear-gradient(135deg, #f0f5ff, #f5f0ff)",
+                      border: "1px solid #c7d2fe", borderRadius: 20,
+                      padding: "4px 12px", fontSize: 11, color: "#6a1b9a",
+                      cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600, lineHeight: 1.4,
+                    }}
+                  >＋{hiddenCount} more ›</button>
+                )}
+                {chipsExpanded && (
+                  <button
+                    onClick={() => setChipsExpanded(false)}
+                    style={{
+                      background: "none", border: "1px solid #e8e8e8",
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#8c8c8c",
+                      cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4,
+                    }}
+                  >‹ less</button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ padding: "8px 12px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0, background: "#fff" }}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Ask about your deals, earnings…"
+                style={{ flex: 1, border: "1.5px solid #e8e8e8", borderRadius: 24, padding: "9px 16px", fontSize: 13, outline: "none", background: "#fafafa", transition: "border-color 0.15s" }}
+                onFocus={e => e.target.style.borderColor = "#6a1b9a"}
+                onBlur={e => e.target.style.borderColor = "#e8e8e8"}
+                disabled={sending}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={sending || !input.trim()}
+                style={{
+                  background: sending || !input.trim() ? "#e8e8e8" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
+                  border: "none", borderRadius: 24, padding: "9px 20px",
+                  color: sending || !input.trim() ? "#aaa" : "#fff",
+                  cursor: sending || !input.trim() ? "default" : "pointer",
+                  fontSize: 15, fontWeight: 700, transition: "all 0.2s", flexShrink: 0,
+                }}
+              >↑</button>
+            </div>
+          </>}
         </div>
       )}
-      <style>{`@keyframes aiDotBounce { 0%,60%,100%{transform:translateY(0);opacity:0.55} 30%{transform:translateY(-7px);opacity:1} }`}</style>
+      <style>{`
+        @keyframes chatBounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+          40% { transform: translateY(-6px); opacity: 1; }
+        }
+      `}</style>
     </>
   );
 };
@@ -492,7 +573,6 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) =
   const interest  = earningsData.fyInterestEarned   || 0;
   const principal = earningsData.fyPrincipalReturned || 0;
   const total     = earningsData.fyTotalReceived     || 0;
-  const upcoming  = earningsData.upcomingTotal       || 0;
   const label     = earningsData.fyLabel             || "Period";
   const narrative = earningsData.narrative           || "";
 
@@ -510,18 +590,17 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) =
       <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
       <div className="row g-3 mb-3">
         {[
-          { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed",  onClick: () => { onEarningsTileClick(); scrollTo("section-deal-history"); } },
-          { label: "Principal Returned", value: `₹${fmt(principal)}`, color: "#1890ff", bg: "#e6f7ff",  onClick: () => { onEarningsTileClick(); scrollTo("section-deal-history"); } },
-          { label: "Total Received",     value: `₹${fmt(total)}`,     color: "#722ed1", bg: "#f9f0ff",  onClick: () => { onEarningsTileClick(); scrollTo("section-deal-history"); } },
-          { label: "Upcoming (60 days)", value: `₹${fmt(upcoming)}`,  color: "#fa8c16", bg: "#fff7e6",  onClick: null },
+          { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed" },
+          { label: "Principal Returned", value: `₹${fmt(principal)}`, color: "#1890ff", bg: "#e6f7ff" },
+          { label: "Total Received",     value: `₹${fmt(total)}`,     color: "#722ed1", bg: "#f9f0ff" },
         ].map((item) => (
-          <div key={item.label} className="col-6 col-md-3">
+          <div key={item.label} className="col-6 col-md-4">
             <div
-              onClick={item.onClick || undefined}
-              style={{ background: item.bg, borderRadius: 10, padding: "12px 14px", textAlign: "center", cursor: item.onClick ? "pointer" : "default", transition: "box-shadow 0.15s" }}
-              onMouseEnter={e => { if (item.onClick) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.12)"; }}
+              onClick={() => { onEarningsTileClick(); scrollTo("section-deal-history"); }}
+              style={{ background: item.bg, borderRadius: 10, padding: "12px 14px", textAlign: "center", cursor: "pointer", transition: "box-shadow 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.12)"}
               onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}
-              title={item.onClick ? "Click to see active deals" : undefined}
+              title="Click to see active deals"
             >
               <div style={{ fontSize: 11, color: "#8c8c8c", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{item.label}</div>
               <div style={{ fontWeight: 700, fontSize: 18, color: item.color }}>{item.value}</div>
@@ -905,31 +984,25 @@ const DealAnalyticsCharts = ({ data, earningsData, collapsible = false, defaultO
         )}
 
         {/* India's Largest Bank FD comparison inline */}
-        {data?.fdComparison && (() => {
-          const chartAvgRoi = allDeals.length > 0
-            ? parseFloat((allDeals.reduce((s, d) => s + (d.rateOfInterest < 5 ? d.rateOfInterest * 12 : d.rateOfInterest), 0) / allDeals.length).toFixed(1))
-            : 0;
-          const chartOxyRoi = data.fdComparison.oxyloansReturnPct || chartAvgRoi;
-          return (
-            <div className="col-12">
-              <ReactApexChart
-                options={{
-                  chart: { type: "bar", fontFamily: "inherit", toolbar: { show: false } },
-                  xaxis: { categories: ["Your OxyLoans ROI", "Bank FD (avg)"] },
-                  yaxis: { title: { text: "Rate (%)" }, max: Math.max(chartOxyRoi, 8) + 2 },
-                  colors: ["#52c41a", "#8c8c8c"],
-                  plotOptions: { bar: { borderRadius: 6, columnWidth: "35%", distributed: true } },
-                  dataLabels: { enabled: true, formatter: (v) => `${v}%` },
-                  legend: { show: false },
-                  title: { text: "Your Returns vs Bank FD", align: "left", style: { fontSize: "13px", fontWeight: 700 } },
-                }}
-                series={[{ name: "Rate", data: [chartOxyRoi, data.fdComparison.sbiFdRate || 6.8] }]}
-                type="bar"
-                height={200}
-              />
-            </div>
-          );
-        })()}
+        {data?.fdComparison && (
+          <div className="col-12">
+            <ReactApexChart
+              options={{
+                chart: { type: "bar", fontFamily: "inherit", toolbar: { show: false } },
+                xaxis: { categories: ["Your OxyLoans ROI", "Bank FD (avg)"] },
+                yaxis: { title: { text: "Rate (%)" }, max: Math.max(data.fdComparison.oxyloansReturnPct || 0, 8) + 2 },
+                colors: ["#52c41a", "#8c8c8c"],
+                plotOptions: { bar: { borderRadius: 6, columnWidth: "35%", distributed: true } },
+                dataLabels: { enabled: true, formatter: (v) => `${v}%` },
+                legend: { show: false },
+                title: { text: "Your Returns vs Bank FD", align: "left", style: { fontSize: "13px", fontWeight: 700 } },
+              }}
+              series={[{ name: "Rate", data: [data.fdComparison.oxyloansReturnPct || 0, data.fdComparison.sbiFdRate || 6.8] }]}
+              type="bar"
+              height={200}
+            />
+          </div>
+        )}
       </div>
     </SectionCard>
   );
@@ -986,7 +1059,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
           <span style={{ fontSize: 18 }}>🎯</span>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXI Pro (trial)</strong></div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXY Pro (trial)</strong></div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1034,7 +1107,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
                       </div>
                     )}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXI {info.label}</div>
+                      <div style={{ fontWeight: 700, fontSize: 16, color: info.color }}>{info.icon} OXY {info.label}</div>
                       {info.price ? (
                         <span style={{ fontSize: 12, fontWeight: 700, color: info.color, background: info.bg, border: `1px solid ${info.border}`, borderRadius: 20, padding: "2px 10px" }}>{info.price}</span>
                       ) : (
@@ -1071,7 +1144,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
             })}
           </div>
           <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
-            💡 <strong>Limited time trial:</strong> All lenders can experience OXI Pro features for free. Subscribe before the trial ends to keep your AI insights.
+            💡 <strong>Limited time trial:</strong> All lenders can experience OXY Pro features for free. Subscribe before the trial ends to keep your AI insights.
           </div>
         </div>
       )}
@@ -1082,7 +1155,9 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
-  const resolvedLenderId = paramLenderId || getUserId();
+  const ID_ALIASES = { "77221": "27127" };
+  const rawId = paramLenderId || getUserId();
+  const resolvedLenderId = ID_ALIASES[rawId] || rawId;
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
@@ -1097,26 +1172,26 @@ const LenderPortfolioDashboard = () => {
   const [fyFilter, setFyFilter] = useState(currentMonthFilter());
   const [showAllMaturities, setShowAllMaturities] = useState(false);
   const [showAllDeals, setShowAllDeals] = useState(false);
-  const [reminderSent, setReminderSent] = useState({});
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [previewTier, setPreviewTier] = useState(null);
-  const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
-  const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
-  const [narrativeExpanded, setNarrativeExpanded] = useState(false);
-  const [maturingExpanded, setMaturingExpanded] = useState(false);
   const [interestExpanded, setInterestExpanded] = useState(false);
   const [principalExpanded, setPrincipalExpanded] = useState(false);
-  const [maturityFilter, setMaturityFilter] = useState("all"); // 'all' | 'thisMonth' | 'next90'
-  const [payoutSectionOpen, setPayoutSectionOpen] = useState(false);
-  const [referralSectionOpen, setReferralSectionOpen] = useState(false);
+  const [maturingExpanded, setMaturingExpanded] = useState(false);
   const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
+  const [maturityFilter, setMaturityFilter] = useState("all");
+  const [narrativeExpanded, setNarrativeExpanded] = useState(false);
+  const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
+  const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
+  const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
+  const [momFilter, setMomFilter] = useState("6M");
+  const [momData, setMomData] = useState(null);
 
-  // Tier — derived at component level so all JSX can reference it
-  const effectiveTier = (previewTier || tierOverride || (data?.membershipTier || 'FREE')).toUpperCase();
-  const isPro   = effectiveTier === 'PRO';
-  const isSmart = effectiveTier === 'SMART' || effectiveTier === 'PRO';
+  // All lenders on the main dashboard see full PRO experience
+  const effectiveTier = 'PRO';
+  const isPro   = true;
+  const isSmart = true;
 
   // Portfolio
   useEffect(() => {
@@ -1129,20 +1204,13 @@ const LenderPortfolioDashboard = () => {
       .finally(() => setLoading(false));
   }, [resolvedLenderId]);
 
-  // Auto-set current FY for SMART (not PRO) — they can't pick the filter
-  useEffect(() => {
-    if (!data) return;
-    const t = (tierOverride || (data.membershipTier || 'FREE')).toUpperCase();
-    if (t === 'SMART') {
-      const now = new Date();
-      const fyYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-      setFyFilter({ mode: 'fy', fyYear, from: '', to: '' });
-    }
-  }, [data]);
+  // All lenders are PRO — no SMART-tier FY auto-set needed
 
   // Earnings — reloads when lender or FY filter changes
   useEffect(() => {
     if (!resolvedLenderId) return;
+    // Don't fetch while user is in custom mode but hasn't applied dates yet
+    if (fyFilter.mode === "custom" && (!fyFilter.from || !fyFilter.to)) return;
     setEarningsLoading(true);
     const params = new URLSearchParams();
     if (fyFilter.mode === "fy" && fyFilter.fyYear) {
@@ -1157,6 +1225,14 @@ const LenderPortfolioDashboard = () => {
       .catch(() => {})
       .finally(() => setEarningsLoading(false));
   }, [resolvedLenderId, fyFilter]);
+
+  // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
+  useEffect(() => {
+    if (!resolvedLenderId) return;
+    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings`, { headers: { accessToken: getToken() } })
+      .then((res) => setMomData(res.data))
+      .catch(() => {});
+  }, [resolvedLenderId]);
 
   // Upcoming payouts — loads once on mount, independent of FY filter
   useEffect(() => {
@@ -1194,18 +1270,6 @@ const LenderPortfolioDashboard = () => {
     if (!timingDetail[bucket] || !timingDetail[bucket].records) fetchTimingDetail(bucket, 0);
   };
 
-  const sendMaturityReminder = (m) => {
-    axios.post(
-      `${MARKETPLACE_URL}/v1/notifications/maturity-reminder`,
-      { dealId: m.dealId, maturityDate: m.maturityDate, principal: m.principalAmount },
-      { headers: { accessToken: getToken(), "Content-Type": "application/json" } }
-    ).then(() => {
-      setReminderSent(prev => ({ ...prev, [m.dealId]: true }));
-    }).catch(() => {
-      alert("Could not send reminder. Please try again.");
-    });
-  };
-
   const heroBg = isPro
     ? "linear-gradient(135deg, #1a237e 0%, #4a148c 60%, #6a1b9a 100%)"
     : isSmart
@@ -1239,7 +1303,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 0. TIER PREVIEW BANNER ── */}
               <TierPreviewBanner
                 activeTier={effectiveTier}
-                actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
+                actualTier={(data?.membershipTier || 'PRO').toUpperCase()}
                 onSelect={(t) => setPreviewTier(t)}
               />
 
@@ -1297,18 +1361,18 @@ const LenderPortfolioDashboard = () => {
                         )}
                         {!isSmart && (
                           <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                            Upgrade to OXI Smart to unlock AI-powered insights
+                            Upgrade to OXY Smart to unlock AI-powered insights
                           </span>
                         )}
                       </div>
                       {isSmart ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                          {(() => {
-                            const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((line) => line.trim()).filter((l) => l.length > 0);
-                            const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
-                            const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 2);
-                            return (
-                              <>
+                        (() => {
+                          const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+                          const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
+                          const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
+                          return (
+                            <div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                 {visibleLines.map((line, idx) => {
                                   const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
                                   return (
@@ -1318,25 +1382,23 @@ const LenderPortfolioDashboard = () => {
                                     </div>
                                   );
                                 })}
-                                {allLines.length > 2 && (
-                                  <button
-                                    onClick={() => setNarrativeExpanded(v => !v)}
-                                    style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "rgba(255,255,255,0.85)", fontSize: 13, padding: "6px 16px", cursor: "pointer", alignSelf: "flex-start", fontWeight: 600 }}
-                                  >
-                                    {narrativeExpanded ? "Show less ▲" : `Show more ▼ (${allLines.length - 2} more)`}
-                                  </button>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
+                              </div>
+                              {allLines.length > 3 && (
+                                <button onClick={() => setNarrativeExpanded(v => !v)}
+                                  style={{ marginTop: 10, background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", borderRadius: 20, padding: "5px 18px", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+                                  {narrativeExpanded ? "Show less ▲" : `Show more (${allLines.length - 3} more) ▼`}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()
                       ) : (
                         <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
                           <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
                           <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>AI Portfolio Analysis</div>
                           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 14 }}>Personalized insights on your investments, reinvestment patterns &amp; more</div>
                           <span style={{ background: "linear-gradient(135deg, #0050b3, #1890ff)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                            Upgrade to OXI Smart — ₹500/year
+                            Upgrade to OXY Smart — ₹500/year
                           </span>
                         </div>
                       )}
@@ -1348,7 +1410,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 2. STATS — all tiers see basic numbers ── */}
               <div className="row mb-2">
                 <StatCard label="Total Invested" value={`₹${fmt(data.totalInvested)}`} color="#1890ff"
-                  sub={`${data.totalDeals ?? 0} deals · ${data.activeDeals ?? 0} active · ${data.closedDeals ?? 0} closed`} />
+                  sub={data.totalWithdrawn > 0 ? `Net deployed ₹${fmt(data.netInvested)}` : null} />
                 <InterestBreakdownCard data={data} />
                 <StatCard label="Principal Returned" value={`₹${fmt(data.totalPrincipalReturned)}`} color="#13c2c2"
                   sub={data.closedDeals > 0 ? `Across ${data.closedDeals} closed deals` : null} />
@@ -1357,32 +1419,19 @@ const LenderPortfolioDashboard = () => {
               </div>
               <div className="row mb-4">
                 <StatCard label="Active Deals" value={data.activeDeals ?? "—"} color="#52c41a"
-                  sub={`₹${fmt(data.earningsForecast?.totalActiveAmount)} deployed`}
-                  onClick={() => scrollTo("section-active-deals")} />
+                  sub={`${data.closedDeals ?? 0} closed · ${data.totalDeals ?? 0} total`} />
                 <StatCard label="Payments Received" value={fmt(data.emisPaid ?? 0)} color="#faad14"
                   sub={data.lastPaidDate && data.lastPaidDate !== "N/A" ? `Last: ${fmtDate(data.lastPaidDate)}` : null} />
-                {/* Referral: SMART+ clicks to referral section, FREE shows locked */}
+                {/* Referral stat: SMART+ gets the expandable card, FREE gets a locked tile */}
                 {isSmart ? (
-                  <StatCard
-                    label="Referral Bonus"
-                    value={`₹${fmt(data.referralEarnings ?? 0)}`}
-                    color="#f759ab"
-                    sub={(() => {
-                      const paid   = data.referralPaidAmount   ?? 0;
-                      const unpaid = data.referralUnpaidAmount ?? 0;
-                      const count  = data.referredLendersCount ?? 0;
-                      if (count === 0) return "No referrals yet";
-                      return `${count} referral${count > 1 ? "s" : ""} · ₹${fmt(paid)} paid${unpaid > 0 ? ` · ₹${fmt(unpaid)} pending` : ""}`;
-                    })()}
-                    onClick={() => { setReferralSectionOpen(true); scrollTo("section-referral"); }}
-                  />
+                  <ReferralBonusCard data={data} />
                 ) : (
                   <div className="col-6 col-md mb-3">
                     <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px dashed #d9d9d9", background: "#fafafa" }}>
                       <div className="card-body py-3 px-2 d-flex flex-column align-items-center justify-content-center">
                         <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>Referral Bonus</p>
                         <div style={{ fontSize: 18 }}>🔒</div>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4 }}>OXI Smart</div>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 4 }}>OXY Smart</div>
                       </div>
                     </div>
                   </div>
@@ -1403,11 +1452,108 @@ const LenderPortfolioDashboard = () => {
                     if (early > 0) return `⚡ ${early} early · ✅ ${same + next} on time · ⏰ ${late} late`;
                     if (same + next > 0) return `✅ ${same} same day · +1d: ${next}${late > 0 ? ` · ⏰ ${late} late` : ''}`;
                     return `${data.successfulPayments ?? 0} payments delivered`;
-                  })()}
-                  onClick={() => { setPayoutSectionOpen(true); scrollTo("section-payout-reliability"); }} />
+                  })()} />
               </div>
 
-              {/* ── 3. EARNINGS SECTION ── */}
+              {/* ── 3. MONTH-ON-MONTH EARNINGS — always visible ── */}
+              {(() => {
+                const allMonths = momData ? [...(momData.monthlyEarnings || [])].reverse() : [];
+
+                // Apply filter to allMonths (already sorted oldest→newest after reverse)
+                const now = new Date();
+                const curYear  = now.getFullYear();
+                const curMonth = now.getMonth() + 1; // 1-based
+                // FY starts April of current or previous year
+                const fyStartYear = curMonth >= 4 ? curYear : curYear - 1;
+
+                const months = (() => {
+                  if (momFilter === "3M") return allMonths.slice(-3);
+                  if (momFilter === "6M") return allMonths.slice(-6);
+                  if (momFilter === "FY") return allMonths.filter(m =>
+                    (m.year > fyStartYear) ||
+                    (m.year === fyStartYear && m.month >= 4)
+                  );
+                  return allMonths; // All
+                })();
+
+                const labels    = months.map(m => m.monthLabel || `${m.month}/${m.year}`);
+                const interest  = months.map(m => Math.round(m.interestAmount || 0));
+                const principal = months.map(m => Math.round(m.principalReturned || 0));
+                const totalInterest = interest.reduce((s,v) => s+v, 0);
+
+                const momOptions = {
+                  chart: { type: "bar", stacked: false, fontFamily: "inherit", toolbar: { show: false }, zoom: { enabled: false } },
+                  plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                  colors: ["#0ea5a1", "#2563eb"],
+                  dataLabels: { enabled: false },
+                  xaxis: { categories: labels, labels: { style: { fontSize: "11px" } } },
+                  yaxis: { labels: { formatter: v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}` } },
+                  legend: { position: "top", fontSize: "12px" },
+                  tooltip: { y: { formatter: v => `₹${v.toLocaleString("en-IN")}` } },
+                  grid: { borderColor: "#f0f0f0" },
+                };
+
+                const filterBtnStyle = (f) => ({
+                  padding: "3px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none",
+                  background: momFilter === f ? "#0ea5a1" : "#f0f0f0",
+                  color: momFilter === f ? "#fff" : "#595959",
+                  transition: "background 0.15s",
+                });
+
+                return (
+                  <SectionCard
+                    title="Month-on-Month Earnings"
+                    badge={<span style={{ background: "#e6f7ff", color: "#096dd9", border: "1px solid #91d5ff", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Trend</span>}
+                    collapsible defaultOpen={true}
+                    summary={allMonths.length > 0 ? `₹${fmt(totalInterest)} interest · ${months.length} months` : "Loading…"}
+                  >
+                    {!momData && (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "#8c8c8c", fontSize: 14 }}>Loading earnings data…</div>
+                    )}
+                    {momData && allMonths.length === 0 && (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "#8c8c8c", fontSize: 14 }}>No earnings records found for this account.</div>
+                    )}
+                    {allMonths.length > 0 && (
+                      <>
+                        {/* Filter tabs */}
+                        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                          {["3M","6M","FY","All"].map(f => (
+                            <button key={f} style={filterBtnStyle(f)} onClick={() => setMomFilter(f)}>{f === "FY" ? `FY ${fyStartYear}-${String(fyStartYear+1).slice(2)}` : f}</button>
+                          ))}
+                        </div>
+
+                        {/* Recent month tiles — top 3 from filtered set */}
+                        <div style={{ marginBottom: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                          {[...months].reverse().slice(0, 3).map((m, i) => (
+                            <div key={i} style={{ background: i === 0 ? "#e6f7ff" : "#fafafa", border: `1px solid ${i === 0 ? "#91d5ff" : "#f0f0f0"}`, borderRadius: 8, padding: "8px 14px", minWidth: 110 }}>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>{m.monthLabel}</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#0ea5a1" }}>₹{fmt(m.interestAmount)}</div>
+                              <div style={{ fontSize: 11, color: "#595959" }}>interest</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {months.length === 0 ? (
+                          <div style={{ textAlign: "center", padding: "24px 0", color: "#8c8c8c", fontSize: 13 }}>No data for this period. Try a wider filter.</div>
+                        ) : (
+                          <ReactApexChart
+                            key={momFilter}
+                            options={momOptions}
+                            series={[
+                              { name: "Interest Earned", data: interest },
+                              { name: "Principal Returned", data: principal },
+                            ]}
+                            type="bar"
+                            height={240}
+                          />
+                        )}
+                      </>
+                    )}
+                  </SectionCard>
+                );
+              })()}
+
+              {/* ── 4. EARNINGS SECTION ── */}
               {/* FREE: locked */}
               {!isSmart && (
                 <LockCard title="Earnings Intelligence — Interest, Principal & Period Summary" requiredTier="SMART" />
@@ -1435,7 +1581,7 @@ const LenderPortfolioDashboard = () => {
                       ))}
                     </div>
                     <div style={{ background: "#f9f0ff", borderRadius: 10, padding: "12px 16px", textAlign: "center", border: "1px dashed #d3adf7" }}>
-                      <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 4 }}>📊 Month-by-month chart, FY selector &amp; forecast available in OXI Pro</div>
+                      <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 4 }}>📊 Month-by-month chart, FY selector &amp; forecast available in OXY Pro</div>
                       <div style={{ fontSize: 12, color: "#8c8c8c" }}>Upgrade to see earning trends, ROI analysis &amp; ₹1L target planner</div>
                     </div>
                   </div>
@@ -1446,19 +1592,19 @@ const LenderPortfolioDashboard = () => {
                 <>
                   <FyFilterBar fyFilter={fyFilter} setFyFilter={setFyFilter} loading={earningsLoading} />
 
-                  {/* Platform stats — Last Month + Current Month deals, always visible next to filter */}
+                  {/* Platform deal stats — always visible */}
                   {data.platformHealth && (
                     <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
                       <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#873800", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedLastMonth || 0} Deals Last Month · ₹{(data.platformHealth.dealsValueLastMonth || 0).toLocaleString("en-IN")}</span>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedLastMonth || 0} Deals Launched Last Month · ₹{(data.platformHealth.dealsValueLastMonth || 0).toLocaleString("en-IN")}</span>
                       </div>
                       <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals This Month · ₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")}</span>
+                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals Launched This Month · ₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")}</span>
                       </div>
                     </div>
                   )}
 
-                  {/* Current Month breakdown — shown only when Current Month tab selected */}
+                  {/* Current Month tiles — 3 up + 3 down, no Wallet */}
                   {fyFilter.mode === "month" ? (() => {
                     const earned         = data.currentMonthInterestEarned    || 0;
                     const projected      = data.currentMonthInterestProjected || 0;
@@ -1468,15 +1614,16 @@ const LenderPortfolioDashboard = () => {
                     const principalByDeal = data.currentMonthPrincipalByDeal || [];
                     const principalThisMonth = data.currentMonthPrincipalReturned || 0;
                     const maturingCount  = data.maturingThisMonthCount || 0;
-                    const maturingDeals  = data.maturingThisMonthDeals || [];
                     const refCredited    = data.referralThisMonthCredited || 0;
-                    const wallet         = data.walletBalance || 0;
-                    const gapMsg         = data.investableGapMessage || "";
+                    const monthLabel = new Date().toLocaleString("en-IN", { month: "long", year: "numeric" });
                     return (
+                      <SectionCard title={`This Month — ${monthLabel}`} collapsible defaultOpen={true}
+                        summary={`₹${fmt(earned + projected)} interest · ${maturingCount} maturing · ${data.activeDeals ?? 0} active deals`}>
                       <>
-                      <div className="row mb-4 g-3">
+                      {/* Row 1: Interest, Principal, Active Deals */}
+                      <div className="row mb-3 g-3">
                         {/* Tile 1: Interest This Month */}
-                        <div className="col-12 col-sm-6 col-lg">
+                        <div className="col-12 col-md-4">
                           <div
                             style={{ background: interestExpanded ? "linear-gradient(135deg, #d9f7be, #b7eb8f)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: interestExpanded ? "2px solid #52c41a" : "1px solid #b7eb8f", height: "100%", cursor: interestByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
                             onClick={() => { if (interestByDeal.length > 0) { setPrincipalExpanded(false); setMaturingExpanded(false); setInterestExpanded(v => !v); } }}
@@ -1503,7 +1650,7 @@ const LenderPortfolioDashboard = () => {
                         </div>
 
                         {/* Tile 2: Principal This Month */}
-                        <div className="col-12 col-sm-6 col-lg">
+                        <div className="col-12 col-md-4">
                           <div
                             style={{ background: principalExpanded ? "linear-gradient(135deg, #d6e4ff, #adc6ff)" : "linear-gradient(135deg, #f0f5ff, #d6e4ff)", borderRadius: 14, padding: "16px 18px", border: principalExpanded ? "2px solid #1677ff" : "1px solid #adc6ff", height: "100%", cursor: principalByDeal.length > 0 ? "pointer" : "default", transition: "all 0.2s" }}
                             onClick={() => { if (principalByDeal.length > 0) { setInterestExpanded(false); setMaturingExpanded(false); setPrincipalExpanded(v => !v); } }}
@@ -1524,20 +1671,8 @@ const LenderPortfolioDashboard = () => {
                           </div>
                         </div>
 
-                        {/* Tile 3: Wallet Balance */}
-                        <div className="col-12 col-sm-6 col-lg">
-                          <div style={{ background: wallet > 500 ? "linear-gradient(135deg, #e6f7ff, #bae7ff)" : "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: wallet > 500 ? "1px solid #91d5ff" : "1px solid #b7eb8f", height: "100%" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                              <span style={{ fontSize: 20 }}>💰</span>
-                              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: wallet > 500 ? "#0958d9" : "#389e0d", fontWeight: 700 }}>Wallet Balance</div>
-                            </div>
-                            <div style={{ fontWeight: 700, fontSize: 18, color: wallet > 500 ? "#0050b3" : "#237804", marginBottom: 4 }}>₹{fmt(wallet)}</div>
-                            <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{wallet === 0 ? "₹0 — all funds deployed" : gapMsg}</div>
-                          </div>
-                        </div>
-
-                        {/* Tile 3b: Active Deals — click → Deal History ACTIVE filter */}
-                        <div className="col-12 col-sm-6 col-lg">
+                        {/* Tile 3: Active Deals */}
+                        <div className="col-12 col-md-4">
                           <div
                             style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 14, padding: "16px 18px", border: "1px solid #b7eb8f", height: "100%", cursor: "pointer", transition: "all 0.2s" }}
                             onClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); scrollTo("section-deal-history"); }}
@@ -1553,9 +1688,12 @@ const LenderPortfolioDashboard = () => {
                             <div style={{ fontSize: 11, color: "#52c41a" }}>▼ view active deals</div>
                           </div>
                         </div>
+                      </div>
 
-                        {/* Tile 4: Maturing This Month — click scrolls to planner filtered to this month */}
-                        <div className="col-12 col-sm-6 col-lg">
+                      {/* Row 2: Maturing, Referral, Deal Participation */}
+                      <div className="row mb-4 g-3">
+                        {/* Tile 4: Maturing This Month */}
+                        <div className="col-12 col-md-4">
                           <div
                             style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
                             onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setDealParticipationExpanded(false); setMaturityFilter("thisMonth"); setShowAllMaturities(true); scrollTo("section-maturity"); } }}
@@ -1574,7 +1712,7 @@ const LenderPortfolioDashboard = () => {
                         </div>
 
                         {/* Tile 5: Referral This Month */}
-                        <div className="col-12 col-sm-6 col-lg">
+                        <div className="col-12 col-md-4">
                           <div style={{ background: "linear-gradient(135deg, #fff0f6, #ffd6e7)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffadd2", height: "100%" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                               <span style={{ fontSize: 20 }}>🎁</span>
@@ -1585,13 +1723,13 @@ const LenderPortfolioDashboard = () => {
                           </div>
                         </div>
 
-                        {/* Tile 6: Deal Participation Rate — backend field: platformDealsLaunchedThisMonth, myDealsThisMonth */}
+                        {/* Tile 6: Deal Participation */}
                         {(() => {
                           const mine     = data.myDealsThisMonth || 0;
                           const launched = data.platformHealth?.dealsAnnouncedThisMonth || 0;
                           const pct      = launched > 0 ? Math.round((mine / launched) * 100) : null;
                           return (
-                            <div className="col-12 col-sm-6 col-lg">
+                            <div className="col-12 col-md-4">
                               <div
                                 style={{ background: dealParticipationExpanded ? "linear-gradient(135deg, #d6e4ff, #adc6ff)" : "linear-gradient(135deg, #f0f5ff, #e8f4fd)", borderRadius: 14, padding: "16px 18px", border: dealParticipationExpanded ? "2px solid #1677ff" : "1px solid #91caff", height: "100%", cursor: mine > 0 ? "pointer" : "default", transition: "all 0.2s" }}
                                 onClick={() => { if (mine > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setDealParticipationExpanded(v => !v); } }}
@@ -1619,17 +1757,16 @@ const LenderPortfolioDashboard = () => {
                         })()}
                       </div>
 
-                      {/* ── Breakdown panel — shown below the strip when a tile is clicked ── */}
+                      {/* Breakdown panel — shown below tiles when a tile is clicked */}
                       {(interestExpanded || principalExpanded || dealParticipationExpanded) && (() => {
                         const activeTitle  = interestExpanded ? "📈 Interest This Month — Per Deal" : principalExpanded ? "🏦 Principal This Month — Per Deal" : "🏹 Deal Participation This Month";
                         const borderColor  = interestExpanded ? "#52c41a" : principalExpanded ? "#1677ff" : "#1677ff";
                         const headerColor  = interestExpanded ? "#237804" : principalExpanded ? "#10239e" : "#003eb3";
-                        // Deal participation: filter deals whose startDate is this month
-                        const now = new Date();
+                        const nowD = new Date();
                         const thisMonthDeals = (data.deals || data.allDeals || []).filter(d => {
                           if (!d.startDate) return false;
                           const sd = new Date(d.startDate);
-                          return sd.getMonth() === now.getMonth() && sd.getFullYear() === now.getFullYear();
+                          return sd.getMonth() === nowD.getMonth() && sd.getFullYear() === nowD.getFullYear();
                         });
                         const rows = interestExpanded
                           ? interestByDeal
@@ -1700,16 +1837,24 @@ const LenderPortfolioDashboard = () => {
                         );
                       })()}
                       </>
+                      </SectionCard>
                     );
                   })() : (
-                    <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                    <SectionCard
+                      title="Earnings Summary"
+                      collapsible
+                      defaultOpen={true}
+                      summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
+                    >
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                    </SectionCard>
                   )}
 
                   <UpcomingPayoutsSection upcomingData={upcomingData} loading={upcomingLoading} />
                 </>
               )}
 
-              {/* ── 4. INVESTMENT ANALYTICS — PRO only ── */}
+              {/* ── 5. INVESTMENT ANALYTICS — PRO only ── */}
               {!isPro && (
                 <LockCard title="Investment Analytics — ROI Charts, Deal Distribution &amp; Earnings Trends" requiredTier="PRO" />
               )}
@@ -1721,7 +1866,6 @@ const LenderPortfolioDashboard = () => {
                 const shownDeals = showAllDeals ? allActive : allActive.slice(0, DEAL_LIMIT);
                 const dealRemaining = allActive.length - DEAL_LIMIT;
                 return (
-                  <div id="section-active-deals">
                   <SectionCard
                     title={`Active Deals (${data.activeDeals ?? allActive.length})`}
                     badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Live</span>}
@@ -1777,12 +1921,11 @@ const LenderPortfolioDashboard = () => {
                     {!isSmart && allActive.length > DEAL_LIMIT && (
                       <div style={{ marginTop: 10, background: "#f9f0ff", borderRadius: 8, padding: "10px 16px", textAlign: "center", border: "1px dashed #d3adf7" }}>
                         <span style={{ fontSize: 13, color: "#722ed1" }}>
-                          🔒 Upgrade to <strong>OXI Smart</strong> to see all {allActive.length} active deals
+                          🔒 Upgrade to <strong>OXY Smart</strong> to see all {allActive.length} active deals
                         </span>
                       </div>
                     )}
                   </SectionCard>
-                  </div>
                 );
               })()}
 
@@ -1804,12 +1947,36 @@ const LenderPortfolioDashboard = () => {
                     <div style={{ background: "linear-gradient(135deg, #f9f0ff, #efdbff)", borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontSize: 14, color: "#391085", lineHeight: 1.7 }}>
                       {summaryText}
                     </div>
-                    {data.nextStarTip && (
-                      <div style={{ background: "linear-gradient(135deg, #fffbe6, #fff7cc)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, border: "1px solid #ffe58f", display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 18 }}>🌟</span>
-                        <span style={{ fontSize: 13, color: "#614700", fontWeight: 600 }}>{data.nextStarTip}</span>
+
+                    {/* How we rate you */}
+                    <div style={{ background: "#fffbe6", border: "1px solid #ffe58f", borderRadius: 10, padding: "12px 16px", marginBottom: 14 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: "#874d00", marginBottom: 8 }}>How your star rating is calculated</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {[
+                          { stars: "⭐", label: "1 star", desc: "New lender or no reinvestment yet" },
+                          { stars: "⭐⭐", label: "2 stars", desc: "At least 1 reinvestment after a maturity" },
+                          { stars: "⭐⭐⭐", label: "3 stars", desc: "40% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "100% of returned principal reinvested" },
+                        ].map((item) => {
+                          const myCount = parseInt((data.reinvestmentStarRating || "1").split(" ")[0]) || 1;
+                          const itemCount = item.stars.split("⭐").length - 1;
+                          const isYours = myCount === itemCount;
+                          return (
+                            <div key={item.label} style={{ background: isYours ? "#fff7e6" : "#fafafa", border: isYours ? "2px solid #faad14" : "1px solid #f0f0f0", borderRadius: 8, padding: "6px 12px", minWidth: 150, flex: "1 1 150px" }}>
+                              <div style={{ fontSize: 13 }}>{item.stars}</div>
+                              <div style={{ fontWeight: isYours ? 700 : 500, fontSize: 12, color: isYours ? "#d46b08" : "#595959" }}>{item.label} {isYours ? "← you" : ""}</div>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>{item.desc}</div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    )}
+                      {data.nextStarTip && (
+                        <div style={{ marginTop: 10, fontSize: 13, color: "#d46b08", fontWeight: 600 }}>
+                          Next: {data.nextStarTip}
+                        </div>
+                      )}
+                    </div>
                     <div className="row">
                       <div className="col-12 col-md-4 mb-3">
                         <div style={{ textAlign: "center", padding: 16, background: "#fafafa", borderRadius: 10 }}>
@@ -1840,7 +2007,7 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ textAlign: "center", padding: 16, background: "#fafafa", borderRadius: 10, border: "1px dashed #d9d9d9" }}>
                             <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 6 }}>Reinvest Probability</div>
                             <div style={{ fontSize: 20 }}>🔒</div>
-                            <div style={{ fontSize: 11, color: "#8c8c8c" }}>OXI Pro</div>
+                            <div style={{ fontSize: 11, color: "#8c8c8c" }}>OXY Pro</div>
                           </div>
                         </div>
                       )}
@@ -1863,11 +2030,38 @@ const LenderPortfolioDashboard = () => {
                         <div style={{ fontWeight: 600 }}>{totalReturns} interest payments</div>
                       </div>
                     </div>
+
+                    {/* Membership badge explanation */}
+                    {data.membershipBadge && (
+                      <div style={{ background: "#f0f5ff", border: "1px solid #adc6ff", borderRadius: 10, padding: "12px 16px", marginTop: 8 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: "#1a237e", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+                          Your Badge: <MembershipBadge badge={data.membershipBadge} />
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {[
+                            { badge: "MEMBER",   label: "Member",   desc: "Total invested < ₹50,000" },
+                            { badge: "LOYAL",    label: "💜 Loyal",  desc: "< 18 months & < ₹1.5L invested" },
+                            { badge: "SILVER",   label: "🥈 Silver", desc: "18+ months & ₹50K+ invested" },
+                            { badge: "GOLD",     label: "🥇 Gold",   desc: "₹1.5L+ total invested" },
+                            { badge: "PLATINUM", label: "🏆 Platinum", desc: "₹5L+ total invested" },
+                          ].map((item) => {
+                            const isYours = data.membershipBadge?.toUpperCase() === item.badge;
+                            return (
+                              <div key={item.badge} style={{ background: isYours ? "#e6f7ff" : "#fafafa", border: isYours ? "2px solid #1677ff" : "1px solid #f0f0f0", borderRadius: 8, padding: "6px 12px", minWidth: 140, flex: "1 1 140px" }}>
+                                <div style={{ fontWeight: isYours ? 700 : 500, fontSize: 12, color: isYours ? "#0050b3" : "#595959" }}>{item.label} {isYours ? "← you" : ""}</div>
+                                <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>{item.desc}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </SectionCard>
                 );
               })()}
 
               {/* ── 7. SMART MATURITY PLANNER — PRO only ── */}
+              <div id="section-maturity" />
               {/* SMART gets a teaser with count, PRO gets the full table */}
               {!isPro && (() => {
                 const maturingCount = (data.upcomingMaturities || []).filter(m => (m.daysToMaturity || 999) <= 90).length;
@@ -1878,99 +2072,72 @@ const LenderPortfolioDashboard = () => {
                       <div style={{ fontWeight: 700, color: "#262626", fontSize: 15, marginBottom: 6 }}>Smart Maturity Planner</div>
                       {isSmart && maturingCount > 0 && (
                         <div style={{ fontSize: 13, color: "#fa8c16", fontWeight: 600, marginBottom: 8 }}>
-                          ⚠️ {maturingCount} deal{maturingCount > 1 ? 's' : ''} maturing in next 90 days — plan your reinvestment in OXI Pro
+                          ⚠️ {maturingCount} deal{maturingCount > 1 ? 's' : ''} maturing in next 90 days — plan your reinvestment in OXY Pro
                         </div>
                       )}
                       <div style={{ fontSize: 13, color: "#8c8c8c", marginBottom: 14 }}>
-                        Available on <strong style={{ color: '#722ed1' }}>OXI Pro</strong> — ₹1,000/year
+                        Available on <strong style={{ color: '#722ed1' }}>OXY Pro</strong> — ₹1,000/year
                       </div>
                       <div style={{ display: "inline-block", background: "linear-gradient(135deg, #4a148c, #6a1b9a)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                        Upgrade to OXI Pro
+                        Upgrade to OXY Pro
                       </div>
                     </div>
                   </div>
                 );
               })()}
               {isPro && (data.upcomingMaturities || []).length > 0 && (() => {
-                const allMat  = data.upcomingMaturities || [];
-                const now     = new Date();
-                const curMon  = now.getMonth();
-                const curYr   = now.getFullYear();
-                const thisMonthMat = allMat.filter(m => { const d = m.maturityDate ? new Date(m.maturityDate) : null; return d && d.getMonth() === curMon && d.getFullYear() === curYr; });
-                const filtered = maturityFilter === "thisMonth" ? thisMonthMat
-                               : maturityFilter === "next90"   ? allMat.filter(m => (m.daysToMaturity ?? 999) <= 90)
-                               : allMat;
-                const shown    = maturityFilter === "all" ? (showAllMaturities ? filtered : filtered.slice(0, 10)) : filtered;
-                const remaining = filtered.length - 10;
+                const allMat = data.upcomingMaturities || [];
+                const LIMIT = 10;
+                const shown = showAllMaturities ? allMat : allMat.slice(0, LIMIT);
+                const remaining = allMat.length - LIMIT;
                 return (
-                  <div id="section-maturity">
-                  <SectionCard
-                    title={`Smart Maturity Planner (${allMat.length})`}
-                    collapsible
-                    defaultOpen={maturityFilter !== "all"}
-                    isOpen={maturityFilter !== "all" ? true : undefined}
-                    summary={`${allMat.length} upcoming maturities`}
-                    badge={thisMonthMat.length > 0 ? <span style={{ background: "#fff7e6", color: "#fa8c16", border: "1px solid #ffd591", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>{thisMonthMat.length} maturing this month</span> : null}
-                  >
-                    {/* Filter tabs */}
-                    <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-                      {[
-                        { key: "all",       label: `All (${allMat.length})` },
-                        { key: "thisMonth", label: `This Month (${thisMonthMat.length})` },
-                        { key: "next90",    label: "Next 90 Days" },
-                      ].map(({ key, label }) => (
-                        <button key={key} onClick={() => setMaturityFilter(key)}
-                          style={{
-                            padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer",
-                            fontSize: 12, fontWeight: maturityFilter === key ? 700 : 500,
-                            background: maturityFilter === key ? "linear-gradient(135deg, #fa8c16, #d46b08)" : "#f5f5f5",
-                            color: maturityFilter === key ? "#fff" : "#595959",
-                          }}>
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    {filtered.length === 0 ? (
-                      <div style={{ textAlign: "center", color: "#8c8c8c", padding: "20px 0", fontSize: 14 }}>
-                        No deals maturing {maturityFilter === "thisMonth" ? "this month" : "in next 90 days"}.{" "}
-                        <button onClick={() => setMaturityFilter("all")} style={{ background: "none", border: "none", color: "#1890ff", cursor: "pointer", fontSize: 14 }}>View all</button>
-                      </div>
-                    ) : (
-                      <div className="table-responsive">
-                        <table className="table table-sm mb-0">
-                          <thead className="thead-light">
-                            <tr>
-                              <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder Date</th><th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {shown.map((m, idx) => (
+                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} summary={`${allMat.length} upcoming maturities`}>
+                    <div className="table-responsive">
+                      <table className="table table-sm mb-0">
+                        <thead className="thead-light">
+                          <tr>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {shown.map((m, idx) => {
+                            const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
+                            const nudgeIsPast = nudge && nudge < new Date();
+                            const alreadyReminded = remindedDeals.has(m.dealId);
+                            const sendReminder = () => {
+                              axios.post(`${MARKETPLACE_URL}/v1/notifications/maturity-reminder`, {
+                                dealId: m.dealId,
+                                maturityDate: fmtDate(m.maturityDate),
+                                principal: fmt(m.principalAmount),
+                              }, { headers: { accessToken: getToken() } })
+                                .then(() => setRemindedDeals(prev => new Set([...prev, m.dealId])))
+                                .catch(() => setRemindedDeals(prev => new Set([...prev, m.dealId])));
+                            };
+                            return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
                                 <td><strong>#{m.dealId}</strong></td>
                                 <td>{fmtDate(m.maturityDate)}</td>
                                 <td>₹{fmt(m.principalAmount)}</td>
                                 <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                                 <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
-                                <td style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</td>
                                 <td>
-                                  {reminderSent[m.dealId] ? (
-                                    <span style={{ color: "#52c41a", fontSize: 11, fontWeight: 600 }}>✓ Reminder sent</span>
-                                  ) : (
-                                    <button
-                                      onClick={() => sendMaturityReminder(m)}
-                                      style={{ background: "#f0f5ff", color: "#2f54eb", border: "1px solid #adc6ff", borderRadius: 4, padding: "2px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
-                                    >
+                                  {alreadyReminded ? (
+                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
+                                  ) : nudgeIsPast ? (
+                                    <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
                                       Remind Me
                                     </button>
+                                  ) : (
+                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
                                   )}
                                 </td>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {maturityFilter === "all" && filtered.length > 10 && (
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    {allMat.length > LIMIT && (
                       <div style={{ textAlign: 'center', marginTop: 10 }}>
                         <button
                           onClick={() => setShowAllMaturities(v => !v)}
@@ -1981,7 +2148,6 @@ const LenderPortfolioDashboard = () => {
                       </div>
                     )}
                   </SectionCard>
-                  </div>
                 );
               })()}
 
@@ -1989,40 +2155,6 @@ const LenderPortfolioDashboard = () => {
               {!isPro && <LockCard title="Earnings Intelligence — FY Forecast, Monthly Chart &amp; Bank FD Comparison" requiredTier="PRO" />}
               {isPro && <SectionCard title="Earnings Intelligence" collapsible defaultOpen={false} summary="FY forecast & FD comparison">
                 <div className="row">
-                  {/* This Month sub-row */}
-                  {(() => {
-                    const mEarned    = data.currentMonthInterestEarned    || 0;
-                    const mProjected = data.currentMonthInterestProjected || 0;
-                    const mTotal     = mEarned + mProjected;
-                    const mPct       = mTotal > 0 ? Math.round((mEarned / mTotal) * 100) : 0;
-                    return (
-                      <div className="col-12 mb-3">
-                        <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 10, padding: "12px 16px", border: "1px solid #b7eb8f" }}>
-                          <div style={{ fontWeight: 700, fontSize: 12, color: "#389e0d", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>This Month</div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", marginBottom: 8 }}>
-                            <div>
-                              <span style={{ fontSize: 11, color: "#8c8c8c" }}>Earned </span>
-                              <span style={{ fontWeight: 700, color: "#237804", fontSize: 16 }}>₹{fmt(mEarned)}</span>
-                            </div>
-                            <div style={{ fontSize: 14, color: "#8c8c8c" }}>+</div>
-                            <div>
-                              <span style={{ fontSize: 11, color: "#8c8c8c" }}>Projected </span>
-                              <span style={{ fontWeight: 700, color: "#52c41a", fontSize: 16 }}>₹{fmt(mProjected)}</span>
-                            </div>
-                          </div>
-                          {mTotal > 0 && (
-                            <>
-                              <div style={{ background: "#d9f7be", borderRadius: 4, height: 8, overflow: "hidden" }}>
-                                <div style={{ width: `${mPct}%`, height: "100%", background: "#52c41a", borderRadius: 4, transition: "width 0.8s ease" }} />
-                              </div>
-                              <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 4 }}>{mPct}% of month earned so far</div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
-
                   {/* FY Forecast — explained clearly */}
                   <div className="col-12 col-md-6 mb-3">
                     {(() => {
@@ -2059,42 +2191,32 @@ const LenderPortfolioDashboard = () => {
                   </div>
                   {/* FD Comparison — no bank name */}
                   <div className="col-12 col-md-6 mb-3">
-                    {data.fdComparison && (() => {
-                      const allDealsRaw = data.allDeals || data.deals || [];
-                      const historicalAvgRoi = allDealsRaw.length > 0
-                        ? parseFloat((allDealsRaw.reduce((s, d) => s + (d.rateOfInterest < 5 ? d.rateOfInterest * 12 : d.rateOfInterest), 0) / allDealsRaw.length).toFixed(1))
-                        : 0;
-                      const displayRoi = data.fdComparison.oxyloansReturnPct || historicalAvgRoi;
-                      const isHistorical = !data.fdComparison.oxyloansReturnPct && historicalAvgRoi > 0;
-                      const extraVsFd = parseFloat((displayRoi - (data.fdComparison.sbiFdRate || 6.8)).toFixed(1));
-                      return (
-                        <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 12, padding: 20, height: "100%" }}>
-                          <div style={{ fontSize: 13, color: "#135200", fontWeight: 700, marginBottom: 12 }}>
-                            How You Compare — Bank FD vs OxyLoans
+                    {data.fdComparison && (
+                      <div style={{ background: "linear-gradient(135deg, #f6ffed, #d9f7be)", borderRadius: 12, padding: 20, height: "100%" }}>
+                        <div style={{ fontSize: 13, color: "#135200", fontWeight: 700, marginBottom: 12 }}>
+                          How You Compare — Bank FD vs OxyLoans
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>Bank FD (avg)</div>
+                            <div style={{ fontSize: 28, fontWeight: 800, color: "#8c8c8c" }}>{data.fdComparison.sbiFdRate || 6.8}%</div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-                            <div style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>Bank FD (avg)</div>
-                              <div style={{ fontSize: 28, fontWeight: 800, color: "#8c8c8c" }}>{data.fdComparison.sbiFdRate || 6.8}%</div>
-                            </div>
-                            <div style={{ flex: 1, borderTop: "2px dashed #b7eb8f" }} />
-                            <div style={{ textAlign: "center" }}>
-                              <div style={{ fontSize: 11, color: "#52c41a", marginBottom: 2 }}>Your OxyLoans ROI</div>
-                              <div style={{ fontSize: 28, fontWeight: 800, color: "#52c41a" }}>{displayRoi}%</div>
-                              {isHistorical && <div style={{ fontSize: 10, color: "#52c41a", fontStyle: "italic" }}>avg across {allDealsRaw.length} deals</div>}
-                            </div>
-                          </div>
-                          {extraVsFd > 0 && (
-                            <div style={{ background: "#52c41a", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
-                              +{extraVsFd}% more than a bank FD
-                            </div>
-                          )}
-                          <div style={{ fontSize: 12, color: "#135200" }}>
-                            Bank FD benchmark is the average of India's top public sector banks. OxyLoans is RBI-registered NBFC-P2P.
+                          <div style={{ flex: 1, borderTop: "2px dashed #b7eb8f" }} />
+                          <div style={{ textAlign: "center" }}>
+                            <div style={{ fontSize: 11, color: "#52c41a", marginBottom: 2 }}>Your OxyLoans ROI</div>
+                            <div style={{ fontSize: 28, fontWeight: 800, color: "#52c41a" }}>{data.fdComparison.oxyloansReturnPct || 0}%</div>
                           </div>
                         </div>
-                      );
-                    })()}
+                        {data.fdComparison.extraEarningsVsFd > 0 && (
+                          <div style={{ background: "#52c41a", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 14, fontWeight: 700, textAlign: "center", marginBottom: 8 }}>
+                            +{data.fdComparison.extraEarningsVsFd}% more than a bank FD
+                          </div>
+                        )}
+                        <div style={{ fontSize: 12, color: "#135200" }}>
+                          Bank FD benchmark is the average of India's top public sector banks. OxyLoans is RBI-registered NBFC-P2P.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </SectionCard>}
@@ -2102,8 +2224,7 @@ const LenderPortfolioDashboard = () => {
               {/* ── 9. PAYOUT RELIABILITY ── SMART: score+tiles, PRO: full detail+table ── */}
               {!isSmart && <LockCard title="Payout Reliability" requiredTier="SMART" />}
               {isSmart && (data.safetyNarrativeDetails || data.safetyNarrative) && (
-                <div id="section-payout-reliability">
-                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible isOpen={payoutSectionOpen} onToggle={() => setPayoutSectionOpen(o => !o)} summary="Payment track record">
+                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} summary="Payment track record">
                   {(() => {
                     const early   = data.creditsPaidEarly    ?? 0;
                     const same    = data.creditsPaidSameDay  ?? 0;
@@ -2310,13 +2431,12 @@ const LenderPortfolioDashboard = () => {
                     );
                   })()}
                 </SectionCard>
-                </div>
               )}
 
               {/* ── 10. DEAL HISTORY — SMART+ only ── */}
               {!isSmart && <LockCard title="Deal History" requiredTier="SMART" />}
               {isSmart && (() => {
-                const allDeals = (data.deals || data.allDeals || []).slice().sort((a, b) => new Date(b.startDate || 0) - new Date(a.startDate || 0));
+                const allDeals = data.deals || data.allDeals || [];
                 const activeDeals = allDeals.filter(d => (d.status || "").toUpperCase() === "ACTIVE");
                 const closedDeals = allDeals.filter(d => (d.status || "").toUpperCase() !== "ACTIVE");
                 const filteredDeals = dealHistoryFilter === "ACTIVE" ? activeDeals : dealHistoryFilter === "CLOSED" ? closedDeals : allDeals;
@@ -2404,13 +2524,21 @@ const LenderPortfolioDashboard = () => {
               })()}
 
               {/* ── 11. REFERRAL EARNINGS — FREE: locked, SMART: totals, PRO: full breakdown with FY filter ── */}
-              {!isSmart && (data.referredLendersCount > 0 || data.referralEarnings > 0) && (
+              {!isSmart && (
                 <LockCard title="Referral Earnings" requiredTier="SMART" />
               )}
-              {isSmart && (data.referredLendersCount > 0 || data.referralEarnings > 0) && (
-                <div id="section-referral">
-                <SectionCard title="Referral Earnings" collapsible isOpen={referralSectionOpen} onToggle={() => setReferralSectionOpen(o => !o)} summary={`₹${fmt(data.referralEarnings)} earned · ${data.referredLendersCount || 0} referred`}>
+              {isSmart && (
+                <SectionCard title="Referral Earnings" collapsible defaultOpen={false} summary={data.referredLendersCount > 0 ? `₹${fmt(data.referralEarnings)} earned · ${data.referredLendersCount} referred` : "No referrals yet"}>
+                  {/* No referrals yet — show prompt */}
+                  {(data.referredLendersCount === 0 && data.referralEarnings === 0) && (
+                    <div style={{ textAlign: "center", padding: "20px 0", color: "#8c8c8c" }}>
+                      <div style={{ fontSize: 28, marginBottom: 8 }}>🤝</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: "#262626", marginBottom: 4 }}>No referrals yet</div>
+                      <div style={{ fontSize: 12 }}>Refer a friend to OxyLoans and earn a bonus when they invest.</div>
+                    </div>
+                  )}
                   {/* Stat tiles — consistent grid */}
+                  {(data.referredLendersCount > 0 || data.referralEarnings > 0) && (
                   <div className="row g-3 mb-3">
                     {[
                       { label: "Lenders Referred",  value: String(data.referredLendersCount || 0), color: "#722ed1", bg: "#f9f0ff", target: null },
@@ -2437,6 +2565,7 @@ const LenderPortfolioDashboard = () => {
                       </div>
                     ))}
                   </div>
+                  )} {/* end stats grid wrapper */}
 
                   {isPro ? (
                     <div>
@@ -2496,15 +2625,18 @@ const LenderPortfolioDashboard = () => {
                   ) : (
                     <div style={{ background: "#f9f0ff", borderRadius: 8, padding: "10px 16px", textAlign: "center", border: "1px dashed #d3adf7" }}>
                       <span style={{ fontSize: 13, color: "#722ed1" }}>
-                        Paid vs Pending breakdown &amp; monthly table available in <strong>OXI Pro</strong>
+                        Paid vs Pending breakdown &amp; monthly table available in <strong>OXY Pro</strong>
                       </span>
                     </div>
                   )}
                 </SectionCard>
-                </div>
               )}
 
-
+              <div className="row mb-2">
+                <div className="col-12">
+                  <small className="text-muted">Generated at: {data.generatedAt ? new Date(data.generatedAt).toLocaleString("en-IN") : "—"}</small>
+                </div>
+              </div>
             </>
           )}
         </div>

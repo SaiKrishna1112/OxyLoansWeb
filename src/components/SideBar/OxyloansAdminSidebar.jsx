@@ -8,6 +8,20 @@ const OxyloansAdminSidebar = () => {
   // const pathName = useLocation().pathname;
   const [openSubmenus, setOpenSubmenus] = useState({});
   const { pathname } = useLocation();
+
+  useEffect(() => {
+    menuItems.forEach((item) => {
+      if (item.children) {
+        const hasActiveChild = item.children.some((child) => child.link === pathname);
+        if (hasActiveChild) {
+          setOpenSubmenus((prev) => ({
+            ...prev,
+            [item.key]: true,
+          }));
+        }
+      }
+    });
+  }, [pathname]);
   const primaryType=localStorage.getItem("primaryType")
   const userId=sessionStorage.getItem("userId")
 

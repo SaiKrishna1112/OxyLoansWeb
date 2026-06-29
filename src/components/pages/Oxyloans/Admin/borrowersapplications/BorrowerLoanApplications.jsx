@@ -7,6 +7,7 @@ import { commentsAdminApiCall, searchCall, handleChangePrimaryType, handleIntere
 import Swal from 'sweetalert2';
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
+import { base_url } from "../../../../HttpRequest/afterlogin";
 import { Modal,  Form } from 'react-bootstrap';
 import { Link, useNavigate } from "react-router-dom";
 
@@ -713,7 +714,7 @@ const BorrowerLoanApplications = () => {
     formData.append("loanId", recordId); // Modify according to backend requirement
   
     try {
-      const response = await fetch("http://182.18.139.198:PORT/api/upload-cibil", {
+      const response = await fetch(`${base_url}/api/upload-cibil`, {
         method: "POST",
         body: formData,
       });

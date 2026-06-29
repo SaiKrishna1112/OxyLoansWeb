@@ -1,7 +1,11 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
-import LenderAIDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
+import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
+import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
+import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSuccess";
+import AITestAdmin from "./components/pages/Dashboard/AITestAdmin";
+import LenderUpgradePortal from "./components/pages/Dashboard/LenderUpgradePortal";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
@@ -70,7 +74,7 @@ import WalletToWalletTransactionHistory from "./components/pages/Oxyloans/Lender
 import RegularEscrowDeals from "./components/pages/Oxyloans/Lender/RegularEscrowDeals";
 import TopLendersPage from "./components/pages/Oxyloans/Lender/TopLendersPage.jsx";
 import Whatappuser from "./components/pages/Authentication/Whatappuser";
-import BorrowerDashboard from "./components/pages/Dashboard/BorrowerDashboard";
+import BorrowerDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 import BorrowerProfile from "./components/pages/Oxyloans/Borrower/BorrowerProfile";
 import BorrowerAgreedLoans from "./components/pages/Oxyloans/Borrower/AgreedLoan";
 import BorrowerEnach from "./components/pages/Oxyloans/Borrower/Enach";
@@ -179,9 +183,10 @@ import CeoDashboard from "./components/pages/Oxyloans/Admin/CeoDashboard";
 import LenderAnalytics from "./components/pages/Analytics/LenderAnalytics";
 import BorrowerAnalytics from "./components/pages/Analytics/BorrowerAnalytics";
 import AdminReconciliationDashboard from "./components/pages/Dashboard/AdminReconciliationDashboard";
-import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/LenderPortfolioDashboard";
-import LenderEarningsDashboard from "./components/pages/Dashboard/LenderEarningsDashboard";
+import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
+import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges.jsx";
+import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees.jsx";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -530,6 +535,8 @@ const AppRouter = () => {
         <Route path="/activeLendersParticipation" element={<ActiveLendersParticipationPage />} />
         <Route path="/failedborrowers" element={<FailedBorrowers />} />
         <Route path="/dealsInfo" element={<DealsInfo />} />
+        <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
+        <Route path="/adminProcessingFees" element={<ProcessingFees />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
         {/* MARKETPLACE */}
         <Route path="/post-loan-request" element={<PrivateRoute element={<PostLoanRequest />} />} />
@@ -568,8 +575,11 @@ const AppRouter = () => {
         <Route path="/admin/reconciliation" element={<PrivateRoute element={<AdminReconciliationDashboard />} />} />
         <Route path="/ai/portfolio" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/ai/portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
-        <Route path="/ai/lender-earnings" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
-        <Route path="/ai/lender-earnings/:lenderId" element={<PrivateRoute element={<LenderEarningsDashboard />} />} />
+        <Route path="/ai/plans" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
+        <Route path="/lender-upgrade" element={<PrivateRoute element={<LenderAIPlanPage />} />} />
+        <Route path="/oxai-upgrade" element={<LenderUpgradePortal />} />
+        <Route path="/ai/subscription-success" element={<PrivateRoute element={<AISubscriptionSuccess />} />} />
+        <Route path="/ai/test-admin" element={<PrivateRoute element={<AITestAdmin />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
         <Route path="*" element={<CatchAll />} />
       </Routes>

@@ -58,12 +58,12 @@ const NotificationBell = () => {
     const userId = getUserId();
     const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
     if (!userId || !token || token === "null" || token === "undefined") return;
-    axios
-      .get(`${BASE}/v1/notifications/count`, { headers: headers() })
-      .then((res) => {
-        if (res.status === 200) setUnreadCount(res.data?.unreadCount || 0);
-      })
-      .catch(() => {});
+    // axios
+    //   .get(`${BASE}/v1/notifications/count`, { headers: headers() })
+    //   .then((res) => {
+    //     if (res.status === 200) setUnreadCount(res.data?.unreadCount || 0);
+    //   })
+    //   .catch(() => {});
   };
 
   const fetchNotifications = () => {

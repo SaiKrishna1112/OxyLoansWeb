@@ -70,6 +70,8 @@ export const Admlog = async (userid, password) => {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
     localStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("primaryType", response.data.primaryType);
+    sessionStorage.setItem("primaryType", response.data.primaryType);
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
@@ -126,6 +128,7 @@ export const userloginSection = async (email, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
+
     return response;
   } else {
     return response;
@@ -139,7 +142,7 @@ export const sendwhatappotp = async (value1) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "sendWhatsappOtp",
+    "whatsapp-login-otp",
     data
   );
   return response;
@@ -219,7 +222,7 @@ export const verifywhatappotp = async (api, whatsapploginotp) => {
   const response = await handleApiRequestBeforeLogin(
     "POST",
     API_BASE_URL,
-    "verifyWhatsappOtp",
+    "whatsapp-login-otp-verification",
     data
   );
   return response;
