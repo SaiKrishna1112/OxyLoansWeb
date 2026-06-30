@@ -1186,10 +1186,10 @@ const LenderPortfolioDashboard = () => {
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
 
-  // All lenders on the main dashboard see full PRO experience
-  const effectiveTier = 'PRO';
-  const isPro   = true;
-  const isSmart = true;
+  // Tier from backend, URL override for testing (?tier=FREE|SMART|PRO)
+  const effectiveTier = (tierOverride || (data?.membershipTier) || 'FREE').toUpperCase();
+  const isPro   = effectiveTier === 'PRO';
+  const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
   // Portfolio
   useEffect(() => {
