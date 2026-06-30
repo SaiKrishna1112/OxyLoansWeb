@@ -955,46 +955,7 @@ const getFinancialYear = () => {
                   </div>
                 </div>
 
-                {/* RBI ₹50L Lending Limit */}
-                {(() => {
-                  const RBI_LIMIT = 5000000;
-                  const active = dashboardcarddata?.activeDealsAmount ?? 0;
-                  const remaining = Math.max(RBI_LIMIT - active, 0);
-                  const usedPct = Math.min((active / RBI_LIMIT) * 100, 100);
-                  const toLakhs = (v) => (v / 100000).toFixed(2);
-                  const barColor = usedPct >= 90 ? "#e53935" : usedPct >= 70 ? "#fb8c00" : "#0ea5a1";
-                  return (
-                    <div className="row mb-3">
-                      <div className="col-12">
-                        <div className="card" style={{ borderLeft: `4px solid ${barColor}` }}>
-                          <div className="card-body py-3 px-4">
-                            <div className="d-flex justify-content-between align-items-center mb-2">
-                              <div>
-                                <h6 className="mb-0" style={{ fontWeight: 600 }}>RBI Lending Limit</h6>
-                                <small className="text-muted">Max ₹50 Lakhs per lender as per RBI P2P guidelines</small>
-                              </div>
-                              <div className="text-end">
-                                <span style={{ fontSize: 20, fontWeight: 700, color: barColor }}>
-                                  ₹{toLakhs(remaining)} L
-                                </span>
-                                <div style={{ fontSize: 12, color: "gray" }}>remaining to invest</div>
-                              </div>
-                            </div>
-                            <div style={{ background: "#e9ecef", borderRadius: 6, height: 10, overflow: "hidden" }}>
-                              <div style={{ width: `${usedPct}%`, background: barColor, height: "100%", borderRadius: 6, transition: "width 0.6s ease" }} />
-                            </div>
-                            <div className="d-flex justify-content-between mt-1" style={{ fontSize: 12, color: "gray" }}>
-                              <span>Deployed: ₹{toLakhs(active)} L</span>
-                              <span>{usedPct.toFixed(1)}% used of ₹50 L</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <div className="row">
+<div className="row">
                   <div className="col-md-6 col-lg-6">
                     <div className="card">
                       <div className="card-body">

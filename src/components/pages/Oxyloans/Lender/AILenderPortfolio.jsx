@@ -1459,6 +1459,41 @@ const LenderPortfolioDashboard = () => {
                   })()} />
               </div>
 
+              {/* ── RBI ₹50L Lending Limit Bar ── */}
+              {(() => {
+                const RBI_LIMIT = 5000000;
+                const active = data.earningsForecast?.totalActiveAmount ?? data.totalInvested ?? 0;
+                const remaining = Math.max(RBI_LIMIT - active, 0);
+                const usedPct = Math.min((active / RBI_LIMIT) * 100, 100);
+                const toLakhs = (v) => (v / 100000).toFixed(2);
+                const barColor = usedPct >= 90 ? "#e53935" : usedPct >= 70 ? "#fa8c16" : "#52c41a";
+                return (
+                  <div className="row mb-4">
+                    <div className="col-12">
+                      <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${barColor}`, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "#222" }}>RBI Lending Limit</div>
+                            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Max ₹50 Lakhs per lender as per RBI P2P guidelines</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontWeight: 800, fontSize: 22, color: barColor }}>₹{toLakhs(remaining)} L</div>
+                            <div style={{ fontSize: 11, color: "#888" }}>remaining to invest</div>
+                          </div>
+                        </div>
+                        <div style={{ background: "#f0f0f0", borderRadius: 8, height: 12, overflow: "hidden" }}>
+                          <div style={{ width: `${usedPct}%`, background: barColor, height: "100%", borderRadius: 8, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12, color: "#888" }}>
+                          <span>Deployed: ₹{toLakhs(active)} L</span>
+                          <span>{usedPct.toFixed(1)}% used of ₹50 L limit</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ── 3. MONTH-ON-MONTH EARNINGS — always visible ── */}
               {(() => {
                 const allMonths = momData ? [...(momData.monthlyEarnings || [])].reverse() : [];
