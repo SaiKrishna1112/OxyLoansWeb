@@ -1034,6 +1034,106 @@ export const downloadAdminAILenderAnalyticsExcel = async (segment) => {
   return response;
 };
 
+export const downloadAdminAIDashboardExcel = async (section = "overview") => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/dashboard/export`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: { section },
+    responseType: "blob",
+    timeout: 600000,
+  });
+  return response;
+};
+
+export const downloadAdminAIUsersExcel = async (userView = "registered") => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/users/export`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: { userView },
+    responseType: "blob",
+    timeout: 600000,
+  });
+  return response;
+};
+
+export const parseAdminAIExportError = async (error) => {
+  const blob = error?.response?.data;
+  if (blob instanceof Blob) {
+    try {
+      const text = await blob.text();
+      const payload = JSON.parse(text);
+      return payload?.errorMessage || text;
+    } catch {
+      return "Export failed. Restart backend and try again.";
+    }
+  }
+  return error?.response?.data?.errorMessage || error?.message || "Export failed.";
+};
+
+export const fetchAllAdminUsersForExport = async (userView = "registered", onProgress) => {
+  const requestPageSize = 100;
+  const rows = [];
+  let pageNo = 1;
+  let totalCount = 0;
+  let effectivePageSize = requestPageSize;
+
+  while (pageNo <= 500) {
+    if (typeof onProgress === "function") {
+      onProgress(pageNo, totalCount || rows.length);
+    }
+    const data = await getAdminAIUsers(pageNo, requestPageSize, userView, {});
+    effectivePageSize = Number(data?.pageSize) || effectivePageSize;
+    const batch = Array.isArray(data?.users) ? data.users : [];
+    if (pageNo === 1) {
+      totalCount = Number(data?.totalCount) || 0;
+    }
+    if (!batch.length) {
+      break;
+    }
+    rows.push(...batch);
+    if (totalCount > 0 && rows.length >= totalCount) {
+      break;
+    }
+    if (batch.length < effectivePageSize) {
+      break;
+    }
+    pageNo += 1;
+  }
+
+  return { rows, totalCount: totalCount || rows.length };
+};
+
+export const fetchAllCreatedDealsForExport = async (dealView = "all", onProgress) => {
+  const requestPageSize = 100;
+  const rows = [];
+  let pageNo = 1;
+  let totalCount = 0;
+  let effectivePageSize = requestPageSize;
+
+  while (pageNo <= 200) {
+    if (typeof onProgress === "function") {
+      onProgress(pageNo, totalCount || rows.length);
+    }
+    const data = await getAdminAICreatedDeals(pageNo, requestPageSize, dealView, {});
+    effectivePageSize = Number(data?.pageSize) || effectivePageSize;
+    const batch = Array.isArray(data?.deals) ? data.deals : [];
+    if (pageNo === 1) {
+      totalCount = Number(data?.totalCount) || 0;
+    }
+    if (!batch.length) {
+      break;
+    }
+    rows.push(...batch);
+    if (totalCount > 0 && rows.length >= totalCount) {
+      break;
+    }
+    if (batch.length < effectivePageSize) {
+      break;
+    }
+    pageNo += 1;
+  }
+
+  return { rows, totalCount: totalCount || rows.length };
+};
+
 export const generateAdminAILenderCampaignMessage = async (payload) => {
   const response = await axios.post(
     `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/generate-message`,
@@ -1061,14 +1161,21 @@ export const sendAdminAILenderSegmentCampaign = async (payload) => {
 export const uploadAdminAILenderCampaignImage = async (file) => {
   const formData = new FormData();
   formData.append("BULKINVITE", file);
-  const response = await axios.post(`${API_BASE_URL}downloadCampaignUrl`, formData, {
-    headers: adminRegisteredUsersHeaders(),
-    timeout: 120000,
-  });
-  const payload = typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/upload-image`,
+    formData,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+    }
+  );
+  const payload = response.data;
+  if (payload?.status === "FAILED") {
+    throw new Error(payload?.message || "Image upload failed.");
+  }
   const url = payload?.downloadUrl || payload?.url;
   if (!url) {
-    throw new Error("Image upload did not return a URL.");
+    throw new Error(payload?.message || "Image upload did not return a URL.");
   }
   return url;
 };
@@ -1113,10 +1220,11 @@ export const fetchAllActiveLendersForExport = async (onProgress) => {
   const rows = [];
   let pageNo = 1;
   let totalCount = 0;
+  let effectivePageSize = requestPageSize;
 
   while (pageNo <= 50) {
     if (typeof onProgress === "function") {
-      onProgress(pageNo, totalCount);
+      onProgress(pageNo, totalCount || rows.length);
     }
 
     const data = await getAdminAIActiveLenders(pageNo, requestPageSize, {
@@ -1125,6 +1233,7 @@ export const fetchAllActiveLendersForExport = async (onProgress) => {
       includeBankDetails: false,
     });
 
+    effectivePageSize = Number(data?.pageSize) || effectivePageSize;
     const batch = Array.isArray(data?.activeLenders) ? data.activeLenders : [];
     if (pageNo === 1) {
       totalCount = Number(data?.totalCount) || 0;
@@ -1138,14 +1247,14 @@ export const fetchAllActiveLendersForExport = async (onProgress) => {
     if (totalCount > 0 && rows.length >= totalCount) {
       break;
     }
-    if (batch.length < requestPageSize) {
+    if (batch.length < effectivePageSize) {
       break;
     }
 
     pageNo += 1;
   }
 
-  return { rows, totalCount };
+  return { rows, totalCount: totalCount || rows.length };
 };
 
 export const downloadAdminAIActiveLendersExcel = async () => {

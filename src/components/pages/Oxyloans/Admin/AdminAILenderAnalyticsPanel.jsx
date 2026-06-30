@@ -102,6 +102,7 @@ const SEGMENT_LABELS = {
   last3Months: "Last 3 Months Active",
   last6Months: "Last 6 Months Active",
   last1Year: "Last 1 Year Active",
+  inactive3Months: "Inactive (3+ Months)",
   inactive6Months: "Inactive (6+ Months)",
   inactive1Year: "Inactive (1+ Year)",
   oneTime: "1 Deal Participated",
@@ -356,7 +357,8 @@ const AdminAILenderAnalyticsPanel = ({ onOpenLender }) => {
       <div className="admin-ai-analytics-section">
         <h5><FaUserClock /> Inactive Lenders</h5>
         <p className="admin-ai-analytics-hint">Previously active lenders with no recent deal participation.</p>
-        <div className="admin-ai-pro-grid admin-ai-pro-grid-analytics admin-ai-pro-grid-compact">
+        <div className="admin-ai-pro-grid admin-ai-pro-grid-analytics admin-ai-pro-grid-inactive">
+          <MetricCard label="Inactive 3+ Months" value={inactive.inactive3Months} purpose="No participation in last 90 days, but participated before" accent="emerald" active={selectedSegment === "inactive3Months"} onClick={() => openSegment("inactive3Months", "Inactive 3+ Months")} onExport={() => downloadSegmentExcel("inactive3Months", "Inactive 3+ Months")} exporting={exportingSegment === "inactive3Months"} onCampaign={(channel) => openCampaign("inactive3Months", "Inactive 3+ Months", inactive.inactive3Months, channel)} />
           <MetricCard label="Inactive 6+ Months" value={inactive.inactive6Months} purpose="No participation in last 6 months, but participated before" accent="amber" active={selectedSegment === "inactive6Months"} onClick={() => openSegment("inactive6Months", "Inactive 6+ Months")} onExport={() => downloadSegmentExcel("inactive6Months", "Inactive 6+ Months")} exporting={exportingSegment === "inactive6Months"} onCampaign={(channel) => openCampaign("inactive6Months", "Inactive 6+ Months", inactive.inactive6Months, channel)} />
           <MetricCard label="Inactive 1+ Year" value={inactive.inactive1Year} purpose="No participation in last 1 year, but participated before" accent="orange" active={selectedSegment === "inactive1Year"} onClick={() => openSegment("inactive1Year", "Inactive 1+ Year")} onExport={() => downloadSegmentExcel("inactive1Year", "Inactive 1+ Year")} exporting={exportingSegment === "inactive1Year"} onCampaign={(channel) => openCampaign("inactive1Year", "Inactive 1+ Year", inactive.inactive1Year, channel)} />
         </div>

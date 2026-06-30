@@ -21,6 +21,7 @@ import "./AdminAIDashboard.css";
 const pageSize = 20;
 
 const dealTabMeta = {
+  todaycreated: { label: "Today's Deals", description: "Deals created today with status." },
   all: { label: "All Deals", description: "Every deal created on the platform." },
   regular: { label: "Regular Deals", description: "Non-test deals across all statuses." },
   active: { label: "Active Deals", description: "Deals that are not yet closed." },
@@ -95,6 +96,8 @@ const AdminAICreatedDealsPage = () => {
     activeDeals: 0,
     closedDeals: 0,
     testDeals: 0,
+    todayDealsCreated: 0,
+    todayDealsClosed: 0,
   });
   const [dealTab, setDealTab] = useState(initialTab);
   const [deals, setDeals] = useState([]);
@@ -116,9 +119,19 @@ const AdminAICreatedDealsPage = () => {
         activeDeals: pickNumber(data.activeDealsCount),
         closedDeals: pickNumber(data.closedDealsCount),
         testDeals: pickNumber(data.testDealsCount),
+        todayDealsCreated: pickNumber(data.todayDealsCreatedCount),
+        todayDealsClosed: pickNumber(data.todayDealsClosedCount),
       });
     } catch {
-      setSummary({ allDeals: 0, regularDeals: 0, activeDeals: 0, closedDeals: 0, testDeals: 0 });
+      setSummary({
+        allDeals: 0,
+        regularDeals: 0,
+        activeDeals: 0,
+        closedDeals: 0,
+        testDeals: 0,
+        todayDealsCreated: 0,
+        todayDealsClosed: 0,
+      });
     }
   };
 
@@ -159,6 +172,7 @@ const AdminAICreatedDealsPage = () => {
 
   const tabCount = useMemo(
     () => ({
+      todaycreated: summary.todayDealsCreated,
       all: summary.allDeals,
       regular: summary.regularDeals,
       active: summary.activeDeals,

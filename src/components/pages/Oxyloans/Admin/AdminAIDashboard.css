@@ -3456,6 +3456,59 @@
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
 }
 
+.admin-ai-portfolio-legend {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-ai-portfolio-legend .admin-ai-mix-legend-item {
+  padding: 10px 8px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.admin-ai-mix-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.admin-ai-mix-legend-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-ai-mix-legend-copy small {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-ai-mix-legend-copy strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.admin-ai-portfolio-legend .admin-ai-mix-legend-copy strong {
+  font-size: 0.9rem;
+}
+
 .admin-ai-mix-legend .dot {
   width: 10px;
   height: 10px;
@@ -3772,14 +3825,30 @@
 
 .admin-ai-monthly-reg-layout {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 16px;
   align-items: stretch;
 }
 
 .admin-ai-monthly-reg-side {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+  align-content: start;
+}
+
+.admin-ai-monthly-reg-side-heading {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.admin-ai-monthly-reg-side-heading--platform {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed #cbd5e1;
 }
 
 .admin-ai-monthly-reg-side-card {
@@ -3830,6 +3899,33 @@
 
 .admin-ai-monthly-reg-side-card.months .side-letter {
   background: linear-gradient(180deg, #fbbf24, #f59e0b);
+}
+
+.admin-ai-monthly-reg-side-card.platform {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.admin-ai-monthly-reg-side-card.platform .side-letter {
+  width: 36px;
+  height: 36px;
+  font-size: 0.95rem;
+}
+
+.admin-ai-monthly-reg-side-card.platform.lender .side-letter {
+  background: linear-gradient(180deg, #6366f1, #4f46e5);
+}
+
+.admin-ai-monthly-reg-side-card.platform.active .side-letter {
+  background: linear-gradient(180deg, #14b8a6, #0d9488);
+}
+
+.admin-ai-monthly-reg-side-card.platform.borrower .side-letter {
+  background: linear-gradient(180deg, #64748b, #475569);
+}
+
+.admin-ai-monthly-reg-side-card.platform strong {
+  font-size: 1.15rem;
 }
 
 .admin-ai-geo-legend-head {
@@ -4476,6 +4572,173 @@
   gap: 0.5rem;
 }
 
+.admin-ai-top-lenders-panel--compact {
+  max-width: 100%;
+}
+
+.admin-ai-top-lenders-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-ai-top-lenders-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-ai-top-lenders-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.admin-ai-top-lenders-tabs button.active {
+  background: #fff;
+  color: #4338ca;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+.admin-ai-month-picker--inline {
+  margin: 0;
+}
+
+.admin-ai-top-lenders-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.admin-ai-top-lenders-chart-pane,
+.admin-ai-top-lenders-list-pane,
+.admin-ai-top-lenders-trend-only {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(199, 210, 254, 0.55);
+  border-radius: 16px;
+  padding: 12px;
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.06);
+}
+
+.admin-ai-top-lenders-list-pane {
+  padding: 8px 10px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.admin-ai-top-lenders-compact-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-ai-top-lenders-compact-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.admin-ai-top-lenders-compact-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.admin-ai-top-lenders-compact-copy strong {
+  font-size: 0.78rem;
+  color: #4338ca;
+}
+
+.admin-ai-top-lenders-compact-copy span {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-ai-top-lenders-compact-copy small {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-ai-top-lenders-compact-meta {
+  text-align: right;
+  min-width: 88px;
+}
+
+.admin-ai-top-lenders-compact-meta strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.admin-ai-top-lenders-compact-meta small {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.admin-ai-rank-badge--sm {
+  min-width: 1.65rem;
+  height: 1.65rem;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 1100px) {
+  .admin-ai-top-lenders-split {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-ai-top-lenders-list-pane {
+    max-height: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-ai-top-lenders-compact-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .admin-ai-top-lenders-compact-meta,
+  .admin-ai-top-lenders-compact-list .admin-ai-link-btn {
+    grid-column: 2;
+  }
+
+  .admin-ai-top-lenders-compact-meta {
+    text-align: left;
+  }
+}
+
 .admin-ai-top-lenders-card {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid rgba(199, 210, 254, 0.55);
@@ -5063,6 +5326,83 @@
   border-bottom: none;
 }
 
+.admin-ai-pro-kpi-meta {
+  display: block;
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.admin-ai-pro-kpi-card-export-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 16px);
+  margin: 0 8px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d4ed8;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.admin-ai-pro-kpi-card-export-btn:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.admin-ai-pro-kpi-card-export-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.admin-ai-pro-kpi--teal .admin-ai-pro-kpi-card-export-btn {
+  color: #0f766e;
+}
+
+.admin-ai-pro-kpi--teal .admin-ai-pro-kpi-card-export-btn:hover:not(:disabled) {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.admin-ai-pro-section-export-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #93c5fd;
+  background: #fff;
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-ai-pro-section-export-btn--deals {
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.admin-ai-pro-section-export-btn:hover:not(:disabled) {
+  background: #eff6ff;
+}
+
+.admin-ai-pro-section-export-btn--deals:hover:not(:disabled) {
+  background: #ecfdf5;
+}
+
+.admin-ai-pro-section-export-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .admin-ai-pro-section--users .admin-ai-pro-section-head {
   background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
 }
@@ -5147,6 +5487,17 @@
 .admin-ai-pro-grid-compact {
   max-width: 480px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-ai-pro-grid-inactive {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1100px) {
+  .admin-ai-pro-grid-inactive {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .admin-ai-pro-grid-fy {
@@ -5541,7 +5892,8 @@
   }
 
   .admin-ai-pro-grid-4,
-  .admin-ai-pro-grid-compact {
+  .admin-ai-pro-grid-compact,
+  .admin-ai-pro-grid-inactive {
     grid-template-columns: 1fr;
     max-width: none;
   }
@@ -5719,6 +6071,7 @@
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 12px;
+  width: 100%;
 }
 
 .admin-ai-campaign-preview pre {
@@ -5778,6 +6131,148 @@
 
 .admin-ai-campaign-email-preview-head img {
   max-height: 48px;
+}
+
+.admin-ai-campaign-whatsapp-preview {
+  background: #e5ddd5;
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.admin-ai-campaign-whatsapp-preview-bubble {
+  background: #fff;
+  border-radius: 8px;
+  padding: 14px;
+  width: 100%;
+  max-width: 100%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.admin-ai-campaign-whatsapp-logo-card {
+  max-height: 120px;
+  object-fit: contain;
+  padding: 8px 12px;
+  background: #fff;
+}
+
+.admin-ai-campaign-upload-btn.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.admin-ai-campaign-whatsapp-card-style {
+  padding: 10px;
+}
+
+.admin-ai-campaign-whatsapp-card-image {
+  width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+  background: #f8fafc;
+}
+
+.admin-ai-campaign-whatsapp-card-placeholder {
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 0.9rem;
+  background: #f8fafc;
+}
+
+.admin-ai-campaign-whatsapp-caption {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.admin-ai-campaign-whatsapp-logo-wrap {
+  text-align: center;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+}
+
+.admin-ai-campaign-whatsapp-logo {
+  max-height: 64px;
+  max-width: 220px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: inline-block;
+}
+
+.admin-ai-campaign-whatsapp-banner {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.admin-ai-campaign-whatsapp-subject {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.admin-ai-campaign-whatsapp-greeting {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 14px;
+}
+
+.admin-ai-campaign-whatsapp-body-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.admin-ai-campaign-whatsapp-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111827;
+  margin: 0;
+}
+
+.admin-ai-campaign-email-preview-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111827;
+  margin: 12px 0;
+}
+
+.admin-ai-campaign-whatsapp-footer {
+  display: block;
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.admin-ai-campaign-test-ok {
+  border-color: #86efac !important;
+  background: #f0fdf4 !important;
+}
+
+.admin-ai-campaign-test-ok strong {
+  color: #166534;
 }
 
 .admin-ai-campaign-actions {

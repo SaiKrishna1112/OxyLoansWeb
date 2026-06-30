@@ -45,9 +45,13 @@ const AdminAIMonthlyRegistrationChart = ({ monthlyRows = [], platformStats = {} 
     [monthly]
   );
 
-  const lenderTotal = totals.lenders || pickNumber(platformStats?.allLenders);
-  const borrowerTotal = totals.borrowers || pickNumber(platformStats?.allBorrowers);
-  const registrationTotal = totals.total || lenderTotal + borrowerTotal;
+  const chartLenderSignups = totals.lenders;
+  const chartBorrowerSignups = totals.borrowers;
+  const chartRegistrationTotal = totals.total || chartLenderSignups + chartBorrowerSignups;
+
+  const allTimeLenders = pickNumber(platformStats?.allLenders);
+  const dealActiveLenders = pickNumber(platformStats?.allActiveLenders);
+  const allTimeBorrowers = pickNumber(platformStats?.allBorrowers);
 
   const chart = useMemo(
     () => ({
@@ -95,38 +99,65 @@ const AdminAIMonthlyRegistrationChart = ({ monthlyRows = [], platformStats = {} 
       <div className="admin-ai-panel-head">
         <div>
           <h4>Month-wise Lender &amp; Borrower Registrations</h4>
-          <p>12-month registration trend with lender and borrower counts beside the chart.</p>
+          <p>
+            Chart shows <strong>new sign-ups per month</strong> (last 12 months). Side totals are sign-ups in that
+            period only — not all-time registered or deal-active lenders.
+          </p>
         </div>
       </div>
 
       <div className="admin-ai-monthly-reg-layout">
         <aside className="admin-ai-monthly-reg-side">
+          <p className="admin-ai-monthly-reg-side-heading">Last 12 months (chart period)</p>
           <div className="admin-ai-monthly-reg-side-card lender">
             <span className="side-letter">L</span>
             <div>
-              <small>Total Lenders</small>
-              <strong>{fmtNum(lenderTotal)}</strong>
+              <small>New lender sign-ups</small>
+              <strong>{fmtNum(chartLenderSignups)}</strong>
             </div>
           </div>
           <div className="admin-ai-monthly-reg-side-card borrower">
             <span className="side-letter">B</span>
             <div>
-              <small>Total Borrowers</small>
-              <strong>{fmtNum(borrowerTotal)}</strong>
+              <small>New borrower sign-ups</small>
+              <strong>{fmtNum(chartBorrowerSignups)}</strong>
             </div>
           </div>
           <div className="admin-ai-monthly-reg-side-card total">
             <span className="side-letter">Σ</span>
             <div>
-              <small>Chart Registrations</small>
-              <strong>{fmtNum(registrationTotal)}</strong>
+              <small>Chart sign-ups total</small>
+              <strong>{fmtNum(chartRegistrationTotal)}</strong>
             </div>
           </div>
           <div className="admin-ai-monthly-reg-side-card months">
             <span className="side-letter">12</span>
             <div>
-              <small>Months Tracked</small>
+              <small>Months on chart</small>
               <strong>{fmtNum(monthly.length)}</strong>
+            </div>
+          </div>
+
+          <p className="admin-ai-monthly-reg-side-heading admin-ai-monthly-reg-side-heading--platform">Platform all-time (UserRepo)</p>
+          <div className="admin-ai-monthly-reg-side-card platform lender">
+            <span className="side-letter">∞</span>
+            <div>
+              <small>Registered lenders</small>
+              <strong>{fmtNum(allTimeLenders)}</strong>
+            </div>
+          </div>
+          <div className="admin-ai-monthly-reg-side-card platform active">
+            <span className="side-letter">✓</span>
+            <div>
+              <small>Deal-active lenders</small>
+              <strong>{fmtNum(dealActiveLenders)}</strong>
+            </div>
+          </div>
+          <div className="admin-ai-monthly-reg-side-card platform borrower">
+            <span className="side-letter">∞</span>
+            <div>
+              <small>Registered borrowers</small>
+              <strong>{fmtNum(allTimeBorrowers)}</strong>
             </div>
           </div>
         </aside>

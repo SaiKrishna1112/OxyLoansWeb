@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
+import { saveAs } from "file-saver";
 import {
   FaRobot,
   FaUsers,
@@ -12,6 +13,8 @@ import {
   FaMedal,
   FaCopy,
   FaBriefcase,
+  FaFileExcel,
+  FaCalendarDay,
 } from "react-icons/fa";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
@@ -29,6 +32,14 @@ import {
   getAdminAIActiveLenderLegacyDetails,
   getAdminAIActiveLenderStates,
   getRegisteredUsersSummary,
+  downloadAdminAIDashboardExcel,
+  downloadAdminAIUsersExcel,
+  parseAdminAIExportError,
+  fetchAllAdminUsersForExport,
+  fetchAllCreatedDealsForExport,
+  fetchAllActiveLendersForExport,
+  downloadAdminAIActiveLendersExcel,
+  getAdminAICreatedDeals,
 } from "../../../HttpRequest/admin";
 import "./AdminAIDashboard.css";
 import AdminAIUserGeographyPanel from "./AdminAIUserGeographyPanel";
@@ -56,14 +67,27 @@ const fallbackStats = {
   activeDeals: 0,
   closedDeals: 0,
   testDeals: 0,
+  todayDealsCreated: 0,
+  todayDealsClosed: 0,
 };
 
 const userViewByCard = {
   allUsers: "registered",
   allLenders: "lenders",
   allBorrowers: "borrowers",
+  lastThreeMonthsActiveLenders: "last3MonthsActive",
   todayRegisteredUsers: "todayRegistered",
   todayParticipatedUsers: "todayParticipated",
+};
+
+const userExportByCard = {
+  allUsers: { type: "users", userView: "registered", label: "Registered Users", fileSlug: "registered-users" },
+  allLenders: { type: "users", userView: "lenders", label: "Registered Lenders", fileSlug: "registered-lenders" },
+  allBorrowers: { type: "users", userView: "borrowers", label: "Registered Borrowers", fileSlug: "registered-borrowers" },
+  allActiveLenders: { type: "activeLenders", label: "All Active Lenders", fileSlug: "active-lenders" },
+  lastThreeMonthsActiveLenders: { type: "users", userView: "last3MonthsActive", label: "Last 3 Months Active", fileSlug: "last-3-months-active" },
+  todayRegisteredUsers: { type: "users", userView: "todayRegistered", label: "Today Registered", fileSlug: "today-registered" },
+  todayParticipatedUsers: { type: "users", userView: "todayParticipated", label: "Today Participated", fileSlug: "today-participated" },
 };
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
@@ -79,6 +103,201 @@ const pickNumber = (...values) => {
 const responseData = (payload) => (payload && payload.data ? payload.data : payload);
 const valueOrDash = (value) => (value == null || value === "" ? "-" : value);
 const formatDate = (value) => String(value || "").slice(0, 10) || "-";
+const escapeXml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const buildSpreadsheetXml = (sheetName, headers, rows, numericColumns = []) => {
+  const headerXml = headers
+    .map((title) => `<Cell><Data ss:Type="String">${escapeXml(title)}</Data></Cell>`)
+    .join("");
+  const rowXml = rows
+    .map((cells) => {
+      const cellXml = cells
+        .map((cell, index) => {
+          const type = numericColumns.includes(index) ? "Number" : "String";
+          return `<Cell><Data ss:Type="${type}">${escapeXml(cell)}</Data></Cell>`;
+        })
+        .join("");
+      return `<Row>${cellXml}</Row>`;
+    })
+    .join("");
+  return `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+<Worksheet ss:Name="${escapeXml(sheetName)}">
+<Table>
+<Row>${headerXml}</Row>
+${rowXml}
+</Table>
+</Worksheet>
+</Workbook>`;
+};
+
+const saveSpreadsheetXml = (xml, fileName) => {
+  const blob = new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  saveAs(blob, fileName.endsWith(".xls") ? fileName : fileName.replace(/\.xlsx$/, ".xls"));
+};
+
+const buildOverviewSummaryRows = (stats) => [
+  ["Registered Users", stats.allUsers, "All platform users"],
+  ["Registered Lenders", stats.allLenders, "LENDER accounts"],
+  ["Registered Borrowers", stats.allBorrowers, "BORROWER accounts"],
+  ["All Active Lenders", stats.allActiveLenders, "Participated in deals"],
+  ["Last 3 Months Active", stats.lastThreeMonthsActiveLenders, "Recent participation"],
+  ["Today Registered", stats.todayRegisteredUsers, "New sign-ups today"],
+  ["Today Participated", stats.todayParticipatedUsers, "Deal activity today"],
+];
+
+const buildDealsSummaryRows = (stats) => [
+  ["Today's Deals (Created)", stats.todayDealsCreated, "Deals created today"],
+  ["Today's Deals (Closed)", stats.todayDealsClosed, "Deals closed today"],
+  ["All Deals Created", stats.allDeals, "Full deals directory"],
+  ["Active Deals", stats.activeDeals, "Open / not closed"],
+  ["Closed Deals", stats.closedDeals, "Completed deals"],
+  ["Test Deals", stats.testDeals, "Test records only"],
+];
+
+const ACTIVE_LENDER_EXPORT_HEADERS = [
+  "Lender ID", "User Code", "Name", "Mobile Number", "Email", "City", "State",
+  "Deals Count", "Total Participation Amount", "Last Participation",
+];
+
+const buildActiveLenderExportRows = (lenders) =>
+  (lenders || []).map((lender) => [
+    pickNumber(lender.lenderId),
+    lender.userCode || `LR${pickNumber(lender.lenderId)}`,
+    valueOrDash(lender.name),
+    valueOrDash(lender.mobileNumber),
+    valueOrDash(lender.email),
+    valueOrDash(lender.city),
+    valueOrDash(lender.state),
+    pickNumber(lender.dealsCount),
+    Math.round(pickNumber(lender.totalParticipationAmount)),
+    formatDate(lender.lastParticipationOn),
+  ]);
+
+const buildUserExportRows = (users) =>
+  (users || []).map((user) => [
+    pickNumber(user.userId),
+    user.userCode || `U${pickNumber(user.userId)}`,
+    valueOrDash(user.name),
+    valueOrDash(user.mobileNumber),
+    valueOrDash(user.email),
+    valueOrDash(user.primaryType || user.lenderType),
+    formatDate(user.registeredOn),
+    valueOrDash(user.city),
+    valueOrDash(user.state),
+    valueOrDash(user.pincode),
+    valueOrDash(user.utm),
+    pickNumber(user.dealsCount),
+    Math.round(pickNumber(user.totalParticipationAmount)),
+  ]);
+
+const buildDealExportRows = (deals) =>
+  (deals || []).map((deal) => [
+    pickNumber(deal.dealId),
+    valueOrDash(deal.dealName),
+    Math.round(pickNumber(deal.dealAmount)),
+    valueOrDash(deal.status === "NOTYETCLOSED" ? "Active" : deal.status),
+    valueOrDash(deal.dealType),
+    formatDate(deal.createdOn),
+    formatDate(deal.closedDate || deal.borrowerClosedDate),
+    pickNumber(deal.lendersParticipated),
+    Math.round(pickNumber(deal.collectedAmount || deal.dealAchievedAmount)),
+    valueOrDash(deal.tenure),
+    valueOrDash(deal.payoutTypeLabel || deal.payoutType),
+  ]);
+
+const USER_EXPORT_HEADERS = [
+  "User ID", "User Code", "Name", "Mobile Number", "Email", "User Type", "Registered Date",
+  "City", "State", "Pincode", "UTM Source", "Deals Count", "Total Participation Amount",
+];
+
+const DEAL_EXPORT_HEADERS = [
+  "Deal ID", "Deal Name", "Deal Amount", "Status", "Deal Type", "Created On", "Closed Date",
+  "Lenders Participated", "Collected Amount", "Tenure", "Payout Type",
+];
+
+const downloadOverviewExcelFallback = async (stats) => {
+  const summaryXml = buildSpreadsheetXml(
+    "Overview Summary",
+    ["Metric", "Count", "Description"],
+    buildOverviewSummaryRows(stats),
+    [1]
+  );
+  saveSpreadsheetXml(summaryXml, `admin-ai-overview-summary-${new Date().toISOString().slice(0, 10)}.xls`);
+
+  const { rows } = await fetchAllAdminUsersForExport("registered");
+  const usersXml = buildSpreadsheetXml(
+    "Registered Users",
+    USER_EXPORT_HEADERS,
+    buildUserExportRows(rows),
+    [0, 11, 12]
+  );
+  saveSpreadsheetXml(usersXml, `admin-ai-registered-users-${new Date().toISOString().slice(0, 10)}.xls`);
+};
+
+const userViewSheetLabel = (userView) => {
+  if (userView === "lenders") return "Registered Lenders";
+  if (userView === "borrowers") return "Registered Borrowers";
+  if (userView === "todayRegistered") return "Today Registered";
+  if (userView === "todayParticipated") return "Today Participated";
+  if (userView === "last3MonthsActive") return "Last 3 Months Active";
+  return "Registered Users";
+};
+
+const cardExportFileName = (fileSlug) => {
+  const stamp = new Date().toISOString().slice(0, 10);
+  return `admin-ai-${fileSlug}-${stamp}.xlsx`;
+};
+
+const downloadDealsExcelFallback = async (stats) => {
+  const summaryXml = buildSpreadsheetXml(
+    "Deals Summary",
+    ["Metric", "Count", "Description"],
+    buildDealsSummaryRows(stats),
+    [1]
+  );
+  saveSpreadsheetXml(summaryXml, `admin-ai-deals-summary-${new Date().toISOString().slice(0, 10)}.xls`);
+
+  const [todayCreated, todayClosed, allDeals] = await Promise.all([
+    getAdminAICreatedDeals(1, 500, "todaycreated", {}),
+    getAdminAICreatedDeals(1, 500, "todayclosed", {}),
+    fetchAllCreatedDealsForExport("all"),
+  ]);
+  const todayRows = [
+    ...(todayCreated?.deals || []).map((deal) => ({ ...deal, todayActivity: "Created Today" })),
+    ...(todayClosed?.deals || []).map((deal) => ({ ...deal, todayActivity: "Closed Today" })),
+  ];
+  const todayXml = buildSpreadsheetXml(
+    "Todays Deals",
+    [...DEAL_EXPORT_HEADERS.slice(0, 7), "Today's Activity", ...DEAL_EXPORT_HEADERS.slice(7)],
+    todayRows.map((deal) => [
+      ...buildDealExportRows([deal])[0].slice(0, 7),
+      valueOrDash(deal.todayActivity),
+      ...buildDealExportRows([deal])[0].slice(7),
+    ]),
+    [0, 2, 7, 8]
+  );
+  saveSpreadsheetXml(todayXml, `admin-ai-todays-deals-${new Date().toISOString().slice(0, 10)}.xls`);
+
+  const allXml = buildSpreadsheetXml(
+    "All Deals",
+    DEAL_EXPORT_HEADERS,
+    buildDealExportRows(allDeals.rows),
+    [0, 2, 7, 8]
+  );
+  saveSpreadsheetXml(allXml, `admin-ai-all-deals-${new Date().toISOString().slice(0, 10)}.xls`);
+};
+
 const formatLenderCode = (lenderId, userCode) => userCode || (lenderId ? `LR${lenderId}` : "-");
 const gmailUrl = (email) => (email ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}` : "");
 
@@ -227,6 +446,11 @@ const AdminAIDashboard = () => {
   const [topLenderDetailLoading, setTopLenderDetailLoading] = useState(false);
   const [topLenderDetailError, setTopLenderDetailError] = useState("");
   const [topLenderDealsTab, setTopLenderDealsTab] = useState("active");
+  const [topLendersTab, setTopLendersTab] = useState("allTime");
+  const [exportingOverview, setExportingOverview] = useState(false);
+  const [exportingDeals, setExportingDeals] = useState(false);
+  const [exportingCardKey, setExportingCardKey] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
 
   const showActiveLenders = selectedCard?.key === "lastThreeMonthsActiveLenders";
   const showAdminUsers = Boolean(
@@ -289,6 +513,8 @@ const AdminAIDashboard = () => {
         activeDeals: pickNumber(registeredUsersData.activeDealsCount),
         closedDeals: pickNumber(registeredUsersData.closedDealsCount),
         testDeals: pickNumber(registeredUsersData.testDealsCount),
+        todayDealsCreated: pickNumber(registeredUsersData.todayDealsCreatedCount, today.dealsCreated),
+        todayDealsClosed: pickNumber(registeredUsersData.todayDealsClosedCount, today.dealsClosed),
       });
       setCharts({
         registrationBreakdown,
@@ -590,6 +816,138 @@ const AdminAIDashboard = () => {
     }
   };
 
+  const downloadDashboardExcel = async (section) => {
+    const isOverview = section === "overview";
+    if (isOverview ? exportingOverview : exportingDeals) {
+      return;
+    }
+    const setLoading = isOverview ? setExportingOverview : setExportingDeals;
+    setExportMessage("");
+    setLoading(true);
+    const date = new Date().toISOString().slice(0, 10);
+    const fileName = `admin-ai-${section}-${date}.xlsx`;
+    try {
+      const response = await downloadAdminAIDashboardExcel(section);
+      const blob = response?.data;
+      if (!blob || blob.size === 0) {
+        throw new Error("Export returned no data.");
+      }
+      if (blob.type && blob.type.includes("json")) {
+        const text = await blob.text();
+        const payload = JSON.parse(text);
+        throw new Error(payload?.errorMessage || "Export failed.");
+      }
+      saveAs(blob, fileName);
+      setExportMessage(
+        section === "overview"
+          ? "Downloaded Excel: Overview Summary + all Registered Users (name, mobile, email, type, date)."
+          : "Downloaded Excel: Deals Summary + Today's Deals + All Deals with status."
+      );
+    } catch (error) {
+      try {
+        if (section === "overview") {
+          await downloadOverviewExcelFallback(stats);
+          setExportMessage("Downloaded registered users Excel (browser export). Restart backend for single .xlsx file.");
+        } else {
+          await downloadDealsExcelFallback(stats);
+          setExportMessage("Downloaded deals Excel files (browser export). Restart backend for single .xlsx file.");
+        }
+      } catch (fallbackError) {
+        setExportMessage(await parseAdminAIExportError(error) || fallbackError?.message || "Export failed.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadUsersExcel = async (userView = "registered", label = "", fileSlug = "") => {
+    const exportLabel = label || userViewSheetLabel(userView);
+    const fileName = cardExportFileName(fileSlug || userView);
+    setExportMessage(`Preparing ${exportLabel} export...`);
+    try {
+      const response = await downloadAdminAIUsersExcel(userView);
+      const blob = response?.data;
+      if (!blob || blob.size === 0) {
+        throw new Error("Export returned no data.");
+      }
+      if (blob.type && blob.type.includes("json")) {
+        const text = await blob.text();
+        const payload = JSON.parse(text);
+        throw new Error(payload?.errorMessage || "Export failed.");
+      }
+      saveAs(blob, fileName);
+      setExportMessage(`Downloaded ${exportLabel} Excel with user details.`);
+    } catch (error) {
+      setExportMessage(`Fetching all ${exportLabel} records page by page...`);
+      const { rows, totalCount } = await fetchAllAdminUsersForExport(userView, (pageNo, fetched) => {
+        setExportMessage(`Fetching ${exportLabel}... page ${pageNo} (${fetched} loaded)`);
+      });
+      if (!rows.length) {
+        throw new Error((await parseAdminAIExportError(error)) || "No users found to export.");
+      }
+      const usersXml = buildSpreadsheetXml(
+        userViewSheetLabel(userView),
+        USER_EXPORT_HEADERS,
+        buildUserExportRows(rows),
+        [0, 11, 12]
+      );
+      saveSpreadsheetXml(usersXml, fileName.replace(/\.xlsx$/, ".xls"));
+      setExportMessage(`Downloaded ${rows.length} of ${totalCount || rows.length} ${exportLabel} records as Excel.`);
+    }
+  };
+
+  const downloadActiveLendersExcel = async (label = "All Active Lenders", fileSlug = "active-lenders") => {
+    const fileName = cardExportFileName(fileSlug);
+    setExportMessage("");
+    try {
+      const response = await downloadAdminAIActiveLendersExcel();
+      const blob = response?.data;
+      if (!blob || blob.size === 0) {
+        throw new Error("Export returned no data.");
+      }
+      if (blob.type && blob.type.includes("json")) {
+        const text = await blob.text();
+        const payload = JSON.parse(text);
+        throw new Error(payload?.errorMessage || "Export failed.");
+      }
+      saveAs(blob, fileName);
+      setExportMessage(`Downloaded ${label} Excel with lender details.`);
+    } catch (error) {
+      const { rows } = await fetchAllActiveLendersForExport();
+      if (!rows.length) {
+        throw new Error((await parseAdminAIExportError(error)) || "No active lenders found to export.");
+      }
+      const lendersXml = buildSpreadsheetXml(
+        "Active Lenders",
+        ACTIVE_LENDER_EXPORT_HEADERS,
+        buildActiveLenderExportRows(rows),
+        [0, 7, 8]
+      );
+      saveSpreadsheetXml(lendersXml, fileName.replace(/\.xlsx$/, ".xls"));
+      setExportMessage(`Downloaded ${rows.length} ${label} records as Excel.`);
+    }
+  };
+
+  const downloadOverviewCardExcel = async (cardKey) => {
+    const config = userExportByCard[cardKey];
+    if (!config || exportingCardKey) {
+      return;
+    }
+    setExportingCardKey(cardKey);
+    setExportMessage("");
+    try {
+      if (config.type === "activeLenders") {
+        await downloadActiveLendersExcel(config.label, config.fileSlug);
+      } else {
+        await downloadUsersExcel(config.userView, config.label, config.fileSlug);
+      }
+    } catch (error) {
+      setExportMessage(error?.message || "Failed to download Excel for this card.");
+    } finally {
+      setExportingCardKey("");
+    }
+  };
+
   const userCards = useMemo(
     () => [
       { key: "allUsers", label: "Registered Users", value: stats.allUsers, icon: <FaUsers />, meta: "All platform users", accent: "blue", clickable: true },
@@ -605,6 +963,19 @@ const AdminAIDashboard = () => {
 
   const dealCards = useMemo(
     () => [
+      {
+        key: "todayDeals",
+        label: "Today's Deals",
+        value: stats.todayDealsCreated,
+        icon: <FaCalendarDay />,
+        meta:
+          stats.todayDealsCreated > 0 || stats.todayDealsClosed > 0
+            ? `${fmtNum(stats.todayDealsCreated)} created · ${fmtNum(stats.todayDealsClosed)} closed today`
+            : "No deals today",
+        accent: "amber",
+        clickable: true,
+        navigateTo: "/adminAICreatedDeals?tab=todaycreated",
+      },
       {
         key: "allDeals",
         label: "All Deals Created",
@@ -807,6 +1178,8 @@ const AdminAIDashboard = () => {
             </div>
           )}
 
+          {exportMessage ? <div className="admin-ai-pro-export-msg">{exportMessage}</div> : null}
+
           {loading && <div className="admin-ai-empty-state">Loading Admin AI dashboard...</div>}
 
           {!loading && !showActiveLenders && !showAdminUsers && (
@@ -816,8 +1189,17 @@ const AdminAIDashboard = () => {
                   <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--users"><FaUsers /></div>
                   <div>
                     <h2>Platform Overview</h2>
-                    <p>User registrations, active lenders, and today&apos;s activity</p>
+                    <p>Summary counts plus full registered-user Excel (name, mobile, email, LENDER/BORROWER, register date).</p>
                   </div>
+                  <button
+                    type="button"
+                    className="admin-ai-pro-section-export-btn"
+                    disabled={exportingOverview}
+                    onClick={() => downloadDashboardExcel("overview")}
+                    title="Sheet 1: counts. Sheet 2: all registered users with details."
+                  >
+                    <FaFileExcel /> {exportingOverview ? "Exporting..." : "Download Excel"}
+                  </button>
                 </div>
                 <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
                   {userCards.map((card) => (
@@ -826,6 +1208,8 @@ const AdminAIDashboard = () => {
                       {...card}
                       active={selectedCard?.key === card.key}
                       onClick={card.clickable ? () => handleCardClick(card) : undefined}
+                      onExport={userExportByCard[card.key] ? () => downloadOverviewCardExcel(card.key) : undefined}
+                      exporting={exportingCardKey === card.key}
                     />
                   ))}
                 </div>
@@ -836,8 +1220,17 @@ const AdminAIDashboard = () => {
                   <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--deals"><FaBriefcase /></div>
                   <div>
                     <h2>Platform Deals</h2>
-                    <p>Click any card to open the deals directory with participation details.</p>
+                    <p>Summary counts, today&apos;s deals with status, and full all-deals list in Excel.</p>
                   </div>
+                  <button
+                    type="button"
+                    className="admin-ai-pro-section-export-btn admin-ai-pro-section-export-btn--deals"
+                    disabled={exportingDeals}
+                    onClick={() => downloadDashboardExcel("deals")}
+                    title="Sheets: summary, today's deals, all deals with status."
+                  >
+                    <FaFileExcel /> {exportingDeals ? "Exporting..." : "Download Excel"}
+                  </button>
                 </div>
                 <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
                   {dealCards.map((card) => (
@@ -853,11 +1246,11 @@ const AdminAIDashboard = () => {
 
               <AdminAILenderAnalyticsPanel onOpenLender={openTopLenderDetail} />
 
-              <section className="admin-ai-panel admin-ai-top-lenders-panel">
+              <section className="admin-ai-panel admin-ai-top-lenders-panel admin-ai-top-lenders-panel--compact">
                 <div className="admin-ai-panel-head">
                   <div>
                     <h4><FaTrophy /> Top 10 Lenders</h4>
-                    <p>All-time and month-wise lender rankings by total investment (participation + updation).</p>
+                    <p>Compact rankings by total investment — switch tabs for all-time, monthly, or trend.</p>
                   </div>
                   <span className="admin-ai-live-pill">Investment Rankings</span>
                 </div>
@@ -873,68 +1266,79 @@ const AdminAIDashboard = () => {
 
                 {!topLendersLoading && (
                   <>
-                    <div className="row admin-ai-section-row">
-                      <div className="col-lg-6 mb-4">
-                        <div className="admin-ai-top-lenders-card">
-                          <div className="admin-ai-top-lenders-card-head">
-                            <h5><FaMedal /> All-Time Top {topLendersLimit}</h5>
-                            <span>By total investment</span>
-                          </div>
-                          {topLenders.length ? (
-                            <>
-                              <div className="admin-ai-chart-wrap admin-ai-chart-wrap-compact">
-                                <ReactApexChart type="bar" height={320} series={topLendersChart.series} options={topLendersChart.options} />
-                              </div>
-                              <TopLendersTable lenders={topLenders} onSelect={openTopLenderDetail} />
-                            </>
-                          ) : (
-                            <div className="admin-ai-empty-state">No all-time top lender data returned.</div>
-                          )}
-                        </div>
+                    <div className="admin-ai-top-lenders-toolbar">
+                      <div className="admin-ai-top-lenders-tabs">
+                        <button
+                          type="button"
+                          className={topLendersTab === "allTime" ? "active" : ""}
+                          onClick={() => setTopLendersTab("allTime")}
+                        >
+                          <FaMedal /> All-Time
+                        </button>
+                        <button
+                          type="button"
+                          className={topLendersTab === "monthly" ? "active" : ""}
+                          onClick={() => setTopLendersTab("monthly")}
+                        >
+                          Month-Wise
+                        </button>
+                        <button
+                          type="button"
+                          className={topLendersTab === "trend" ? "active" : ""}
+                          onClick={() => setTopLendersTab("trend")}
+                        >
+                          <FaChartLine /> 12-Mo Trend
+                        </button>
                       </div>
-                      <div className="col-lg-6 mb-4">
-                        <div className="admin-ai-top-lenders-card">
-                          <div className="admin-ai-top-lenders-card-head">
-                            <h5>Month-Wise Top {topLendersLimit}</h5>
-                            <label className="admin-ai-month-picker">
-                              Month
-                              <select
-                                value={selectedTopMonth}
-                                onChange={(event) => loadMonthlyTopLenders(event.target.value)}
-                              >
-                                {monthOptions.map((month) => (
-                                  <option key={month} value={month}>{month}</option>
-                                ))}
-                              </select>
-                            </label>
-                          </div>
-                          {monthlyTopLenders.length ? (
-                            <>
-                              <div className="admin-ai-chart-wrap admin-ai-chart-wrap-compact">
-                                <ReactApexChart type="bar" height={320} series={monthlyTopLendersChart.series} options={monthlyTopLendersChart.options} />
-                              </div>
-                              <TopLendersTable lenders={monthlyTopLenders} onSelect={openTopLenderDetail} monthly />
-                            </>
-                          ) : (
-                            <div className="admin-ai-empty-state">No lender participation found for {selectedTopMonth}.</div>
-                          )}
-                        </div>
-                      </div>
+                      {topLendersTab === "monthly" ? (
+                        <label className="admin-ai-month-picker admin-ai-month-picker--inline">
+                          Month
+                          <select
+                            value={selectedTopMonth}
+                            onChange={(event) => loadMonthlyTopLenders(event.target.value)}
+                          >
+                            {monthOptions.map((month) => (
+                              <option key={month} value={month}>{month}</option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
                     </div>
 
-                    <div className="admin-ai-top-lenders-card">
-                      <div className="admin-ai-top-lenders-card-head">
-                        <h5>12-Month Investment Trend</h5>
-                        <span>Platform-wide participation by month</span>
+                    {topLendersTab === "trend" ? (
+                      <div className="admin-ai-top-lenders-trend-only">
+                        {monthlyTrend.length ? (
+                          <div className="admin-ai-chart-wrap admin-ai-chart-wrap-compact">
+                            <ReactApexChart type="line" height={240} series={monthlyInvestmentTrendChart.series} options={monthlyInvestmentTrendChart.options} />
+                          </div>
+                        ) : (
+                          <div className="admin-ai-empty-state">No monthly investment trend data returned.</div>
+                        )}
                       </div>
-                      {monthlyTrend.length ? (
-                        <div className="admin-ai-chart-wrap">
-                          <ReactApexChart type="line" height={300} series={monthlyInvestmentTrendChart.series} options={monthlyInvestmentTrendChart.options} />
+                    ) : (
+                      <div className="admin-ai-top-lenders-split">
+                        <div className="admin-ai-top-lenders-chart-pane">
+                          {topLendersTab === "allTime" ? (
+                            topLenders.length ? (
+                              <ReactApexChart type="bar" height={240} series={topLendersChart.series} options={topLendersChart.options} />
+                            ) : (
+                              <div className="admin-ai-empty-state">No all-time top lender data.</div>
+                            )
+                          ) : monthlyTopLenders.length ? (
+                            <ReactApexChart type="bar" height={240} series={monthlyTopLendersChart.series} options={monthlyTopLendersChart.options} />
+                          ) : (
+                            <div className="admin-ai-empty-state">No data for {selectedTopMonth}.</div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="admin-ai-empty-state">No monthly investment trend data returned.</div>
-                      )}
-                    </div>
+                        <div className="admin-ai-top-lenders-list-pane">
+                          <TopLendersCompactList
+                            lenders={topLendersTab === "allTime" ? topLenders : monthlyTopLenders}
+                            monthly={topLendersTab === "monthly"}
+                            onSelect={openTopLenderDetail}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </section>
@@ -944,7 +1348,7 @@ const AdminAIDashboard = () => {
                   <section className="admin-ai-panel">
                     <div className="admin-ai-panel-head">
                       <div>
-                        <h4>UserAi-Graph</h4>
+                        <h4>user-Portfolio chart</h4>
                         <p>Registered users, lenders, and borrowers from UserRepo.</p>
                       </div>
                       <span className="admin-ai-db-pill">DB</span>
@@ -952,10 +1356,28 @@ const AdminAIDashboard = () => {
                     <div className="admin-ai-chart-wrap">
                       <ReactApexChart type="donut" height={280} series={registrationDonut.series} options={registrationDonut.options} />
                     </div>
-                    <div className="admin-ai-mix-legend">
-                      <div><span className="dot users" />Users: <strong>{fmtNum(registrationDonut.usersCount)}</strong></div>
-                      <div><span className="dot lenders" />Lenders: <strong>{fmtNum(registrationDonut.lendersCount)}</strong></div>
-                      <div><span className="dot borrowers" />Borrowers: <strong>{fmtNum(registrationDonut.borrowersCount)}</strong></div>
+                    <div className="admin-ai-mix-legend admin-ai-portfolio-legend">
+                      <div className="admin-ai-mix-legend-item">
+                        <span className="dot users" />
+                        <div className="admin-ai-mix-legend-copy">
+                          <small>Users</small>
+                          <strong>{fmtNum(registrationDonut.usersCount)}</strong>
+                        </div>
+                      </div>
+                      <div className="admin-ai-mix-legend-item">
+                        <span className="dot lenders" />
+                        <div className="admin-ai-mix-legend-copy">
+                          <small>Lenders</small>
+                          <strong>{fmtNum(registrationDonut.lendersCount)}</strong>
+                        </div>
+                      </div>
+                      <div className="admin-ai-mix-legend-item">
+                        <span className="dot borrowers" />
+                        <div className="admin-ai-mix-legend-copy">
+                          <small>Borrowers</small>
+                          <strong>{fmtNum(registrationDonut.borrowersCount)}</strong>
+                        </div>
+                      </div>
                     </div>
                   </section>
                 </div>
@@ -1037,6 +1459,17 @@ const AdminAIDashboard = () => {
               onPrevious={() => loadAdminUsers(adminUsersPage - 1, adminUsersView, adminUserSearch)}
               onNext={() => loadAdminUsers(adminUsersPage + 1, adminUsersView, adminUserSearch)}
               onBack={backToDashboard}
+              onExport={() => {
+                const config = userExportByCard[selectedCard?.key];
+                if (config?.type === "activeLenders") {
+                  downloadOverviewCardExcel("allActiveLenders");
+                } else if (config) {
+                  downloadOverviewCardExcel(selectedCard.key);
+                } else {
+                  downloadUsersExcel(adminUsersView, adminUsersTitle, adminUsersView);
+                }
+              }}
+              exporting={Boolean(exportingCardKey)}
             />
           )}
 
@@ -1137,44 +1570,24 @@ const AdminAIDashboard = () => {
   );
 };
 
-const TopLendersTable = ({ lenders, onSelect, monthly = false }) => (
-  <div className="admin-ai-advanced-table-wrap">
-    <table className="admin-ai-advanced-table admin-ai-top-lenders-table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Lender</th>
-          <th>Location</th>
-          <th>Deals</th>
-          <th>{monthly ? "Month Investment" : "Total Investment"}</th>
-          <th>Participation</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {lenders.map((lender) => (
-          <tr key={`${monthly ? "m" : "a"}-${lender.lenderId}`}>
-            <td><span className="admin-ai-rank-badge">{lender.rank || "-"}</span></td>
-            <td>
-              <strong>{lender.userCode || `LR${lender.lenderId}`}</strong>
-              <div className="admin-ai-top-lender-name">{valueOrDash(lender.name)}</div>
-              <small>{valueOrDash(lender.mobileNumber)}</small>
-            </td>
-            <td>{valueOrDash(lender.city)}, {valueOrDash(lender.state)}</td>
-            <td>{fmtNum(lender.dealsCount)}</td>
-            <td><strong>{fmtMoney(lender.totalInvestment ?? lender.totalParticipationAmount)}</strong></td>
-            <td>
-              <div>Part: {fmtMoney(lender.participatedAmount)}</div>
-              <small>Upd: {fmtMoney(lender.updationAmount)}</small>
-            </td>
-            <td>
-              <button className="admin-ai-link-btn" type="button" onClick={() => onSelect(lender)}>View Profile</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
+const TopLendersCompactList = ({ lenders, onSelect, monthly = false }) => (
+  <ul className="admin-ai-top-lenders-compact-list">
+    {(lenders || []).map((lender) => (
+      <li key={`${monthly ? "m" : "a"}-${lender.lenderId}`}>
+        <span className="admin-ai-rank-badge admin-ai-rank-badge--sm">{lender.rank || "-"}</span>
+        <div className="admin-ai-top-lenders-compact-copy">
+          <strong>{lender.userCode || `LR${lender.lenderId}`}</strong>
+          <span>{valueOrDash(lender.name)}</span>
+          <small>{valueOrDash(lender.city)}{lender.state ? `, ${lender.state}` : ""}</small>
+        </div>
+        <div className="admin-ai-top-lenders-compact-meta">
+          <strong>{fmtMoney(lender.totalInvestment ?? lender.totalParticipationAmount)}</strong>
+          <small>{monthly ? "This month" : `${fmtNum(lender.dealsCount)} deals`}</small>
+        </div>
+        <button className="admin-ai-link-btn" type="button" onClick={() => onSelect(lender)}>View</button>
+      </li>
+    ))}
+  </ul>
 );
 
 const TopLenderDetailPanel = ({ lender, detail, loading, error, dealsTab, onDealsTabChange, onClose }) => {
@@ -1243,7 +1656,7 @@ const TopLenderDetailPanel = ({ lender, detail, loading, error, dealsTab, onDeal
   );
 };
 
-const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick }) => (
+const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false }) => (
   <div
     className={`admin-ai-pro-kpi admin-ai-pro-kpi--${accent} ${clickable || onClick ? "is-clickable" : ""} ${active ? "is-active" : ""}`}
     onClick={onClick}
@@ -1260,6 +1673,20 @@ const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable
       <strong className="admin-ai-pro-kpi-value">{fmtNum(value)}</strong>
       {meta ? <small className="admin-ai-pro-kpi-meta">{meta}</small> : null}
     </div>
+    {onExport ? (
+      <button
+        type="button"
+        className="admin-ai-pro-kpi-card-export-btn"
+        disabled={exporting}
+        title="Download this segment as Excel with user details"
+        onClick={(event) => {
+          event.stopPropagation();
+          onExport();
+        }}
+      >
+        <FaFileExcel /> {exporting ? "Exporting..." : "Download Excel"}
+      </button>
+    ) : null}
   </div>
 );
 
@@ -1304,6 +1731,8 @@ const AdminUsersPanel = ({
   onPrevious,
   onNext,
   onBack,
+  onExport,
+  exporting = false,
 }) => {
   const isLenderView = userView === "lenders" || userView === "last3MonthsActive";
 
@@ -1316,6 +1745,17 @@ const AdminUsersPanel = ({
       </div>
       <div className="admin-ai-panel-actions">
         <span className="admin-ai-count-pill">{fmtNum(total)} records</span>
+        {onExport ? (
+          <button
+            className="admin-ai-pro-kpi-export-btn"
+            type="button"
+            disabled={exporting}
+            onClick={onExport}
+            title="User ID, code, name, mobile, email, type, register date, city, state"
+          >
+            <FaFileExcel /> {exporting ? "Exporting..." : "Download Excel"}
+          </button>
+        ) : null}
         <button className="admin-ai-close-btn" type="button" onClick={onBack}>Back to Dashboard</button>
       </div>
     </div>
