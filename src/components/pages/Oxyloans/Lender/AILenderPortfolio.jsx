@@ -7,6 +7,7 @@ import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
 import { getToken, getUserId } from "../../../HttpRequest/afterlogin";
 import axios from "axios";
+import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -198,57 +199,109 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
 };
 
 // ── AI CHAT WIDGET ─────────────────────────────────────────────────────────
+const DEFAULT_QUESTIONS = [
+  "Show my wallet balance",
+  "What is my average ROI?",
+  "How much have I invested in total?",
+  "How much did I earn this year?",
+  "Show my active deals",
+  "Show my principal returned",
+  "Show upcoming payments",
+  "In which deal did I invest recently?",
+];
+const CHIPS_VISIBLE = 3;
+
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
+  const [panelSize, setPanelSize] = useState("normal"); // "normal" | "maximized" | "minimized"
   const [messages, setMessages] = useState([
-    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.` }
+    { role: "assistant", text: `Hi ${lenderName || "there"}! 👋 I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null, ts: Date.now() }
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [chipsExpanded, setChipsExpanded] = useState(false);
   const bottomRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (open && bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, open]);
+    if (open && panelSize !== "minimized") setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+  }, [messages, open, panelSize]);
 
-  const sendMessage = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
+  useEffect(() => {
+    if (open && panelSize !== "minimized") setTimeout(() => inputRef.current?.focus(), 120);
+  }, [open, panelSize]);
+
+  const sendMessage = async (text) => {
+    const msg = (text || input).trim();
+    if (!msg || sending) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text }]);
+    setChipsExpanded(false);
+    setMessages((prev) => [...prev, { role: "user", text: msg, data: null, ts: Date.now() }]);
     setSending(true);
     try {
-      const token = getToken();
       const res = await axios.post(
         `${MARKETPLACE_URL}/v1/ai/chat`,
-        { message: text, primaryType: "LENDER" },
-        { headers: { accessToken: token, "Content-Type": "application/json" } }
+        { message: msg, primaryType: "LENDER" },
+        { headers: { accessToken: getToken(), "Content-Type": "application/json" } }
       );
-      const reply = res.data?.answer
-        || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
-      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
+      const reply = res.data?.answer || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
+      const responseData = res.data?.responseData || null;
+      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData, ts: Date.now() }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again." }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null, ts: Date.now() }]);
     } finally {
       setSending(false);
     }
   };
 
+  const visibleChips = chipsExpanded ? DEFAULT_QUESTIONS : DEFAULT_QUESTIONS.slice(0, CHIPS_VISIBLE);
+  const hiddenCount = DEFAULT_QUESTIONS.length - CHIPS_VISIBLE;
+  const fmtTime = (ts) => new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+
+  const panelStyles = {
+    normal: {
+      position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+      width: 390, maxWidth: "calc(100vw - 32px)",
+      height: "min(600px, 84vh)",
+    },
+    maximized: {
+      position: "fixed", top: "50%", left: "50%",
+      transform: "translate(-50%, -50%)", zIndex: 9998,
+      width: "min(860px, 94vw)",
+      height: "min(720px, 90vh)",
+    },
+    minimized: {
+      position: "fixed", bottom: 96, right: 24, zIndex: 9998,
+      width: 340, maxWidth: "calc(100vw - 32px)",
+      height: "auto",
+    },
+  };
+
+  const headerBtn = (onClick, title, label) => (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 6, width: 26, height: 26, color: "#fff", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.15s" }}
+      onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.28)"}
+      onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
+    >{label}</button>
+  );
+
   return (
     <>
       {/* Floating button */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { setOpen((v) => !v); setPanelSize("normal"); }}
         style={{
           position: "fixed", bottom: 28, right: 28, zIndex: 9999,
           width: 56, height: 56, borderRadius: "50%",
           background: "linear-gradient(135deg, #1a237e, #6a1b9a)",
           border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(106,27,154,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontSize: 24,
+          color: "#fff", fontSize: 24, transition: "transform 0.2s",
         }}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.08)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
         title="Ask AI"
       >
         {open ? "✕" : "🤖"}
@@ -257,71 +310,158 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       {/* Chat panel */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 360, maxWidth: "calc(100vw - 48px)",
-          background: "#fff", borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+          ...panelStyles[panelSize],
+          background: "#fff", borderRadius: 20,
+          boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 4px 16px rgba(106,27,154,0.12)",
           display: "flex", flexDirection: "column",
           border: "1px solid #e8e8e8", overflow: "hidden",
+          transition: "width 0.25s, height 0.25s",
         }}>
+
           {/* Header */}
-          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 22 }}>🤖</span>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>OxyLoans AI Assistant</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Ask about your investments</div>
+          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "13px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: panelSize === "minimized" ? "pointer" : "default" }}
+            onClick={() => panelSize === "minimized" && setPanelSize("normal")}
+          >
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>🤖</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>OxyLoans AI Assistant</div>
+              {panelSize !== "minimized" && (
+                <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#52c41a", display: "inline-block", boxShadow: "0 0 5px #52c41a" }} />
+                  Online · Ask about earnings, ROI, deals
+                </div>
+              )}
+              {panelSize === "minimized" && (
+                <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{messages.length - 1} message{messages.length !== 2 ? "s" : ""} · click to expand</div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+              {panelSize !== "minimized" && headerBtn(() => setPanelSize("minimized"), "Minimise", "⎯")}
+              {panelSize === "normal"    && headerBtn(() => setPanelSize("maximized"), "Maximise", "⤢")}
+              {panelSize === "maximized" && headerBtn(() => setPanelSize("normal"),    "Restore",  "⊡")}
+              {panelSize === "minimized" && headerBtn(() => setPanelSize("maximized"), "Maximise", "⤢")}
+              {headerBtn(() => { setOpen(false); setPanelSize("normal"); }, "Close", "✕")}
             </div>
           </div>
 
-          {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", maxHeight: 340, minHeight: 200 }}>
+          {/* Messages — primary space, scrollable */}
+          {panelSize !== "minimized" && <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 6px", display: "flex", flexDirection: "column" }}>
             {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 12, display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                <div style={{
-                  maxWidth: "80%", padding: "10px 14px", borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                  background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f5f5f5",
-                  color: m.role === "user" ? "#fff" : "#262626",
-                  fontSize: 13, lineHeight: 1.5,
-                }}>
-                  {m.text}
+              <div key={i} style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 7 }}>
+                  {m.role === "assistant" && (
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginBottom: 2 }}>🤖</div>
+                  )}
+                  <div style={{
+                    maxWidth: "76%", padding: "10px 14px",
+                    borderRadius: m.role === "user" ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
+                    background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f4f4f6",
+                    color: m.role === "user" ? "#fff" : "#1a1a2e",
+                    fontSize: 13, lineHeight: 1.55,
+                    boxShadow: m.role === "user" ? "0 3px 10px rgba(26,35,126,0.28)" : "0 1px 4px rgba(0,0,0,0.07)",
+                  }}>
+                    {m.data ? <TopicBadge type={m.data.type} /> : null}
+                    <FormattedText text={m.text} />
+                  </div>
+                </div>
+                {m.data && (
+                  <div style={{ marginLeft: m.role === "assistant" ? 35 : 0, marginTop: 6 }}>
+                    <RichMessage data={m.data} />
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: "#c0c0c0", marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: m.role === "assistant" ? 35 : 0 }}>
+                  {fmtTime(m.ts)}
                 </div>
               </div>
             ))}
+
             {sending && (
-              <div style={{ display: "flex", gap: 6, padding: "8px 14px" }}>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#6a1b9a", animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
-                ))}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 7, marginBottom: 14 }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
+                <div style={{ background: "#f4f4f6", borderRadius: "4px 18px 18px 18px", padding: "12px 16px", display: "flex", gap: 5, alignItems: "center" }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6a1b9a", animation: `chatBounce 1.2s ${i * 0.18}s infinite` }} />
+                  ))}
+                </div>
               </div>
             )}
             <div ref={bottomRef} />
-          </div>
+          </div>}
 
-          {/* Input */}
-          <div style={{ padding: "10px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8 }}>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Ask about your deals, earnings…"
-              style={{ flex: 1, border: "1px solid #e8e8e8", borderRadius: 24, padding: "8px 14px", fontSize: 13, outline: "none" }}
-              disabled={sending}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={sending || !input.trim()}
-              style={{
-                background: sending || !input.trim() ? "#d9d9d9" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
-                border: "none", borderRadius: 24, padding: "8px 16px",
-                color: "#fff", cursor: sending || !input.trim() ? "default" : "pointer", fontSize: 13, fontWeight: 600,
-              }}
-            >
-              Send
-            </button>
-          </div>
+          {/* Quick chips + input — hidden when minimized */}
+          {panelSize !== "minimized" && <>
+            <div style={{ padding: "7px 12px 5px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+                {visibleChips.map((q, i) => (
+                  <button
+                    key={i}
+                    onClick={() => sendMessage(q)}
+                    disabled={sending}
+                    style={{
+                      background: "#fff", border: "1px solid #c7d2fe",
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#3730a3",
+                      cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)", lineHeight: 1.4, opacity: sending ? 0.6 : 1,
+                    }}
+                  >{q}</button>
+                ))}
+                {!chipsExpanded && hiddenCount > 0 && (
+                  <button
+                    onClick={() => setChipsExpanded(true)}
+                    style={{
+                      background: "linear-gradient(135deg, #f0f5ff, #f5f0ff)",
+                      border: "1px solid #c7d2fe", borderRadius: 20,
+                      padding: "4px 12px", fontSize: 11, color: "#6a1b9a",
+                      cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600, lineHeight: 1.4,
+                    }}
+                  >＋{hiddenCount} more ›</button>
+                )}
+                {chipsExpanded && (
+                  <button
+                    onClick={() => setChipsExpanded(false)}
+                    style={{
+                      background: "none", border: "1px solid #e8e8e8",
+                      borderRadius: 20, padding: "4px 12px", fontSize: 11, color: "#8c8c8c",
+                      cursor: "pointer", whiteSpace: "nowrap", lineHeight: 1.4,
+                    }}
+                  >‹ less</button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ padding: "8px 12px 12px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0, background: "#fff" }}>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Ask about your deals, earnings…"
+                style={{ flex: 1, border: "1.5px solid #e8e8e8", borderRadius: 24, padding: "9px 16px", fontSize: 13, outline: "none", background: "#fafafa", transition: "border-color 0.15s" }}
+                onFocus={e => e.target.style.borderColor = "#6a1b9a"}
+                onBlur={e => e.target.style.borderColor = "#e8e8e8"}
+                disabled={sending}
+              />
+              <button
+                onClick={() => sendMessage()}
+                disabled={sending || !input.trim()}
+                style={{
+                  background: sending || !input.trim() ? "#e8e8e8" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
+                  border: "none", borderRadius: 24, padding: "9px 20px",
+                  color: sending || !input.trim() ? "#aaa" : "#fff",
+                  cursor: sending || !input.trim() ? "default" : "pointer",
+                  fontSize: 15, fontWeight: 700, transition: "all 0.2s", flexShrink: 0,
+                }}
+              >↑</button>
+            </div>
+          </>}
         </div>
       )}
-      <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-8px)} }`}</style>
+      <style>{`
+        @keyframes chatBounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+          40% { transform: translateY(-6px); opacity: 1; }
+        }
+      `}</style>
     </>
   );
 };
@@ -1043,11 +1183,13 @@ const LenderPortfolioDashboard = () => {
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
+  const [momFilter, setMomFilter] = useState("6M");
+  const [momData, setMomData] = useState(null);
 
-  // All lenders on the main dashboard see full PRO experience
-  const effectiveTier = 'PRO';
-  const isPro   = true;
-  const isSmart = true;
+  // Default PRO view; lender can switch via tier pills; ?tier= URL override for testing
+  const effectiveTier = (tierOverride || previewTier || 'PRO').toUpperCase();
+  const isPro   = effectiveTier === 'PRO';
+  const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
   // Portfolio
   useEffect(() => {
@@ -1081,6 +1223,14 @@ const LenderPortfolioDashboard = () => {
       .catch(() => {})
       .finally(() => setEarningsLoading(false));
   }, [resolvedLenderId, fyFilter]);
+
+  // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
+  useEffect(() => {
+    if (!resolvedLenderId) return;
+    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings`, { headers: { accessToken: getToken() } })
+      .then((res) => setMomData(res.data))
+      .catch(() => {});
+  }, [resolvedLenderId]);
 
   // Upcoming payouts — loads once on mount, independent of FY filter
   useEffect(() => {
@@ -1207,19 +1357,19 @@ const LenderPortfolioDashboard = () => {
                             {isPro ? "Full AI intelligence active — updated live" : "AI insights enabled — portfolio analysis active"}
                           </span>
                         )}
-                        {!isSmart && (
-                          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                            Upgrade to OXY Smart to unlock AI-powered insights
-                          </span>
-                        )}
                       </div>
-                      {isSmart ? (
-                        (() => {
+                      {(() => {
+                          const firstName = (data.lenderName || "").split(" ")[0];
                           const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
                           const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
                           const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
                           return (
                             <div>
+                              {firstName && (
+                                <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: 600, marginBottom: 12 }}>
+                                  Hi {firstName}! 👋
+                                </div>
+                              )}
                               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                 {visibleLines.map((line, idx) => {
                                   const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
@@ -1239,17 +1389,7 @@ const LenderPortfolioDashboard = () => {
                               )}
                             </div>
                           );
-                        })()
-                      ) : (
-                        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
-                          <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
-                          <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>AI Portfolio Analysis</div>
-                          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 14 }}>Personalized insights on your investments, reinvestment patterns &amp; more</div>
-                          <span style={{ background: "linear-gradient(135deg, #0050b3, #1890ff)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                            Upgrade to OXY Smart — ₹500/year
-                          </span>
-                        </div>
-                      )}
+                        })()}
                     </div>
                   </div>
                 </div>
@@ -1303,7 +1443,140 @@ const LenderPortfolioDashboard = () => {
                   })()} />
               </div>
 
-              {/* ── 3. EARNINGS SECTION ── */}
+              {/* ── RBI ₹50L Lending Limit Bar ── */}
+              {(() => {
+                const RBI_LIMIT = 5000000;
+                const active = data.earningsForecast?.totalActiveAmount ?? data.totalInvested ?? 0;
+                const remaining = Math.max(RBI_LIMIT - active, 0);
+                const usedPct = Math.min((active / RBI_LIMIT) * 100, 100);
+                const toLakhs = (v) => (v / 100000).toFixed(2);
+                const barColor = usedPct >= 90 ? "#e53935" : usedPct >= 70 ? "#fa8c16" : "#52c41a";
+                return (
+                  <div className="row mb-4">
+                    <div className="col-12">
+                      <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${barColor}`, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "#222" }}>RBI Lending Limit</div>
+                            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Max ₹50 Lakhs per lender as per RBI P2P guidelines</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontWeight: 800, fontSize: 22, color: barColor }}>₹{toLakhs(remaining)} L</div>
+                            <div style={{ fontSize: 11, color: "#888" }}>remaining to invest</div>
+                          </div>
+                        </div>
+                        <div style={{ background: "#f0f0f0", borderRadius: 8, height: 12, overflow: "hidden" }}>
+                          <div style={{ width: `${usedPct}%`, background: barColor, height: "100%", borderRadius: 8, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12, color: "#888" }}>
+                          <span>Deployed: ₹{toLakhs(active)} L</span>
+                          <span>{usedPct.toFixed(1)}% used of ₹50 L limit</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── 3. MONTH-ON-MONTH EARNINGS — always visible ── */}
+              {(() => {
+                const allMonths = momData ? [...(momData.monthlyEarnings || [])].reverse() : [];
+
+                // Apply filter to allMonths (already sorted oldest→newest after reverse)
+                const now = new Date();
+                const curYear  = now.getFullYear();
+                const curMonth = now.getMonth() + 1; // 1-based
+                // FY starts April of current or previous year
+                const fyStartYear = curMonth >= 4 ? curYear : curYear - 1;
+
+                const months = (() => {
+                  if (momFilter === "3M") return allMonths.slice(-3);
+                  if (momFilter === "6M") return allMonths.slice(-6);
+                  if (momFilter === "FY") return allMonths.filter(m =>
+                    (m.year > fyStartYear) ||
+                    (m.year === fyStartYear && m.month >= 4)
+                  );
+                  return allMonths; // All
+                })();
+
+                const labels    = months.map(m => m.monthLabel || `${m.month}/${m.year}`);
+                const interest  = months.map(m => Math.round(m.interestAmount || 0));
+                const principal = months.map(m => Math.round(m.principalReturned || 0));
+                const totalInterest = interest.reduce((s,v) => s+v, 0);
+
+                const momOptions = {
+                  chart: { type: "bar", stacked: false, fontFamily: "inherit", toolbar: { show: false }, zoom: { enabled: false } },
+                  plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
+                  colors: ["#0ea5a1", "#2563eb"],
+                  dataLabels: { enabled: false },
+                  xaxis: { categories: labels, labels: { style: { fontSize: "11px" } } },
+                  yaxis: { labels: { formatter: v => v >= 1000 ? `₹${(v/1000).toFixed(0)}K` : `₹${v}` } },
+                  legend: { position: "top", fontSize: "12px" },
+                  tooltip: { y: { formatter: v => `₹${v.toLocaleString("en-IN")}` } },
+                  grid: { borderColor: "#f0f0f0" },
+                };
+
+                const filterBtnStyle = (f) => ({
+                  padding: "3px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none",
+                  background: momFilter === f ? "#0ea5a1" : "#f0f0f0",
+                  color: momFilter === f ? "#fff" : "#595959",
+                  transition: "background 0.15s",
+                });
+
+                return (
+                  <SectionCard
+                    title="Month-on-Month Earnings"
+                    badge={<span style={{ background: "#e6f7ff", color: "#096dd9", border: "1px solid #91d5ff", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Trend</span>}
+                    collapsible defaultOpen={true}
+                    summary={allMonths.length > 0 ? `₹${fmt(totalInterest)} interest · ${months.length} months` : "Loading…"}
+                  >
+                    {!momData && (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "#8c8c8c", fontSize: 14 }}>Loading earnings data…</div>
+                    )}
+                    {momData && allMonths.length === 0 && (
+                      <div style={{ textAlign: "center", padding: "32px 0", color: "#8c8c8c", fontSize: 14 }}>No earnings records found for this account.</div>
+                    )}
+                    {allMonths.length > 0 && (
+                      <>
+                        {/* Filter tabs */}
+                        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                          {["3M","6M","FY","All"].map(f => (
+                            <button key={f} style={filterBtnStyle(f)} onClick={() => setMomFilter(f)}>{f === "FY" ? `FY ${fyStartYear}-${String(fyStartYear+1).slice(2)}` : f}</button>
+                          ))}
+                        </div>
+
+                        {/* Recent month tiles — top 3 from filtered set */}
+                        <div style={{ marginBottom: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                          {[...months].reverse().slice(0, 3).map((m, i) => (
+                            <div key={i} style={{ background: i === 0 ? "#e6f7ff" : "#fafafa", border: `1px solid ${i === 0 ? "#91d5ff" : "#f0f0f0"}`, borderRadius: 8, padding: "8px 14px", minWidth: 110 }}>
+                              <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 2 }}>{m.monthLabel}</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#0ea5a1" }}>₹{fmt(m.interestAmount)}</div>
+                              <div style={{ fontSize: 11, color: "#595959" }}>interest</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {months.length === 0 ? (
+                          <div style={{ textAlign: "center", padding: "24px 0", color: "#8c8c8c", fontSize: 13 }}>No data for this period. Try a wider filter.</div>
+                        ) : (
+                          <ReactApexChart
+                            key={momFilter}
+                            options={momOptions}
+                            series={[
+                              { name: "Interest Earned", data: interest },
+                              { name: "Principal Returned", data: principal },
+                            ]}
+                            type="bar"
+                            height={240}
+                          />
+                        )}
+                      </>
+                    )}
+                  </SectionCard>
+                );
+              })()}
+
+              {/* ── 4. EARNINGS SECTION ── */}
               {/* FREE: locked */}
               {!isSmart && (
                 <LockCard title="Earnings Intelligence — Interest, Principal & Period Summary" requiredTier="SMART" />
@@ -1604,7 +1877,7 @@ const LenderPortfolioDashboard = () => {
                 </>
               )}
 
-              {/* ── 4. INVESTMENT ANALYTICS — PRO only ── */}
+              {/* ── 5. INVESTMENT ANALYTICS — PRO only ── */}
               {!isPro && (
                 <LockCard title="Investment Analytics — ROI Charts, Deal Distribution &amp; Earnings Trends" requiredTier="PRO" />
               )}
