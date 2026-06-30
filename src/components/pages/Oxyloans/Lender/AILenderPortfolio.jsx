@@ -1188,10 +1188,10 @@ const LenderPortfolioDashboard = () => {
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
 
-  // All lenders on the main dashboard see full PRO experience
-  const effectiveTier = 'PRO';
-  const isPro   = true;
-  const isSmart = true;
+  // Default PRO view; lender can switch via tier pills; ?tier= URL override for testing
+  const effectiveTier = (tierOverride || previewTier || 'PRO').toUpperCase();
+  const isPro   = effectiveTier === 'PRO';
+  const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
   // Portfolio
   useEffect(() => {
@@ -1359,19 +1359,19 @@ const LenderPortfolioDashboard = () => {
                             {isPro ? "Full AI intelligence active — updated live" : "AI insights enabled — portfolio analysis active"}
                           </span>
                         )}
-                        {!isSmart && (
-                          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                            Upgrade to OXY Smart to unlock AI-powered insights
-                          </span>
-                        )}
                       </div>
-                      {isSmart ? (
-                        (() => {
+                      {(() => {
+                          const firstName = (data.lenderName || "").split(" ")[0];
                           const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
                           const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
                           const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
                           return (
                             <div>
+                              {firstName && (
+                                <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: 600, marginBottom: 12 }}>
+                                  Hi {firstName}! 👋
+                                </div>
+                              )}
                               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                 {visibleLines.map((line, idx) => {
                                   const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
@@ -1391,17 +1391,7 @@ const LenderPortfolioDashboard = () => {
                               )}
                             </div>
                           );
-                        })()
-                      ) : (
-                        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
-                          <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
-                          <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>AI Portfolio Analysis</div>
-                          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 14 }}>Personalized insights on your investments, reinvestment patterns &amp; more</div>
-                          <span style={{ background: "linear-gradient(135deg, #0050b3, #1890ff)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                            Upgrade to OXY Smart — ₹500/year
-                          </span>
-                        </div>
-                      )}
+                        })()}
                     </div>
                   </div>
                 </div>
@@ -1454,6 +1444,41 @@ const LenderPortfolioDashboard = () => {
                     return `${data.successfulPayments ?? 0} payments delivered`;
                   })()} />
               </div>
+
+              {/* ── RBI ₹50L Lending Limit Bar ── */}
+              {(() => {
+                const RBI_LIMIT = 5000000;
+                const active = data.earningsForecast?.totalActiveAmount ?? data.totalInvested ?? 0;
+                const remaining = Math.max(RBI_LIMIT - active, 0);
+                const usedPct = Math.min((active / RBI_LIMIT) * 100, 100);
+                const toLakhs = (v) => (v / 100000).toFixed(2);
+                const barColor = usedPct >= 90 ? "#e53935" : usedPct >= 70 ? "#fa8c16" : "#52c41a";
+                return (
+                  <div className="row mb-4">
+                    <div className="col-12">
+                      <div style={{ background: "#fff", borderRadius: 12, border: `1.5px solid ${barColor}`, padding: "16px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: "#222" }}>RBI Lending Limit</div>
+                            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>Max ₹50 Lakhs per lender as per RBI P2P guidelines</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontWeight: 800, fontSize: 22, color: barColor }}>₹{toLakhs(remaining)} L</div>
+                            <div style={{ fontSize: 11, color: "#888" }}>remaining to invest</div>
+                          </div>
+                        </div>
+                        <div style={{ background: "#f0f0f0", borderRadius: 8, height: 12, overflow: "hidden" }}>
+                          <div style={{ width: `${usedPct}%`, background: barColor, height: "100%", borderRadius: 8, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 12, color: "#888" }}>
+                          <span>Deployed: ₹{toLakhs(active)} L</span>
+                          <span>{usedPct.toFixed(1)}% used of ₹50 L limit</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* ── 3. MONTH-ON-MONTH EARNINGS — always visible ── */}
               {(() => {
