@@ -1186,8 +1186,8 @@ const LenderPortfolioDashboard = () => {
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
 
-  // Tier from backend, URL override for testing (?tier=FREE|SMART|PRO)
-  const effectiveTier = (tierOverride || (data?.membershipTier) || 'FREE').toUpperCase();
+  // Default PRO view; lender can switch via tier pills; ?tier= URL override for testing
+  const effectiveTier = (tierOverride || previewTier || 'PRO').toUpperCase();
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
