@@ -1359,14 +1359,8 @@ const LenderPortfolioDashboard = () => {
                             {isPro ? "Full AI intelligence active — updated live" : "AI insights enabled — portfolio analysis active"}
                           </span>
                         )}
-                        {!isSmart && (
-                          <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                            Upgrade to OXY Smart to unlock AI-powered insights
-                          </span>
-                        )}
                       </div>
-                      {isSmart ? (
-                        (() => {
+                      {(() => {
                           const firstName = (data.lenderName || "").split(" ")[0];
                           const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
                           const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
@@ -1397,17 +1391,7 @@ const LenderPortfolioDashboard = () => {
                               )}
                             </div>
                           );
-                        })()
-                      ) : (
-                        <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "20px 24px", textAlign: "center", border: "1px dashed rgba(255,255,255,0.2)" }}>
-                          <div style={{ fontSize: 22, marginBottom: 8 }}>🔒</div>
-                          <div style={{ color: "rgba(255,255,255,0.8)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>AI Portfolio Analysis</div>
-                          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 14 }}>Personalized insights on your investments, reinvestment patterns &amp; more</div>
-                          <span style={{ background: "linear-gradient(135deg, #0050b3, #1890ff)", color: "#fff", borderRadius: 20, padding: "6px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                            Upgrade to OXY Smart — ₹500/year
-                          </span>
-                        </div>
-                      )}
+                        })()}
                     </div>
                   </div>
                 </div>
