@@ -1367,11 +1367,17 @@ const LenderPortfolioDashboard = () => {
                       </div>
                       {isSmart ? (
                         (() => {
+                          const firstName = (data.lenderName || "").split(" ")[0];
                           const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
                           const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
                           const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
                           return (
                             <div>
+                              {firstName && (
+                                <div style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: 600, marginBottom: 12 }}>
+                                  Hi {firstName}! 👋
+                                </div>
+                              )}
                               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                 {visibleLines.map((line, idx) => {
                                   const text = line.replace(/^[•\-\*#]+\s*/, "").replace(/\*\*/g, "");
