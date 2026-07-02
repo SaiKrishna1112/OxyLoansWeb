@@ -167,7 +167,7 @@ const PartnerRegister = () => {
                         </label>
                         <input
                           className="form-control"
-                          type="text "
+                          type="text"
                           name="partnername"
                           onChange={handlechange}
                         />
@@ -185,7 +185,7 @@ const PartnerRegister = () => {
                         </label>
                         <input
                           className="form-control"
-                          type="text"
+                          type="email"
                           name="partneremail"
                           onChange={handlechange}
                         />
@@ -205,7 +205,7 @@ const PartnerRegister = () => {
                           ref={inputRef}
                           className="form-control pass-input"
                           name="phonenumber"
-                          type="password"
+                          type="tel"
                           onChange={handlechange}
                         />
                         <span className="profile-views">
