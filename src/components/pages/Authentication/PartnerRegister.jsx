@@ -52,6 +52,7 @@ const PartnerRegister = () => {
     setdata({
       ...data,
       [name]: value,
+      [name + "error"]: "",
     });
   };
 
