@@ -54,11 +54,11 @@ const PartnerRegister = () => {
   const reduxStoreData = useSelector((data) => data.counter.userProfile);
   const handlechange = (event) => {
     const { name, value } = event.target;
-    setdata({
-      ...data,
+    setdata((prev) => ({
+      ...prev,
       [name]: value,
       [name + "error"]: "",
-    });
+    }));
   };
 
   const submitformone = () => {
@@ -74,10 +74,7 @@ const PartnerRegister = () => {
       errors.phonenumbererror = "Please enter The Partner number";
     }
 
-    setdata({
-      ...data,
-      ...errors,
-    });
+    setdata((prev) => ({ ...prev, ...errors }));
 
     if (Object.keys(errors).length === 0) {
       setfield(false);
@@ -99,7 +96,7 @@ const PartnerRegister = () => {
       errors.captchaerror = "Please complete the CAPTCHA verification";
     }
 
-    setdata({ ...data, ...errors });
+    setdata((prev) => ({ ...prev, ...errors }));
     if (Object.keys(errors).length > 0) return;
 
     setLoading(true);
