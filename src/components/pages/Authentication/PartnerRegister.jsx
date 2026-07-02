@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import axios from "axios";
 import { login } from "../../imagepath";
 import { Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -6,6 +7,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
+import { MARKETPLACE_URL } from "../../../config";
 
 // Replace with your real site key from https://www.google.com/recaptcha/admin
 // Use env var for prod (real key). Falls back to Google's test key (always passes, for dev/test servers).
@@ -43,6 +45,9 @@ const PartnerRegister = () => {
     captchaerror: "",
   });
   const [captchaToken, setCaptchaToken] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const dispatch = useDispatch();
 
@@ -78,13 +83,13 @@ const PartnerRegister = () => {
       setfield(false);
     }
   };
-  const handlesubmit1 = () => {
+  const handlesubmit1 = async () => {
     const errors = {};
 
     if (data.smobilenumber === "") {
       errors.smobilenumbererror = "Please enter The Partner number";
     }
-    if (data.partneremail === "") {
+    if (data.semail === "") {
       errors.semailerror = "Please enter The Partner email";
     }
     if (data.sname === "") {
@@ -94,10 +99,36 @@ const PartnerRegister = () => {
       errors.captchaerror = "Please complete the CAPTCHA verification";
     }
 
-    setdata({
-      ...data,
-      ...errors,
-    });
+    setdata({ ...data, ...errors });
+    if (Object.keys(errors).length > 0) return;
+
+    setLoading(true);
+    setSubmitError("");
+    try {
+      await axios.post(
+        `${MARKETPLACE_URL}/rest/user/userType/partnerRegistrationFlow`,
+        {
+          partnerName: data.partnername,
+          partnerEmail: data.partneremail,
+          partnermobileNumber: data.phonenumber,
+          pocName: data.sname,
+          listOfPoCEmail: data.semail,
+          listOfPoCMobileNumber: data.smobilenumber,
+          captchaToken: captchaToken,
+        }
+      );
+      setSubmitted(true);
+    } catch (err) {
+      const msg =
+        err.response?.data?.errorMessage ||
+        err.response?.data?.message ||
+        "Registration failed. Please try again.";
+      setSubmitError(msg);
+      if (captchaRef.current) captchaRef.current.reset();
+      setCaptchaToken(null);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <>
@@ -115,9 +146,23 @@ const PartnerRegister = () => {
                     Register as a Partner
                   </h1>
 
+                  {submitted && (
+                    <div style={{ textAlign: "center", padding: "20px 0" }}>
+                      <div style={{ fontSize: "48px", color: "#28a745" }}>✓</div>
+                      <h3 style={{ color: "#28a745" }}>Registration Successful!</h3>
+                      <p>Thank you! Your partner registration has been received. You will receive an email with your login credentials shortly.</p>
+                      <Link to="/login" className="btn btn-primary">Go to Login</Link>
+                    </div>
+                  )}
+
+                  {!submitted && submitError && (
+                    <div style={{ color: "red", marginBottom: "12px", padding: "10px", background: "#fff3f3", borderRadius: "4px", border: "1px solid #ffcccc" }}>
+                      {submitError}
+                    </div>
+                  )}
+
                   {/* Form */}
-                  {/* <form action="./login"> */}
-                  {field ? (
+                  {!submitted && field ? (
                     <>
                       <div className="form-group">
                         <label>
@@ -281,8 +326,9 @@ const PartnerRegister = () => {
                           className="btn btn-primary btn-block"
                           type="submit"
                           onClick={handlesubmit1}
+                          disabled={loading}
                         >
-                          Submit
+                          {loading ? "Submitting..." : "Submit"}
                         </button>
                       </div>
                     </>
