@@ -106,7 +106,7 @@ const PartnerRegister = () => {
     setSubmitError("");
     try {
       await axios.post(
-        `${MARKETPLACE_URL}/rest/user/userType/partnerRegistrationFlow`,
+        `${MARKETPLACE_URL}/v1/user/partnerRegistrationFlow`,
         {
           partnerName: data.partnername,
           partnerEmail: data.partneremail,
