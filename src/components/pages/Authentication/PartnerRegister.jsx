@@ -1,14 +1,20 @@
 import React, { useRef, useState } from "react";
 import { login } from "../../imagepath";
 import { Link } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
 
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 
+// Replace with your real site key from https://www.google.com/recaptcha/admin
+// Use env var for prod (real key). Falls back to Google's test key (always passes, for dev/test servers).
+const RECAPTCHA_SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
 const PartnerRegister = () => {
   let inputRef = useRef();
   let inputRef2 = useRef();
+  const captchaRef = useRef(null);
   const showIcon = () => (
     <i class="feather feather-eye" aria-hidden="true">
       <FeatherIcon icon="eye" />
@@ -34,7 +40,9 @@ const PartnerRegister = () => {
     smobilenumbererror: "",
     snameerror: "",
     semailerror: "",
+    captchaerror: "",
   });
+  const [captchaToken, setCaptchaToken] = useState(null);
 
   const dispatch = useDispatch();
 
@@ -60,11 +68,14 @@ const PartnerRegister = () => {
       errors.phonenumbererror = "Please enter The Partner number";
     }
 
-    // Update the state with all the error messages at once
     setdata({
       ...data,
       ...errors,
     });
+
+    if (Object.keys(errors).length === 0) {
+      setfield(false);
+    }
   };
   const handlesubmit1 = () => {
     const errors = {};
@@ -78,8 +89,10 @@ const PartnerRegister = () => {
     if (data.sname === "") {
       errors.snameerror = "Please enter The Partner name";
     }
+    if (!captchaToken) {
+      errors.captchaerror = "Please complete the CAPTCHA verification";
+    }
 
-    // Update the state with all the error messages at once
     setdata({
       ...data,
       ...errors,
@@ -213,7 +226,7 @@ const PartnerRegister = () => {
                         <input
                           ref={inputRef2}
                           className="form-control pass-confirm"
-                          type="number"
+                          type="text"
                           name="sname"
                           onChange={handlechange}
                         />
@@ -232,7 +245,7 @@ const PartnerRegister = () => {
                         <input
                           ref={inputRef2}
                           className="form-control pass-confirm"
-                          type="number"
+                          type="email"
                           name="semail"
                           onChange={handlechange}
                         />
@@ -246,6 +259,22 @@ const PartnerRegister = () => {
                       {/* <div className=" dont-have">
                       Already Registered? <Link to="/login">Login</Link>
                     </div> */}
+                      <div className="form-group">
+                        <ReCAPTCHA
+                          ref={captchaRef}
+                          sitekey={RECAPTCHA_SITE_KEY}
+                          onChange={(token) => {
+                            setCaptchaToken(token);
+                            setdata((prev) => ({ ...prev, captchaerror: "" }));
+                          }}
+                          onExpired={() => setCaptchaToken(null)}
+                        />
+                        {data.captchaerror && (
+                          <div className="error" style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+                            {data.captchaerror}
+                          </div>
+                        )}
+                      </div>
                       <div className="form-group mb-0">
                         <button
                           className="btn btn-primary btn-block"
