@@ -1316,7 +1316,7 @@ const LenderPortfolioDashboard = () => {
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
       .then((res) => {
         const d = res.data;
-        if (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127") {
+        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
           d.lenderName = "Pradeep Chakravarthy";
           d.email      = "pradeepchk@gmail.com";
         }
@@ -2054,14 +2054,17 @@ const LenderPortfolioDashboard = () => {
                             <div className="d-flex justify-content-between mb-1">
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
                                 {(() => {
-                                  const roi = deal.rateOfInterest;
+                                  const rawRoi = deal.rateOfInterest || 0;
                                   const freq = (deal.payoutFrequency || '').toUpperCase();
-                                  if (roi >= 5) return `${roi.toFixed(1)}% p.a.`;
-                                  const annual = (roi * 12).toFixed(1);
-                                  if (freq === 'QUARTERLY')               return `${annual}% p.a. (${(roi*3).toFixed(2)}%/qtr)`;
-                                  if (freq === 'HALFYEARLY' || freq === 'HALF_YEARLY') return `${annual}% p.a. (${(roi*6).toFixed(2)}%/half-yr)`;
-                                  if (freq === 'YEARLY')                  return `${annual}% p.a. (${(roi*12).toFixed(2)}%/yr)`;
-                                  return `${annual}% p.a. (${roi}%/mo)`;
+                                  const isAnnual = rawRoi >= 5;
+                                  const monthly = isAnnual ? rawRoi / 12 : rawRoi;
+                                  const isQtr  = freq === 'QUARTELY'  || freq === 'QUARTERLY';
+                                  const isHalf = freq === 'HALFLY'    || freq === 'HALFYEARLY' || freq === 'HALF_YEARLY';
+                                  const isYrly = freq === 'YEARLY';
+                                  if (isQtr)  return `${(monthly*3).toFixed(2)}%/qtr`;
+                                  if (isHalf) return `${(monthly*6).toFixed(2)}%/half-yr`;
+                                  if (isYrly) return `${(monthly*12).toFixed(1)}%/yr`;
+                                  return `${monthly.toFixed(2)}%/mo`;
                                 })()}
                               </span>
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
@@ -2290,7 +2293,7 @@ const LenderPortfolioDashboard = () => {
                             const roi = meta.roi || 0;
                             const freq = meta.freq || 'MONTHLY';
                             const annualRoi = roi < 5 ? roi * 12 : roi;
-                            const freqLabel = freq === 'QUARTERLY' ? 'quarterly' : freq === 'HALFYEARLY' || freq === 'HALF_YEARLY' ? 'half-yearly' : freq === 'YEARLY' ? 'yearly' : 'monthly';
+                            const freqLabel = (freq === 'QUARTELY' || freq === 'QUARTERLY') ? 'quarterly' : (freq === 'HALFLY' || freq === 'HALFYEARLY' || freq === 'HALF_YEARLY') ? 'half-yearly' : freq === 'YEARLY' ? 'yearly' : 'monthly';
                             const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
                             const nudgeIsPast = nudge && nudge < new Date();
                             const alreadyReminded = remindedDeals.has(m.dealId);

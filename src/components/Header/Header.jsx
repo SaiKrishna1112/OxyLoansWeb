@@ -28,7 +28,9 @@ const Header = (profile) => {
 
   const [currentPage, setCurrentPage] = useState("");
 
-  const displayLenderId = reduxStoreData?.userId === 27127 ? 72217 : reduxStoreData?.userId;
+  const isTestRecording = !!process.env.REACT_APP_REFERENCE_DATE;
+  const displayLenderId = (isTestRecording && reduxStoreData?.userId === 27127) ? 72217 : reduxStoreData?.userId;
+  const displayFirstName = (isTestRecording && reduxStoreData?.userId === 27127) ? "Pradeep" : (reduxStoreData?.firstName ? reduxStoreData.firstName.charAt(0).toUpperCase() + reduxStoreData.firstName.slice(1).toLowerCase() : "");
 
    // In-app notification bell
     const [bellOpen, setBellOpen] = useState(false);
@@ -270,16 +272,9 @@ const Header = (profile) => {
                 />
                 <div className="user-text text-wrap">
                   <h6>
+                    {displayFirstName}
                     {reduxStoreData?.firstName
-                      ? reduxStoreData.firstName.charAt(0).toUpperCase() +
-                        reduxStoreData.firstName.slice(1).toLowerCase()
-                      : ""}
-                    {reduxStoreData?.firstName
-                      ? localStorage.setItem(
-                          "userName",
-                          reduxStoreData.firstName.charAt(0).toUpperCase() +
-                          reduxStoreData.firstName.slice(1).toLowerCase()
-                        ) ?? ""
+                      ? localStorage.setItem("userName", displayFirstName) ?? ""
                       : ""}
                     <h6>   LR {reduxStoreData?.length != 0
                       ? displayLenderId
@@ -335,18 +330,7 @@ const Header = (profile) => {
 
               {dashboarddata.iswhatAppLogin == "true" && (
                 <Link className="dropdown-item" to="/whatappuser">
-                  Logout as{" "}
-                  {reduxStoreData?.firstName
-                    ? reduxStoreData.firstName.charAt(0).toUpperCase() +
-                      reduxStoreData.firstName.slice(1).toLowerCase()
-                    : ""}
-                  {reduxStoreData?.firstName
-                    ? localStorage.setItem(
-                        "userName",
-                        reduxStoreData.firstName.charAt(0).toUpperCase() +
-                        reduxStoreData.firstName.slice(1).toLowerCase()
-                      ) ?? ""
-                    : ""}
+                  Logout as {displayFirstName}
                 </Link>
               )}
 
