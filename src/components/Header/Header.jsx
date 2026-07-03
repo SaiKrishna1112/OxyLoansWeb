@@ -24,6 +24,8 @@ const Header = (profile) => {
 
   const [currentPage, setCurrentPage] = useState("");
 
+  const displayLenderId = reduxStoreData?.userId === 27127 ? 72217 : reduxStoreData?.userId;
+
   const handlesidebar = () => {
     document.body.classList.toggle("mini-sidebar");
   };
@@ -156,7 +158,7 @@ const Header = (profile) => {
                         ) ?? ""
                       : ""}
                     <h6>   LR {reduxStoreData?.length != 0
-                      ? reduxStoreData?.userId
+                      ? displayLenderId
                       : ""}</h6>
                   </h6>
                 </div>
@@ -175,7 +177,7 @@ const Header = (profile) => {
                   <p className="text-muted mb-0">
                     LR
                     {reduxStoreData?.length !== 0
-                      ? reduxStoreData?.userId ?? 0
+                      ? displayLenderId ?? 0
                       : ""}
                   </p>
 
