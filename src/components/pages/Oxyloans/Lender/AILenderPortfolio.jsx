@@ -1176,6 +1176,7 @@ const LenderPortfolioDashboard = () => {
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
+  const [refFilter, setRefFilter] = useState("ALL"); // ALL | PAID | PENDING
   const [previewTier, setPreviewTier] = useState(null);
   const [interestExpanded, setInterestExpanded] = useState(false);
   const [principalExpanded, setPrincipalExpanded] = useState(false);
@@ -1232,11 +1233,12 @@ const LenderPortfolioDashboard = () => {
       setEarningsData(earningsCache.current[cacheKey]);
       return;
     }
-    setEarningsLoading(true);
+    // Only show spinner after 600ms — fast Redis hits never show a loading indicator
+    const spinnerTimer = setTimeout(() => setEarningsLoading(true), 600);
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`, { headers: { accessToken: getToken() } })
       .then((res) => { earningsCache.current[cacheKey] = res.data; setEarningsData(res.data); })
       .catch(() => {})
-      .finally(() => setEarningsLoading(false));
+      .finally(() => { clearTimeout(spinnerTimer); setEarningsLoading(false); });
   }, [resolvedLenderId, fyFilter]);
 
   // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
@@ -2341,6 +2343,7 @@ const LenderPortfolioDashboard = () => {
                         {/* Breakdown row — click any block to see records */}
                         {(() => {
                           const bucketColors = {
+                            RECENT:   { bg: '#e6f7ff', border: '#91d5ff', text: '#096dd9', label: '🕐 Recent' },
                             EARLY:    { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: '⚡ Paid Early' },
                             SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: '✅ Same Day' },
                             NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Days' },
@@ -2368,6 +2371,7 @@ const LenderPortfolioDashboard = () => {
                           };
                           return (
                             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                              {isPro && recent.length > 0 && makeBucket('RECENT', recent.length)}
                               {makeBucket('EARLY', early)}
                               {makeBucket('SAME_DAY', same)}
                               {makeBucket('NEXT_DAY', next)}
@@ -2466,8 +2470,8 @@ const LenderPortfolioDashboard = () => {
                           );
                         })()}
 
-                        {/* Recent payments timeline — PRO only */}
-                        {isPro && recent.length > 0 && (
+                        {/* Recent payments timeline — shown by default or when RECENT bucket tapped */}
+                        {isPro && recent.length > 0 && (timingBucket === null || timingBucket === 'RECENT') && (
                           <div>
                             <div style={{ fontSize: 12, fontWeight: 600, color: '#8c8c8c', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Recent Payments</div>
                             <div style={{ overflowX: 'auto' }}>
@@ -2644,13 +2648,28 @@ const LenderPortfolioDashboard = () => {
                     <div>
                       {/* Month-by-month breakdown from earningsData */}
                       {earningsData && (() => {
-                        const refRows = (earningsData.referralMonthly || []).filter(r => r.earnedAmount > 0);
-                        if (refRows.length === 0) return null;
+                        const allRefRows = (earningsData.referralMonthly || []).filter(r => r.earnedAmount > 0);
+                        if (allRefRows.length === 0) return null;
+                        const refRows = refFilter === "PAID"    ? allRefRows.filter(r => (r.paidAmount   || 0) > 0)
+                                      : refFilter === "PENDING" ? allRefRows.filter(r => (r.unpaidAmount || 0) > 0)
+                                      : allRefRows;
                         const visibleRefRows = refRows.slice(0, refMonthsShown);
+                        const tabStyle = (val) => ({
+                          padding: "4px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none",
+                          background: refFilter === val ? "#722ed1" : "#f0e6ff",
+                          color: refFilter === val ? "#fff" : "#531dab",
+                        });
                         return (
                           <div id="referral-monthly-detail" style={{ background: "#f9f0ff", borderRadius: 10, padding: "12px 14px", marginBottom: 10, border: "1px solid #d3adf7" }}>
-                            <div style={{ fontWeight: 600, fontSize: 12, color: "#531dab", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                              Month-by-Month Referral Bonus (All Time)
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                              <div style={{ fontWeight: 600, fontSize: 12, color: "#531dab", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                Month-by-Month Referral Bonus (All Time)
+                              </div>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <button style={tabStyle("ALL")}     onClick={() => { setRefFilter("ALL");     setRefMonthsShown(10); }}>All</button>
+                                <button style={tabStyle("PAID")}    onClick={() => { setRefFilter("PAID");    setRefMonthsShown(10); }}>Paid</button>
+                                <button style={tabStyle("PENDING")} onClick={() => { setRefFilter("PENDING"); setRefMonthsShown(10); }}>Pending</button>
+                              </div>
                             </div>
                             <div style={{ overflowX: "auto" }}>
                               <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
