@@ -24,8 +24,9 @@ const Header = (profile) => {
 
   const [currentPage, setCurrentPage] = useState("");
 
-  const displayLenderId = reduxStoreData?.userId === 27127 ? 72217 : reduxStoreData?.userId;
-  const displayFirstName = reduxStoreData?.userId === 27127 ? "Pradeep" : (reduxStoreData?.firstName ? reduxStoreData.firstName.charAt(0).toUpperCase() + reduxStoreData.firstName.slice(1).toLowerCase() : "");
+  const isTestRecording = !!process.env.REACT_APP_REFERENCE_DATE;
+  const displayLenderId = (isTestRecording && reduxStoreData?.userId === 27127) ? 72217 : reduxStoreData?.userId;
+  const displayFirstName = (isTestRecording && reduxStoreData?.userId === 27127) ? "Pradeep" : (reduxStoreData?.firstName ? reduxStoreData.firstName.charAt(0).toUpperCase() + reduxStoreData.firstName.slice(1).toLowerCase() : "");
 
   const handlesidebar = () => {
     document.body.classList.toggle("mini-sidebar");

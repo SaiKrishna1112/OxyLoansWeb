@@ -1204,7 +1204,7 @@ const LenderPortfolioDashboard = () => {
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
       .then((res) => {
         const d = res.data;
-        if (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127") {
+        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
           d.lenderName = "Pradeep Chakravarthy";
           d.email      = "pradeepchk@gmail.com";
         }
