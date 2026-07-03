@@ -1932,9 +1932,16 @@ const LenderPortfolioDashboard = () => {
                             </div>
                             <div className="d-flex justify-content-between mb-1">
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
-                                {deal.rateOfInterest < 5
-                                  ? `${(deal.rateOfInterest * 12).toFixed(1)}% p.a. (${deal.rateOfInterest}%/mo)`
-                                  : `${deal.rateOfInterest}% p.a.`}
+                                {(() => {
+                                  const roi = deal.rateOfInterest;
+                                  const freq = (deal.payoutFrequency || '').toUpperCase();
+                                  if (roi >= 5) return `${roi.toFixed(1)}% p.a.`;
+                                  const annual = (roi * 12).toFixed(1);
+                                  if (freq === 'QUARTERLY')               return `${annual}% p.a. (${(roi*3).toFixed(2)}%/qtr)`;
+                                  if (freq === 'HALFYEARLY' || freq === 'HALF_YEARLY') return `${annual}% p.a. (${(roi*6).toFixed(2)}%/half-yr)`;
+                                  if (freq === 'YEARLY')                  return `${annual}% p.a. (${(roi*12).toFixed(2)}%/yr)`;
+                                  return `${annual}% p.a. (${roi}%/mo)`;
+                                })()}
                               </span>
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
                                 {deal.daysTotal > 0
@@ -2151,7 +2158,18 @@ const LenderPortfolioDashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {shown.map((m, idx) => {
+                          {(() => {
+                            // Build lookup: dealId → {roi, payoutFrequency} from active deals
+                            const dealMeta = {};
+                            (data.activeDealsWithProgress || data.activeDeals || []).forEach(d => {
+                              dealMeta[d.dealId] = { roi: d.rateOfInterest, freq: (d.payoutFrequency || '').toUpperCase() };
+                            });
+                            return shown.map((m, idx) => {
+                            const meta = dealMeta[m.dealId] || {};
+                            const roi = meta.roi || 0;
+                            const freq = meta.freq || 'MONTHLY';
+                            const annualRoi = roi < 5 ? roi * 12 : roi;
+                            const freqLabel = freq === 'QUARTERLY' ? 'quarterly' : freq === 'HALFYEARLY' || freq === 'HALF_YEARLY' ? 'half-yearly' : freq === 'YEARLY' ? 'yearly' : 'monthly';
                             const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
                             const nudgeIsPast = nudge && nudge < new Date();
                             const alreadyReminded = remindedDeals.has(m.dealId);
@@ -2170,7 +2188,10 @@ const LenderPortfolioDashboard = () => {
                                 <td>{fmtDate(m.maturityDate)}</td>
                                 <td>₹{fmt(m.principalAmount)}</td>
                                 <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                                <td>
+                                  <span style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</span>
+                                  {annualRoi > 0 && <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>at {annualRoi.toFixed(1)}% p.a. · {freqLabel}</div>}
+                                </td>
                                 <td>
                                   {alreadyReminded ? (
                                     <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
@@ -2184,7 +2205,8 @@ const LenderPortfolioDashboard = () => {
                                 </td>
                               </tr>
                             );
-                          })}
+                          });
+                          })()}
                         </tbody>
                       </table>
                     </div>
