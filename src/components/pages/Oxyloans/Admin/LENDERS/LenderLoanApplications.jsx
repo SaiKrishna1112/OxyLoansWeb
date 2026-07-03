@@ -28,6 +28,7 @@ import {
   handleInterestStatus,
   handleComments,
   handlegetComments,
+  getcommentsHistory,
   handleupdatedob,
   handleSendStatement,
   handleEmiUpdateComments,
@@ -503,7 +504,7 @@ const LenderLoanApplications = () => {
 
 //Function to get Comments
 const getCommentsfun=async(record)=>{
-  const response =await handlegetComments(record)
+  const response =await getcommentsHistory(record)
   console.log(response.data)
   if(response.status==200){
     setGetComments(response.data)
@@ -689,13 +690,13 @@ const getCommentsfun=async(record)=>{
         </div>
       ),
     },
-    {
-      title: "View Documents",
-      key: "viewdocs",
-      render: (_, record) => (
-        <></>
-      ),
-    },
+    // {
+    //   title: "View Documents",
+    //   key: "viewdocs",
+    //   render: (_, record) => (
+    //     <></>
+    //   ),
+    // },
 
     {
       title: "Actions",
@@ -729,7 +730,7 @@ const getCommentsfun=async(record)=>{
             size="small"
             onClick={() => writeComments(record)}
           >
-            Write to Comments
+            Add Comments
           </Button>
           <Button size="small" onClick={() => updatedob(record)}>
             Update the DOB

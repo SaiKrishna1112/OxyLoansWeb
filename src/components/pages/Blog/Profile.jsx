@@ -2278,6 +2278,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   value={userProfile.panNumber}
                                   maxLength={10}
                                   name="panNumber"
+                                  readOnly={userProfile.panNumber ? true : false}
                                 />
 
                                 {userProfile.panNumbererror && (

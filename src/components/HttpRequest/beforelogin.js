@@ -1,10 +1,17 @@
 import axios from "axios";
 import { API_USER_URL as API_BASE_URL } from "../../config";
+import { initWebPush } from "../../utils/fcmWebPush";
 // const userisIn = "local"; //local or production
 // let API_BASE_URL =
 //   userisIn == "local"
 //     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
 //     : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+
+function registerFcmAfterLogin(userId, accessToken) {
+  if (userId && accessToken) {
+    initWebPush(userId, accessToken).catch(() => {});
+  }
+}
 
 const handleApiRequestBeforeLogin = async (
   method,
@@ -75,6 +82,7 @@ export const Admlog = async (userid, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
+    registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
     return response;
   } else {
     return response;
@@ -99,6 +107,7 @@ export const partnerlogin = async (userid, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
+    registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
     return response;
   } else {
     return response;
@@ -128,7 +137,7 @@ export const userloginSection = async (email, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
-
+    registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
     return response;
   } else {
     return response;

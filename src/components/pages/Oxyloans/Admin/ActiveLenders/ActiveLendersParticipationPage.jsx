@@ -5,7 +5,7 @@ import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import { API_USER_URL } from "../../../../../config";
 import { Modal } from "react-bootstrap";
 import {Button} from "antd";
-import { handleComments, handlegetComments } from "../../../../HttpRequest/admin";
+import { handleComments, handlegetComments,getcommentsHistory} from "../../../../HttpRequest/admin";
 import Swal from "sweetalert2";
 const LIST_API = `${API_USER_URL}activLendersParicipationAmount`;
 
@@ -596,7 +596,7 @@ export default function ActiveLendersParticipationPage() {
   //Function to get Comments
   const getCommentsfun=async(record)=>{
     console.log("View comments for:", record);
-    const response =await handlegetComments(record)
+    const response =await getcommentsHistory(record)
     console.log(response.data)
     if(response.status==200){
       setGetComments(response.data)

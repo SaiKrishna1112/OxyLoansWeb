@@ -104,6 +104,13 @@ const OxyloansAdminSidebar = () => {
       icon: "fa-solid fa-robot",
       type: ["ADMIN"],
     },
+      {
+      key: "adminNotifications",
+      label: "Send Notifications",
+      link: "/adminNotifications",
+      icon: "fa-solid fa-bell",
+      type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
+    },
     {
       key: "adminAIReconciliation",
       label: "AI Reconciliation",

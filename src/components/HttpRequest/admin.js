@@ -1,12 +1,13 @@
 import axios from "axios";
 import { API_USER_URL as API_BASE_URL } from "../../config";
+import {BASE_URL} from "../../config";
 const userisIn = "local"; //local or production
 // const API_BASE_URL =
 //   userisIn == "local"
 //     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
 //     : "https://fintech.oxyloans.com/oxyloans/v1/user/"; 
 
-
+const AI_BASE_URL = `${BASE_URL}/v1/ai/`;
 
 const getToken = () => {
   return sessionStorage.getItem("accessToken");
@@ -78,6 +79,25 @@ export const handleBorrowerEmiRequest = async (value) => {
   }
 };
 
+export const getcommentsHistory = async (value) => {
+  try{
+    const token = getToken();
+    const response = await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `commentHistory/${value.userDisplayId || value.lenderId}`,
+      "get",
+      token,
+      // data
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching comments history:", error);
+    throw error;
+  }
+};
+
+
+// NOFICATIONS API CALLS
 
 export const handleSendMessageNotification=async(value)=>{
   try {
@@ -925,3 +945,110 @@ export const uploadBorrowerDocument = async (borrowerId, file) => {
   return response;
 };
 
+const buildAdminNotificationPayload = (payload) => {
+  const adminId = Number(sessionStorage.getItem("userId"));
+  return {
+    ...payload,
+    adminCreated: true,
+    adminId: Number.isFinite(adminId) ? adminId : null,
+    sendInApp: true,
+    sendPush: true,
+  };
+};
+
+const adminNotificationHeaders = () => {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Admin accessToken missing. Please log out and log in again.");
+  }
+  return {
+    headers: {
+      accessToken: token,
+      accesstoken: token,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  };
+};
+
+export const sendAdminNotificationAll = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-all`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const sendAdminNotificationSegment = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-segment`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const sendAdminNotificationLimited = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-limited`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const sendAdminNotificationIndividual = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-individual`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotifications = async (page = 0, size = 10) => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/getAllAdminNotifications?page=${page}&size=${size}`,
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationDispatchStatus = async (notificationId) => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/${notificationId}/dispatch-status`,
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationAnalytics = async (notificationId) => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/${notificationId}/analytics`,
+    adminNotificationHeaders()
+  );
+};
+
+export const deleteAdminNotification = async (notificationId) => {
+  return axios.delete(
+    `${AI_BASE_URL}admin/notifications/${notificationId}`,
+    adminNotificationHeaders()
+  );
+};
+
+export const duplicateAdminNotification = async (notificationId) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/${notificationId}/duplicate`,
+    {},
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationStatistics = async () => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/analytics/statistics`,
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationAvgReadPercentage = async () => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/analytics/avg-read-percentage`,
+    adminNotificationHeaders()
+  );
+};

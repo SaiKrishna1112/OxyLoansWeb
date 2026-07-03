@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useMemo, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
+import axios from "axios";
 
 import {
   getUserDetails1,
+    getToken,
 } from "../HttpRequest/afterlogin";
 
 import { useSelector, useDispatch } from "react-redux";
@@ -11,7 +13,9 @@ import { fetchDatadashboard } from "../Redux/SliceDashboard";
 
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
-import NotificationBell from "../NotificationBell";
+// import NotificationBell from "../NotificationBell";
+import { MARKETPLACE_URL } from "../../config";
+import { initWebPush } from "../../utils/fcmWebPush";
 
 const Header = (profile) => {
   const location = useLocation();
@@ -26,6 +30,69 @@ const Header = (profile) => {
 
   const displayLenderId = reduxStoreData?.userId === 27127 ? 72217 : reduxStoreData?.userId;
 
+   // In-app notification bell
+    const [bellOpen, setBellOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const bellRef = useRef(null);
+
+     const fetchNotifications = () => {
+        const token = getToken();
+        const userId = sessionStorage.getItem("userId") || reduxStoreData?.userId;
+        if (!token || !userId) return;
+        axios.get(`${MARKETPLACE_URL}/v1/ai/notifications?userId=${userId}&size=20`, { headers: { accessToken: token } })
+          .then(res => {
+            const raw = res.data?.data?.content || res.data?.content || [];
+            const list = raw.map(n => ({
+              ...n,
+              read: n.readStatus === true,
+              createdAt: n.createdDate || n.createdAt,
+            }));
+            setNotifications(list);
+            setUnreadCount(list.filter(n => !n.read).length);
+          }).catch(() => {});
+        axios.get(`${MARKETPLACE_URL}/v1/ai/notifications/count/unread?userId=${userId}`, { headers: { accessToken: token } })
+          .then(res => {
+            if (typeof res.data?.data === "number") setUnreadCount(res.data.data);
+          }).catch(() => {});
+      };
+    
+      useEffect(() => {
+        fetchNotifications();
+        const interval = setInterval(fetchNotifications, 60000);
+        return () => clearInterval(interval);
+      }, []);
+    
+      useEffect(() => {
+        const userId = sessionStorage.getItem("userId") || reduxStoreData?.userId;
+        const token = getToken();
+        if (userId && token) {
+          initWebPush(userId, token).catch(() => {});
+        }
+      }, [reduxStoreData?.userId]);
+    
+      useEffect(() => {
+        const handler = (e) => { if (bellRef.current && !bellRef.current.contains(e.target)) setBellOpen(false); };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+      }, []);
+    
+      const markAllRead = () => {
+        const token = getToken();
+        const userId = sessionStorage.getItem("userId") || reduxStoreData?.userId;
+        if (!token || !userId) return;
+        axios.put(`${MARKETPLACE_URL}/v1/ai/notifications/read-all?userId=${userId}`, {}, { headers: { accessToken: token } })
+          .then(() => { setUnreadCount(0); setNotifications(prev => prev.map(n => ({ ...n, read: true, readStatus: true }))); }).catch(() => {});
+      };
+    
+      const markOneRead = (id) => {
+        const token = getToken();
+        const userId = sessionStorage.getItem("userId") || reduxStoreData?.userId;
+        if (!token || !userId) return;
+        axios.put(`${MARKETPLACE_URL}/v1/ai/notifications/${id}/read?userId=${userId}`, {}, { headers: { accessToken: token } })
+          .then(() => { setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true, readStatus: true } : n)); setUnreadCount(prev => Math.max(0, prev - 1)); }).catch(() => {});
+      };
+    
   const handlesidebar = () => {
     document.body.classList.toggle("mini-sidebar");
   };
@@ -129,7 +196,64 @@ const Header = (profile) => {
               <img src={headericon04} alt="" />
             </Link>
           </li>
-          <NotificationBell />
+
+          {/* Notification Bell */}
+          <li className="nav-item" ref={bellRef} style={{ position: "relative" }}>
+            <button
+              onClick={() => { setBellOpen(o => !o); if (!bellOpen) fetchNotifications(); }}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "8px 10px", position: "relative" }}
+              title="Notifications"
+            >
+              <i className="far fa-bell" style={{ fontSize: 18, color: "#555" }} />
+              {unreadCount > 0 && (
+                <span style={{
+                  position: "absolute", top: 4, right: 4,
+                  background: "#ff4d4f", color: "#fff", borderRadius: "50%",
+                  width: 16, height: 16, fontSize: 10, fontWeight: 700,
+                  display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1
+                }}>{unreadCount > 9 ? "9+" : unreadCount}</span>
+              )}
+            </button>
+            {bellOpen && (
+              <div style={{
+                position: "absolute", right: 0, top: "100%", zIndex: 9999,
+                background: "#fff", borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                width: 340, maxHeight: 440, overflowY: "auto", border: "1px solid #f0f0f0"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderBottom: "1px solid #f0f0f0" }}>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>Notifications</span>
+                  {unreadCount > 0 && (
+                    <button onClick={markAllRead} style={{ background: "none", border: "none", color: "#1890ff", fontSize: 12, cursor: "pointer", fontWeight: 600 }}>
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                {notifications.length === 0 ? (
+                  <div style={{ padding: 24, textAlign: "center", color: "#8c8c8c", fontSize: 13 }}>No notifications yet</div>
+                ) : (
+                  notifications.slice(0, 20).map(n => (
+                    <div
+                      key={n.id}
+                      onClick={() => { if (!n.read) markOneRead(n.id); }}
+                      style={{
+                        padding: "10px 14px", borderBottom: "1px solid #f5f5f5", cursor: "pointer",
+                        background: n.read ? "#fff" : "#f0f7ff",
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      <div style={{ fontWeight: n.read ? 500 : 700, fontSize: 13, color: "#262626", marginBottom: 2 }}>{n.title}</div>
+                      <div style={{ fontSize: 12, color: "#595959", lineHeight: 1.4 }}>{n.message}</div>
+                      <div style={{ fontSize: 11, color: "#bfbfbf", marginTop: 4 }}>
+                        {n.createdAt ? new Date(n.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </li>
+          {/* /Notification Bell */}
+
           {/* User Menu */}
           <li className="nav-item dropdown has-arrow new-user-menus">
             <Link

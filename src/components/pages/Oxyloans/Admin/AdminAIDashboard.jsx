@@ -3,6 +3,7 @@ import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
 import Footer from "../../../Footer/Footer";
 import { getAdminAIPlatformStats } from "../../../HttpRequest/afterlogin";
+import AdminNotificationPanel from "./Notification/AdminNotificationPanel";
 
 const fmt = (n) =>
   n == null ? "—" : "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -52,6 +53,8 @@ const AdminAIDashboard = () => {
             </div>
           )}
           {error && <div className="alert alert-danger">{error}</div>}
+
+          {!loading && <AdminNotificationPanel />}
 
           {data && (
             <>

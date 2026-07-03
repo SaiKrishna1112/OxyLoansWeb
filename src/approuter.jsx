@@ -1,5 +1,7 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import WebPushBootstrap from "./components/WebPushBootstrap";
+
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
@@ -107,6 +109,7 @@ import InterestsDateWise from "./components/pages/Oxyloans/Lender/InterestsDateW
 import EMI from "./components/pages/Oxyloans/Admin/Admin Dashboard/EMI.js";
 import AddBorrower from "./components/pages/Oxyloans/Admin/Admin Dashboard/AddBorrower.js";
 import CICReports from "./components/pages/Oxyloans/Admin/CICReports.jsx";
+import AdminNotificationCenter from "./components/pages/Oxyloans/Admin/Notification/AdminNotificationCenter.jsx";
 import LenderQueries from "../src/components/pages/Oxyloans/Admin/Help Desk/Lender/LenderQueries.jsx";
 import BorrowerQueries from "../src/components/pages/Oxyloans/Admin/Help Desk/Borrower/BorrowerQueries.jsx";
 import ResolvedLenderQueries from "../src/components/pages/Oxyloans/Admin/Help Desk/Lender/ResolvedLenderQueries.jsx";
@@ -321,6 +324,7 @@ const AppRouter = () => {
         <Route path="/Emi" element={<PrivateRoute element={<EMI />} />} />
         <Route path="/addBorrower" element={<PrivateRoute element={<AddBorrower />} />} />
         <Route path="/cicReports" element={<PrivateRoute element={<CICReports />} />} />
+        <Route path="/adminNotifications" element={<AdminNotificationCenter />} />
         <Route path="/lenderqueries" element={<PrivateRoute element={<LenderQueries />} />} />
         <Route path="/borrowerqueries" element={<PrivateRoute element={<BorrowerQueries />} />} />
         <Route path="/resolvedlender" element={<PrivateRoute element={<ResolvedLenderQueries />} />} />
