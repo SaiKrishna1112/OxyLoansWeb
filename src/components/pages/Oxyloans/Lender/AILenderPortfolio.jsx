@@ -2159,7 +2159,7 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested (1st Month)</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2195,7 +2195,7 @@ const LenderPortfolioDashboard = () => {
                                 <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                                 <td>
                                   <span style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</span>
-                                  {annualRoi > 0 && <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>at {annualRoi.toFixed(1)}% p.a. · {freqLabel}</div>}
+                                  {annualRoi > 0 && <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>@ {annualRoi.toFixed(1)}% annual ROI</div>}
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
