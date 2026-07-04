@@ -2194,8 +2194,8 @@ const LenderPortfolioDashboard = () => {
                                 <td>₹{fmt(m.principalAmount)}</td>
                                 <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                                 <td>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 1 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 1 }}>₹{fmt(m.projectedEarningIfReinvested)} every month</div>
+                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} per year</div>
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
