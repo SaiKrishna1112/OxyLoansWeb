@@ -2159,7 +2159,7 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested at Same Rate</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2194,14 +2194,9 @@ const LenderPortfolioDashboard = () => {
                                 <td>₹{fmt(m.principalAmount)}</td>
                                 <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                                 <td>
-                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2, display: "flex", alignItems: "center", gap: 8 }}>
-                                    ₹{fmt(m.projectedEarningIfReinvested)}
-                                    {annualRoi > 0 && <span style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 400 }}>{(annualRoi / 12).toFixed(1)}% p.m.</span>}
-                                  </div>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c", display: "flex", alignItems: "center", gap: 8 }}>
-                                    ₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))}
-                                    {annualRoi > 0 && <span style={{ color: "#1d39c4", fontWeight: 600 }}>{annualRoi.toFixed(1)}% p.a.</span>}
-                                  </div>
+                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's rate: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
+                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
