@@ -9,6 +9,8 @@ import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSu
 import AITestAdmin from "./components/pages/Dashboard/AITestAdmin";
 import LenderUpgradePortal from "./components/pages/Dashboard/LenderUpgradePortal";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
+import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
@@ -219,6 +221,107 @@ const AppRouter = () => {
         <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/forgotpassword" element={<ForgotPassword3 />} />
         <Route path="/forgotpassword2" element={<ForgotPassword />} />
+        <Route path="/whatsappuser" element={<Whatappuser />} />
+        <Route path="/escrowDeals" element={<EscrowDeals />} />
+        <Route path="/regularEscrowDeals" element={<RegularEscrowDeals />} />
+        <Route path="top-lenders" element={<TopLendersPage />} />
+        <Route
+          path="/loadwalletThroughVirtualAccount"
+          element={<LoadwalletThroughVirtualAccount />}
+        />
+        <Route
+          path="/withdrawdealfromwallet"
+          element={<Withdrawdealfromwallet />}
+        />
+        <Route path="/mainadmindashboard" element={<MainAdminDashboard />} />
+        <Route
+          path="/oxyloansadmindashboard"
+          element={<OxyloansAdminDashboard />}
+        />
+        <Route
+          path="/walletToWalletHistory"
+          element={<WalletToWalletHistory />}
+        />
+        <Route path="/viewdeals" element={<ViewDeals />} />
+        <Route path="/admintestDeals" element={<TestDeals />} />
+        <Route path="/spining" element={<Spining />} />
+        <Route path="/admlogin" element={<Admlogin />} />
+        <Route
+          path="/withdrawdealfromDeal"
+          element={<WithdrawdealfromDeal />}
+        />
+        <Route
+          path="/transferWalletToWallet"
+          element={<TransferWalletToWallet />}
+        />
+        <Route path="/mywithdrawalHistory" element={<MywithdrawalHistory />} />
+        <Route path="/participatedeal" element={<Participatedeal />} />
+        <Route path="/writetous" element={<Writetous />} />
+        <Route path="/viewTicketHistory" element={<ViewTicketHistory />} />
+        <Route path="/todaydeal" element={<Todaydeal />} />
+        <Route path="/testdeals1" element={<Testdeal1 />} />
+        <Route path="/viewCurrentDayDeals" element={<ViewCurrentDayDeals />} />
+        <Route path="/emicalculator" element={<Emicalculator />} />
+        <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
+        <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
+        <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/adminAICreatedDeals" element={<AdminAICreatedDealsPage />} />
+        <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
+        <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
+        <Route path="/configautoInvest" element={<ConfigautoInvest />} />
+        <Route path="/membership" element={<Membership />} />
+        <Route
+          path="/referalEaringsMonthWise"
+          element={<ReferalEaringsMonthWise />}
+        />
+        <Route path="/viewAutoHistory" element={<ViewAutoHistory />} />
+        <Route path="/regularRunningDeal" element={<RegularRunningDeal />} />
+        <Route path="/myRunningDeals" element={<MyRunningDeals />} />
+        <Route path="/myclosedDeals" element={<MyclosedDeals />} />
+        <Route path="/myholdamount" element={<Myholdamount />} />
+        <Route
+          path="/mypartiallClosedDeal"
+          element={<MypartiallClosedDeal />}
+        />
+        <Route path="/ticketHistory" element={<TicketHistory />} />
+        <Route path="/Fileconvension" element={<Fileconvension />} />
+        <Route path="/myinterestEarning" element={<MyinterestEarning />} />
+        <Route path="/myhighvalueDeals" element={<MyhighvalueDeals />} />
+        <Route path="/earningCertificate" element={<EarningCertificate />} />
+        <Route path="/myloansStatement" element={<MyloansStatement />} />
+        <Route path="/referaFriend" element={<ReferaFriend />} />
+        <Route path="/myreferalStatus" element={<MyreferalStatus />} />
+        <Route path="/lendercontacts" element={<Mycontacts />} />
+        <Route path="/lendercontacts1" element={<Mycontacts1 />} />
+        <Route
+          path="/walletToWalletHistory"
+          element={<WalletToWalletHistory />}
+        />
+        <Route path="/myEarnings" element={<MyEarnings />} />
+        <Route path="/loanListings" element={<LoanListings />} />
+        <Route path="/proximityLoans" element={<ProximityLoans />} />
+        <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
+        <Route path="/offerGivenList" element={<OfferGivenList />} />
+        <Route path="/disburseLoans" element={<DisburseLoans />} />
+        <Route path="/WalletToWallet" element={<WalletToWallet />} />
+        <Route
+          path="/withdrawalFromWallet"
+          element={<WithdrawalFromWallet />}
+        />
+        <Route path="/withdrawdealFounds" element={<WithdrawdealFounds />} />
+        <Route path="/whatappuser" element={<Whatappuser />} />
+        <Route path="/membershipHistory" element={<MembershipHistory />} />
+        <Route path="/mytransactions" element={<Mytransactions />} />
+        <Route path="/autoInvestHistory" element={<AutoInvestHistory />} />
+        <Route
+          path="/dashboardTransactions"
+          element={<DashboardTransactions />}
+        />
+        <Route
+          path="/loadwalletThroughVirtualAccount"
+          element={<LoadwalletThroughVirtualAccount />}
+        />{" "}
+        <Route path="/interestsDateWise" element={<InterestsDateWise />} />
         <Route path="/whatsapplogin" element={<Whatapplog />} />
         <Route path="/whatsappuser" element={<Whatappuser />} />
         <Route path="/whatappuser" element={<Whatappuser />} />

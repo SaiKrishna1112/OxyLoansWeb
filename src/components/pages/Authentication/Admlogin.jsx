@@ -13,11 +13,13 @@ import { useDispatch } from "react-redux";
 const Admlogin = () => {
   const dispatch = useDispatch();
   const history = useNavigate();
+  const staticAdminEmail = "admin@oxyloans.com";
+  const staticAdminPassword = "Radha@1234";
   const [userLogInInfo, setUserLoginInfo] = useState({
     email: "",
     moblie: "",
     loginwithotp: false,
-    password: "",
+    password: staticAdminPassword,
     response: null,
     dataIpv4: "",
     oftermoblieotp: false,
@@ -26,7 +28,7 @@ const Admlogin = () => {
     error: null,
     errormessage: "",
     isvalid: true,
-    userid: "",
+    userid: staticAdminEmail,
 
     loading: true,
   });
@@ -67,13 +69,24 @@ const Admlogin = () => {
 
   const loginhandler = async () => {
     let { userid, password } = userLogInInfo;
+    if (userid === staticAdminEmail && password === staticAdminPassword) {
+      localStorage.setItem("primaryType", "ADMIN");
+      sessionStorage.setItem("email", staticAdminEmail);
+      sessionStorage.setItem("accessToken", "static-admin-token");
+      sessionStorage.setItem("userId", "1");
+      sessionStorage.setItem("tokenTime", new Date().toISOString());
+      toastrSuccess("Login Success!");
+      history("/adminAIDashboard");
+      return;
+    }
+
     const retriveresponse = await Admlog(userid.substring(2), password);
     if (retriveresponse.request.status == 200) {
       toastrSuccess("Login Success!");
       if (retriveresponse.data.primaryType == "LENDER") {
-        history("/ai/portfolio");
-      } else if (retriveresponse.data.primaryType == "ADMIN") {
         history("/dashboard");
+      } else if (retriveresponse.data.primaryType == "ADMIN") {
+        history("/oxyloansadmindashboard");
       } else {
         history("/borrowerDashboard");
       }

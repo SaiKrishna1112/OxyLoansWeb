@@ -10,7 +10,6 @@ import { fetchDatadashboard } from "../Redux/SliceDashboard";
 import { WarningAlert } from "../pages/Base UI Elements/SweetAlert";
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
-import NotificationBell from "../NotificationBell";
 
 const OxyloansAdminHeader = (profile) => {
 //   const location = useLocation();
@@ -23,6 +22,8 @@ const OxyloansAdminHeader = (profile) => {
 
 //   const [currentPage, setCurrentPage] = useState("");
 const userId=sessionStorage.getItem("userId")
+const primaryType = localStorage.getItem("primaryType");
+const displayRole = primaryType === "ADMIN" || userId == "6680" ? "ADMIN" : "HELP DESK ADMIN";
 
   const handlesidebar = () => {
     document.body.classList.toggle("mini-sidebar");
@@ -136,7 +137,6 @@ const userId=sessionStorage.getItem("userId")
               <img src={headericon04} alt="" />
             </Link>
           </li> */}
-          <NotificationBell />
           {/* User Menu */}
           <li className="nav-item dropdown has-arrow new-user-menus">
             <Link
@@ -166,7 +166,7 @@ const userId=sessionStorage.getItem("userId")
                       : ""} */}
                     <h6>
                       {" "}
-                      {userId=="6680"?"ADMIN":"HELP DESK ADMIN"}{" "}
+                      {displayRole}{" "}
                       {/* {reduxStoreData?.length != 0
                         ? reduxStoreData?.userId
                         : ""} */}

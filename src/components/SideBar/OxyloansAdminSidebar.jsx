@@ -79,7 +79,7 @@ const OxyloansAdminSidebar = () => {
     {
       key: "OxyloansAdminDashboard",
       label: "Dashboard",
-      link: "/oxyloansadmindashboard",
+      link: "/OxyloansAdminDashboard",
       icon: "fa-solid fa-gauge",
       type: ["ADMIN", "HELPDESKADMIN"], // Show to all roles
     },
@@ -91,15 +91,8 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"], // Show to all roles
     },
     {
-      key:"DealsInfo",
-      label:"Deals Info",
-      link:"/dealsInfo",
-      icon:"fa-solid fa-handshake",
-      type:["ADMIN"]
-    },
-    {
       key: "adminAIDashboard",
-      label: "AI Platform Stats",
+      label: "🤖 AI Platform Stats",
       link: "/adminAIDashboard",
       icon: "fa-solid fa-robot",
       type: ["ADMIN"],
@@ -113,7 +106,7 @@ const OxyloansAdminSidebar = () => {
     },
     {
       key: "adminAIReconciliation",
-      label: "AI Reconciliation",
+      label: "🤖 AI Reconciliation",
       link: "/adminAIReconciliation",
       icon: "fa-solid fa-scale-balanced",
       type: ["ADMIN"],
@@ -130,13 +123,6 @@ const OxyloansAdminSidebar = () => {
       link: "/borrowerLoanApplications",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
-    {
-  key: "failedborrowers",
-  label: "Failed borrowers",
-  link: "/failedborrowers",
-  icon: "fa-solid fa-triangle-exclamation",
-  type: ["HELPDESKADMIN", "ADMIN"]
-},
       {
       key: "activeLenders",
       label: "Active Lenders",
@@ -171,7 +157,6 @@ const OxyloansAdminSidebar = () => {
       icon: "fas fa-chart-bar",
       type: ["ADMIN"],
     },
-    
     {
       key: "ParticipationList",
       label: "Offline Participation List",
@@ -303,21 +288,6 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN", "SUPERADMIN"],
     },
 
-  {
-      key: "marketplaceAdminDashboard",
-      label: "Marketplace Dashboard",
-      link: "/marketplace-admin-dashboard",
-      icon: "fa-solid fa-store",
-      type: ["ADMIN","SUPERADMIN","HELPDESKADMIN"],
-    },
-  {
-      key: "aiReconciliation",
-      label: "AI Reconciliation",
-      link: "/admin/reconciliation",
-      icon: "fa-solid fa-brain",
-      type: ["ADMIN","SUPERADMIN"],
-    },
-
   ];
   
 
@@ -371,6 +341,12 @@ const OxyloansAdminSidebar = () => {
   {menuItems.map((item) => {
     const isSubmenuOpen = openSubmenus[item.key];
     const isActive = pathname === item.link;
+    const itemLabel =
+      item.key === "adminAIDashboard"
+        ? "Admin AI Dashboard"
+        : item.key === "adminAIReconciliation"
+        ? "AI Reconciliation"
+        : item.label;
 
     return (
       <>
@@ -392,7 +368,7 @@ const OxyloansAdminSidebar = () => {
               >
                 <div>
                   <i className={item.icon}></i>
-                  <span style={{ marginLeft: "16px" }}> {item.label} </span>
+                  <span style={{ marginLeft: "16px" }}> {itemLabel} </span>
                 </div>
                 <i
                   className={`fa-solid ${
@@ -404,7 +380,7 @@ const OxyloansAdminSidebar = () => {
             ) : (
               <Link to={item.link}>
                 <i className={item.icon}></i>
-                <span style={{ marginLeft: "18px", fontSize: "15px" }}> {item.label} </span>
+                <span style={{ marginLeft: "18px", fontSize: "15px" }}> {itemLabel} </span>
                 </Link>
             )}
 
