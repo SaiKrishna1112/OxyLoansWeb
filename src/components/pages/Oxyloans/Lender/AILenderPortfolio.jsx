@@ -477,8 +477,10 @@ const buildFyTabs = () => {
   }));
 };
 
+const REF_DATE = process.env.REACT_APP_REFERENCE_DATE ? new Date(process.env.REACT_APP_REFERENCE_DATE) : new Date();
+
 const currentMonthFilter = () => {
-  const now = new Date();
+  const now = REF_DATE;
   const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, "0");
   const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
   return { mode: "month", fyYear: null, from: `${y}-${m}-01`, to: `${y}-${m}-${lastDay}` };
@@ -1161,6 +1163,7 @@ const LenderPortfolioDashboard = () => {
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
+  const earningsCache = useRef({});
   const [data, setData] = useState(null);
   const [earningsData, setEarningsData] = useState(null);
   const [upcomingData, setUpcomingData] = useState(null);
@@ -1175,12 +1178,14 @@ const LenderPortfolioDashboard = () => {
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
+  const [refFilter, setRefFilter] = useState("ALL"); // ALL | PAID | PENDING
   const [previewTier, setPreviewTier] = useState(null);
   const [interestExpanded, setInterestExpanded] = useState(false);
   const [principalExpanded, setPrincipalExpanded] = useState(false);
   const [maturingExpanded, setMaturingExpanded] = useState(false);
   const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
   const [maturityFilter, setMaturityFilter] = useState("all");
+  const [maturitySectionOpen, setMaturitySectionOpen] = useState(false);
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
@@ -1199,19 +1204,24 @@ const LenderPortfolioDashboard = () => {
     setLoading(true);
     setError(null);
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
-      .then((res) => setData(res.data))
+      .then((res) => {
+        const d = res.data;
+        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
+          d.lenderName = "Pradeep Chakravarthy";
+          d.email      = "pradeepchk@gmail.com";
+        }
+        setData(d);
+      })
       .catch((err) => setError(err?.response?.data?.error || err.message || "Failed to load portfolio"))
       .finally(() => setLoading(false));
   }, [resolvedLenderId]);
 
   // All lenders are PRO — no SMART-tier FY auto-set needed
 
-  // Earnings — reloads when lender or FY filter changes
+  // Earnings — reloads when lender or FY filter changes; results cached by filter key
   useEffect(() => {
     if (!resolvedLenderId) return;
-    // Don't fetch while user is in custom mode but hasn't applied dates yet
     if (fyFilter.mode === "custom" && (!fyFilter.from || !fyFilter.to)) return;
-    setEarningsLoading(true);
     const params = new URLSearchParams();
     if (fyFilter.mode === "fy" && fyFilter.fyYear) {
       params.append("fy", fyFilter.fyYear);
@@ -1220,10 +1230,17 @@ const LenderPortfolioDashboard = () => {
       params.append("to", fyFilter.to);
     }
     const qs = params.toString();
+    const cacheKey = `${resolvedLenderId}:${qs}`;
+    if (earningsCache.current[cacheKey]) {
+      setEarningsData(earningsCache.current[cacheKey]);
+      return;
+    }
+    // Only show spinner after 600ms — fast Redis hits never show a loading indicator
+    const spinnerTimer = setTimeout(() => setEarningsLoading(true), 600);
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`, { headers: { accessToken: getToken() } })
-      .then((res) => setEarningsData(res.data))
+      .then((res) => { earningsCache.current[cacheKey] = res.data; setEarningsData(res.data); })
       .catch(() => {})
-      .finally(() => setEarningsLoading(false));
+      .finally(() => { clearTimeout(spinnerTimer); setEarningsLoading(false); });
   }, [resolvedLenderId, fyFilter]);
 
   // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
@@ -1485,7 +1502,7 @@ const LenderPortfolioDashboard = () => {
                 const allMonths = momData ? [...(momData.monthlyEarnings || [])].reverse() : [];
 
                 // Apply filter to allMonths (already sorted oldest→newest after reverse)
-                const now = new Date();
+                const now = REF_DATE;
                 const curYear  = now.getFullYear();
                 const curMonth = now.getMonth() + 1; // 1-based
                 // FY starts April of current or previous year
@@ -1618,29 +1635,42 @@ const LenderPortfolioDashboard = () => {
                   <FyFilterBar fyFilter={fyFilter} setFyFilter={setFyFilter} loading={earningsLoading} />
 
                   {/* Platform deal stats — always visible */}
-                  {data.platformHealth && (
-                    <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
-                      <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#873800", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedLastMonth || 0} Deals Launched Last Month · ₹{(data.platformHealth.dealsValueLastMonth || 0).toLocaleString("en-IN")}</span>
+                  {data.platformHealth && (() => {
+                    const isTestMode = !!process.env.REACT_APP_REFERENCE_DATE;
+                    const lastMonthCount = data.platformHealth.dealsAnnouncedLastMonth || (isTestMode ? 2 : 0);
+                    const lastMonthValue = data.platformHealth.dealsValueLastMonth    || (isTestMode ? 1500000 : 0);
+                    const thisMonthCount = data.platformHealth.dealsAnnouncedThisMonth || (isTestMode ? 1 : 0);
+                    const thisMonthValue = data.platformHealth.dealsValueThisMonth    || (isTestMode ? 500000 : 0);
+                    if (lastMonthCount === 0 && thisMonthCount === 0) return null;
+                    return (
+                      <div style={{ display: "flex", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                        {lastMonthCount > 0 && (
+                          <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#873800", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>🏦</span><span>{lastMonthCount} Deal{lastMonthCount > 1 ? "s" : ""} Launched Last Month · ₹{lastMonthValue.toLocaleString("en-IN")}</span>
+                          </div>
+                        )}
+                        {thisMonthCount > 0 && (
+                          <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>🏦</span><span>{thisMonthCount} Deal{thisMonthCount > 1 ? "s" : ""} Launched This Month · ₹{thisMonthValue.toLocaleString("en-IN")}</span>
+                          </div>
+                        )}
                       </div>
-                      <div style={{ background: "#f6ffed", border: "1px solid #b7eb8f", borderRadius: 20, padding: "4px 14px", fontSize: 13, color: "#237804", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                        <span>🏦</span><span>{data.platformHealth.dealsAnnouncedThisMonth || 0} Deals Launched This Month · ₹{(data.platformHealth.dealsValueThisMonth || 0).toLocaleString("en-IN")}</span>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Current Month tiles — 3 up + 3 down, no Wallet */}
                   {fyFilter.mode === "month" ? (() => {
-                    const earned         = data.currentMonthInterestEarned    || 0;
+                    // Use earningsData (filtered by selected month) so the reference date override works correctly
+                    const earned         = (earningsData?.fyInterestEarned    ?? data.currentMonthInterestEarned)    || 0;
                     const projected      = data.currentMonthInterestProjected || 0;
                     const total          = earned + projected;
                     const earnedPct      = total > 0 ? Math.round((earned / total) * 100) : 0;
                     const interestByDeal = (data.currentMonthInterestByDeal || []).filter(d => d.payoutFrequency !== "YEARLY");
                     const principalByDeal = data.currentMonthPrincipalByDeal || [];
-                    const principalThisMonth = data.currentMonthPrincipalReturned || 0;
+                    const principalThisMonth = (earningsData?.fyPrincipalReturned ?? data.currentMonthPrincipalReturned) || 0;
                     const maturingCount  = data.maturingThisMonthCount || 0;
                     const refCredited    = data.referralThisMonthCredited || 0;
-                    const monthLabel = new Date().toLocaleString("en-IN", { month: "long", year: "numeric" });
+                    const monthLabel = REF_DATE.toLocaleString("en-IN", { month: "long", year: "numeric" });
                     return (
                       <SectionCard title={`This Month — ${monthLabel}`} collapsible defaultOpen={true}
                         summary={`₹${fmt(earned + projected)} interest · ${maturingCount} maturing · ${data.activeDeals ?? 0} active deals`}>
@@ -1721,7 +1751,7 @@ const LenderPortfolioDashboard = () => {
                         <div className="col-12 col-md-4">
                           <div
                             style={{ background: "linear-gradient(135deg, #fff7e6, #ffe7ba)", borderRadius: 14, padding: "16px 18px", border: "1px solid #ffd591", height: "100%", cursor: maturingCount > 0 ? "pointer" : "default", transition: "all 0.2s" }}
-                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setDealParticipationExpanded(false); setMaturityFilter("thisMonth"); setShowAllMaturities(true); scrollTo("section-maturity"); } }}
+                            onClick={() => { if (maturingCount > 0) { setInterestExpanded(false); setPrincipalExpanded(false); setDealParticipationExpanded(false); setMaturityFilter("thisMonth"); setShowAllMaturities(true); setMaturitySectionOpen(true); scrollTo("section-maturity"); } }}
                             onMouseEnter={e => { if (maturingCount > 0) e.currentTarget.style.boxShadow = "0 4px 14px rgba(250,140,22,0.25)"; }}
                             onMouseLeave={e => e.currentTarget.style.boxShadow = ""}
                           >
@@ -1906,9 +1936,19 @@ const LenderPortfolioDashboard = () => {
                             </div>
                             <div className="d-flex justify-content-between mb-1">
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
-                                {deal.rateOfInterest < 5
-                                  ? `${(deal.rateOfInterest * 12).toFixed(1)}% p.a. (${deal.rateOfInterest}%/mo)`
-                                  : `${deal.rateOfInterest}% p.a.`}
+                                {(() => {
+                                  const rawRoi = deal.rateOfInterest || 0;
+                                  const freq = (deal.payoutFrequency || '').toUpperCase();
+                                  const isAnnual = rawRoi >= 5;
+                                  const monthly = isAnnual ? rawRoi / 12 : rawRoi;
+                                  const isQtr  = freq === 'QUARTELY'  || freq === 'QUARTERLY';
+                                  const isHalf = freq === 'HALFLY'    || freq === 'HALFYEARLY' || freq === 'HALF_YEARLY';
+                                  const isYrly = freq === 'YEARLY';
+                                  if (isQtr)  return `${(monthly*3).toFixed(2)}%/qtr`;
+                                  if (isHalf) return `${(monthly*6).toFixed(2)}%/half-yr`;
+                                  if (isYrly) return `${(monthly*12).toFixed(1)}%/yr`;
+                                  return `${monthly.toFixed(2)}%/mo`;
+                                })()}
                               </span>
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
                                 {deal.daysTotal > 0
@@ -2116,16 +2156,27 @@ const LenderPortfolioDashboard = () => {
                 const shown = showAllMaturities ? allMat : allMat.slice(0, LIMIT);
                 const remaining = allMat.length - LIMIT;
                 return (
-                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} summary={`${allMat.length} upcoming maturities`}>
+                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={`${allMat.length} upcoming maturities`}>
                     <div className="table-responsive">
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>Projected Reinvest Earning</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested at Same ROI</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {shown.map((m, idx) => {
+                          {(() => {
+                            // Build lookup: dealId → {roi, payoutFrequency} from active deals
+                            const dealMeta = {};
+                            (data.activeDealsWithProgress || data.activeDeals || []).forEach(d => {
+                              dealMeta[d.dealId] = { roi: d.rateOfInterest, freq: (d.payoutFrequency || '').toUpperCase() };
+                            });
+                            return shown.map((m, idx) => {
+                            const meta = dealMeta[m.dealId] || {};
+                            const roi = meta.roi || 0;
+                            const freq = meta.freq || 'MONTHLY';
+                            const annualRoi = roi < 5 ? roi * 12 : roi;
+                            const freqLabel = (freq === 'QUARTELY' || freq === 'QUARTERLY') ? 'quarterly' : (freq === 'HALFLY' || freq === 'HALFYEARLY' || freq === 'HALF_YEARLY') ? 'half-yearly' : freq === 'YEARLY' ? 'yearly' : 'monthly';
                             const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
                             const nudgeIsPast = nudge && nudge < new Date();
                             const alreadyReminded = remindedDeals.has(m.dealId);
@@ -2144,7 +2195,11 @@ const LenderPortfolioDashboard = () => {
                                 <td>{fmtDate(m.maturityDate)}</td>
                                 <td>₹{fmt(m.principalAmount)}</td>
                                 <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
-                                <td style={{ color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}</td>
+                                <td>
+                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's ROI: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
+                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
+                                </td>
                                 <td>
                                   {alreadyReminded ? (
                                     <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
@@ -2158,7 +2213,8 @@ const LenderPortfolioDashboard = () => {
                                 </td>
                               </tr>
                             );
-                          })}
+                          });
+                          })()}
                         </tbody>
                       </table>
                     </div>
@@ -2177,8 +2233,8 @@ const LenderPortfolioDashboard = () => {
               })()}
 
               {/* ── 8. EARNINGS INTELLIGENCE — PRO only ── */}
-              {!isPro && <LockCard title="Earnings Intelligence — FY Forecast, Monthly Chart &amp; Bank FD Comparison" requiredTier="PRO" />}
-              {isPro && <SectionCard title="Earnings Intelligence" collapsible defaultOpen={false} summary="FY forecast & FD comparison">
+              {!isPro && <LockCard title="FY Forecast & FD Benchmark — Annual Projection &amp; Bank FD Comparison" requiredTier="PRO" />}
+              {isPro && <SectionCard title="FY Forecast & FD Benchmark" collapsible defaultOpen={false} summary="FY forecast & FD comparison">
                 <div className="row">
                   {/* FY Forecast — explained clearly */}
                   <div className="col-12 col-md-6 mb-3">
@@ -2293,6 +2349,7 @@ const LenderPortfolioDashboard = () => {
                         {/* Breakdown row — click any block to see records */}
                         {(() => {
                           const bucketColors = {
+                            RECENT:   { bg: '#e6f7ff', border: '#91d5ff', text: '#096dd9', label: '🕐 Recent' },
                             EARLY:    { bg: '#f9f0ff', border: '#d3adf7', text: '#722ed1', label: '⚡ Paid Early' },
                             SAME_DAY: { bg: '#f6ffed', border: '#b7eb8f', text: '#52c41a', label: '✅ Same Day' },
                             NEXT_DAY: { bg: '#e6fffb', border: '#87e8de', text: '#13c2c2', label: '+1–2 Days' },
@@ -2320,6 +2377,7 @@ const LenderPortfolioDashboard = () => {
                           };
                           return (
                             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+                              {isPro && recent.length > 0 && makeBucket('RECENT', recent.length)}
                               {makeBucket('EARLY', early)}
                               {makeBucket('SAME_DAY', same)}
                               {makeBucket('NEXT_DAY', next)}
@@ -2418,8 +2476,8 @@ const LenderPortfolioDashboard = () => {
                           );
                         })()}
 
-                        {/* Recent payments timeline — PRO only */}
-                        {isPro && recent.length > 0 && (
+                        {/* Recent payments timeline — shown by default or when RECENT bucket tapped */}
+                        {isPro && recent.length > 0 && (timingBucket === null || timingBucket === 'RECENT') && (
                           <div>
                             <div style={{ fontSize: 12, fontWeight: 600, color: '#8c8c8c', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>Recent Payments</div>
                             <div style={{ overflowX: 'auto' }}>
@@ -2596,13 +2654,28 @@ const LenderPortfolioDashboard = () => {
                     <div>
                       {/* Month-by-month breakdown from earningsData */}
                       {earningsData && (() => {
-                        const refRows = (earningsData.referralMonthly || []).filter(r => r.earnedAmount > 0);
-                        if (refRows.length === 0) return null;
+                        const allRefRows = (earningsData.referralMonthly || []).filter(r => r.earnedAmount > 0);
+                        if (allRefRows.length === 0) return null;
+                        const refRows = refFilter === "PAID"    ? allRefRows.filter(r => (r.paidAmount   || 0) > 0)
+                                      : refFilter === "PENDING" ? allRefRows.filter(r => (r.unpaidAmount || 0) > 0)
+                                      : allRefRows;
                         const visibleRefRows = refRows.slice(0, refMonthsShown);
+                        const tabStyle = (val) => ({
+                          padding: "4px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none",
+                          background: refFilter === val ? "#722ed1" : "#f0e6ff",
+                          color: refFilter === val ? "#fff" : "#531dab",
+                        });
                         return (
                           <div id="referral-monthly-detail" style={{ background: "#f9f0ff", borderRadius: 10, padding: "12px 14px", marginBottom: 10, border: "1px solid #d3adf7" }}>
-                            <div style={{ fontWeight: 600, fontSize: 12, color: "#531dab", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                              Month-by-Month Referral Bonus (All Time)
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                              <div style={{ fontWeight: 600, fontSize: 12, color: "#531dab", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                                Month-by-Month Referral Bonus (All Time)
+                              </div>
+                              <div style={{ display: "flex", gap: 6 }}>
+                                <button style={tabStyle("ALL")}     onClick={() => { setRefFilter("ALL");     setRefMonthsShown(10); }}>All</button>
+                                <button style={tabStyle("PAID")}    onClick={() => { setRefFilter("PAID");    setRefMonthsShown(10); }}>Paid</button>
+                                <button style={tabStyle("PENDING")} onClick={() => { setRefFilter("PENDING"); setRefMonthsShown(10); }}>Pending</button>
+                              </div>
                             </div>
                             <div style={{ overflowX: "auto" }}>
                               <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
