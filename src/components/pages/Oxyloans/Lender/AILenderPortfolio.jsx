@@ -2187,14 +2187,27 @@ const LenderPortfolioDashboard = () => {
                             const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
                             const nudgeIsPast = nudge && nudge < new Date();
                             const alreadyReminded = remindedDeals.has(m.dealId);
+                            const isSending = remindedDeals.has(`sending-${m.dealId}`);
                             const sendReminder = () => {
+                              if (isSending || alreadyReminded) return;
+                              setRemindedDeals(prev => new Set([...prev, `sending-${m.dealId}`]));
                               axios.post(`${MARKETPLACE_URL}/v1/notifications/maturity-reminder`, {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
                               }, { headers: { accessToken: getToken() } })
-                                .then(() => setRemindedDeals(prev => new Set([...prev, m.dealId])))
-                                .catch(() => setRemindedDeals(prev => new Set([...prev, m.dealId])));
+                                .then(() => setRemindedDeals(prev => {
+                                  const next = new Set(prev);
+                                  next.delete(`sending-${m.dealId}`);
+                                  next.add(m.dealId);
+                                  return next;
+                                }))
+                                .catch(() => setRemindedDeals(prev => {
+                                  const next = new Set(prev);
+                                  next.delete(`sending-${m.dealId}`);
+                                  next.add(m.dealId);
+                                  return next;
+                                }));
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
@@ -2209,10 +2222,12 @@ const LenderPortfolioDashboard = () => {
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
-                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
+                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>🔔 Reminder sent</span>
+                                  ) : isSending ? (
+                                    <span style={{ fontSize: 12, color: "#d46b08" }}>Sending...</span>
                                   ) : nudgeIsPast ? (
                                     <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
-                                      Remind Me
+                                      🔔 Remind Me
                                     </button>
                                   ) : (
                                     <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
