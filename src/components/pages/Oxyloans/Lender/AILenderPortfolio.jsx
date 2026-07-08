@@ -2005,7 +2005,7 @@ const LenderPortfolioDashboard = () => {
                 const firstName = (data.lenderName || "").split(" ")[0];
                 const reinvestedCount = rd.reinvestedCount ?? rd.totalReturns ?? 0;
                 const totalReturns = rd.totalReturns ?? reinvestedCount;
-                const ratio = Math.round(rd.reinvestRatioPct || 0);
+                const ratio = parseFloat((rd.reinvestRatioPct || 0).toFixed(1));
                 const delay = rd.avgReinvestmentDelayDays || 0;
                 const tenure = rd.preferredTenure || "short-term";
                 const prob = rd.reinvestmentProbabilityPct || 0;
