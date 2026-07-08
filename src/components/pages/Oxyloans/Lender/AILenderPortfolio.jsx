@@ -2161,6 +2161,9 @@ const LenderPortfolioDashboard = () => {
                 const remaining = allMat.length - LIMIT;
                 return (
                   <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={`${allMat.length} upcoming maturities`}>
+                    <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 12, color: "#874d00" }}>
+                      🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
+                    </div>
                     <div className="table-responsive">
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
