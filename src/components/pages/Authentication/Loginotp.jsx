@@ -7,7 +7,9 @@ import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 
-import { handlesenOtp, usersubmitotp } from "../../HttpRequest/beforelogin";
+import { handlesenOtp, usersubmitotp, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
+import { saveLoginSession } from "../../HttpRequest/aiAdminApi";
+import BASE_URL, { ENV, DEV_ADMIN_MOBILE, DEV_OTP } from "../../../config";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 
@@ -60,34 +62,63 @@ const Loginotp = () => {
         passworderror:
           userLogInInfo.password === "" ? "Please enter the OTP" : "",
       }));
-    } else {
-      let { email, password } = userLogInInfo;
-      setLoading(true)
+      return;
+    }
+
+    const { email, password } = userLogInInfo;
+    setLoading(true);
+    try {
       const retriveresponse = await usersubmitotp(email, password);
 
-      if (retriveresponse.request.status == 200) {
-        setLoading(false)
+      if (isApiSuccess(retriveresponse)) {
+        if (!saveLoginSession(retriveresponse)) {
+          const { title, message } = warnApiError(
+            retriveresponse,
+            "Login failed",
+            "Login succeeded but no access token was returned. Check backend logs."
+          );
+          WarningBackendApi(title, message);
+          return;
+        }
         toastrSuccess("Login Success!");
 
-        sessionStorage.setItem("userId", retriveresponse.data.id);
-        sessionStorage.setItem("tokenTime", retriveresponse.data.tokenGeneratedTime);
-        sessionStorage.setItem("accessToken", retriveresponse.headers.accesstoken);
-        sessionStorage.setItem("email", retriveresponse.data.email || "");
-        localStorage.setItem("primaryType", retriveresponse.data.primaryType);
-
-        if (retriveresponse.data.primaryType == "LENDER") {
+        const role = retriveresponse.data.primaryType;
+        if (role === "LENDER") {
           history("/dashboard");
-        } else if (retriveresponse.data.primaryType == "ADMIN" || retriveresponse.data.primaryType == "HELPDESKADMIN") {
-          history("/oxyloansadmindashboard");
+        } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
+          history("/adminAIDashboard");
         } else {
           history("/borrowerDashboard");
         }
       } else {
-        setLoading(false)
-        toastrWarning(retriveresponse.response.data.errorMessage);
+        const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
+        toastrWarning(message);
+        WarningBackendApi(title, message);
       }
+    } catch (e) {
+      WarningBackendApi("Login failed", e?.message || "Unexpected error during login");
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (ENV !== "local" || !DEV_ADMIN_MOBILE) return;
+
+    const autoLogin = async () => {
+      try {
+        const otpRes = await handlesenOtp(DEV_ADMIN_MOBILE);
+        if (!isApiSuccess(otpRes)) return;
+        const res = await usersubmitotp(DEV_ADMIN_MOBILE, DEV_OTP);
+        if (isApiSuccess(res) && saveLoginSession(res)) {
+          history("/adminAIDashboard");
+        }
+      } catch (e) {
+        // manual login required
+      }
+    };
+    autoLogin();
+  }, []);
 
   const sendtheOtp = async () => {
     if (userLogInInfo.email === "") {
@@ -96,38 +127,34 @@ const Loginotp = () => {
         emailerror:
           userLogInInfo.email === "" ? "Please enter the Mobile Number" : "",
       }));
-    } else {
-      if (userLogInInfo.email.length === 10) {
-        setLoading(true)
-        const response = await handlesenOtp(userLogInInfo.email);
+      return;
+    }
 
-        if (response.request.status == 200) {
-          setLoading(false)
-          if (response.data.id) {
-            sessionStorage.setItem("userId", response.data.id);
+    if (userLogInInfo.email.length !== 10) {
+      setUserLoginInfo((prevState) => ({
+        ...prevState,
+        emailerror: "Please enter a 10 digit mobile number",
+      }));
+      return;
+    }
 
-          }
-          setUserLoginInfo({
-            ...userLogInInfo,
-            sentotp: true,
-          });
-        } else {
-          setLoading(false)
-          WarningBackendApi(
-            response.response.data.errorCode,
-            response.response.data.errorMessage
-          );
+    setLoading(true);
+    try {
+      const response = await handlesenOtp(userLogInInfo.email);
+
+      if (isApiSuccess(response)) {
+        if (response.data?.id) {
+          sessionStorage.setItem("userId", response.data.id);
         }
+        setUserLoginInfo({ ...userLogInInfo, sentotp: true, emailerror: "" });
       } else {
-        setLoading(false)
-        setUserLoginInfo((prevState) => ({
-          ...prevState,
-          emailerror:
-            userLogInInfo.email.length > 10
-              ? "Please 10 digit mobile Number"
-              : "",
-        }));
+        const { title, message } = warnApiError(response, "Send OTP failed", "Could not send OTP");
+        WarningBackendApi(title, message);
       }
+    } catch (e) {
+      WarningBackendApi("Send OTP failed", e?.message || "Could not send OTP");
+    } finally {
+      setLoading(false);
     }
   };
 

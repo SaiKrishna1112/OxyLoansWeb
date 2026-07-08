@@ -14,11 +14,11 @@ import {
 import { ReloadOutlined } from "@ant-design/icons";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
+import { API_USER_URL } from "../../../../../config";
 
 const { Title, Text } = Typography;
 
-const API_URL =
-  "https://fintech.oxyloans.com/oxyloans/v1/user/getParticipatedAmountInfo";
+const API_URL = `${API_USER_URL}getParticipatedAmountInfo`;
 
 const FIELD_MAP = [
   {

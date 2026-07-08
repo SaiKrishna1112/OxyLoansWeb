@@ -1278,5 +1278,13 @@ export const Success = (tittle, message) => {
 };
 
 export const WarningBackendApi = (tittle, message) => {
-  Swal.fire(`${tittle}`, `${message}`, "warning");
+  const safeTitle =
+    tittle != null && String(tittle).trim() && String(tittle) !== "undefined"
+      ? String(tittle).trim()
+      : "Warning";
+  const safeMessage =
+    message != null && String(message).trim() && String(message) !== "undefined"
+      ? String(message).trim()
+      : "Something went wrong. Please try again.";
+  Swal.fire(safeTitle, safeMessage, "warning");
 };

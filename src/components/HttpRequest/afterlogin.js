@@ -1,10 +1,7 @@
 import axios from "axios";
 import { data } from "jquery";
-const userisIn = "local"; //local or production
-const API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user/";
+import { MARKETPLACE_URL, API_USER_URL } from "../../config";
+const API_BASE_URL = API_USER_URL;
 
 export const getToken = () => {
   return sessionStorage.getItem("accessToken");
@@ -1882,17 +1879,21 @@ export const getEmiTableInformation = async (params) => {
   return response;
 };
 
-export const getSessionExpireTime = () => {
+/** Must match accessTokenTtl in oxyloans-rest application.properties (milliseconds). */
+export const SESSION_TTL_MS = 1800000; // 1800 seconds = 30 minutes
+export const SESSION_WARN_BEFORE_SEC = 300; // show warning in last 5 minutes
+
+export const getSessionRemainingSeconds = () => {
   const tokenTimeStamp = getUserSessionTime();
-  var addingtime = 1500000;
-  var getTime = parseInt(tokenTimeStamp) + addingtime;
-  var date = new Date();
-  var milliseconds = date.getTime();
-  let isNearbySession = false;
-  if (milliseconds > getTime) {
-    isNearbySession = true;
-  }
-  return isNearbySession;
+  if (!tokenTimeStamp) return null;
+  const expiresAt = parseInt(tokenTimeStamp, 10) + SESSION_TTL_MS;
+  return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+};
+
+export const getSessionExpireTime = () => {
+  const remainingSec = getSessionRemainingSeconds();
+  if (remainingSec === null) return false;
+  return remainingSec <= SESSION_WARN_BEFORE_SEC;
 };
 
 export const getNewSessionTime = async () => {
@@ -2985,9 +2986,7 @@ export const aggrementGenerationforLenderSide = async (payload) => {
 
 // ── AI Layer API ──────────────────────────────────────────────────────────────
 const AI_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/ai/"
-    : "https://fintech.oxyloans.com/oxyloans/v1/ai/";
+  `${MARKETPLACE_URL}/v1/ai/`;
 
 export const getLenderAIPortfolio = async (lenderId) => {
   const token = getToken();
@@ -3021,5 +3020,256 @@ export const getAdminAIReconciliationSummary = async () => {
   return response;
 };
 
+export const getAdminAIDashboardLive = async (fy, includeLenderRisk = false) => {
+  const token = getToken();
+  const headers = { accessToken: token };
+  const params = [];
+  if (fy) params.push(`fy=${fy}`);
+  if (includeLenderRisk) params.push("includeLenderRisk=true");
+  const query = params.length ? `?${params.join("&")}` : "";
+
+  try {
+    return await axios.get(`${AI_BASE_URL}admin/dashboard-live${query}`, { headers });
+  } catch (primaryErr) {
+    const [platformRes, reconRes] = await Promise.all([
+      axios.get(`${AI_BASE_URL}admin/platform-stats${fy ? `?fy=${fy}` : ""}`, { headers }),
+      axios.get(`${AI_BASE_URL}admin/reconciliation-summary`, { headers }),
+    ]);
+    const body = {
+      apiVersion: "fallback-combined-v1",
+      resource: "/v1/ai/admin/platform-stats + /v1/ai/admin/reconciliation-summary",
+      generatedAt: new Date().toISOString(),
+      platform: platformRes.data,
+      reconciliation: reconRes.data,
+    };
+    if (includeLenderRisk) {
+      try {
+        const riskRes = await axios.get(`${AI_BASE_URL}admin/lenders/intelligence-summary`, { headers });
+        body.lenderRisk = riskRes.data;
+      } catch (riskErr) {
+        body.lenderRiskError = riskErr?.response?.data?.error || riskErr.message;
+      }
+    }
+    return { data: body, status: 200, request: primaryErr?.request };
+  }
+};
+
+// ── Loan-module AI Admin APIs (one endpoint per dashboard section) ───────────
+const adminAiLoanHeaders = () => {
+  const token = getToken();
+  if (!token) {
+    const err = new Error("Not logged in. Go to /loginotp and login with admin mobile + OTP 1234.");
+    err.code = "NO_TOKEN";
+    throw err;
+  }
+  return { accessToken: token };
+};
+
+const parseApiError = (err) => {
+  const status = err?.response?.status;
+  const msg =
+    err?.response?.data?.errorMessage ||
+    err?.response?.data?.error ||
+    err?.response?.data?.detail ||
+    err.message;
+  if (status === 401 || (msg && msg.toLowerCase().includes("session has expired"))) {
+    return "Session expired. Please login again at /loginotp (OTP: 1234 on local backend).";
+  }
+  if (status === 404) {
+    return "API not found (404). Restart backend: mvn spring-boot:run -Dspring-boot.run.profiles=test";
+  }
+  return msg || "Request failed";
+};
+
+export const getAdminAIDbHealth = async () => {
+  const health = await axios.get(`${MARKETPLACE_URL}/healthCheck`);
+  if (health.status !== 200) {
+    throw new Error(`Backend health check failed (${health.status})`);
+  }
+  try {
+    const db = await axios.get(`${API_USER_URL}verifyEndPoint-admin-ai-db-health`);
+    return db;
+  } catch {
+    return {
+      data: {
+        status: "backend-online",
+        database: "oxyloansprodtest",
+        message: "Backend reachable via proxy. Login for live DB stats.",
+      },
+    };
+  }
+};
+
+const adminAiLoanGet = async (path, fy) => {
+  const q = fy != null ? `?fy=${fy}` : "";
+  const url = `${API_USER_URL}admin/ai/${path}${q}`;
+  try {
+    return await axios.get(url, { headers: adminAiLoanHeaders() });
+  } catch (loanErr) {
+    if (loanErr?.code === "NO_TOKEN") throw loanErr;
+    if (loanErr?.response?.status === 401) {
+      const e = new Error(parseApiError(loanErr));
+      e.code = "AUTH";
+      throw e;
+    }
+    if (loanErr?.response?.status !== 404) throw loanErr;
+    return null;
+  }
+};
+
+const aiFallbackGet = async (path, fy) => {
+  const headers = adminAiLoanHeaders();
+  const q = fy != null ? `?fy=${fy}` : "";
+  return axios.get(`${AI_BASE_URL}admin/${path}${q}`, { headers });
+};
+
+export const getAdminAIPlatformKpis = async (fy) => {
+  const res = await adminAiLoanGet("platform-kpis", fy);
+  if (res) return res;
+  const fallback = await aiFallbackGet("platform-stats", fy);
+  return {
+    data: {
+      displayName: "Platform KPIs",
+      resource: "/v1/ai/admin/platform-stats",
+      data: { kpis: fallback.data?.kpis || fallback.data },
+    },
+  };
+};
+
+export const getAdminAIUserGrowth = async (fy) => {
+  const res = await adminAiLoanGet("user-growth", fy);
+  if (res) return res;
+  const fallback = await aiFallbackGet("platform-stats", fy);
+  return {
+    data: {
+      displayName: "User Growth",
+      resource: "/v1/ai/admin/platform-stats",
+      data: { users: fallback.data?.users },
+    },
+  };
+};
+
+export const getAdminAITopLenders = async (fy) => {
+  const res = await adminAiLoanGet("top-lenders", fy);
+  if (res) return res;
+  const fallback = await aiFallbackGet("platform-stats", fy);
+  return {
+    data: {
+      displayName: "Top Lenders",
+      resource: "/v1/ai/admin/platform-stats",
+      data: {
+        topLenders: fallback.data?.topLenders,
+        fyLeaderboard: fallback.data?.fyLeaderboard,
+      },
+    },
+  };
+};
+
+export const getAdminAITopDeals = async (fy) => {
+  const res = await adminAiLoanGet("top-deals", fy);
+  if (res) return res;
+  const fallback = await aiFallbackGet("platform-stats", fy);
+  return {
+    data: {
+      displayName: "Top Deals",
+      resource: "/v1/ai/admin/platform-stats",
+      data: { topDeals: fallback.data?.topDeals },
+    },
+  };
+};
+
+export const getAdminAIMonthlyPayoutTrend = async (fy) => {
+  const res = await adminAiLoanGet("monthly-payout-trend", fy);
+  if (res) return res;
+  const fallback = await aiFallbackGet("platform-stats", fy);
+  return {
+    data: {
+      displayName: "Monthly Payout Trend",
+      resource: "/v1/ai/admin/platform-stats",
+      data: {
+        monthlyTrend: fallback.data?.monthlyTrend,
+        fyHistory: fallback.data?.fyHistory,
+      },
+    },
+  };
+};
+
+export const getAdminAICmsReconciliationDaily = async () => {
+  const res = await adminAiLoanGet("cms-reconciliation-daily");
+  if (res) return res;
+  const fallback = await getAdminAIReconciliationSummary();
+  return {
+    data: {
+      displayName: "CMS Daily Reconciliation",
+      resource: "/v1/ai/admin/reconciliation-summary",
+      data: { reconciliation: fallback.data },
+    },
+  };
+};
+
+export const getAdminAILenderRiskPortfolio = async () => {
+  const res = await adminAiLoanGet("lender-risk-portfolio");
+  if (res) return res;
+  const fallback = await axios.get(`${AI_BASE_URL}admin/lenders/intelligence-summary`, {
+    headers: adminAiLoanHeaders(),
+  });
+  return {
+    data: {
+      displayName: "Lender Risk Portfolio",
+      resource: "/v1/ai/admin/lenders/intelligence-summary",
+      data: { lenderRisk: fallback.data },
+    },
+  };
+};
+
+export const loadAdminAIDashboardSections = async (fy, includeRisk = false) => {
+  const token = getToken();
+  if (!token) {
+    const err = new Error("Not logged in. Login at /loginotp with mobile + OTP 1234.");
+    err.code = "NO_TOKEN";
+    throw err;
+  }
+
+  const res = await getAdminAIDashboardLive(fy, includeRisk);
+  const data = res.data || {};
+  const platform = data.platform || data.platformKpis || {};
+  const reconciliation = data.reconciliation || {};
+  const resource = data.resource || "/v1/ai/admin/dashboard-live";
+  const generatedAt = data.generatedAt;
+
+  const wrap = (displayName, payload) => ({
+    displayName,
+    resource,
+    generatedAt,
+    apiVersion: data.apiVersion,
+    data: payload,
+  });
+
+  const sections = {
+    platformKpis: wrap("Platform KPIs", { kpis: platform.kpis || {} }),
+    userGrowth: wrap("User Growth", { users: platform.users || {} }),
+    topLenders: wrap("Top Lenders", {
+      topLenders: platform.topLenders || [],
+      fyLeaderboard: platform.fyLeaderboard || [],
+    }),
+    topDeals: wrap("Top Deals", { topDeals: platform.topDeals || [] }),
+    monthlyTrend: wrap("Monthly Payout Trend", {
+      monthlyTrend: platform.monthlyTrend || [],
+      fyHistory: platform.fyHistory || [],
+    }),
+    reconciliation: wrap("CMS Daily Reconciliation", { reconciliation }),
+  };
+
+  if (includeRisk && data.lenderRisk) {
+    sections.lenderRisk = wrap("Lender Risk Portfolio", { lenderRisk: data.lenderRisk });
+  }
+
+  const errors = [];
+  if (data.platformError) errors.push({ key: "platform", message: data.platformError });
+  if (data.reconciliationError) errors.push({ key: "reconciliation", message: data.reconciliationError });
+  if (data.lenderRiskError) errors.push({ key: "lenderRisk", message: data.lenderRiskError });
+
+  return { sections, errors, loadedAt: generatedAt || new Date().toISOString() };
+};
 
 

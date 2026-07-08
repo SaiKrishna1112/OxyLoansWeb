@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   getUserDetails,
   getSessionExpireTime,
+  getSessionRemainingSeconds,
   getUserDetails1,
 } from "../HttpRequest/afterlogin";
 
@@ -11,7 +12,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchData } from "../Redux/Slice";
 import { fetchDatadashboard } from "../Redux/SliceDashboard";
 
-import { WarningAlert } from "../pages/Base UI Elements/SweetAlert";
+import { WarningAlert, WarningAlertwithdrow } from "../pages/Base UI Elements/SweetAlert";
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
 
@@ -63,16 +64,30 @@ const PartnerHeader = (profile) => {
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response.data.errorCode != "200") {
-        WarningAlert(data.response.data.errorMessage, "/");
+      } else if (data.response?.data?.errorCode != "200") {
+        const msg = data.response?.data?.errorMessage || "Request failed";
+        const isSessionError =
+          data.response?.status === 401 ||
+          /session|expired|token/i.test(String(msg));
+        if (isSessionError) {
+          WarningAlert(msg, "/");
+        } else {
+          WarningAlertwithdrow(msg);
+        }
       }
     });
   }, []);
 
   useMemo(() => {
-    const sessionsExpire = getSessionExpireTime();
-    if (sessionsExpire) {
-      WarningAlert("Your session is expiring in 5 minutes.", "/dashboard");
+    if (getSessionExpireTime()) {
+      const secs = getSessionRemainingSeconds();
+      const mins = Math.ceil((secs || 0) / 60);
+      WarningAlert(
+        secs != null
+          ? `Your session expires in ${secs} seconds (${mins} min). Click Continue to refresh.`
+          : "Your session is expiring soon.",
+        "/dashboard"
+      );
     }
   }, []);
 

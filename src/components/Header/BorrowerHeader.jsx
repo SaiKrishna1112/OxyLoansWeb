@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   getUserDetails,
   getSessionExpireTime,
+  getSessionRemainingSeconds,
 } from "../HttpRequest/afterlogin";
 import CountUp from "react-countup";
 import { useSelector, useDispatch } from "react-redux";
@@ -12,6 +13,7 @@ import { fetchDatadashboard } from "../Redux/SliceDashboard";
 import {
   HandleWithFooter,
   WarningAlert,
+  WarningAlertwithdrow,
 } from "../pages/Base UI Elements/SweetAlert";
 import {
   headericon05,
@@ -69,17 +71,30 @@ const BorrowerHeader = (profile) => {
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response.data.errorCode != "200") {
-        WarningAlert(data.response.data.errorMessage, "/");
+      } else if (data.response?.data?.errorCode != "200") {
+        const msg = data.response?.data?.errorMessage || "Request failed";
+        const isSessionError =
+          data.response?.status === 401 ||
+          /session|expired|token/i.test(String(msg));
+        if (isSessionError) {
+          WarningAlert(msg, "/");
+        } else {
+          WarningAlertwithdrow(msg);
+        }
       }
     });
   }, []);
 
   useMemo(() => {
-    const sessionsExpire = getSessionExpireTime();
-
-    if (sessionsExpire) {
-      WarningAlert("Your session is expiring in 5 minutes.", "/dashboard");
+    if (getSessionExpireTime()) {
+      const secs = getSessionRemainingSeconds();
+      const mins = Math.ceil((secs || 0) / 60);
+      WarningAlert(
+        secs != null
+          ? `Your session expires in ${secs} seconds (${mins} min). Click Continue to refresh.`
+          : "Your session is expiring soon.",
+        "/dashboard"
+      );
     }
   }, []);
 
