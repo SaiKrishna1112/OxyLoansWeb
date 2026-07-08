@@ -111,9 +111,11 @@ const OxiBadge = ({ tier }) => {
   );
 };
 
-const StatCard = ({ label, value, color, sub }) => (
-  <div className="col-6 col-md mb-3">
-    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}>
+const StatCard = ({ label, value, color, sub, onClick }) => (
+  <div className="col-6 col-md mb-3" onClick={onClick} style={onClick ? { cursor: "pointer" } : {}}>
+    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0", transition: "box-shadow 0.2s" }}
+      onMouseEnter={onClick ? (e) => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)" : undefined}
+      onMouseLeave={onClick ? (e) => e.currentTarget.style.boxShadow = "none" : undefined}>
       <div className="card-body py-3 px-2">
         <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>
           {label}
@@ -1186,6 +1188,7 @@ const LenderPortfolioDashboard = () => {
   const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
   const [maturityFilter, setMaturityFilter] = useState("all");
   const [maturitySectionOpen, setMaturitySectionOpen] = useState(false);
+  const [payoutSectionOpen, setPayoutSectionOpen] = useState(false);
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
@@ -1444,6 +1447,7 @@ const LenderPortfolioDashboard = () => {
                   </div>
                 )}
                 <StatCard label="Payout Reliability"
+                  onClick={() => { setPayoutSectionOpen(true); scrollTo("section-payout"); }}
                   value={(() => {
                     const timed = (data.creditsPaidEarly ?? 0) + (data.creditsPaidSameDay ?? 0) + (data.creditsPaidNextDay ?? 0) + (data.creditsPaidLate ?? 0);
                     const late  = data.creditsPaidLate ?? 0;
@@ -2303,9 +2307,10 @@ const LenderPortfolioDashboard = () => {
               </SectionCard>}
 
               {/* ── 9. PAYOUT RELIABILITY ── SMART: score+tiles, PRO: full detail+table ── */}
+              <div id="section-payout" />
               {!isSmart && <LockCard title="Payout Reliability" requiredTier="SMART" />}
               {isSmart && (data.safetyNarrativeDetails || data.safetyNarrative) && (
-                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} summary="Payment track record">
+                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} isOpen={payoutSectionOpen || undefined} onToggle={setPayoutSectionOpen} summary="Payment track record">
                   {(() => {
                     const early   = data.creditsPaidEarly    ?? 0;
                     const same    = data.creditsPaidSameDay  ?? 0;
