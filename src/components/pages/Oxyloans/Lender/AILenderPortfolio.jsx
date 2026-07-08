@@ -1159,7 +1159,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
-  const ID_ALIASES = { "77221": "27127" };
+  const ID_ALIASES = { "72271": "27127" };
   const rawId = paramLenderId || getUserId();
   const resolvedLenderId = ID_ALIASES[rawId] || rawId;
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
@@ -1209,9 +1209,9 @@ const LenderPortfolioDashboard = () => {
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
       .then((res) => {
         const d = res.data;
-        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
+        if (process.env.REACT_APP_REFERENCE_DATE && String(resolvedLenderId) === "27127") {
           d.lenderName = "Pradeep Chakravarthy";
-          d.email      = "pradeepch123@gmail.com";
+          d.email      = "pradeepchk@gmail.com";
         }
         setData(d);
       })
