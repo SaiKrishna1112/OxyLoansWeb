@@ -2010,8 +2010,7 @@ const LenderPortfolioDashboard = () => {
                 const tenure = rd.preferredTenure || "short-term";
                 const prob = rd.reinvestmentProbabilityPct || 0;
                 const avgSize = fmt(rd.avgInvestmentAmount || data.avgInvestmentAmount);
-                const reinvestSpeed = rd.sameDayReinvestFlag ? "same-day" : `typically within ${delay} day${delay === 1 ? "" : "s"}`;
-                const summaryText = `${firstName} reinvests ${ratio}% of the time — ${reinvestedCount} out of ${totalReturns} returns were put back to work, ${reinvestSpeed}. Preferred deal tenure is ${tenure} with an average deal size of ₹${avgSize}.${isPro ? ` Probability of reinvesting next return: ${prob}%.` : ""}`;
+                const summaryText = `${firstName} reinvests ${ratio}% of the time — ${reinvestedCount} out of ${totalReturns} returns were put back to work, typically within ${delay} day${delay === 1 ? "" : "s"}. Preferred deal tenure is ${tenure} with an average deal size of ₹${avgSize}.${isPro ? ` Probability of reinvesting next return: ${prob}%.` : ""}`;
                 return (
                   <SectionCard title="Reinvestment Profile" badge={<StarRating rating={data.reinvestmentStarRating || rd.starRating} />} collapsible defaultOpen={false} summary={rd.classification || `${ratio}% reinvested`}>
                     <div style={{ background: "linear-gradient(135deg, #f9f0ff, #efdbff)", borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontSize: 14, color: "#391085", lineHeight: 1.7 }}>
