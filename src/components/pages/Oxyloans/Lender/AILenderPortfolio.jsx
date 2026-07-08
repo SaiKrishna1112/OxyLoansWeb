@@ -1208,7 +1208,7 @@ const LenderPortfolioDashboard = () => {
         const d = res.data;
         if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
           d.lenderName = "Pradeep Chakravarthy";
-          d.email      = "pradeepchk@gmail.com";
+          d.email      = "pradeepch123@gmail.com";
         }
         setData(d);
       })
