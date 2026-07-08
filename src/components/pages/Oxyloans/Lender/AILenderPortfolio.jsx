@@ -2025,8 +2025,8 @@ const LenderPortfolioDashboard = () => {
                           { stars: "⭐", label: "1 star", desc: "New lender or no reinvestment yet" },
                           { stars: "⭐⭐", label: "2 stars", desc: "At least 1 reinvestment after a maturity" },
                           { stars: "⭐⭐⭐", label: "3 stars", desc: "40% of returned principal reinvested" },
-                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80% of returned principal reinvested" },
-                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "100% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80%–95% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "95%+ of returned principal reinvested" },
                         ].map((item) => {
                           const myCount = parseInt((data.reinvestmentStarRating || "1").split(" ")[0]) || 1;
                           const itemCount = item.stars.split("⭐").length - 1;
