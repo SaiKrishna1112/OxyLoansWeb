@@ -25,6 +25,7 @@ import {
   oxylogomobile,
   oxylogodashboard,
 } from "../imagepath";
+import NotificationBell from "../NotificationBell";
 
 const BorrowerHeader = (profile) => {
   const dispatch = useDispatch();
@@ -61,41 +62,20 @@ const BorrowerHeader = (profile) => {
   }, []);
 
   useEffect(() => {
+    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+    const isValidToken = token && token !== "null" && token !== "undefined";
+    if (!isValidToken) return;
+
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails().then((data) => {
-      if (data.request.status == 200) {
-        console.log("header", data.data)
-        // localStorage.setItem("userType", data.data.userDisplayId);
+      if (data && data.status == 200) {
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response?.data?.errorCode != "200") {
-        const msg = data.response?.data?.errorMessage || "Request failed";
-        const isSessionError =
-          data.response?.status === 401 ||
-          /session|expired|token/i.test(String(msg));
-        if (isSessionError) {
-          WarningAlert(msg, "/");
-        } else {
-          WarningAlertwithdrow(msg);
-        }
       }
-    });
-  }, []);
-
-  useMemo(() => {
-    if (getSessionExpireTime()) {
-      const secs = getSessionRemainingSeconds();
-      const mins = Math.ceil((secs || 0) / 60);
-      WarningAlert(
-        secs != null
-          ? `Your session expires in ${secs} seconds (${mins} min). Click Continue to refresh.`
-          : "Your session is expiring soon.",
-        "/dashboard"
-      );
-    }
+    }).catch(() => {});
   }, []);
 
   return (
@@ -287,6 +267,7 @@ const BorrowerHeader = (profile) => {
               <img src={headericon04} alt="" />
             </Link>
           </li>
+          <NotificationBell />
           {/* User Menu */}
           <li className="nav-item dropdown has-arrow new-user-menus">
             <Link
@@ -341,7 +322,7 @@ const BorrowerHeader = (profile) => {
               <Link className="dropdown-item" to="/borrowerProfile">
                 My Profile
               </Link>
-              <Link className="dropdown-item" to="/myRunningDeals">
+              <Link className="dropdown-item" to="/borrowerRequestAmount">
                 My Application
               </Link>
 

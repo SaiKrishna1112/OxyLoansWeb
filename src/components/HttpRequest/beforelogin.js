@@ -1,6 +1,10 @@
 import axios from "axios";
-import { API_USER_URL } from "../../config";
-const API_BASE_URL = API_USER_URL;
+import { API_USER_URL as API_BASE_URL } from "../../config";
+// const userisIn = "local"; //local or production
+// let API_BASE_URL =
+//   userisIn == "local"
+//     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
+//     : "https://fintech.oxyloans.com/oxyloans/v1/user/";
 
 /** True when axios returned HTTP 200 (not an error object). */
 export const isApiSuccess = (response) => {
@@ -32,6 +36,7 @@ const handleApiRequestBeforeLogin = async (
       method,
       url: `${BASE_URL}${End_Url}`,
       data: POSTDATA,
+      timeout: 20000,
       headers: {
         "Content-Type": "application/json",
       },
@@ -106,7 +111,11 @@ export const Admlog = async (userid, password) => {
   if (response?.status === 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("primaryType", response.data.primaryType);
+    sessionStorage.setItem("primaryType", response.data.primaryType);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     sessionStorage.setItem("email", response.data.email || "");
     localStorage.setItem("primaryType", response.data.primaryType || "");
@@ -129,7 +138,9 @@ export const partnerlogin = async (userid, password) => {
   if (response.status == 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     return response;
   } else {
@@ -156,7 +167,9 @@ export const userloginSection = async (email, password) => {
   if (response?.status === 200) { 
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
     sessionStorage.setItem("userId", response.data.id);
+    localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     sessionStorage.setItem("email", response.data.email || "");
     localStorage.setItem("primaryType", response.data.primaryType || "");

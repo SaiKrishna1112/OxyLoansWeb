@@ -285,6 +285,76 @@ const BorrowerTicketHistory = React.lazy(() =>
   import("./components/pages/Oxyloans/Borrower/ViewTicketHistory")
 );
 
+const Todaydeal = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/Todaydeal")
+);
+
+// ── Marketplace / new features ──────────────────────────────────────────────
+
+const OpenMarketLoanListings = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/OpenMarketLoanListings")
+);
+
+const MyOffers = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/MyOffers")
+);
+
+const LenderMarketplaceConsent = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/LenderMarketplaceConsent")
+);
+
+const LenderEmiDashboard = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/LenderEmiDashboard")
+);
+
+const EscalationDashboard = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/EscalationDashboard")
+);
+
+const NearbyBorrowers = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/NearbyBorrowers")
+);
+
+const SmartLoanMatch = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/SmartLoanMatch")
+);
+
+const InterestRateNegotiation = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/InterestRateNegotiation")
+);
+
+const BorrowerMarketplaceListings = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings")
+);
+
+const PostLoanRequest = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/PostLoanRequest")
+);
+
+const BorrowerMarketplaceConsent = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/BorrowerMarketplaceConsent")
+);
+
+const MarketplaceEsign = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/MarketplaceEsign")
+);
+
+const MarketplaceEnach = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/MarketplaceEnach")
+);
+
+const MyOxyScore = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/MyOxyScore")
+);
+
+const BorrowerEmiSchedule = React.lazy(() =>
+  import("./components/pages/Oxyloans/Borrower/BorrowerEmiSchedule")
+);
+
+const NotificationsPage = React.lazy(() =>
+  import("./components/pages/NotificationsPage")
+);
+
 export const newRouter = createBrowserRouter([
   {
     path: "/",
@@ -701,6 +771,94 @@ export const newRouter = createBrowserRouter([
   {
     path: "/borrowerTicketHistory",
     element: <BorrowerTicketHistory />,
+    errorElement: <Error404></Error404>,
+  },
+
+  // ── Marketplace routes ────────────────────────────────────────────────────
+
+  // Lender marketplace
+  {
+    path: "/marketplace-loans",
+    element: <OpenMarketLoanListings />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/my-offers",
+    element: <MyOffers />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/lender-consent/:loanRequestId",
+    element: <LenderMarketplaceConsent />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/lender-emi-dashboard",
+    element: <LenderEmiDashboard />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/escalation-dashboard",
+    element: <EscalationDashboard />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/nearby-borrowers",
+    element: <NearbyBorrowers />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/smart-loan-match",
+    element: <SmartLoanMatch />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/negotiation/:loanRequestId",
+    element: <InterestRateNegotiation />,
+    errorElement: <Error404></Error404>,
+  },
+
+  // Borrower marketplace
+  {
+    path: "/my-marketplace-loans",
+    element: <BorrowerMarketplaceListings />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/post-loan-request",
+    element: <PostLoanRequest />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/borrower-consent/:loanRequestId",
+    element: <BorrowerMarketplaceConsent />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/esign/:loanRequestId",
+    element: <MarketplaceEsign />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/enach/:loanRequestId",
+    element: <MarketplaceEnach />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/my-oxyscore",
+    element: <MyOxyScore />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/borrower-emi-schedule",
+    element: <BorrowerEmiSchedule />,
+    errorElement: <Error404></Error404>,
+  },
+
+  // Notifications
+  {
+    path: "/notifications",
+    element: <NotificationsPage />,
     errorElement: <Error404></Error404>,
   },
 ]);

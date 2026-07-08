@@ -1,10 +1,7 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import {
-  getUserDetails,
-  getSessionExpireTime,
-  getSessionRemainingSeconds,
   getUserDetails1,
 } from "../HttpRequest/afterlogin";
 
@@ -12,7 +9,6 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchData } from "../Redux/Slice";
 import { fetchDatadashboard } from "../Redux/SliceDashboard";
 
-import { WarningAlert, WarningAlertwithdrow } from "../pages/Base UI Elements/SweetAlert";
 import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
 import { Tag } from "antd";
 
@@ -58,37 +54,15 @@ const PartnerHeader = (profile) => {
     dispatch(fetchData());
     dispatch(fetchDatadashboard());
     getUserDetails1().then((data) => {
-      if (data.request.status == 200) {
+      if (data && data.status == 200) {
         localStorage.setItem("userType", data.data.userDisplayId);
         setdashboarddata({
           ...dashboarddata,
           profileData: data,
         });
-      } else if (data.response?.data?.errorCode != "200") {
-        const msg = data.response?.data?.errorMessage || "Request failed";
-        const isSessionError =
-          data.response?.status === 401 ||
-          /session|expired|token/i.test(String(msg));
-        if (isSessionError) {
-          WarningAlert(msg, "/");
-        } else {
-          WarningAlertwithdrow(msg);
-        }
       }
-    });
-  }, []);
-
-  useMemo(() => {
-    if (getSessionExpireTime()) {
-      const secs = getSessionRemainingSeconds();
-      const mins = Math.ceil((secs || 0) / 60);
-      WarningAlert(
-        secs != null
-          ? `Your session expires in ${secs} seconds (${mins} min). Click Continue to refresh.`
-          : "Your session is expiring soon.",
-        "/dashboard"
-      );
-    }
+      // silently ignore errors to avoid false session expiry popup
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -210,10 +184,10 @@ const PartnerHeader = (profile) => {
                   </p>
                   <p className="text-muted mb-0">
                     Wallet :
-                    {reduxStoreData?.length !== 0
-                      ? reduxStoreData?.lenderWalletAmount -
-                        reduxStoreData?.holdAmountInDealParticipation -
-                        reduxStoreData?.equityAmount
+                    {reduxStoreData?.lenderWalletAmount != null
+                      ? (reduxStoreData.lenderWalletAmount -
+                          (reduxStoreData.holdAmountInDealParticipation || 0) -
+                          (reduxStoreData.equityAmount || 0)).toFixed(2)
                       : ""}
                   </p>
                 </div>

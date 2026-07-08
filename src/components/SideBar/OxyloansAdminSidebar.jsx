@@ -8,6 +8,20 @@ const OxyloansAdminSidebar = () => {
   // const pathName = useLocation().pathname;
   const [openSubmenus, setOpenSubmenus] = useState({});
   const { pathname } = useLocation();
+
+  useEffect(() => {
+    menuItems.forEach((item) => {
+      if (item.children) {
+        const hasActiveChild = item.children.some((child) => child.link === pathname);
+        if (hasActiveChild) {
+          setOpenSubmenus((prev) => ({
+            ...prev,
+            [item.key]: true,
+          }));
+        }
+      }
+    });
+  }, [pathname]);
   const primaryType=localStorage.getItem("primaryType")
   const userId=sessionStorage.getItem("userId")
 
@@ -136,7 +150,6 @@ const OxyloansAdminSidebar = () => {
       icon: "fas fa-chart-bar",
       type: ["ADMIN"],
     },
-    
     {
       key: "ParticipationList",
       label: "Offline Participation List",
@@ -321,6 +334,12 @@ const OxyloansAdminSidebar = () => {
   {menuItems.map((item) => {
     const isSubmenuOpen = openSubmenus[item.key];
     const isActive = pathname === item.link;
+    const itemLabel =
+      item.key === "adminAIDashboard"
+        ? "Admin AI Dashboard"
+        : item.key === "adminAIReconciliation"
+        ? "AI Reconciliation"
+        : item.label;
 
     return (
       <>
@@ -342,7 +361,7 @@ const OxyloansAdminSidebar = () => {
               >
                 <div>
                   <i className={item.icon}></i>
-                  <span style={{ marginLeft: "16px" }}> {item.label} </span>
+                  <span style={{ marginLeft: "16px" }}> {itemLabel} </span>
                 </div>
                 <i
                   className={`fa-solid ${
@@ -354,7 +373,7 @@ const OxyloansAdminSidebar = () => {
             ) : (
               <Link to={item.link}>
                 <i className={item.icon}></i>
-                <span style={{ marginLeft: "18px", fontSize: "15px" }}> {item.label} </span>
+                <span style={{ marginLeft: "18px", fontSize: "15px" }}> {itemLabel} </span>
                 </Link>
             )}
 

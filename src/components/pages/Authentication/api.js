@@ -1,14 +1,8 @@
 import axios from "axios";
-const userisIn = "production"; //local or production
-const API_BASE_URL =
-  userisIn == "local"
-    ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user"
-    : "https://fintech.oxyloans.com/oxyloans/v1/user";
+import { API_USER_URL as API_BASE_URL } from "../../../config";
 
-const API_URL =
-  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/login?grantType=PWD";
-const API_URL_otp =
-  "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/sendOtp";
+const API_URL = API_BASE_URL + "login?grantType=PWD";
+const API_URL_otp = API_BASE_URL + "sendOtp";
 // Function to perform the login API request
 export const loginUser = async (email, password, dataIpv4, dataIpv6) => {
   var data = {
@@ -27,6 +21,7 @@ export const loginUser = async (email, password, dataIpv4, dataIpv6) => {
     const accessTokenFromHeader = response.headers["accesstoken"];
     console.log("Access Token API:", accessTokenFromHeader);
     localStorage.setItem("token", accessTokenFromHeader);
+    localStorage.setItem("primaryType", response.data.primaryType);
 
     if (!accessTokenFromHeader) {
       throw new Error("Access token not found in response headers");
@@ -58,7 +53,7 @@ export const sendotpemail = async (email) => {
     email: email,
   };
   try {
-    const response = await axios.post(API_BASE_URL + "/resetpassword", data, {
+    const response = await axios.post(API_BASE_URL + "resetpassword", data, {
       headers: {
         "Content-Type": "application/json",
       },
@@ -84,7 +79,7 @@ export const verifypannumber = async (pannumber, address, time, id, date) => {
   };
   try {
     const response = await axios.patch(
-      API_BASE_URL + "/emailVerification",
+      API_BASE_URL + "emailVerification",
       data,
       {
         headers: {
@@ -156,7 +151,7 @@ export const validateotpsubmit = async (moblie, otp) => {
   };
   try {
     const response = await axios.post(
-      API_BASE_URL + "/login?grantType=PWD",
+      API_BASE_URL + "login?grantType=PWD",
       data,
       {
         headers: {
@@ -180,7 +175,7 @@ export const RegisterUser = async (moblie) => {
   };
   try {
     const response = await axios.post(
-      API_BASE_URL + "/newUserRegistration",
+      API_BASE_URL + "newUserRegistration",
       data
     );
     return response.data.mobileOtpSession;
@@ -197,7 +192,10 @@ export const vaildateotp = async (
   name,
   password,
   session,
-  referrerId
+  referrerId,
+  userType,
+  latitude,
+  longitude
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
@@ -218,6 +216,8 @@ export const vaildateotp = async (
       // uuid: "asdfghjkl",
       cifNumber: null,
       finoEmployeeMobileNumber: "0",
+      latitude: latitude || null,
+      longitude: longitude || null,
     };
   } else {
     var data = {
@@ -236,6 +236,8 @@ export const vaildateotp = async (
       cifNumber: null,
       finoEmployeeMobileNumber: null,
       // uuid: "asdfghjkl",
+      latitude: latitude || null,
+      longitude: longitude || null,
     };
   }
   if (utmForPartner === "Borrower") {
@@ -245,7 +247,7 @@ export const vaildateotp = async (
   }
   try {
     const response = await axios.post(
-      API_BASE_URL + "/newUserRegistration",
+      API_BASE_URL + "newUserRegistration",
       data
     );
 

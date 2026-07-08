@@ -31,7 +31,7 @@ const Whatappuser = ({ data }) => {
         sessionStorage.setItem("whatsAppLoginUsers", JSON.stringify(data1));
 
         if (data.primaryType === "LENDER" || data.primaryType === "ADMIN") {
-          history("/dashboard");
+          history("/ai/portfolio");
         } else if (data.primaryType === "BORROWER") {
           history("/borrowerDashboard");
         }

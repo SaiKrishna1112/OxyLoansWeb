@@ -37,19 +37,9 @@ useEffect(()=>{
     setLoading(true);
     try {
       const response = await handleDashboardUsersData();
-      // console.log("handleDashboardUsersData",response)
       setUserData(response.data);
     } catch (err) {
-      // Alert.error("error",err.response.data.errorCode);
       console.log("error",err.response.data.errorCode);
-      //  if (err.response == 200) {
-      //             Swal.fire("Success!", `Payment received successfully!`, "success");
-      //             setTimeout(() => {
-      //               window.location.href = `/dashboard`;
-      //             }, 5000);
-      //           } else {
-      //             membershipsweetalert(data.response.data.errorMessage);
-      //           }  
       Swal.fire({
         icon: 'error',
         title: 'Oops...',
@@ -62,14 +52,11 @@ useEffect(()=>{
   };
 
   const activeLendersData = async () => {
-    
-
     setLoading(true);
         const response = await fetchActiveLendersData();
         console.log("fetchActiveLendersData",response)
         setLoading(false); 
       if(response.status == 200) {
-              // setShowData(true);
               setActiveLenders(response.data);
             setLoading(false);  
         
@@ -80,16 +67,11 @@ useEffect(()=>{
             title: 'Oops...',
             text: response.response.data.errorMessage,
             confirmButtonText: 'Go to Login',
-            // denyButtonText: 'Regenerated',
         
           }).then((result) => {
             if (result.isConfirmed) {
               navigate('/');
             }
-            // else if (result.isDenied) {
-            //   // Call your API here
-            //   regenerateOTP(); // Replace with your actual API call function
-            // }
           });
           setLoading(false)
         
@@ -104,14 +86,8 @@ useEffect(()=>{
         setLoading(false)
         }  
             }
-        
-    
   };
 
-  
-
-
-  // Stats data with React Icons
   const statsCards = [
     { title: "Registered Users", value: `${userData?.registeredUsersCount}`, icon: <FaUserAlt size={40} color="#4e73df" /> },
     { title: "Lenders", value: `${userData?.lendersCount}`, icon: <FaUsers size={40} color="#1cc88a" /> },
@@ -143,7 +119,6 @@ useEffect(()=>{
 
 {loading==false?
           <>
-            {/* Stats Cards */}
             <div className="row">
               {statsCards.map((card, index) => (
                 <div key={index} className="col-xl-3 col-sm-6 col-12 d-flex">
@@ -162,7 +137,6 @@ useEffect(()=>{
           </>
 :
 <>
-{/* <LoadingOutlined /> Loading... */}
 <div className="d-flex justify-content-center p-3">
   <div className="bg-white shadow rounded-pill p-2 d-flex align-items-center">
     {[0, 0.1, 0.2].map((delay, i) => (

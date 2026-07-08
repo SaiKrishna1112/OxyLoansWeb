@@ -22,6 +22,8 @@ const OxyloansAdminHeader = (profile) => {
 
 //   const [currentPage, setCurrentPage] = useState("");
 const userId=sessionStorage.getItem("userId")
+const primaryType = localStorage.getItem("primaryType");
+const displayRole = primaryType === "ADMIN" || userId == "6680" ? "ADMIN" : "HELP DESK ADMIN";
 
   const handlesidebar = () => {
     document.body.classList.toggle("mini-sidebar");
@@ -164,7 +166,7 @@ const userId=sessionStorage.getItem("userId")
                       : ""} */}
                     <h6>
                       {" "}
-                      {userId=="6680"?"ADMIN":"HELP DESK ADMIN"}{" "}
+                      {displayRole}{" "}
                       {/* {reduxStoreData?.length != 0
                         ? reduxStoreData?.userId
                         : ""} */}

@@ -4,15 +4,19 @@ import { chatbotapicall } from "./HttpRequest/afterlogin";
 const QUICK_REPLIES = {
   LENDER: [
     "Show my wallet balance",
+    "Which deal earned me the highest ROI?",
+    "Compare my earnings this month vs last month",
+    "How much will I earn in the next 30 days?",
     "What is my total interest earned this year?",
-    "Which deals can I participate in today?",
+    "How long have I been investing with OxyLoans?",
+    "What is my average ROI across all deals?",
+    "How much have I invested in total?",
+    "In which deal did I invest recently?",
     "Show my active deals",
     "How much principal has been returned to me?",
     "Show my upcoming interest payments",
-    "What are the RBI lending limits?",
     "Show my referral bonus history",
-    "Which deal has the highest interest rate?",
-    "How does OxyLoans work for lenders?",
+    "Which deals can I participate in today?",
   ],
   BORROWER: [
     "What is the status of my loan application?",
@@ -42,28 +46,36 @@ const ROLE_CONFIG = {
 };
 
 const FOLLOWUP = {
-  LENDER_PROFILE:           ["Show my active deals", "What interest did I earn this year?", "Show my upcoming payments"],
-  DEALS_STATISTICS:         ["Show my running deals", "Show upcoming payments", "Show interest history"],
-  LENDER_RUNNING_DEALS:     ["Show my wallet balance", "Show upcoming interest payments", "Which deal has the highest rate?"],
-  OPEN_DEALS:               ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
-  INTEREST_HISTORY:         ["Show my principal returned", "Show upcoming payments", "How much is in my wallet?"],
-  PRINCIPAL_HISTORY:        ["Show my wallet balance", "Show my referral earnings", "Show my active deals"],
-  LENDER_UPCOMING_INTEREST: ["Show my wallet balance", "What interest have I earned?", "Show active deals"],
-  REFERRAL_HISTORY:         ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
-  EMI_SCHEDULE:             ["Show my active loans", "What interest rate am I paying?", "How does repayment work?"],
-  LOAN_APPLICATIONS:        ["Show my active loans", "How long does loan approval take?", "What documents are required?"],
-  ACTIVE_LOANS:             ["Show my EMI schedule", "What interest rate am I paying?", "How does repayment work?"],
+  LENDER_PROFILE:             ["Show my active deals", "What interest did I earn this year?", "Compare my earnings month on month"],
+  DEALS_STATISTICS:           ["Show my running deals", "Show upcoming payments", "Compare my earnings month on month"],
+  LENDER_LATEST_DEAL:         ["Show my active deals", "Which deal earned me highest ROI?", "Show my wallet balance"],
+  LENDER_RUNNING_DEALS:       ["Show my wallet balance", "Show upcoming interest payments", "Compare my earnings month on month"],
+  OPEN_DEALS:                 ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
+  INTEREST_HISTORY:           ["Compare my earnings month on month", "Show my principal returned", "Show upcoming payments"],
+  PRINCIPAL_HISTORY:          ["Show my wallet balance", "Show my referral earnings", "Compare my earnings month on month"],
+  LENDER_UPCOMING_INTEREST:   ["Show my wallet balance", "What interest have I earned?", "Compare my earnings month on month"],
+  LENDER_UPCOMING_BREAKDOWN:  ["Show my active deals", "What interest have I earned?", "Compare my earnings month on month"],
+  LENDER_MOM_COMPARISON:        ["Show my active deals", "What interest did I earn this year?", "Show upcoming payments"],
+  LENDER_HIGHEST_INTEREST:      ["Compare my earnings month on month", "Show my active deals", "What interest did I earn this year?"],
+  REFERRAL_HISTORY:           ["Show my wallet balance", "Show my active deals", "What interest did I earn?"],
+  EMI_SCHEDULE:               ["Show my active loans", "What interest rate am I paying?", "How does repayment work?"],
+  LOAN_APPLICATIONS:          ["Show my active loans", "How long does loan approval take?", "What documents are required?"],
+  ACTIVE_LOANS:               ["Show my EMI schedule", "What interest rate am I paying?", "How does repayment work?"],
 };
 
 const TYPE_META = {
   LENDER_PROFILE:           { icon: "💰", label: "Wallet", color: "#16a34a" },
+  LENDER_LATEST_DEAL:       { icon: "🆕", label: "Latest Deal", color: "#2563eb" },
   LENDER_RUNNING_DEALS:     { icon: "📊", label: "Deals",  color: "#2563eb" },
   OPEN_DEALS:               { icon: "🎯", label: "Marketplace", color: "#7c3aed" },
   INTEREST_HISTORY:         { icon: "💵", label: "Earnings", color: "#0ea5a1" },
   PRINCIPAL_HISTORY:        { icon: "🏦", label: "Principal", color: "#16a34a" },
-  LENDER_UPCOMING_INTEREST: { icon: "📅", label: "Upcoming", color: "#f97316" },
-  REFERRAL_HISTORY:         { icon: "🎁", label: "Referral", color: "#7c3aed" },
-  DEALS_STATISTICS:         { icon: "📈", label: "Stats",  color: "#2563eb" },
+  LENDER_UPCOMING_INTEREST:  { icon: "📅", label: "Upcoming",    color: "#f97316" },
+  LENDER_UPCOMING_BREAKDOWN: { icon: "📅", label: "Payouts",     color: "#f97316" },
+  LENDER_MOM_COMPARISON:        { icon: "📊", label: "Month-on-Month",  color: "#0ea5a1" },
+  LENDER_HIGHEST_INTEREST:      { icon: "💰", label: "Interest Earned", color: "#16a34a" },
+  REFERRAL_HISTORY:          { icon: "🎁", label: "Referral",    color: "#7c3aed" },
+  DEALS_STATISTICS:          { icon: "📈", label: "Stats",       color: "#2563eb" },
   EMI_SCHEDULE:             { icon: "📅", label: "EMI",    color: "#f97316" },
   LOAN_APPLICATIONS:        { icon: "📋", label: "Applications", color: "#6366f1" },
   ACTIVE_LOANS:             { icon: "🏠", label: "Loans",  color: "#2563eb" },
@@ -452,47 +464,88 @@ function LenderProfileView({ data }) {
 // ─── Lender: Deal statistics ──────────────────────────────────────────────────
 
 function DealStatisticsView({ data }) {
-  const stats = [
-    { label: "Active", value: data.activeDeals ?? 0, color: "#2563eb", bg: "#dbeafe" },
-    { label: "Disbursed", value: data.disbursedDeals ?? 0, color: "#16a34a", bg: "#dcfce7" },
-    { label: "Closed", value: data.closedDeals ?? 0, color: "#64748b", bg: "#f1f5f9" },
-  ];
-  const amounts = [
-    { label: "Total Invested", value: data.totalInvested, color: "#0ea5a1" },
-    { label: "Total Repaid", value: data.totalRepaid, color: "#16a34a" },
-    { label: "Pending Repayment", value: data.pendingRepayment, color: "#ea580c" },
-  ].filter(a => a.value != null);
+  const totalDeals    = data.totalDeals ?? 0;
+  const totalInvested = data.totalInvested ?? 0;
+  const activeDeployed = data.activeDeployed ?? 0;
+  const completed     = totalInvested - activeDeployed;
 
   return (
     <div style={{ marginTop: 8 }}>
-      {/* Deal counts */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6, marginBottom: 8 }}>
-        {stats.map(s => (
-          <div key={s.label} style={{
-            textAlign: "center", padding: "10px 4px", borderRadius: 10,
-            background: s.bg, border: `1px solid ${s.color}30`,
+      {/* Hero stat */}
+      <div style={{
+        background: "linear-gradient(135deg, #0ea5a1 0%, #059890 100%)",
+        borderRadius: 12, padding: "14px 16px", marginBottom: 8,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
+        <div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Lifetime Investment</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{fmtINR(totalInvested)}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Deals</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#fff" }}>{totalDeals}</div>
+        </div>
+      </div>
+
+      {/* Active vs Completed */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ background: "#dbeafe", borderRadius: 10, padding: "10px 12px", border: "1px solid #93c5fd30" }}>
+          <div style={{ fontSize: 9, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Active Deployed</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#1d4ed8" }}>{fmtINR(activeDeployed)}</div>
+        </div>
+        <div style={{ background: "#dcfce7", borderRadius: 10, padding: "10px 12px", border: "1px solid #86efac30" }}>
+          <div style={{ fontSize: 9, color: "#15803d", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 4 }}>Completed</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#15803d" }}>{fmtINR(completed > 0 ? completed : 0)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Lender: Upcoming payout breakdown ───────────────────────────────────────
+
+function UpcomingBreakdownView({ data }) {
+  const rows = [
+    data.monthly    && { label: "Next Month",    amount: data.monthly,    deals: data.monthlyDeals,    color: "#0ea5a1", icon: "📅" },
+    data.quarterly  && { label: "Next Quarter",  amount: data.quarterly,  deals: data.quarterlyDeals,  color: "#2563eb", icon: "🗓️" },
+    data.halfYearly && { label: "Next 6 Months", amount: data.halfYearly, deals: data.halfYearlyDeals, color: "#7c3aed", icon: "📆" },
+    data.yearly     && { label: "Next Year",     amount: data.yearly,     deals: data.yearlyDeals,     color: "#f97316", icon: "🎯" },
+  ].filter(Boolean);
+
+  const totalExpected = rows.reduce((s, r) => s + (r.amount || 0), 0);
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 10,
+        padding: "8px 12px", marginBottom: 8,
+      }}>
+        <span style={{ fontSize: 11, color: "#9a3412" }}>Expected Interest Income</span>
+        <span style={{ fontSize: 15, fontWeight: 800, color: "#ea580c" }}>{fmtINR(totalExpected)}</span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {rows.map((r, i) => (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 14px", background: "#fff", borderRadius: 10,
+            border: `1.5px solid ${r.color}30`, boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
           }}>
-            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 9, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 2 }}>{s.label}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 20 }}>{r.icon}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a" }}>{r.label}</div>
+                <div style={{ fontSize: 10, color: "#94a3b8" }}>{r.deals} deal{r.deals > 1 ? "s" : ""}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: r.color }}>~{fmtINR(r.amount)}</div>
           </div>
         ))}
       </div>
-
-      {/* Amount breakdown */}
-      {amounts.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {amounts.map(a => (
-            <div key={a.label} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "7px 11px", background: "#f8fafc", borderRadius: 8,
-              border: "1px solid #e2e8f0",
-            }}>
-              <span style={{ fontSize: 11, color: "#64748b" }}>{a.label}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: a.color }}>{fmtINR(a.value)}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 6, textAlign: "center" }}>
+        Estimated based on your active deals · exact dates vary
+      </div>
     </div>
   );
 }
@@ -720,255 +773,91 @@ function TopicBadge({ type }) {
   );
 }
 
-// ─── Chatbot card components (cardType from /v1/ai/chat) ─────────────────────
+// ─── Rich message dispatcher ──────────────────────────────────────────────────
 
-function GreetingCard({ text, quickReplies, onSend }) {
-  const name = text.replace(/^Hi\s+/, "").replace(/!.*/, "");
+function MonthOnMonthView({ data }) {
+  const up = (data.difference ?? 0) >= 0;
+  const color = up ? "#16a34a" : "#dc2626";
+  const icon = up ? "📈" : "📉";
+  const closed = data.dealsClosedLastMonth || [];
+  const added  = data.dealsAddedThisMonth  || [];
   return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{
-        background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-        padding: "14px 16px", color: "#fff",
-      }}>
-        <div style={{ fontSize: 22, marginBottom: 2 }}>👋</div>
-        <div style={{ fontWeight: 700, fontSize: 15 }}>Hi {name}!</div>
-        <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>What would you like to explore today?</div>
+    <div style={{ marginTop: 8 }}>
+      {/* Hero comparison bar */}
+      <div style={{ background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", borderRadius: 12, padding: "14px 16px", marginBottom: 8 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 3 }}>{data.lastMonthName || "Last Month"}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#f8fafc" }}>{fmtINR(data.lastMonth)}</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 8, padding: "10px 12px", textAlign: "center", border: `1.5px solid ${color}44` }}>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 3 }}>{data.thisMonthName || "This Month"}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#f8fafc" }}>{fmtINR(data.thisMonth)}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${color}22`, borderRadius: 8, padding: "8px 12px" }}>
+          <span style={{ fontSize: 18 }}>{icon}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color }}>
+            {up ? "+" : ""}{fmtINR(data.difference ?? 0)} vs last month
+          </span>
+        </div>
       </div>
-      <div style={{ background: "#f8f7ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-        {(quickReplies || []).map((q, i) => (
-          <button key={i} onClick={() => onSend(q)} style={{
-            background: "#fff", border: "1.5px solid #6366f1", color: "#6366f1",
-            borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer",
-            fontWeight: 600, transition: "all 0.15s",
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#6366f1"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#6366f1"; }}
-          >{q}</button>
+
+      {/* Deal changes */}
+      {(closed.length > 0 || added.length > 0) && (
+        <div style={{ display: "grid", gridTemplateColumns: closed.length > 0 && added.length > 0 ? "1fr 1fr" : "1fr", gap: 6 }}>
+          {closed.length > 0 && (
+            <div style={{ background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#c2410c", marginBottom: 4 }}>
+                Closed in {data.lastMonthName} ({closed.length})
+              </div>
+              {closed.slice(0, 3).map((d, i) => (
+                <div key={i} style={{ fontSize: 11, color: "#374151", padding: "2px 0", borderBottom: i < Math.min(closed.length, 3) - 1 ? "1px solid #fed7aa" : "none" }}>
+                  {d.dealName || d} — {fmtINR(d.participatedAmount || 0)} @ {d.rateOfInterest || 0}%
+                </div>
+              ))}
+              {closed.length > 3 && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>+{closed.length - 3} more</div>}
+            </div>
+          )}
+          {added.length > 0 && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, padding: "8px 10px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#16a34a", marginBottom: 4 }}>
+                Added in {data.thisMonthName} ({added.length})
+              </div>
+              {added.slice(0, 3).map((d, i) => (
+                <div key={i} style={{ fontSize: 11, color: "#374151", padding: "2px 0", borderBottom: i < Math.min(added.length, 3) - 1 ? "1px solid #bbf7d0" : "none" }}>
+                  {d.dealName || d} — {fmtINR(d.participatedAmount || 0)} @ {d.rateOfInterest || 0}%
+                </div>
+              ))}
+              {added.length > 3 && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>+{added.length - 3} more</div>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HighestInterestView({ data }) {
+  const tiles = [
+    { label: "Total Interest Received", value: fmtINR(data.totalInterest), color: "#16a34a", bg: "#f0fdf4", border: "#86efac" },
+    { label: `Best Month (${data.bestMonthLabel || "—"})`, value: fmtINR(data.bestMonthInterest), color: "#0ea5a1", bg: "#f0fdfa", border: "#99f6e4" },
+    { label: "Last Month Interest", value: fmtINR(data.lastMonthInterest), color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" },
+    { label: "Total Deals", value: data.dealCount ?? 0, color: "#7c3aed", bg: "#faf5ff", border: "#ddd6fe" },
+  ];
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 6 }}>
+        {tiles.map((t, i) => (
+          <div key={i} style={{ background: t.bg, border: `1.5px solid ${t.border}`, borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ fontSize: 11, color: "#64748b", marginBottom: 3 }}>{t.label}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: t.color }}>{typeof t.value === "number" ? t.value : t.value}</div>
+          </div>
         ))}
       </div>
     </div>
   );
 }
-
-function WalletCard({ text, quickReplies, onSend }) {
-  const match = text.match(/₹[\d,]+/);
-  const amount = match ? match[0] : "₹0";
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{
-        background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-        padding: "14px 16px", color: "#fff",
-      }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>💰 Wallet Balance</div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{amount}</div>
-        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Available to invest</div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f0fdf4", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #059669", color: "#059669",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#059669"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#059669"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DealsCard({ text, quickReplies, onSend }) {
-  const countMatch = text.match(/Deals:\s*\*\*(\d+)\*\*/);
-  const amtMatch = text.match(/Deployed:\s*\*\*(₹[\d,]+)\*\*/);
-  const count = countMatch ? countMatch[1] : "—";
-  const amount = amtMatch ? amtMatch[1] : "—";
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>📊 Active Deals</div>
-        <div style={{ display: "flex", gap: 24, marginTop: 10 }}>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 800 }}>{count}</div>
-            <div style={{ fontSize: 11, opacity: 0.8 }}>Deals</div>
-          </div>
-          <div style={{ width: 1, background: "rgba(255,255,255,0.3)" }} />
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{amount}</div>
-            <div style={{ fontSize: 11, opacity: 0.8 }}>Deployed</div>
-          </div>
-        </div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#eff6ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #1d4ed8", color: "#1d4ed8",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#1d4ed8"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#1d4ed8"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PaymentsCard({ text, quickReplies, onSend }) {
-  const lines = text.split("\n").filter(l => l.includes("**") && l.includes("₹") && l.includes("🗓"));
-  const totalMatch = text.match(/Total:\s*(₹[\d,]+)/);
-  const total = totalMatch ? totalMatch[1] : null;
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #0369a1 0%, #0ea5e9 100%)", padding: "12px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>📅 Upcoming Payments</div>
-      </div>
-      <div style={{ background: "#fff", padding: "10px 14px" }}>
-        {lines.map((line, i) => {
-          const dateMatch = line.match(/\*\*([^*]+)\*\*/);
-          const amtMatch = line.match(/(₹[\d,]+)/);
-          return (
-            <div key={i} style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "7px 0", borderBottom: i < lines.length - 1 ? "1px solid #f1f5f9" : "none",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0ea5e9" }} />
-                <span style={{ fontSize: 13, color: "#374151", fontWeight: 500 }}>{dateMatch ? dateMatch[1] : ""}</span>
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#0369a1" }}>{amtMatch ? amtMatch[1] : ""}</span>
-            </div>
-          );
-        })}
-        {total && (
-          <div style={{ marginTop: 8, padding: "8px 10px", background: "#eff6ff", borderRadius: 8, display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>Total</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#0369a1" }}>{total}</span>
-          </div>
-        )}
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f0f9ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #0369a1", color: "#0369a1",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#0369a1"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0369a1"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EarningsCard({ text, quickReplies, onSend }) {
-  const match = text.match(/₹[\d,]+/);
-  const amount = match ? match[0] : "₹0";
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #b45309 0%, #f59e0b 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>💵 Interest Earned</div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{amount}</div>
-        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>This financial year</div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#fffbeb", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #b45309", color: "#b45309",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#b45309"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#b45309"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PrincipalCard({ text, quickReplies, onSend }) {
-  const match = text.match(/₹[\d,]+/);
-  const amount = match ? match[0] : "₹0";
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>🔄 Principal Returned</div>
-        <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{amount}</div>
-        <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>Across all matured deals</div>
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f0fdfa", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #0f766e", color: "#0f766e",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#0f766e"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#0f766e"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ReferralsCard({ text, quickReplies, onSend }) {
-  const countMatch = text.match(/(\d+)\s+referral/i);
-  const amtMatch = text.match(/₹[\d,]+/);
-  const hasReferrals = countMatch && parseInt(countMatch[1]) > 0;
-  return (
-    <div style={{ borderRadius: 14, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ background: "linear-gradient(135deg, #6d28d9 0%, #a78bfa 100%)", padding: "14px 16px", color: "#fff" }}>
-        <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>🎁 My Referrals</div>
-        {hasReferrals ? (
-          <>
-            <div style={{ fontSize: 28, fontWeight: 800, marginTop: 4 }}>{countMatch[1]} referrals</div>
-            {amtMatch && <div style={{ fontSize: 16, fontWeight: 700, opacity: 0.9, marginTop: 2 }}>{amtMatch[0]} bonus earned</div>}
-          </>
-        ) : (
-          <div style={{ fontSize: 14, marginTop: 6, opacity: 0.9 }}>No referrals yet — start sharing and earn rewards!</div>
-        )}
-      </div>
-      {quickReplies?.length > 0 && (
-        <div style={{ background: "#f5f3ff", padding: "10px 12px", display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {quickReplies.map((q, i) => (
-            <button key={i} onClick={() => onSend(q)} style={{
-              background: "#fff", border: "1.5px solid #6d28d9", color: "#6d28d9",
-              borderRadius: 20, padding: "5px 12px", fontSize: 12, cursor: "pointer", fontWeight: 600,
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "#6d28d9"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#6d28d9"; }}
-            >{q}</button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Dispatcher for cardType-based cards
-function ChatbotCard({ cardType, text, quickReplies, onSend }) {
-  if (cardType === "GREETING")  return <GreetingCard  text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "WALLET")    return <WalletCard    text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "DEALS")     return <DealsCard     text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "PAYMENTS")  return <PaymentsCard  text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "EARNINGS")  return <EarningsCard  text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "PRINCIPAL") return <PrincipalCard text={text} quickReplies={quickReplies} onSend={onSend} />;
-  if (cardType === "REFERRALS") return <ReferralsCard text={text} quickReplies={quickReplies} onSend={onSend} />;
-  return null;
-}
-
-// ─── Rich message dispatcher ──────────────────────────────────────────────────
 
 function RichMessage({ data }) {
   if (!data) return null;
@@ -983,6 +872,22 @@ function RichMessage({ data }) {
   if (type === "LENDER_PROFILE")    return <LenderProfileView data={data} />;
   if (type === "DEALS_STATISTICS")  return <DealStatisticsView data={data} />;
 
+  if (type === "LENDER_LATEST_DEAL")
+    return (
+      <div style={{ background: "#f0f9ff", borderRadius: 10, padding: "12px 16px", border: "1.5px solid #bae6fd" }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, color: "#0369a1" }}>Your Most Recent Deal</div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <tbody>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Deal Name</td><td style={{ fontWeight: 700, textAlign: "right" }}>{data.dealName || "—"}</td></tr>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Invested</td><td style={{ fontWeight: 700, textAlign: "right", color: "#2563eb" }}>{fmtINR(data.participatedAmount)}</td></tr>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Rate</td><td style={{ fontWeight: 700, textAlign: "right", color: "#16a34a" }}>{data.rateOfInterest}% p.a.</td></tr>
+            <tr><td style={{ color: "#64748b", paddingBottom: 4 }}>Status</td><td style={{ fontWeight: 600, textAlign: "right" }}>{data.status || "—"}</td></tr>
+            <tr><td style={{ color: "#64748b" }}>Joined On</td><td style={{ fontWeight: 600, textAlign: "right" }}>{data.joinedOn || "—"}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    );
+
   if (type === "LENDER_RUNNING_DEALS")
     return <LenderRunningDealsView deals={data.deals || []} />;
 
@@ -991,6 +896,9 @@ function RichMessage({ data }) {
 
   if (type === "LENDER_UPCOMING_INTEREST")
     return <LenderUpcomingInterestView items={data.items || []} totalUpcoming={data.totalUpcoming} />;
+
+  if (type === "LENDER_UPCOMING_BREAKDOWN")
+    return <UpcomingBreakdownView data={data} />;
 
   if (type === "INTEREST_HISTORY")
     return (
@@ -1022,49 +930,76 @@ function RichMessage({ data }) {
       />
     );
 
+  if (type === "LENDER_MOM_COMPARISON")
+    return <MonthOnMonthView data={data} />;
+
+  if (type === "LENDER_HIGHEST_INTEREST")
+    return <HighestInterestView data={data} />;
+
   if (type === "REFERRAL_HISTORY")
     return (
-      <LenderHistoryView
-        items={data.items || []}
-        totalLabel="Total Referral Bonus"
-        totalValue={data.totalBonus}
-        accentColor="#7c3aed"
-        columns={[
-          { key: "referredName", label: "Referred User" },
-          { key: "bonusDate",    label: "Date" },
-          { key: "amount",       label: "Bonus", fmt: fmtINR, style: { fontWeight: 700, color: "#7c3aed" } },
-        ]}
-      />
+      <div style={{ background: "#faf5ff", borderRadius: 10, padding: "12px 16px", border: "1.5px solid #ddd6fe" }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4, color: "#7c3aed" }}>Referral Earnings Timeline</div>
+        <div style={{ fontSize: 12, color: "#64748b", marginBottom: 10 }}>
+          Total Paid: <strong style={{ color: "#7c3aed" }}>{fmtINR(data.totalBonus)}</strong>
+        </div>
+        {(data.items || []).length === 0
+          ? <div style={{ color: "#94a3b8", fontSize: 13 }}>No paid referral bonuses yet.</div>
+          : <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1.5px solid #ddd6fe" }}>
+                  <th style={{ textAlign: "left", paddingBottom: 6, color: "#7c3aed", fontWeight: 600 }}>Date</th>
+                  <th style={{ textAlign: "center", paddingBottom: 6, color: "#7c3aed", fontWeight: 600 }}>Referees</th>
+                  <th style={{ textAlign: "right", paddingBottom: 6, color: "#7c3aed", fontWeight: 600 }}>Bonus Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.items || []).map((it, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #ede9fe" }}>
+                    <td style={{ padding: "5px 0", color: "#374151" }}>{it.date || "—"}</td>
+                    <td style={{ padding: "5px 0", textAlign: "center", color: "#64748b" }}>{it.refereeCount || 0}</td>
+                    <td style={{ padding: "5px 0", textAlign: "right", fontWeight: 700, color: "#7c3aed" }}>{fmtINR(it.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        }
+      </div>
     );
 
   return null;
 }
 
-// ─── Text formatter (bold + numbered list) ────────────────────────────────────
+// ─── Text formatter (bold, italic, numbered list) ─────────────────────────────
 
 function FormattedText({ text }) {
   if (!text || typeof text !== "string") return null;
 
-  // Render **bold** and _italic_ inline
-  const bold = (str) => {
-    const parts = str.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
+  // Inline markdown: **bold**, _italic_, and ₹amounts highlighted
+  const inline = (str) => {
+    const parts = str.split(/(\*\*[^*]+\*\*|_[^_]+_|₹[\d,]+(?:\.\d+)?)/g);
     return parts.map((p, i) => {
       if (p.startsWith("**") && p.endsWith("**"))
-        return <strong key={i} style={{ color: "#0f172a" }}>{p.slice(2, -2)}</strong>;
+        return <strong key={i} style={{ color: "#0f172a", fontWeight: 700 }}>{p.slice(2, -2)}</strong>;
       if (p.startsWith("_") && p.endsWith("_"))
-        return <em key={i} style={{ color: "#64748b" }}>{p.slice(1, -1)}</em>;
+        return <em key={i} style={{ color: "#64748b", fontStyle: "italic" }}>{p.slice(1, -1)}</em>;
+      if (/^₹[\d,]/.test(p))
+        return <span key={i} style={{ color: "#059669", fontWeight: 700 }}>{p}</span>;
       return <span key={i}>{p}</span>;
     });
   };
 
-  // Parse inline "I can help you: 1. ... 2. ... 3. ..." patterns
+  // A line "starts with emoji" when its first codePoint is > U+2600 (covers all finance emojis)
+  const isEmojiLine = (line) => { const c = line.codePointAt(0); return !!c && c > 0x2600; };
+
+  // Parse numbered list patterns: "intro text 1. item 2. item ..."
   const listMatch = text.match(/^(.*?)\s*1\.\s(.+?)(?:\s*2\.\s(.+?))?(?:\s*3\.\s(.+?))?(?:\s*4\.\s(.+?))?$/s);
   if (listMatch && listMatch[2]) {
     const intro = listMatch[1]?.trim();
     const items = [listMatch[2], listMatch[3], listMatch[4], listMatch[5]].filter(Boolean).map(s => s.trim());
     return (
       <div>
-        {intro && <div style={{ marginBottom: 6 }}>{bold(intro)}</div>}
+        {intro && <div style={{ marginBottom: 6, lineHeight: 1.5 }}>{inline(intro)}</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {items.map((item, i) => (
             <div key={i} style={{
@@ -1077,7 +1012,7 @@ function FormattedText({ text }) {
                 color: "#fff", fontSize: 10, fontWeight: 700, flexShrink: 0,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>{i + 1}</span>
-              <span style={{ color: "#334155" }}>{bold(item)}</span>
+              <span style={{ color: "#334155" }}>{inline(item)}</span>
             </div>
           ))}
         </div>
@@ -1085,11 +1020,73 @@ function FormattedText({ text }) {
     );
   }
 
-  // Default: just bold + newlines
+  // Emoji-stat lines: lines starting with an emoji that also contain **bold** get a card treatment
+  const lines = text.split("\n");
+  const hasEmojiStats = lines.some(l => l.trim() && isEmojiLine(l.trim()) && l.includes("**"));
+
+  if (hasEmojiStats) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {lines.map((line, i) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={i} style={{ height: 3 }} />;
+          if (isEmojiLine(trimmed) && trimmed.includes("**")) {
+            return (
+              <div key={i} style={{
+                padding: "8px 12px",
+                background: "linear-gradient(135deg, #f0fdf4, #f0f9ff)",
+                borderRadius: 10, border: "1px solid #bae6fd",
+                fontSize: 13, lineHeight: 1.6,
+              }}>
+                {inline(trimmed)}
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{ fontSize: 12, color: "#64748b", lineHeight: 1.5, paddingLeft: 4 }}>
+              {inline(trimmed)}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Bullet list: lines starting with "- " render as styled bullets
+  const hasBullets = lines.some(l => l.trim().startsWith("- "));
+  if (hasBullets) {
+    return (
+      <div>
+        {lines.map((line, i) => {
+          const trimmed = line.trim();
+          if (!trimmed) return <div key={i} style={{ height: 4 }} />;
+          if (trimmed.startsWith("- ")) {
+            return (
+              <div key={i} style={{
+                display: "flex", gap: 8, alignItems: "flex-start",
+                padding: "5px 10px", marginBottom: 4,
+                background: "#f8fafc", borderRadius: 8, border: "1px solid #e2e8f0",
+              }}>
+                <span style={{ color: "#0ea5a1", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>•</span>
+                <span style={{ fontSize: 13, color: "#334155", lineHeight: 1.5 }}>{inline(trimmed.slice(2))}</span>
+              </div>
+            );
+          }
+          return (
+            <div key={i} style={{ marginBottom: 6, fontSize: 13, lineHeight: 1.5 }}>{inline(trimmed)}</div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Default: inline formatting + newlines as paragraph breaks
   return (
     <div>
-      {text.split("\n").map((line, i) => (
-        <div key={i} style={{ marginBottom: line ? 3 : 6 }}>{bold(line) || " "}</div>
+      {lines.map((line, i) => (
+        <div key={i} style={{ marginBottom: line.trim() ? 3 : 6 }}>
+          {line.trim() ? inline(line) : " "}
+        </div>
       ))}
     </div>
   );
@@ -1105,6 +1102,8 @@ const DOT_KEYFRAME = `
 `;
 
 // ─── Main component ───────────────────────────────────────────────────────────
+
+export { RichMessage, FormattedText, SuggestedFollowup, TopicBadge };
 
 export default function ChatDrawer({ open, initialMessage, onClose }) {
   const ROLE = localStorage.getItem("primaryType") || "LENDER";
@@ -1163,20 +1162,16 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
     setIsTyping(true);
 
     try {
-      const res = await chatbotapicall(trimmed, ROLE);
+      const res = await chatbotapicall(trimmed);
       const answer =
         res.data?.answer || res.data?.response || res.data?.message ||
         (typeof res.data === "string" ? res.data : null) ||
         "I don't have that information right now. Please check your dashboard.";
       const responseData = res.data?.responseData || null;
-      const apiQuickReplies = res.data?.quickReplies || null;
-      const cardType = res.data?.cardType || null;
 
       setMessages(prev => [...prev, {
         id: Date.now() + 1, from: "bot",
-        text: answer, data: responseData,
-        quickReplies: apiQuickReplies, cardType,
-        timestamp: new Date(),
+        text: answer, data: responseData, timestamp: new Date(),
       }]);
       speak(answer);
     } catch (err) {
@@ -1256,7 +1251,7 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
                     <TopicBadge type={m.data.type} />
                     <div style={styles.richCaption}>{m.text}</div>
                   </>
-                ) : m.cardType ? null : (
+                ) : (
                   <div style={styles.bubbleText}>
                     <FormattedText text={m.text} />
                   </div>
@@ -1266,36 +1261,6 @@ export default function ChatDrawer({ open, initialMessage, onClose }) {
 
                 {m.from === "bot" && m.data && (
                   <SuggestedFollowup type={m.data.type} onSend={handleSend} />
-                )}
-
-                {/* Colorful chatbot cards for cardType responses */}
-                {m.from === "bot" && !m.data && m.cardType && (
-                  <ChatbotCard
-                    cardType={m.cardType}
-                    text={m.text}
-                    quickReplies={m.quickReplies}
-                    onSend={handleSend}
-                  />
-                )}
-
-                {/* Plain quick-reply buttons fallback (no cardType) */}
-                {m.from === "bot" && !m.data && !m.cardType && m.quickReplies && m.quickReplies.length > 0 && (
-                  <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 5 }}>
-                    {m.quickReplies.map((q, i) => (
-                      <button key={i} onClick={() => handleSend(q)}
-                        style={{
-                          fontSize: 11, padding: "4px 10px", borderRadius: 20,
-                          border: `1px solid ${cfg.color}50`, background: "#fff",
-                          color: cfg.color, cursor: "pointer", fontFamily: "inherit",
-                          transition: "all 0.15s",
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = cfg.color; e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = cfg.color; }}
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
                 )}
 
                 <div style={styles.time}>

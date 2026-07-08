@@ -84,6 +84,37 @@ const PartnerSideBar = (props) => {
 
   let pathName = useLocation().pathname;
 
+  useEffect(() => {
+    if (
+      "/referaFriend" === pathName ||
+      "/myreferalStatus" === pathName ||
+      "/lendercontacts" === pathName ||
+      "/lendercontacts1" === pathName
+    ) {
+      setSideMenu("Deals");
+    } else if (
+      "/loadwaletThroughQr" === pathName ||
+      "/loadwalletThroughVirtualAccount" === pathName
+    ) {
+      setSideMenu("LoadYourWallet");
+    } else if (
+      "/myinterestEarning" === pathName ||
+      "/myhighvalueDeals" === pathName ||
+      "/myRunningDeals" === pathName ||
+      "/myholdamount" === pathName ||
+      "/earningCertificate" === pathName ||
+      "/loansStatement" === pathName ||
+      "/myclosedDeals" === pathName
+    ) {
+      setSideMenu("Invoices");
+    } else if (
+      "/referaFriend" === pathName ||
+      "/myreferalStatus" === pathName
+    ) {
+      setSideMenu("MyNetwork");
+    }
+  }, [pathName]);
+
   return (
     <>
       <div className="sidebar" id="sidebar">
@@ -162,11 +193,10 @@ const PartnerSideBar = (props) => {
                   )}
                 </li>
 
-  <li className={`${"/GetListOfBorrowerDetails" === pathName ? "active" : ""}`}>
-                  <Link to="/GetListOfBorrowerDetails">
-                    <i className="fa-solid fa-gauge"></i>{" "}
-                    <span> List Of Borrower </span>
-               
+  <li className={`${"/getListOfBorrowerDetails" === pathName ? "active" : ""}`}>
+                  <Link to="/getListOfBorrowerDetails">
+                    <i className="fa-solid fa-list"></i>{" "}
+                    <span> List Of Borrowers </span>
                   </Link>
                 </li>
                    <li className={`${"/Partneraccept" === pathName ? "active" : ""}`}>

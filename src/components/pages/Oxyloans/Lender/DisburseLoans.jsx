@@ -138,7 +138,7 @@ const DisburseLoans = () => {
 
           {/* Repayment Marquee */}
           <div className="mb-2" style={{ background: "#fffdf0", borderRadius: 6 }}>
-            <marquee behavior="scroll" direction="left" scrollamount="2" style={{ padding: "6px 0", fontSize: 12, color: "#7a5c00", fontWeight: 500, textAlign: "center" }}>
+            <marquee behavior="scroll" direction="left" scrollamount="4" style={{ padding: "6px 0", fontSize: 12, color: "#7a5c00", fontWeight: 500, textAlign: "center" }}>
               📅&nbsp;&nbsp;<strong>Repayment Reminder:</strong>&nbsp; Borrower repayment is scheduled for the <strong>5th of each month</strong>. Timely payment ensures consistent returns on your investment.
             </marquee>
           </div>
@@ -171,14 +171,28 @@ const DisburseLoans = () => {
 
           {/* Table Card */}
           <div className="card">
-            <div className="card-header d-flex align-items-center justify-content-between py-3">
-              <h5 className="mb-0 fw-bold">Disbursed Loans List</h5>
-              <p className="text-muted">View all your disbursed loans and their key details.</p>
-              {totalCount > 0 && (
-                <small className="text-muted">Total <strong>{totalCount}</strong> loan{totalCount !== 1 ? "s" : ""}</small>
-              )}
-               
-            </div>
+          <div className="card-header py-3">
+  <div className="d-flex align-items-start w-100">
+
+    {/* LEFT SIDE */}
+    <div>
+      <h5 className="mb-1 fw-bold">Disbursed Loans List</h5>
+      <p className="text-muted mb-0" style={{ fontSize: 13 }}>
+        View all your disbursed loans and their key details.
+      </p>
+    </div>
+
+    {/* RIGHT SIDE */}
+    {totalCount > 0 && (
+      <div style={{ marginLeft: "auto" }}>
+        <small className="text-muted">
+          Total <strong>{totalCount}</strong> loan{totalCount !== 1 ? "s" : ""}
+        </small>
+      </div>
+    )}
+
+  </div>
+</div>
            
 
             <div className="card-body p-0">

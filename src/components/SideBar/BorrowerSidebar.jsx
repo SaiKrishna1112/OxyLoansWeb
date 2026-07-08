@@ -83,6 +83,42 @@ const BorrowerSidebar = (props) => {
 
   let pathName = useLocation().pathname;
 
+  useEffect(() => {
+    if (
+      "/borrowerLoanRequestCreate" === pathName ||
+      "/borrowerRequestAmount" === pathName ||
+      "/borrowerLoansInitiated" === pathName ||
+      "/borrowerDisbursementAmount" === pathName ||
+      "/borrowerDisbursementInterestAmount" === pathName
+    ) {
+      setSideMenu("borrowerLoanRequests");
+    } else if (
+      "/borrowerenach" === pathName ||
+      "/borrowerloanstatement" === pathName ||
+      "/borrowerAgreedLoans" === pathName ||
+      "/borrowermyloanApplication" === pathName
+    ) {
+      setSideMenu("myborrowings");
+    } else if (
+      "/writetous" === pathName ||
+      "/emicalculator" === pathName ||
+      "/ticketHistory" === pathName ||
+      "/borrowerwriteTous" === pathName ||
+      "/borroweremicalculator" === pathName ||
+      "/borrowerTicketHistory" === pathName
+    ) {
+      setSideMenu("HelpDesk");
+    } else if (
+      "/borrowerreferfriend" === pathName ||
+      "/borrowerreferstatus" === pathName ||
+      "/borrowerrunningLoans" === pathName ||
+      "/borrowermycontacts" === pathName ||
+      "/borrowermyearnings" === pathName
+    ) {
+      setSideMenu("MyNetwork");
+    }
+  }, [pathName]);
+
   return (
     <>
       <div className="sidebar" id="sidebar">
@@ -226,7 +262,7 @@ const BorrowerSidebar = (props) => {
                       : "submenu"
                   }`}
                 >
-                  <Link
+                  {/* <Link
                     to="#"
                     className={isSideMenu == "myborrowings" ? "subdrop" : ""}
                     onClick={() =>
@@ -237,7 +273,7 @@ const BorrowerSidebar = (props) => {
                   >
                     <i className="fa-solid fa-network-wired"></i>
                     <span> My Borrowings </span> <span className="menu-arrow" />
-                  </Link>
+                  </Link> */}
                   {isSideMenu == "myborrowings" ? (
                     <ul
                       style={{
@@ -297,7 +333,7 @@ const BorrowerSidebar = (props) => {
                   )}
                 </li>
 
-                <li
+                {/* <li
                   className={`${
                     "/borrowerloanListing" === pathName ? "active" : ""
                   }`}
@@ -307,9 +343,9 @@ const BorrowerSidebar = (props) => {
                     <span> Loan Listing </span>
                     <span className="menu-arrow"></span>
                   </Link>
-                </li>
+                </li> */}
 
-                <li
+                {/* <li
                   className={`${
                     "/borrowerpayemi" === pathName ? "active" : ""
                   }`}
@@ -319,7 +355,7 @@ const BorrowerSidebar = (props) => {
                     <span> Pay EMI </span>
                     <span className="menu-arrow"></span>
                   </Link>
-                </li>
+                </li> */}
 
                 <li
                   className={`${
@@ -389,6 +425,16 @@ const BorrowerSidebar = (props) => {
                 </li>
               </ul>
               {/* /Main Menu*/}
+              {/* AI Insights */}
+              {/* <ul>
+                <li className={`${"/ai/borrower-insights" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/borrower-insights">
+                    <i className="fa-solid fa-brain"></i>
+                    <span>AI Loan Insights</span>
+                  </Link>
+                </li>
+              </ul> */}
+              {/* /AI Insights */}
               {/* Management */}
               <ul>
                 <li
@@ -465,6 +511,39 @@ const BorrowerSidebar = (props) => {
                     ""
                   )}
                 </li>
+
+                {/* Marketplace Menu Items */}
+                {/* <li className={`${"/post-loan-request" === pathName ? "active" : ""}`}>
+                  <Link to="/post-loan-request">
+                    <i className="fa-solid fa-store"></i>
+                    <span>Post Loan Request</span>
+                  </Link>
+                </li>
+                <li className={`${"/my-marketplace-loans" === pathName ? "active" : ""}`}>
+                  <Link to="/my-marketplace-loans">
+                    <i className="fa-solid fa-list"></i>
+                    <span>My Marketplace Loans</span>
+                  </Link>
+                </li>
+                <li className={`${pathName.startsWith("/borrower-consent") ? "active" : ""}`}>
+                  <Link to="/my-marketplace-loans">
+                    <i className="fa-solid fa-file-signature"></i>
+                    <span>Consent Status</span>
+                  </Link>
+                </li>
+                <li className={`${"/borrower-emi-schedule" === pathName ? "active" : ""}`}>
+                  <Link to="/borrower-emi-schedule">
+                    <i className="fa-solid fa-calendar-check"></i>
+                    <span>EMI Schedule</span>
+                  </Link>
+                </li>
+                <li className={`${"/my-oxyscore" === pathName ? "active" : ""}`}>
+                  <Link to="/my-oxyscore">
+                    <i className="fa-solid fa-chart-line"></i>
+                    <span>My OxyScore</span>
+                  </Link>
+                </li> */}
+                {/* End Marketplace Menu Items */}
 
                 <li className={`${"/" === pathName ? "active" : ""}`}>
                   <Link to="/">

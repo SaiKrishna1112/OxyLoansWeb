@@ -16,7 +16,7 @@ const MyReffereeTable = ({ data }) => {
         TransferredOn: data.transferredOn,
         Remark: data.remarks,
         RefereeId: data.refereeId,
-        Earned: data.amount,
+        Earned: data.amount ? data.amount.toLocaleString("en-IN") : null,
       });
     });
   }

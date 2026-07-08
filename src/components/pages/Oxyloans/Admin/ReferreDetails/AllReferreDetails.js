@@ -4,6 +4,7 @@ import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import { Table, Button, Spin } from "antd";
 import axios from "axios";
+import { API_USER_URL } from "../../../../../config";
 
 export default function AllRefereeDetails() {
   const [refereeData, setRefereeData] = useState([]);
@@ -24,7 +25,7 @@ export default function AllRefereeDetails() {
     try {
       setLoading(true);
       const response = await axios.get(
-        "https://fintech.oxyloans.com/oxyloans/v1/user/getAllRefereeDetails/INVITED",
+        `${API_USER_URL}getAllRefereeDetails/INVITED`,
         {
           headers: {
             accessToken: accessToken,

@@ -86,6 +86,74 @@ const Sidebar = (props) => {
   let pathName = useLocation().pathname;
 
   useEffect(() => {
+    if (
+      "/loadwaletThroughQr" === pathName ||
+      "/loadwalletThroughVirtualAccount" === pathName
+    ) {
+      setSideMenu("LoadYourWallet");
+    } else if (
+      "/regularRunningDeal" === pathName ||
+      "/regularEscrowDeals" === pathName ||
+      "/regularPersonalDeal" === pathName ||
+      "/todaydeal" === pathName ||
+      "todaydeal" === pathName ||
+      "/viewCurrentDayDeals" === pathName
+    ) {
+      setSideMenu("Subjects");
+    } else if (
+      "/myinterestEarning" === pathName ||
+      "/myhighvalueDeals" === pathName ||
+      "/myRunningDeals" === pathName ||
+      "/myclosedDeals" === pathName ||
+      "/myholdamount" === pathName ||
+      "/mypartiallClosedDeal" === pathName
+    ) {
+      setSideMenu("Invoices");
+    } else if (
+      "/loanListings" === pathName ||
+      "/proximityLoans" === pathName
+    ) {
+      setSideMenu("P2PLoans");
+    } else if (
+      "/WalletToWallet" === pathName ||
+      "/walletToWalletHistory" === pathName
+    ) {
+      setSideMenu("WalletToWallet");
+    } else if (
+      "/withdrawalFromWallet" === pathName ||
+      "/withdrawdealFounds" === pathName ||
+      "/withdrawdealfromDeal" === pathName
+    ) {
+      setSideMenu("WithdrawFunds");
+    } else if (
+      "/mytransactions" === pathName ||
+      "/walletToWalletTransactionHistory" === pathName ||
+      "/interestsDateWise" === pathName ||
+      "/dashboardTransactions" === pathName
+    ) {
+      setSideMenu("WalletTrans");
+    } else if (
+      "/referaFriend" === pathName ||
+      "/myreferalStatus" === pathName ||
+      "/lendercontacts" === pathName ||
+      "/lendercontacts1" === pathName
+    ) {
+      setSideMenu("MyNetwork");
+    } else if (
+      "/writetous" === pathName ||
+      "/viewTicketHistory" === pathName
+    ) {
+      setSideMenu("HelpDesk");
+    } else if (
+      "/configautoInvest" === pathName ||
+      "/autoInvestHistory" === pathName ||
+      "/viewAutoHistory" === pathName
+    ) {
+      setSideMenu("AutoInvest");
+    }
+  }, [pathName]);
+
+  useEffect(() => {
     ReactGA.pageview(window.location.pathname + window.location.search);
   }, [window.location.pathname]);
 
@@ -107,6 +175,13 @@ const Sidebar = (props) => {
             <div id="sidebar-menu" className="sidebar-menu">
               {/* Main Menu */}
               <ul>
+                <li className={`${"/ai/portfolio" === pathName ? "active" : ""}`}>
+                  <Link to="/ai/portfolio">
+                    <i className="fa-solid fa-brain"></i>
+                    <span> AI Dashboard </span>
+                    <span className="menu-arrow"></span>
+                  </Link>
+                </li>
                 <li className={`${"/dashboard" === pathName ? "active" : ""}`}>
                   <Link to="/dashboard">
                     <i className="fa-solid fa-gauge"></i>{" "}
@@ -115,13 +190,13 @@ const Sidebar = (props) => {
                   </Link>
                 </li>
 
-                <li className={`${"/lenderAIDashboard" === pathName ? "active" : ""}`}>
+                {/* <li className={`${"/lenderAIDashboard" === pathName ? "active" : ""}`}>
                   <Link to="/lenderAIDashboard">
                     <i className="fa-solid fa-robot"></i>{" "}
                     <span> AI Portfolio Dashboard </span>
                     <span className="menu-arrow"></span>
                   </Link>
-                </li>
+                </li> */}
 
                 <li
                   className={`${
@@ -854,6 +929,45 @@ const Sidebar = (props) => {
                     ""
                   )}
                 </li>
+
+                {/* Marketplace Menu Items */}
+                {/* <li className={`${"/marketplace-loans" === pathName ? "active" : ""}`}>
+                  <Link to="/marketplace-loans">
+                    <i className="fa-solid fa-store"></i>
+                    <span>Browse Loan Requests</span>
+                  </Link>
+                </li>
+                <li className={`${"/nearby-borrowers" === pathName ? "active" : ""}`}>
+                  <Link to="/nearby-borrowers">
+                    <i className="fa-solid fa-location-dot"></i>
+                    <span>Nearby Borrowers</span>
+                  </Link>
+                </li>
+                <li className={`${"/my-offers" === pathName ? "active" : ""}`}>
+                  <Link to="/my-offers">
+                    <i className="fa-solid fa-handshake"></i>
+                    <span>My Offers</span>
+                  </Link>
+                </li>
+                <li className={`${"/lender-emi-dashboard" === pathName ? "active" : ""}`}>
+                  <Link to="/lender-emi-dashboard">
+                    <i className="fa-solid fa-calendar-check"></i>
+                    <span>EMI Dashboard</span>
+                  </Link>
+                </li>
+                <li className={`${"/escalation-dashboard" === pathName ? "active" : ""}`}>
+                  <Link to="/escalation-dashboard">
+                    <i className="fa-solid fa-shield-halved"></i>
+                    <span>Escalation Tracker</span>
+                  </Link>
+                </li>
+                <li className={`${"/smart-loan-match" === pathName ? "active" : ""}`}>
+                  <Link to="/smart-loan-match">
+                    <i className="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>AI Smart Match</span>
+                  </Link>
+                </li> */}
+                {/* End Marketplace Menu Items */}
 
                 <li className={`${"/" === pathName ? "active" : ""}`}>
                   <Link

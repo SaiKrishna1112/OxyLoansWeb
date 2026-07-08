@@ -99,13 +99,13 @@ const WithdrawdealfromDeal = () => {
         key: Math.random(),
         DealName: data.dealName,
         DealType: data.dealType,
-        ParticipatedAmount: data.paticipatedAmount,
+        ParticipatedAmount: data.paticipatedAmount.toLocaleString("en-IN"),
         dealtype: data.dealType,
         currentStatus: data.currentStatus,
         RoI: data.rateOfInterest + " % ",
         Duration: data.dealDuration + " " + (data.lederReturnType === "PERDAY" ? (data.dealDuration > 1 ? "DS" : "D") : (data.dealDuration > 1 ? "MS" : "M")),
         DealStatus: data.currentStatus,
-        RequestedAmount: data.requestedAmount,
+        RequestedAmount: data.requestedAmount.toLocaleString("en-IN"),
         action: (
           <>{ }
 

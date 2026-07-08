@@ -7,13 +7,33 @@ import * as api from "./api";
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import OtpInput from "./OtpInput";
 import { toastrWarning } from "../Base UI Elements/Toast";
+import Swal from "sweetalert2";
+import { API_USER_URL } from "../../../config";
+import axios from "axios";
 
 export default function BorrowerRegister() {
   const inputRef = useRef();
   let inputRef2 = useRef();
- 
+
   const navigate = useNavigate();
   const [field, setField] = useState(true);
+  const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.log("Geolocation not available:", error);
+        }
+      );
+    }
+  }, []);
   const [submitotp, setSubmitOtp] = useState(false);
   const [error, setError] = useState("");
   const [response1, setResponse] = useState({});
@@ -36,6 +56,7 @@ export default function BorrowerRegister() {
 
   const handlechange = (event) => {
     const { name, value } = event.target;
+    setError("");
 
     if (name === "referrerId" && value.trim() === "BR100001") {
       setRegistrationField((prev) => ({
@@ -99,6 +120,7 @@ export default function BorrowerRegister() {
 
     if (validationError) {
       setError(validationError);
+      toastrWarning(validationError);
       return;
     }
 
@@ -119,7 +141,44 @@ export default function BorrowerRegister() {
         setError(null);
       } catch (error) {
         console.error("Error:", error.response?.data?.errorMessage);
-        setError(error.response?.data?.errorMessage || "Registration failed");
+        const errData = error.response?.data;
+        if (errData && (errData.errorCode === "113" || String(errData.errorCode) === "113")) {
+          // Parse user id & email from errorMessage
+          const errMsg = errData.errorMessage || "";
+          const idMatch = errMsg.match(/id=(\d+)/);
+          const userId = idMatch ? idMatch[1] : null;
+          
+          const emailMatch = errMsg.match(/email=([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+          const email = emailMatch ? emailMatch[1] : registrationField.email;
+
+          Swal.fire({
+            title: "Email Verification Required",
+            html: `Your email <strong>${email}</strong> has not been verified yet.<br/><br/>Would you like us to resend the activation link?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, resend link",
+            cancelButtonText: "Cancel",
+          }).then((result) => {
+            if (result.isConfirmed && userId) {
+              axios
+                .post(API_USER_URL + "sendingEmailActivationLink", {
+                  userId: userId,
+                })
+                .then((res) => {
+                  Swal.fire("Sent!", "Email activation link has been resent successfully.", "success");
+                })
+                .catch((err) => {
+                  Swal.fire("Error!", err.response?.data?.errorMessage || "Failed to resend activation link. Please try again.", "error");
+                });
+            }
+          });
+        } else {
+          const errMsg = errData?.errorMessage || "Registration failed";
+          setError(errMsg);
+          toastrWarning(errMsg);
+        }
       }
     }
   };
@@ -137,7 +196,9 @@ export default function BorrowerRegister() {
           registrationField.password,
           session,
           registrationField.referrerId,
-          "Borrower"
+          "Borrower",
+          userLocation.latitude,
+          userLocation.longitude
         );
 
         setField(false);
@@ -146,12 +207,12 @@ export default function BorrowerRegister() {
         localStorage.setItem("timemilll", new Date().getTime());
       } else {
         setError("Please enter a valid OTP");
+        toastrWarning("Please enter a valid OTP");
       }
     } catch (error) {
-      setError(
-        error.response?.data?.errorMessage ||
-          "An error occurred during OTP validation"
-      );
+      const errMsg = error.response?.data?.errorMessage || "An error occurred during OTP validation";
+      setError(errMsg);
+      toastrWarning(errMsg);
     }
   };
 
@@ -375,6 +436,12 @@ export default function BorrowerRegister() {
                           </div>
                         )}
                       </div>
+
+                        {error && (
+                             <div className="errormessage">
+                               {error}
+                             </div>
+                           )}
                      
                       <div className="dont-have">
                         Already Registered ? <Link to="/">Login</Link>

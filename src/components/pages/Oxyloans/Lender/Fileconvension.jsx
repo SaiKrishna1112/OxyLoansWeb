@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_USER_URL } from '../../../../config';
 
 const Fileconvension = () => {
     const [userId, setUserId] = useState('');
@@ -15,7 +16,7 @@ const Fileconvension = () => {
         setError(null);
         try {
             const response = await axios.get(
-                'https://fintech.oxyloans.com/oxyloans/v1/user/getGmailAuthorization/gmailcontacts/BORROWER/REACT',
+                `${API_USER_URL}getGmailAuthorization/gmailcontacts/BORROWER/REACT`,
                 {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,

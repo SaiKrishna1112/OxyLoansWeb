@@ -156,7 +156,7 @@ const WithdrawdealFounds = () => {
                           <input
                             type="text"
                             className="form-control"
-                            value={data.participatedamount}
+                            value={data.participatedamount ? data.participatedamount.toLocaleString("en-IN") : null}
                           />
                         </div>
                       </div>

@@ -6,6 +6,7 @@ import { registerImage } from "../../imagepath";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
+import { BsWhatsapp } from "react-icons/bs";
 
 import { handlesenOtp, usersubmitotp, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { saveLoginSession } from "../../HttpRequest/aiAdminApi";
@@ -84,9 +85,9 @@ const Loginotp = () => {
 
         const role = retriveresponse.data.primaryType;
         if (role === "LENDER") {
-          history("/dashboard");
+          history("/ai/portfolio");
         } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
-          history("/adminAIDashboard");
+          history("/oxyloansadmindashboard");
         } else {
           history("/borrowerDashboard");
         }
@@ -187,10 +188,15 @@ const Loginotp = () => {
                     </label>
                     <input
                       className="form-control"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={userLogInInfo.email}
                       name="email"
-                      onChange={handlechange}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        setUserLoginInfo({ ...userLogInInfo, email: digits, emailerror: "" });
+                      }}
                       maxLength={10}
                       id="userloginusername"
                       required
@@ -303,11 +309,11 @@ const Loginotp = () => {
                   </div>
 
                   <div className="social-login">
-                    {/* <Link to="#">
-                      <i className="fab fa-google-plus-g" />
-                    </Link> */}
+                    <Link to="/" className="bg-success text-white">
+                      <i className="fab fa-at" />
+                    </Link>
                     <Link to="/whatsapplogin" className="bg-success text-white">
-                      <i className="fa fa-whatsapp" />{" "}
+                      <BsWhatsapp />{" "}
                     </Link>
                     {/* <Link onClick={() => {}} to="#">
                       <i className="fab fa-facebook-f" />

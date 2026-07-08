@@ -5,6 +5,7 @@ import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import Swal from 'sweetalert2';
 import { Link, useNavigate } from "react-router-dom";
+import { API_USER_URL } from '../../../../../config';
 
 
 export default function EquityDeals() {
@@ -36,7 +37,7 @@ export default function EquityDeals() {
       };
 
       const response = await axios.post(
-        'https://fintech.oxyloans.com/oxyloans/v1/user/40016/listOfDealsInformationForEquityDeals',
+        `${API_USER_URL}40016/listOfDealsInformationForEquityDeals`,
         payload,
         {
           headers: {
