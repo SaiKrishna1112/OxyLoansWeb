@@ -1,3 +1,4 @@
+import axios from "axios";
 import Swal from "sweetalert2";
 const userisIn = "production"; //local or production
 // const API_BASE_URL =
@@ -3501,7 +3502,7 @@ export const loadAdminAIDashboardSections = async (fy, includeRisk = false) => {
 // MARKETPLACE APIs
 // ============================================================
 
-const MARKETPLACE_BASE_URL = MARKETPLACE_BASE;
+const MARKETPLACE_BASE_URL = MARKETPLACE_URL;
 
 const marketplaceHeaders = () => {
   const token = getToken();
@@ -3523,31 +3524,31 @@ export const getMarketplaceLoans = async (lat, lng, radiusKm = 50, page = 0, siz
   if (lat != null) params.append("lat", lat);
   if (lng != null) params.append("lng", lng);
   if (radiusKm != null) params.append("radiusKm", radiusKm);
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loans?${params.toString()}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/loans?${params.toString()}`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const postMarketplaceLoanRequest = async (data) => {
-  return axios.post(`${MARKETPLACE_BASE}/v1/marketplace/loans`, data, {
+  return axios.post(`${MARKETPLACE_URL}/v1/marketplace/loans`, data, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getMyMarketplaceLoans = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loans/my`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/loans/my`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const withdrawMarketplaceLoan = async (loanRequestId) => {
-  return axios.delete(`${MARKETPLACE_BASE}/v1/marketplace/loans/${loanRequestId}`, {
+  return axios.delete(`${MARKETPLACE_URL}/v1/marketplace/loans/${loanRequestId}`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getMarketplaceLoanDetail = async (loanRequestId) => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loans/${loanRequestId}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/loans/${loanRequestId}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3557,31 +3558,31 @@ export const getMarketplaceLoanDetail = async (loanRequestId) => {
 // ============================================================
 
 export const makeNegotiationOffer = async (data) => {
-  return axios.post(`${MARKETPLACE_BASE}/v1/negotiation/offer`, data, {
+  return axios.post(`${MARKETPLACE_URL}/v1/negotiation/offer`, data, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const counterNegotiationOffer = async (offerId, counterRate) => {
-  return axios.put(`${MARKETPLACE_BASE}/v1/negotiation/${offerId}/counter`, { counterRate }, {
+  return axios.put(`${MARKETPLACE_URL}/v1/negotiation/${offerId}/counter`, { counterRate }, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const acceptNegotiationOffer = async (offerId) => {
-  return axios.put(`${MARKETPLACE_BASE}/v1/negotiation/${offerId}/accept`, {}, {
+  return axios.put(`${MARKETPLACE_URL}/v1/negotiation/${offerId}/accept`, {}, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const rejectNegotiationOffer = async (offerId) => {
-  return axios.put(`${MARKETPLACE_BASE}/v1/negotiation/${offerId}/reject`, {}, {
+  return axios.put(`${MARKETPLACE_URL}/v1/negotiation/${offerId}/reject`, {}, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getNegotiationOffers = async (loanRequestId) => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/negotiation/loan/${loanRequestId}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/negotiation/loan/${loanRequestId}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3591,20 +3592,20 @@ export const getNegotiationOffers = async (loanRequestId) => {
 // ============================================================
 
 export const submitBorrowerConsent = async (loanRequestId, checkedBoxes) => {
-  return axios.post(`${MARKETPLACE_BASE}/v1/consent/borrower`, { loanRequestId, checkedBoxes }, {
+  return axios.post(`${MARKETPLACE_URL}/v1/consent/borrower`, { loanRequestId, checkedBoxes }, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const submitLenderConsent = async (loanRequestId, checkedBoxes) => {
-  return axios.post(`${MARKETPLACE_BASE}/v1/consent/lender`, { loanRequestId, checkedBoxes }, {
+  return axios.post(`${MARKETPLACE_URL}/v1/consent/lender`, { loanRequestId, checkedBoxes }, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getConsentStatus = async (loanRequestId, lenderUserId) => {
   const params = lenderUserId ? `?lenderUserId=${lenderUserId}` : "";
-  return axios.get(`${MARKETPLACE_BASE}/v1/consent/${loanRequestId}/status${params}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/consent/${loanRequestId}/status${params}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3614,13 +3615,13 @@ export const getConsentStatus = async (loanRequestId, lenderUserId) => {
 // ============================================================
 
 export const calculateFees = async (loanAmount, loanType = "MARKETPLACE") => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/fees/calculate?loanAmount=${loanAmount}&loanType=${loanType}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/fees/calculate?loanAmount=${loanAmount}&loanType=${loanType}`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getMyLenderOffers = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/negotiation/my-offers`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/negotiation/my-offers`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3630,13 +3631,13 @@ export const getMyLenderOffers = async () => {
 // ============================================================
 
 export const getNearbyBorrowers = async (lat, lng, radiusKm = 50) => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/nearby-borrowers?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/nearby-borrowers?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getNearbyLenders = async (lat, lng, radiusKm = 50) => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/nearby-lenders?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/nearby-lenders?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3654,7 +3655,7 @@ export const filterMarketplaceLoans = async (filters = {}) => {
       params.append(key, filters[key]);
     }
   });
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/loan-filter?${params.toString()}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/loan-filter?${params.toString()}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3664,13 +3665,13 @@ export const filterMarketplaceLoans = async (filters = {}) => {
 // ============================================================
 
 export const getMyEscalationLoans = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/escalation/my-loans`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/escalation/my-loans`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getLoanEscalationStatus = async (loanId) => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/escalation/loan/${loanId}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/escalation/loan/${loanId}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3680,13 +3681,13 @@ export const getLoanEscalationStatus = async (loanId) => {
 // ============================================================
 
 export const getLenderEmiDashboard = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/lender`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/emi/lender`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getBorrowerEmiSchedule = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/borrower`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/emi/borrower`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3696,7 +3697,7 @@ export const getBorrowerEmiSchedule = async () => {
 // ============================================================
 
 export const getMarketplaceAdminStats = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/admin/stats`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/admin/stats`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3704,20 +3705,20 @@ export const getMarketplaceAdminStats = async () => {
 export const getMarketplaceAdminLoans = async (status = "", page = 0, size = 20) => {
   const params = new URLSearchParams({ page, size });
   if (status) params.append("status", status);
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/admin/loans?${params.toString()}`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/admin/loans?${params.toString()}`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getMarketplacePendingApproval = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/admin/pending-approval`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/admin/pending-approval`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const approveMarketplaceLoan = async (loanRequestId, remarks = "") => {
   return axios.put(
-    `${MARKETPLACE_BASE}/v1/marketplace/admin/${loanRequestId}/approve?remarks=${encodeURIComponent(remarks)}`,
+    `${MARKETPLACE_URL}/v1/marketplace/admin/${loanRequestId}/approve?remarks=${encodeURIComponent(remarks)}`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3725,7 +3726,7 @@ export const approveMarketplaceLoan = async (loanRequestId, remarks = "") => {
 
 export const rejectMarketplaceLoan = async (loanRequestId, remarks = "") => {
   return axios.put(
-    `${MARKETPLACE_BASE}/v1/marketplace/admin/${loanRequestId}/reject?remarks=${encodeURIComponent(remarks)}`,
+    `${MARKETPLACE_URL}/v1/marketplace/admin/${loanRequestId}/reject?remarks=${encodeURIComponent(remarks)}`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3737,7 +3738,7 @@ export const rejectMarketplaceLoan = async (loanRequestId, remarks = "") => {
 
 export const uploadCibilPdf = async (formData) => {
   // Do NOT set Content-Type here — let the browser auto-set multipart/form-data with boundary
-  return axios.post(`${MARKETPLACE_BASE}/v1/cibil/upload`, formData, {
+  return axios.post(`${MARKETPLACE_URL}/v1/cibil/upload`, formData, {
     headers: {
       accessToken: getToken(),
       userId: getUserId(),
@@ -3746,13 +3747,13 @@ export const uploadCibilPdf = async (formData) => {
 };
 
 export const getMyOxyScore = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/cibil/my-score`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/cibil/my-score`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const registerMarketplaceEnach = async (data) => {
-  return axios.post(`${MARKETPLACE_BASE}/v1/marketplace/enach/register`, data, {
+  return axios.post(`${MARKETPLACE_URL}/v1/marketplace/enach/register`, data, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3762,7 +3763,7 @@ export const registerMarketplaceEnach = async (data) => {
 // ============================================================
 
 export const getSmartLoanMatches = async (preferences = {}) => {
-  return axios.post(`${MARKETPLACE_BASE}/v1/ai/smart-match`, preferences, {
+  return axios.post(`${MARKETPLACE_URL}/v1/ai/smart-match`, preferences, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3772,20 +3773,20 @@ export const getSmartLoanMatches = async (preferences = {}) => {
 // ============================================================
 
 export const getMyNotifications = async () => {
-  return axios.get(`${MARKETPLACE_BASE}/v1/notifications/my`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/notifications/my`, {
     headers: marketplaceHeaders(),
   });
 };
 
 // export const getNotificationCount = async () => {
-//   return axios.get(`${MARKETPLACE_BASE}/v1/notifications/count`, {
+//   return axios.get(`${MARKETPLACE_URL}/v1/notifications/count`, {
 //     headers: marketplaceHeaders(),
 //   });
 // };
 
 export const markNotificationRead = async (id) => {
   return axios.put(
-    `${MARKETPLACE_BASE}/v1/notifications/${id}/read`,
+    `${MARKETPLACE_URL}/v1/notifications/${id}/read`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3793,7 +3794,7 @@ export const markNotificationRead = async (id) => {
 
 export const markAllNotificationsRead = async () => {
   return axios.put(
-    `${MARKETPLACE_BASE}/v1/notifications/read-all`,
+    `${MARKETPLACE_URL}/v1/notifications/read-all`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3805,7 +3806,7 @@ export const markAllNotificationsRead = async () => {
 
 export const payMarketplaceEmi = async (loanRequestId, emiNo) => {
   return axios.post(
-    `${MARKETPLACE_BASE}/v1/marketplace/emi/pay`,
+    `${MARKETPLACE_URL}/v1/marketplace/emi/pay`,
     { loanRequestId, emiNo },
     { headers: marketplaceHeaders() }
   );
@@ -3816,40 +3817,40 @@ export const payMarketplaceEmi = async (loanRequestId, emiNo) => {
 // ============================================================
 
 export const getAdminPendingDisbursalLoans = async () =>
-  axios.get(`${MARKETPLACE_BASE}/v1/admin/disbursal/pending-disbursal`, {
+  axios.get(`${MARKETPLACE_URL}/v1/admin/disbursal/pending-disbursal`, {
     headers: marketplaceHeaders(),
   });
 
 export const setDisbursalDate = async (loanId, disbursalDate, remarks = "") =>
   axios.put(
-    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/disbursal-date`,
+    `${MARKETPLACE_URL}/v1/admin/disbursal/${loanId}/disbursal-date`,
     { disbursalDate, remarks },
     { headers: marketplaceHeaders() }
   );
 
 export const setRepaymentDate = async (loanId, data) =>
   axios.put(
-    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/repayment-date`,
+    `${MARKETPLACE_URL}/v1/admin/disbursal/${loanId}/repayment-date`,
     data,
     { headers: marketplaceHeaders() }
   );
 
 export const triggerDisbursal = async (loanId, remarks = "") =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/trigger-disbursal`,
+    `${MARKETPLACE_URL}/v1/admin/disbursal/${loanId}/trigger-disbursal`,
     { remarks },
     { headers: marketplaceHeaders() }
   );
 
 export const bulkUpdateDisbursalDates = async (loanIds, disbursalDate, firstRepaymentDate) =>
   axios.put(
-    `${MARKETPLACE_BASE}/v1/admin/disbursal/bulk-update-dates`,
+    `${MARKETPLACE_URL}/v1/admin/disbursal/bulk-update-dates`,
     { loanIds, disbursalDate, firstRepaymentDate },
     { headers: marketplaceHeaders() }
   );
 
 export const getDisbursalAuditLog = async (loanId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/audit-log`, {
+  axios.get(`${MARKETPLACE_URL}/v1/admin/disbursal/${loanId}/audit-log`, {
     headers: marketplaceHeaders(),
   });
 
@@ -3859,18 +3860,18 @@ export const getDisbursalAuditLog = async (loanId) =>
 
 export const getBorrowerActiveLoans = async () => {
   const userId = getUserId();
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/borrower/${userId}/active-loans`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/emi/borrower/${userId}/active-loans`, {
     headers: marketplaceHeaders(),
   });
 };
 
 export const getBorrowerEmiScheduleForLoan = async (loanId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/${loanId}/schedule`, {
+  axios.get(`${MARKETPLACE_URL}/v1/marketplace/emi/${loanId}/schedule`, {
     headers: marketplaceHeaders(),
   });
 
 export const completeEsign = async (loanRequestId) =>
-  axios.post(`${MARKETPLACE_BASE}/v1/marketplace/agreement/${loanRequestId}/esign-complete`, {}, {
+  axios.post(`${MARKETPLACE_URL}/v1/marketplace/agreement/${loanRequestId}/esign-complete`, {}, {
     headers: marketplaceHeaders(),
   });
 
@@ -3880,7 +3881,7 @@ export const completeEsign = async (loanRequestId) =>
 
 export const getLenderPortfolio = async () => {
   const userId = getUserId();
-  return axios.get(`${MARKETPLACE_BASE}/v1/marketplace/emi/lender/${userId}/portfolio`, {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/emi/lender/${userId}/portfolio`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -3890,21 +3891,21 @@ export const getLenderPortfolio = async () => {
 // ============================================================
 
 export const getAdminSettings = () =>
-  axios.get(`${MARKETPLACE_BASE}/v1/admin/settings`, { headers: marketplaceHeaders() });
+  axios.get(`${MARKETPLACE_URL}/v1/admin/settings`, { headers: marketplaceHeaders() });
 
 export const getAdminSettingsChangelog = () =>
-  axios.get(`${MARKETPLACE_BASE}/v1/admin/settings/changelog`, { headers: marketplaceHeaders() });
+  axios.get(`${MARKETPLACE_URL}/v1/admin/settings/changelog`, { headers: marketplaceHeaders() });
 
 export const updateAdminSetting = (key, value, remarks = "") =>
   axios.put(
-    `${MARKETPLACE_BASE}/v1/admin/settings/${key}`,
+    `${MARKETPLACE_URL}/v1/admin/settings/${key}`,
     { value, adminName: localStorage.getItem("userName") || "Admin", remarks },
     { headers: marketplaceHeaders() }
   );
 
 export const updateAdminSettingsBulk = (settings, remarks = "Bulk update") =>
   axios.put(
-    `${MARKETPLACE_BASE}/v1/admin/settings`,
+    `${MARKETPLACE_URL}/v1/admin/settings`,
     { settings, adminName: localStorage.getItem("userName") || "Admin", remarks },
     { headers: marketplaceHeaders() }
   );
@@ -3914,13 +3915,13 @@ export const updateAdminSettingsBulk = (settings, remarks = "Bulk update") =>
 // ============================================================
 
 export const getFeeDisclosure = (loanRequestId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/fees/disclosure/${loanRequestId}`, {
+  axios.get(`${MARKETPLACE_URL}/v1/fees/disclosure/${loanRequestId}`, {
     headers: marketplaceHeaders(),
   });
 
 export const acceptFeeDisclosure = (loanRequestId) =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/fees/disclosure/${loanRequestId}/accept`,
+    `${MARKETPLACE_URL}/v1/fees/disclosure/${loanRequestId}/accept`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3930,20 +3931,20 @@ export const acceptFeeDisclosure = (loanRequestId) =>
 // ============================================================
 
 export const getLoanFundingStatus = (loanRequestId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/funding/${loanRequestId}`, {
+  axios.get(`${MARKETPLACE_URL}/v1/marketplace/funding/${loanRequestId}`, {
     headers: marketplaceHeaders(),
   });
 
 export const commitLoanFunding = (loanRequestId, amount) =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/marketplace/funding/${loanRequestId}/commit`,
+    `${MARKETPLACE_URL}/v1/marketplace/funding/${loanRequestId}/commit`,
     { amount },
     { headers: marketplaceHeaders() }
   );
 
 export const acceptPartialFunding = (loanRequestId) =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/marketplace/funding/${loanRequestId}/accept-partial`,
+    `${MARKETPLACE_URL}/v1/marketplace/funding/${loanRequestId}/accept-partial`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3953,26 +3954,26 @@ export const acceptPartialFunding = (loanRequestId) =>
 // ============================================================
 
 export const getRepaymentByLoan = (loanRequestId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/repayment/loan/${loanRequestId}`, {
+  axios.get(`${MARKETPLACE_URL}/v1/marketplace/repayment/loan/${loanRequestId}`, {
     headers: marketplaceHeaders(),
   });
 
 export const payRepayment = (repaymentId) =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/marketplace/repayment/${repaymentId}/pay`,
+    `${MARKETPLACE_URL}/v1/marketplace/repayment/${repaymentId}/pay`,
     {},
     { headers: marketplaceHeaders() }
   );
 
 export const bounceRepayment = (repaymentId, reason = "") =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/marketplace/repayment/${repaymentId}/bounce`,
+    `${MARKETPLACE_URL}/v1/marketplace/repayment/${repaymentId}/bounce`,
     { reason },
     { headers: marketplaceHeaders() }
   );
 
 export const getPendingRepayments = () =>
-  axios.get(`${MARKETPLACE_BASE}/v1/marketplace/repayment/pending`, {
+  axios.get(`${MARKETPLACE_URL}/v1/marketplace/repayment/pending`, {
     headers: marketplaceHeaders(),
   });
 
@@ -3981,13 +3982,13 @@ export const getPendingRepayments = () =>
 // ============================================================
 
 export const getDisbursalChecklist = (loanId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/checklist`, {
+  axios.get(`${MARKETPLACE_URL}/v1/admin/disbursal/${loanId}/checklist`, {
     headers: marketplaceHeaders(),
   });
 
 export const approveAndDisburse = (loanId) =>
   axios.post(
-    `${MARKETPLACE_BASE}/v1/admin/disbursal/${loanId}/approve-and-disburse`,
+    `${MARKETPLACE_URL}/v1/admin/disbursal/${loanId}/approve-and-disburse`,
     {},
     { headers: marketplaceHeaders() }
   );
@@ -3997,7 +3998,7 @@ export const approveAndDisburse = (loanId) =>
 // ============================================================
 
 export const getMarketplaceOxyScore = (borrowerUserId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/cibil/marketplace-score/${borrowerUserId}`, {
+  axios.get(`${MARKETPLACE_URL}/v1/cibil/marketplace-score/${borrowerUserId}`, {
     headers: marketplaceHeaders(),
   });
 
@@ -4006,31 +4007,31 @@ export const getMarketplaceOxyScore = (borrowerUserId) =>
 // ============================================================
 
 export const getCollectionStats = () =>
-  axios.get(`${MARKETPLACE_BASE}/v1/collections/stats`, { headers: marketplaceHeaders() });
+  axios.get(`${MARKETPLACE_URL}/v1/collections/stats`, { headers: marketplaceHeaders() });
 
 export const getCollectionCases = (status = "") =>
-  axios.get(`${MARKETPLACE_BASE}/v1/collections/cases?status=${status}`, { headers: marketplaceHeaders() });
+  axios.get(`${MARKETPLACE_URL}/v1/collections/cases?status=${status}`, { headers: marketplaceHeaders() });
 
 export const getCollectionCase = (caseId) =>
-  axios.get(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}`, { headers: marketplaceHeaders() });
+  axios.get(`${MARKETPLACE_URL}/v1/collections/cases/${caseId}`, { headers: marketplaceHeaders() });
 
 export const assignCollectionAgent = (caseId, agentId, agentName) =>
-  axios.post(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}/assign`,
+  axios.post(`${MARKETPLACE_URL}/v1/collections/cases/${caseId}/assign`,
     { agentId, agentName }, { headers: marketplaceHeaders() });
 
 export const logCollectionAction = (caseId, actionType, note, outcome) =>
-  axios.post(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}/action`,
+  axios.post(`${MARKETPLACE_URL}/v1/collections/cases/${caseId}/action`,
     { actionType, note, outcome }, { headers: marketplaceHeaders() });
 
 export const updateCollectionStatus = (caseId, status, note = "") =>
-  axios.put(`${MARKETPLACE_BASE}/v1/collections/cases/${caseId}/status`,
+  axios.put(`${MARKETPLACE_URL}/v1/collections/cases/${caseId}/status`,
     { status, note }, { headers: marketplaceHeaders() });
 
 export const getMyCollectionCases = () =>
-  axios.get(`${MARKETPLACE_BASE}/v1/collections/my-cases`, { headers: marketplaceHeaders() });
+  axios.get(`${MARKETPLACE_URL}/v1/collections/my-cases`, { headers: marketplaceHeaders() });
 
 export const syncCollections = () =>
-  axios.post(`${MARKETPLACE_BASE}/v1/collections/sync`, {}, { headers: marketplaceHeaders() });
+  axios.post(`${MARKETPLACE_URL}/v1/collections/sync`, {}, { headers: marketplaceHeaders() });
 
 export const getPCreditReportDoc = async () => {
   const token = getToken();
