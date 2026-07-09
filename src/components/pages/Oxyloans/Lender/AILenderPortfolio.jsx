@@ -111,9 +111,11 @@ const OxiBadge = ({ tier }) => {
   );
 };
 
-const StatCard = ({ label, value, color, sub }) => (
-  <div className="col-6 col-md mb-3">
-    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0" }}>
+const StatCard = ({ label, value, color, sub, onClick }) => (
+  <div className="col-6 col-md mb-3" onClick={onClick} style={onClick ? { cursor: "pointer" } : {}}>
+    <div className="card text-center h-100" style={{ borderRadius: 12, border: "1px solid #f0f0f0", transition: "box-shadow 0.2s" }}
+      onMouseEnter={onClick ? (e) => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)" : undefined}
+      onMouseLeave={onClick ? (e) => e.currentTarget.style.boxShadow = "none" : undefined}>
       <div className="card-body py-3 px-2">
         <p style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1, color: "#8c8c8c", marginBottom: 6 }}>
           {label}
@@ -1298,6 +1300,7 @@ const LenderPortfolioDashboard = () => {
   const [dealParticipationExpanded, setDealParticipationExpanded] = useState(false);
   const [maturityFilter, setMaturityFilter] = useState("all");
   const [maturitySectionOpen, setMaturitySectionOpen] = useState(false);
+  const [payoutSectionOpen, setPayoutSectionOpen] = useState(false);
   const [narrativeExpanded, setNarrativeExpanded] = useState(false);
   const [timingBucket, setTimingBucket] = useState(null);   // which bucket panel is open
   const [timingDetail, setTimingDetail] = useState({});     // { EARLY: {records,page,total,hasMore,loading} }
@@ -1556,6 +1559,7 @@ const LenderPortfolioDashboard = () => {
                   </div>
                 )}
                 <StatCard label="Payout Reliability"
+                  onClick={() => { setPayoutSectionOpen(true); scrollTo("section-payout"); }}
                   value={(() => {
                     const timed = (data.creditsPaidEarly ?? 0) + (data.creditsPaidSameDay ?? 0) + (data.creditsPaidNextDay ?? 0) + (data.creditsPaidLate ?? 0);
                     const late  = data.creditsPaidLate ?? 0;
@@ -2120,12 +2124,12 @@ const LenderPortfolioDashboard = () => {
                 const firstName = (data.lenderName || "").split(" ")[0];
                 const reinvestedCount = rd.reinvestedCount ?? rd.totalReturns ?? 0;
                 const totalReturns = rd.totalReturns ?? reinvestedCount;
-                const ratio = Math.round(rd.reinvestRatioPct || 0);
+                const ratio = parseFloat((rd.reinvestRatioPct || 0).toFixed(1));
                 const delay = rd.avgReinvestmentDelayDays || 0;
                 const tenure = rd.preferredTenure || "short-term";
                 const prob = rd.reinvestmentProbabilityPct || 0;
                 const avgSize = fmt(rd.avgInvestmentAmount || data.avgInvestmentAmount);
-                const summaryText = `${firstName} reinvests ${ratio}% of the time — ${reinvestedCount} out of ${totalReturns} returns were put back to work, typically within ${delay} day${delay === 1 ? "" : "s"}. ${rd.sameDayReinvestFlag ? "Same-day reinvestment detected. " : ""}Preferred deal tenure is ${tenure} with an average deal size of ₹${avgSize}.${isPro ? ` Probability of reinvesting next return: ${prob}%.` : ""}`;
+                const summaryText = `${firstName} reinvests ${ratio}% of the time — ${reinvestedCount} out of ${totalReturns} returns were put back to work, typically within ${delay} day${delay === 1 ? "" : "s"}. Preferred deal tenure is ${tenure} with an average deal size of ₹${avgSize}.${isPro ? ` Probability of reinvesting next return: ${prob}%.` : ""}`;
                 return (
                   <SectionCard title="Reinvestment Profile" badge={<StarRating rating={data.reinvestmentStarRating || rd.starRating} />} collapsible defaultOpen={false} summary={rd.classification || `${ratio}% reinvested`}>
                     <div style={{ background: "linear-gradient(135deg, #f9f0ff, #efdbff)", borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontSize: 14, color: "#391085", lineHeight: 1.7 }}>
@@ -2140,8 +2144,8 @@ const LenderPortfolioDashboard = () => {
                           { stars: "⭐", label: "1 star", desc: "New lender or no reinvestment yet" },
                           { stars: "⭐⭐", label: "2 stars", desc: "At least 1 reinvestment after a maturity" },
                           { stars: "⭐⭐⭐", label: "3 stars", desc: "40% of returned principal reinvested" },
-                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80% of returned principal reinvested" },
-                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "100% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80%–95% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "95%+ of returned principal reinvested" },
                         ].map((item) => {
                           const myCount = parseInt((data.reinvestmentStarRating || "1").split(" ")[0]) || 1;
                           const itemCount = item.stars.split("⭐").length - 1;
@@ -2276,6 +2280,9 @@ const LenderPortfolioDashboard = () => {
                 const remaining = allMat.length - LIMIT;
                 return (
                   <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={`${allMat.length} upcoming maturities`}>
+                    <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 12, color: "#874d00" }}>
+                      🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
+                    </div>
                     <div className="table-responsive">
                       <table className="table table-sm mb-0">
                         <thead className="thead-light">
@@ -2299,14 +2306,27 @@ const LenderPortfolioDashboard = () => {
                             const nudge = m.nudgeSendDate ? new Date(m.nudgeSendDate) : null;
                             const nudgeIsPast = nudge && nudge < new Date();
                             const alreadyReminded = remindedDeals.has(m.dealId);
+                            const isSending = remindedDeals.has(`sending-${m.dealId}`);
                             const sendReminder = () => {
+                              if (isSending || alreadyReminded) return;
+                              setRemindedDeals(prev => new Set([...prev, `sending-${m.dealId}`]));
                               axios.post(`${MARKETPLACE_URL}/v1/notifications/maturity-reminder`, {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
                               }, { headers: { accessToken: getToken() } })
-                                .then(() => setRemindedDeals(prev => new Set([...prev, m.dealId])))
-                                .catch(() => setRemindedDeals(prev => new Set([...prev, m.dealId])));
+                                .then(() => setRemindedDeals(prev => {
+                                  const next = new Set(prev);
+                                  next.delete(`sending-${m.dealId}`);
+                                  next.add(m.dealId);
+                                  return next;
+                                }))
+                                .catch(() => setRemindedDeals(prev => {
+                                  const next = new Set(prev);
+                                  next.delete(`sending-${m.dealId}`);
+                                  next.add(m.dealId);
+                                  return next;
+                                }));
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
@@ -2321,10 +2341,12 @@ const LenderPortfolioDashboard = () => {
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
-                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>✓ Reminder sent</span>
+                                    <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>🔔 Reminder sent</span>
+                                  ) : isSending ? (
+                                    <span style={{ fontSize: 12, color: "#d46b08" }}>Sending...</span>
                                   ) : nudgeIsPast ? (
                                     <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
-                                      Remind Me
+                                      🔔 Remind Me
                                     </button>
                                   ) : (
                                     <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
@@ -2422,9 +2444,10 @@ const LenderPortfolioDashboard = () => {
               </SectionCard>}
 
               {/* ── 9. PAYOUT RELIABILITY ── SMART: score+tiles, PRO: full detail+table ── */}
+              <div id="section-payout" />
               {!isSmart && <LockCard title="Payout Reliability" requiredTier="SMART" />}
               {isSmart && (data.safetyNarrativeDetails || data.safetyNarrative) && (
-                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} summary="Payment track record">
+                <SectionCard title="Payout Reliability" badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>RBI Registered NBFC-P2P</span>} collapsible defaultOpen={false} isOpen={payoutSectionOpen || undefined} onToggle={setPayoutSectionOpen} summary="Payment track record">
                   {(() => {
                     const early   = data.creditsPaidEarly    ?? 0;
                     const same    = data.creditsPaidSameDay  ?? 0;
