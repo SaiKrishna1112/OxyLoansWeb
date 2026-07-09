@@ -2214,7 +2214,7 @@ const LenderPortfolioDashboard = () => {
                                 <td><strong>#{m.dealId}</strong></td>
                                 <td>{fmtDate(m.maturityDate)}</td>
                                 <td>₹{fmt(m.principalAmount)}</td>
-                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
                                 <td>
                                   {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's ROI: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
                                   <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
@@ -2225,12 +2225,12 @@ const LenderPortfolioDashboard = () => {
                                     <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>🔔 Reminder sent</span>
                                   ) : isSending ? (
                                     <span style={{ fontSize: 12, color: "#d46b08" }}>Sending...</span>
-                                  ) : nudgeIsPast ? (
+                                  ) : m.daysToMaturity <= 30 ? (
                                     <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
                                       🔔 Remind Me
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
+                                    <span style={{ fontSize: 11, color: "#8c8c8c" }}>Auto-reminder:<br/>{fmtDate(m.nudgeSendDate)}</span>
                                   )}
                                 </td>
                               </tr>
