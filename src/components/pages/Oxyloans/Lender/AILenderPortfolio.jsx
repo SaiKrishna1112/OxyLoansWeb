@@ -2265,8 +2265,18 @@ const LenderPortfolioDashboard = () => {
                       const roi      = data.earningsForecast?.weightedAvgRoi || 0;
                       const active   = data.earningsForecast?.totalActiveAmount || 0;
                       const fyEnd    = data.earningsForecast?.financialYearEnd;
-                      const needed   = data.amountNeededForOneLakhTarget || data.earningsForecast?.amountNeededToReachOneLakh || 0;
-                      const monthsLeft = fyEnd ? Math.max(0, Math.round((new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30))) : 0;
+                      const monthsLeft = fyEnd ? Math.max(0, (new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30.44)) : 0;
+                      const nextLakhTarget = Math.ceil((forecast + 1) / 100000) * 100000;
+                      const secondLakhTarget = nextLakhTarget + 100000;
+                      const gap1 = nextLakhTarget - forecast;
+                      const gap2 = secondLakhTarget - forecast;
+                      const additionalNeeded1 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap1 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const additionalNeeded2 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap2 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const monthsLeftDisplay = Math.round(monthsLeft);
                       return (
                         <div style={{ background: "linear-gradient(135deg, #e6f7ff, #bae7ff)", borderRadius: 12, padding: 20, height: "100%" }}>
                           <div style={{ fontSize: 13, color: "#0050b3", fontWeight: 700, marginBottom: 12 }}>
@@ -2275,16 +2285,24 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ fontSize: 36, fontWeight: 800, color: "#1890ff", lineHeight: 1 }}>
                             ₹{fmt(forecast)}
                           </div>
-                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 6, marginBottom: 14 }}>
-                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeft} months remaining)
+                          <div style={{ fontSize: 11, color: "#0050b3", marginTop: 4, fontStyle: "italic" }}>
+                            interest earnings (not principal)
+                          </div>
+                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 4, marginBottom: 14 }}>
+                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeftDisplay} months remaining)
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             <div style={{ background: "rgba(24,144,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
                               <strong>₹{fmt(active)}</strong> actively deployed at avg <strong>{roi}% p.a.</strong> weighted ROI
                             </div>
-                            {needed > 0 && (
+                            {additionalNeeded1 > 0 && (
                               <div style={{ background: "rgba(24,144,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
-                                To earn <strong>₹1 Lakh</strong> this FY: invest <strong>₹{fmt(needed)}</strong> more at your current avg ROI for the remaining {monthsLeft} months
+                                Invest <strong>₹{fmt(additionalNeeded1)}</strong> more to reach <strong>₹{fmt(nextLakhTarget)}</strong> this FY
+                              </div>
+                            )}
+                            {additionalNeeded2 > 0 && (
+                              <div style={{ background: "rgba(82,196,26,0.10)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#135200" }}>
+                                Invest <strong>₹{fmt(additionalNeeded2)}</strong> more to reach <strong>₹{fmt(secondLakhTarget)}</strong> this FY
                               </div>
                             )}
                           </div>
