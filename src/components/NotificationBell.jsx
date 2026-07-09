@@ -43,15 +43,16 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const dropdownRef = useRef(null);
 
-  const headers = () => ({
-    "Content-Type": "application/json",
+  const headers = (includeContentType = false) => ({
+    ...(includeContentType ? { "Content-Type": "application/json" } : {}),
     accessToken:
       sessionStorage.getItem("accessToken") ||
       localStorage.getItem("accessToken") ||
       "",
-    userId: getUserId(),
+    userId: sessionStorage.getItem("activeLenderId") || getUserId(),
   });
 
   const fetchCount = () => {
@@ -67,27 +68,30 @@ const NotificationBell = () => {
   };
 
   const fetchNotifications = () => {
-    const userId = getUserId();
+    const userId = sessionStorage.getItem("activeLenderId") || getUserId();
     if (!userId) return;
     setLoading(true);
+    setFetchError(null);
     axios
       .get(`${BASE}/v1/notifications/my`, { headers: headers() })
       .then((res) => {
         if (res.status === 200) {
-          const list = res.data || [];
+          const list = Array.isArray(res.data) ? res.data : [];
           setNotifications(list.slice(0, 10));
           setUnreadCount(list.filter((n) => !n.read).length);
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        const status = err?.response?.status;
+        setFetchError(status === 401 ? "Session expired — please log in again" : `Error ${status || "network"}`);
         setLoading(false);
       });
   };
 
   const markRead = (id) => {
     axios
-      .put(`${BASE}/v1/notifications/${id}/read`, {}, { headers: headers() })
+      .put(`${BASE}/v1/notifications/${id}/read`, {}, { headers: headers(true) })
       .then(() => {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -99,7 +103,7 @@ const NotificationBell = () => {
 
   const markAllRead = () => {
     axios
-      .put(`${BASE}/v1/notifications/read-all`, {}, { headers: headers() })
+      .put(`${BASE}/v1/notifications/read-all`, {}, { headers: headers(true) })
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
@@ -234,6 +238,10 @@ const NotificationBell = () => {
           {loading ? (
             <div className="text-center py-3 text-muted" style={{ fontSize: 13 }}>
               Loading...
+            </div>
+          ) : fetchError ? (
+            <div className="text-center py-4" style={{ color: "#ff4d4f", fontSize: 13 }}>
+              {fetchError}
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-4 text-muted">
