@@ -2195,7 +2195,7 @@ const LenderPortfolioDashboard = () => {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
-                              }, { headers: { accessToken: getToken() } })
+                              }, { headers: { accessToken: getToken(), userId: getUserId() } })
                                 .then(() => setRemindedDeals(prev => {
                                   const next = new Set(prev);
                                   next.delete(`sending-${m.dealId}`);
