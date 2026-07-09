@@ -33,6 +33,7 @@ const ENV =
 
 export const API_USER_URL = `${BASE_URL}/v1/user/`;
 export const MARKETPLACE_URL = BASE_URL;
+export const OFFER_ADMIN_API_URL = `${MARKETPLACE_URL}/v1/ai/admin/reactivation`;
 export const AI_CHAT_URL =
   envAiChatUrl
     ? envAiChatUrl
