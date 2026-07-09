@@ -41,6 +41,7 @@ import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
 import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
+import ReactivationMyOffers from "./components/pages/Oxyloans/Lender/ReactivationMyOffers";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
@@ -560,6 +561,7 @@ const AppRouter = () => {
         <Route path="/escalation-dashboard" element={<PrivateRoute element={<EscalationDashboard />} />} />
         <Route path="/my-marketplace-loans" element={<PrivateRoute element={<BorrowerMarketplaceListings />} />} />
         <Route path="/my-offers" element={<PrivateRoute element={<MyOffers />} />} />
+        <Route path="/my-reactivation-offers" element={<PrivateRoute element={<ReactivationMyOffers />} />} />
         <Route path="/nearby-borrowers" element={<PrivateRoute element={<NearbyBorrowers />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />

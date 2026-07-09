@@ -14,6 +14,7 @@ import {
 } from "@ant-design/icons";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
+import { API_USER_URL } from "../../../../../config";
 
 const { Title, Text } = Typography;
 
@@ -56,7 +57,7 @@ const UploadFile = () => {
     setUploading(true);
     try {
       const response = await axios.post(
-        "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/offlineUsers",
+        `${API_USER_URL}offlineUsers`,
         formData,
         {
           headers: {

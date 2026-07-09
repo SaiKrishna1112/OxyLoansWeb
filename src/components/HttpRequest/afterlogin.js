@@ -5,7 +5,7 @@ const userisIn = "production"; //local or production
 //   userisIn == "local"
 //     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
 //     : "https://fintech.oxyloans.com/oxyloans/v1/user/";
-import { MARKETPLACE_URL, API_USER_URL } from "../../config";
+import { MARKETPLACE_URL, API_USER_URL, AI_CHAT_URL } from "../../config";
 const API_BASE_URL = API_USER_URL;
 
 axios.interceptors.response.use(
@@ -123,10 +123,8 @@ const handleApiRequestAfterLoginService = async (
         ...headers,
       },
     });
-    // Add your common logic here
-    if (response.status == 200) {
-      return response;
-    }
+    // Return axios response for any HTTP status; caller decides success/failure.
+    return response;
   } catch (error) {
     return error;
   }
@@ -256,7 +254,7 @@ export const handlePaymembershipapi = async (member, no, feeAmountWithGst) => {
   const data = {
     userId,
     type: "Wallet",
-    feeAmount: feeAmountWithGst,
+    feeAmount: Math.round(Number(feeAmountWithGst) || 0),
     lenderFeePayments: member,
     paidFrom: "WEB",
   };
@@ -1553,6 +1551,15 @@ export const nofreeParticipationapi = async (
   return response;
 };
 
+/** Maps UI payout labels to backend LenderReturnsType enum values. */
+const normalizeLenderReturnType = (payout) => {
+  if (!payout) return "MONTHLY";
+  const value = String(payout).toUpperCase();
+  if (value === "QUARTERLY") return "QUARTELY";
+  if (value === "HALFYEARLY" || value === "HALF_YEARLY") return "HALFLY";
+  return value;
+};
+
 export const dealparticipationValidityUser = async (deal) => {
   const token = getToken();
   const userId = getUserId();
@@ -1562,7 +1569,7 @@ export const dealparticipationValidityUser = async (deal) => {
     groupId: deal.apidata.groupId,
     dealId: deal.urldealId,
     participatedAmount: deal.participatedAmount,
-    lenderReturnType: deal.apidata.payout,
+    lenderReturnType: normalizeLenderReturnType(deal.apidata.payout),
     processingFee: 0,
     paticipationStatus:
       deal.apidata.lenderParticipationTotal !== null || 0 ? "ADD" : "UPDATE",
@@ -1596,7 +1603,7 @@ export const newlenderdealparticipation = async (deal) => {
     groupId: deal.apidata.groupId,
     dealId: deal.urldealId,
     participatedAmount: deal.participatedAmount,
-    lenderReturnType: deal.apidata.payout,
+    lenderReturnType: normalizeLenderReturnType(deal.apidata.payout),
     processingFee: newLenderGstAndFeeCalculation,
     paticipationStatus:
       deal.apidata.lenderParticipationTotal !== null || 0 ? "ADD" : "UPDATE",
@@ -3001,14 +3008,13 @@ export const chatbotapicall = async (messages) => {
   const userId = getUserId();
   try {
     const response = await axios({
-      url: `https://meta.oxyloans.com/api/oxyloans-ai/oxyloansChat`,
+      url: AI_CHAT_URL,
       method: "POST",
       timeout: 30000,
       headers: {
         "Content-Type": "application/json",
         accessToken: token,
         userId: userId,
-        "X-API-KEY": "oxy-ai-prod-key",
       },
       data: { message: messages, primaryType: localStorage.getItem("primaryType") || "LENDER" },
     });
@@ -3216,6 +3222,20 @@ export const getLenderAIPortfolio = async (lenderId) => {
   const token = getToken();
   const response = await axios.get(`${AI_BASE_URL}lender/${lenderId}/portfolio`, { headers: { accessToken: token } });
   return response;
+};
+
+/** Approved reactivation offers mapped to the logged-in user (GET /v1/ai/user/offers). */
+export const getUserReactivationOffers = async () => {
+  const token = getToken();
+  const response = await axios.get(`${MARKETPLACE_BASE}/v1/ai/user/offers`, {
+    headers: { accessToken: token, "Content-Type": "application/json" },
+    timeout: 30000,
+  });
+  const body = response.data;
+  if (body && typeof body.success === "boolean" && !body.success) {
+    throw new Error(body.message || "Failed to load offers");
+  }
+  return body?.data?.offers || [];
 };
 
 export const getLenderAIEarnings = async (lenderId, fy, from, to) => {

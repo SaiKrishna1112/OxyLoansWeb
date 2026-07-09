@@ -47,8 +47,9 @@ const handleApiRequestBeforeLogin = async (
     }
   } catch (error) {
     if (!error?.response) {
+      const endpoint = `${BASE_URL}${End_Url}`;
       const netErr = new Error(
-        `Cannot reach API at ${BASE_URL}. Start backend on port 8181 (test profile), then restart npm start.`
+        `Cannot reach API endpoint ${endpoint}. Verify backend host/port availability and network access, then try again.`
       );
       netErr.code = "ERR_NETWORK";
       return netErr;

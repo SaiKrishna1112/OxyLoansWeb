@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { API_USER_URL } from "../../../../config";
 import { Table, Spin } from "antd";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
@@ -31,7 +32,7 @@ export default function DealsInfo() {
       }
       try {
         const { data } = await axios.get(
-          `https://fintech.oxyloans.com/oxyloans/v1/user/WEB/notachieved-deals1`,
+          `${API_USER_URL}WEB/notachieved-deals1`,
           { headers: { accessToken } },
         );
         setDeals(data || []);
