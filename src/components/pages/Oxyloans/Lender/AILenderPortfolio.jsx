@@ -1159,9 +1159,11 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
-  const ID_ALIASES = { "77221": "27127" };
+  const ID_ALIASES = { "72271": "27127" };
   const rawId = paramLenderId || getUserId();
   const resolvedLenderId = ID_ALIASES[rawId] || rawId;
+  // Store portfolio owner's ID so bell can read notifications for correct lender
+  if (resolvedLenderId) sessionStorage.setItem("activeLenderId", resolvedLenderId);
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
@@ -1209,7 +1211,7 @@ const LenderPortfolioDashboard = () => {
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
       .then((res) => {
         const d = res.data;
-        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
+        if (process.env.REACT_APP_REFERENCE_DATE && String(resolvedLenderId) === "27127") {
           d.lenderName = "Pradeep Chakravarthy";
           d.email      = "pradeepchk@gmail.com";
         }
@@ -2165,10 +2167,18 @@ const LenderPortfolioDashboard = () => {
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
                     <div className="table-responsive">
-                      <table className="table table-sm mb-0">
+                      <table className="table table-sm mb-0" style={{ tableLayout: "fixed", minWidth: 620 }}>
+                        <colgroup>
+                          <col style={{ width: 70 }} />
+                          <col style={{ width: 110 }} />
+                          <col style={{ width: 100 }} />
+                          <col style={{ width: 90 }} />
+                          <col style={{ width: 190 }} />
+                          <col style={{ width: 120 }} />
+                        </colgroup>
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested at Same ROI</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2195,7 +2205,7 @@ const LenderPortfolioDashboard = () => {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
-                              }, { headers: { accessToken: getToken() } })
+                              }, { headers: { accessToken: getToken(), userId: resolvedLenderId || getUserId() } })
                                 .then(() => setRemindedDeals(prev => {
                                   const next = new Set(prev);
                                   next.delete(`sending-${m.dealId}`);
@@ -2211,26 +2221,25 @@ const LenderPortfolioDashboard = () => {
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td><strong>#{m.dealId}</strong></td>
-                                <td>{fmtDate(m.maturityDate)}</td>
-                                <td>₹{fmt(m.principalAmount)}</td>
-                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ overflow: "hidden" }}><strong>#{m.dealId}</strong></td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>₹{fmt(m.principalAmount)}</td>
+                                <td style={{ overflow: "hidden" }}><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600, fontSize: 12 }}>{m.daysToMaturity}d</span></td>
                                 <td>
-                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's ROI: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
-                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}<span style={{ fontWeight: 400, fontSize: 11 }}>/mo</span></div>
+                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c" }}>{(annualRoi / 12).toFixed(2)}% p.m. · ₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))}/yr</div>}
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
                                     <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>🔔 Reminder sent</span>
                                   ) : isSending ? (
                                     <span style={{ fontSize: 12, color: "#d46b08" }}>Sending...</span>
-                                  ) : nudgeIsPast ? (
+                                  ) : m.daysToMaturity <= 30 ? (
                                     <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
                                       🔔 Remind Me
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
+                                    <span style={{ fontSize: 11, color: "#8c8c8c" }}>Auto-reminder:<br/>{fmtDate(m.nudgeSendDate)}</span>
                                   )}
                                 </td>
                               </tr>
@@ -2265,8 +2274,18 @@ const LenderPortfolioDashboard = () => {
                       const roi      = data.earningsForecast?.weightedAvgRoi || 0;
                       const active   = data.earningsForecast?.totalActiveAmount || 0;
                       const fyEnd    = data.earningsForecast?.financialYearEnd;
-                      const needed   = data.amountNeededForOneLakhTarget || data.earningsForecast?.amountNeededToReachOneLakh || 0;
-                      const monthsLeft = fyEnd ? Math.max(0, Math.round((new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30))) : 0;
+                      const monthsLeft = fyEnd ? Math.max(0, (new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30.44)) : 0;
+                      const nextLakhTarget = Math.ceil((forecast + 1) / 100000) * 100000;
+                      const secondLakhTarget = nextLakhTarget + 100000;
+                      const gap1 = nextLakhTarget - forecast;
+                      const gap2 = secondLakhTarget - forecast;
+                      const additionalNeeded1 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap1 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const additionalNeeded2 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap2 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const monthsLeftDisplay = Math.round(monthsLeft);
                       return (
                         <div style={{ background: "linear-gradient(135deg, #e6f7ff, #bae7ff)", borderRadius: 12, padding: 20, height: "100%" }}>
                           <div style={{ fontSize: 13, color: "#0050b3", fontWeight: 700, marginBottom: 12 }}>
@@ -2275,16 +2294,24 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ fontSize: 36, fontWeight: 800, color: "#1890ff", lineHeight: 1 }}>
                             ₹{fmt(forecast)}
                           </div>
-                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 6, marginBottom: 14 }}>
-                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeft} months remaining)
+                          <div style={{ fontSize: 11, color: "#0050b3", marginTop: 4, fontStyle: "italic" }}>
+                            interest earnings (not principal)
+                          </div>
+                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 4, marginBottom: 14 }}>
+                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeftDisplay} months remaining)
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             <div style={{ background: "rgba(24,144,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
                               <strong>₹{fmt(active)}</strong> actively deployed at avg <strong>{roi}% p.a.</strong> weighted ROI
                             </div>
-                            {needed > 0 && (
+                            {additionalNeeded1 > 0 && (
                               <div style={{ background: "rgba(24,144,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
-                                To earn <strong>₹1 Lakh</strong> this FY: invest <strong>₹{fmt(needed)}</strong> more at your current avg ROI for the remaining {monthsLeft} months
+                                Invest <strong>₹{fmt(additionalNeeded1)}</strong> more to reach <strong>₹{fmt(nextLakhTarget)}</strong> this FY
+                              </div>
+                            )}
+                            {additionalNeeded2 > 0 && (
+                              <div style={{ background: "rgba(82,196,26,0.10)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#135200" }}>
+                                Invest <strong>₹{fmt(additionalNeeded2)}</strong> more to reach <strong>₹{fmt(secondLakhTarget)}</strong> this FY
                               </div>
                             )}
                           </div>

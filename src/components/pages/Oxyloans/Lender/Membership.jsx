@@ -12,7 +12,15 @@ import {
   getpaymentorder,
   lenderfeeamountdetailsapi,
   handellenderFeePaymentsapi,
+  getuserMembershipValidity,
 } from "../../../HttpRequest/afterlogin";
+import {
+  fetchSubscriptionOffer,
+  getFinalSubscriptionAmount,
+  formatRupee,
+  calculateTotalWithGST,
+  isActiveSubscriptionOffer,
+} from "./subscriptionOfferUtils";
 import {
   registersuccess,
   WarningAlertwithdrow,
@@ -39,6 +47,9 @@ const Membership = React.memo((pros) => {
     data: [],
     isLoading: true,
   });
+  const [subscriptionOffer, setSubscriptionOffer] = useState(null);
+  const [offerFetchDone, setOfferFetchDone] = useState(false);
+  const [activeMembership, setActiveMembership] = useState(null);
   const [payment, setpaymentsession] = useState("");
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
@@ -156,28 +167,60 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
   }, [myorder]);
 
   useEffect(() => {
-    const lenderfeeamountdetails = async () => {
+    let cancelled = false;
+
+    const loadMembershipPageData = async () => {
       try {
-        const response = await lenderfeeamountdetailsapi();
-        if (response.status === 200) {
+        const [membershipResponse, offer, validityResponse] = await Promise.all([
+          lenderfeeamountdetailsapi(),
+          fetchSubscriptionOffer(),
+          getuserMembershipValidity(),
+        ]);
+
+        if (cancelled) return;
+
+        if (validityResponse?.request?.status === 200 && validityResponse.data?.validityDate) {
+          const validityDate = new Date(validityResponse.data.validityDate);
+          if (validityDate > new Date()) {
+            setActiveMembership({
+              validityDate: validityResponse.data.validityDate,
+            });
+          }
+        }
+
+        if (membershipResponse?.status === 200) {
           setmebershipdata({
-            data: response.data,
+            data: membershipResponse.data,
             isLoading: false,
           });
         } else {
-          throw new Error("Failed to fetch data");
+          setmebershipdata({
+            data: [],
+            isLoading: false,
+          });
         }
+        setSubscriptionOffer(offer);
       } catch (error) {
         console.error(error);
-        setmebershipdata({
-          data: [],
-          isLoading: false,
-        });
+        if (!cancelled) {
+          setmebershipdata((prev) => ({
+            ...prev,
+            isLoading: false,
+          }));
+        }
+      } finally {
+        if (!cancelled) {
+          setOfferFetchDone(true);
+        }
       }
     };
 
-    lenderfeeamountdetails();
-  }, [lenderfeeamountdetailsapi]);
+    loadMembershipPageData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   useEffect(() => {
     if (payment != null || payment != "") {
       let checkoutOptions = {
@@ -207,7 +250,8 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
 
   const buttonNumber = 0;
   const isButtonLoading = mywalletTowalletHistory[`loading${buttonNumber}`];
-  if (membershipdata.isLoading) {
+  const membershipPaymentBlocked = Boolean(activeMembership);
+  if (membershipdata.isLoading || !offerFetchDone) {
     return <div>Loading...</div>;
   }
 
@@ -221,21 +265,99 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
     TENYEARS: 90000,
   };
 
-  function calculateTotalWithGST(amount) {
-    const gst = (amount * 18) / 100;
-    const total = amount + gst;
-
-    return total;
-  }
-
   function calculateDiscountPercentage(originalPrice, discountedPrice) {
-    console.log(originalPrice, discountedPrice);
-
     const discount = originalPrice - discountedPrice;
     const discountPercentage = (discount / originalPrice) * 100;
 
-    return discountPercentage.toFixed(2); // Returns percentage with 2 decimal places
+    return discountPercentage.toFixed(2);
   }
+
+  const getPaymentAmount = (planData) => {
+    const pricing = getFinalSubscriptionAmount(planData, subscriptionOffer);
+    return Math.round(pricing.finalWithGst * 100) / 100;
+  };
+
+  const renderMembershipPricing = (data) => {
+    const pricing = getFinalSubscriptionAmount(data, subscriptionOffer);
+
+    if (pricing.offerApplied) {
+      return (
+        <div className="subscription-offer-pricing mb-2">
+          <p className="text-muted small mb-1">
+            <del>₹{formatRupee(pricing.originalBase)}</del>
+          </p>
+          <span className="badge badge-success subscription-discount-badge mb-2">
+            {pricing.discountPercent > 0
+              ? `${pricing.discountPercent}% OFF`
+              : "OFFER APPLIED"}
+          </span>
+          <h4
+            className="font-weight-bold text-success subscription-you-pay"
+            style={{ fontSize: "20px" }}
+          >
+            You Pay: ₹{formatRupee(pricing.finalBase)}
+          </h4>
+          <p className="text-muted small mb-1">
+            + 18% GST = ₹{formatRupee(Math.round(pricing.finalWithGst))}
+          </p>
+          <p className="text-success small subscription-offer-note mb-0">
+            Subscription discount applied successfully.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {data.feeAmount !==
+          actualPrices[data.lenderFeePayments.toUpperCase()] && (
+          <div className="mb-2" style={{ fontSize: "14px" }}>
+            <span className="badge badge-danger">Discounted!</span>
+            <p className="text-muted small mb-1">
+              <del>
+                ₹
+                {actualPrices[data.lenderFeePayments.toUpperCase()]}
+              </del>{" "}
+              + 18% GST = ₹
+              {Math.round(
+                calculateTotalWithGST(
+                  actualPrices[data.lenderFeePayments.toUpperCase()]
+                )
+              )}
+            </p>
+            <p className="text-muted small mb-1">
+              Discount:{" "}
+              {calculateDiscountPercentage(
+                calculateTotalWithGST(
+                  actualPrices[data.lenderFeePayments.toUpperCase()]
+                ),
+                data.feeAmountWithGst
+              )}
+              % off
+            </p>
+          </div>
+        )}
+        <h4
+          className="font-weight-bold text-success"
+          style={{ fontSize: "20px" }}
+        >
+          ₹{data.feeAmount} + 18% GST = ₹{data.feeAmountWithGst}
+        </h4>
+        {data.percentageDiscount && (
+          <p className="text-success" style={{ fontSize: "14px" }}>
+            <b>
+              {data.percentageDiscount ||
+                calculateDiscountPercentage(
+                  actualPrices[data.lenderFeePayments.toUpperCase()],
+                  data.feeAmount
+                )}
+              % OFF
+            </b>
+          </p>
+        )}
+      </>
+    );
+  };
 
   // Function to format the plans correctly
   const formatPlanName = (plan) => {
@@ -280,6 +402,24 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                 <div className="card card-table">
                   <div className="card-body">
                     <div className="row">
+                      {activeMembership && (
+                        <div className="col-12 mb-3">
+                          <div className="alert alert-info subscription-offer-banner mb-0">
+                            <strong>Membership already active</strong> until{" "}
+                            {activeMembership.validityDate}. No subscription payment is required
+                            right now.
+                          </div>
+                        </div>
+                      )}
+                      {subscriptionOffer && isActiveSubscriptionOffer(subscriptionOffer) && (
+                        <div className="col-12 mb-3">
+                          <div className="alert alert-success subscription-offer-banner mb-0">
+                            <strong>Subscription offer active:</strong>{" "}
+                            {subscriptionOffer.title || "Special membership discount"} — discounted
+                            pricing is applied to all plans below.
+                          </div>
+                        </div>
+                      )}
                       {console.log(membershipdata.data[6])}
 
                       {membershipdata.data.length !== 0 ? (
@@ -317,66 +457,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     className="card-body d-flex flex-column justify-content-center"
                                     style={{ flexGrow: 1, textAlign: "center" }}
                                   >
-                                    {data.feeAmount !==
-                                      actualPrices[
-                                        data.lenderFeePayments.toUpperCase()
-                                      ] && (
-                                      <div
-                                        className="mb-2"
-                                        style={{ fontSize: "14px" }}
-                                      >
-                                        <span className="badge badge-danger">
-                                          Discounted!
-                                        </span>
-                                        <p className="text-muted small mb-1">
-                                          <del>
-                                            ₹
-                                            {
-                                              actualPrices[
-                                                data.lenderFeePayments.toUpperCase()
-                                              ]
-                                            }
-                                          </del>{" "}
-                                          + 18% GST = ₹
-                                          {Math.round(
-                                            calculateTotalWithGST(
-                                              actualPrices[
-                                                data.lenderFeePayments.toUpperCase()
-                                              ]
-                                            )
-                                          )}
-                                        </p>
-                                        {/* Displaying the discount percentage */}
-                                        <p className="text-muted small mb-1">
-                                          Discount:{" "}
-                                          {calculateDiscountPercentage(
-                                            calculateTotalWithGST(
-                                              actualPrices[
-                                                data.lenderFeePayments.toUpperCase()
-                                              ]
-                                            ),
-                                            data.feeAmountWithGst
-                                          )}
-                                          % off
-                                        </p>
-                                      </div>
-                                    )}
-                                    <h4
-                                      className="font-weight-bold text-success"
-                                      style={{ fontSize: "20px" }}
-                                    >
-                                      ₹{data.feeAmount} + 18% GST = ₹
-                                      {data.feeAmountWithGst}
-                                    </h4>
-                                    {/* Displaying the percentage discount here */}
-                                    {data.percentageDiscount && (
-                                      <p
-                                        className="text-success"
-                                        style={{ fontSize: "14px" }}
-                                      >
-                                        <b>{data.percentageDiscount}% OFF</b>
-                                      </p>
-                                    )}
+                                    {renderMembershipPricing(data)}
                                     <ul
                                       className="list-group list-group-flush mt-3"
                                       style={{ fontSize: "14px" }}
@@ -397,7 +478,14 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     </ul>
                                   </div>
                                   <div className="card-footer bg-white">
-                                    {isButtonLoading ? (
+                                    {membershipPaymentBlocked ? (
+                                      <button
+                                        className="btn btn-secondary btn-block"
+                                        disabled
+                                      >
+                                        Membership Active
+                                      </button>
+                                    ) : isButtonLoading ? (
                                       <button
                                         className="btn btn-success btn-block"
                                         disabled
@@ -416,7 +504,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                           handlePaymembershipfree(
                                             data.lenderFeePayments,
                                             index + 1,
-                                            data.feeAmountWithGst
+                                            getPaymentAmount(data)
                                           )
                                         }
                                       >
@@ -462,74 +550,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     className="card-body d-flex flex-column justify-content-center"
                                     style={{ flexGrow: 1, textAlign: "center" }}
                                   >
-                                    {data.feeAmount !==
-                                      actualPrices[
-                                        data.lenderFeePayments.toUpperCase()
-                                      ] && (
-                                      <div
-                                        className="mb-2"
-                                        style={{ fontSize: "14px" }}
-                                      >
-                                        <span className="badge badge-danger">
-                                          Discounted!
-                                        </span>
-                                        <p className="text-muted small mb-1">
-                                          <del>
-                                            ₹
-                                            {
-                                              actualPrices[
-                                                data.lenderFeePayments.toUpperCase()
-                                              ]
-                                            }
-                                          </del>{" "}
-                                          + 18% GST = ₹
-                                          {Math.round(
-                                            calculateTotalWithGST(
-                                              actualPrices[
-                                                data.lenderFeePayments.toUpperCase()
-                                              ]
-                                            )
-                                          )}
-                                        </p>
-                                        {/* Displaying the discount percentage */}
-                                        <p className="text-muted small mb-1">
-                                          Discount:{" "}
-                                          {calculateDiscountPercentage(
-                                            calculateTotalWithGST(
-                                              actualPrices[
-                                                data.lenderFeePayments.toUpperCase()
-                                              ]
-                                            ),
-                                            data.feeAmountWithGst
-                                          )}
-                                          % off
-                                        </p>
-                                      </div>
-                                    )}
-                                    <h4
-                                      className="font-weight-bold text-success"
-                                      style={{ fontSize: "20px" }}
-                                    >
-                                      ₹{data.feeAmount} + 18% GST = ₹
-                                      {data.feeAmountWithGst}
-                                    </h4>
-                                    {/* Displaying the percentage discount here */}
-                                    {data.percentageDiscount && (
-                                      <p
-                                        className="text-success"
-                                        style={{ fontSize: "14px" }}
-                                      >
-                                        <b>
-                                          {calculateDiscountPercentage(
-                                            actualPrices[
-                                              data.lenderFeePayments.toUpperCase()
-                                            ],
-                                            data.feeAmount
-                                          )}
-                                          % OFF
-                                        </b>
-                                      </p>
-                                    )}
+                                    {renderMembershipPricing(data)}
                                     <ul
                                       className="list-group list-group-flush"
                                       style={{ fontSize: "14px" }}
@@ -562,7 +583,14 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     </ul>
                                   </div>
                                   <div className="card-footer bg-white">
-                                    {isButtonLoading ? (
+                                    {membershipPaymentBlocked ? (
+                                      <button
+                                        className="btn btn-secondary btn-block"
+                                        disabled
+                                      >
+                                        Membership Active
+                                      </button>
+                                    ) : isButtonLoading ? (
                                       <button
                                         className="btn btn-success btn-block"
                                         disabled
@@ -582,7 +610,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                           handlePaymembershipfree(
                                             data.lenderFeePayments,
                                             index + 1,
-                                            data.feeAmountWithGst
+                                            getPaymentAmount(data)
                                           )
                                         }
                                       >
