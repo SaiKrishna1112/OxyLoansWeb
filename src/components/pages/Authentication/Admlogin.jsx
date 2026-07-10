@@ -106,7 +106,7 @@ const Admlogin = () => {
         const { message } = warnApiError(
           retriveresponse,
           "Login failed",
-          "Login failed. Use admin email + password, or user ID with SUPERADMIN."
+          "Login failed. Please check your credentials."
         );
         const hint =
           retriveresponse?.code === "ERR_NETWORK" || String(message).toLowerCase().includes("network")
@@ -144,14 +144,13 @@ const Admlogin = () => {
                   </p>
                   <h2>Admin Login</h2>
                   <p className="account-subtitle small text-muted mb-3">
-                    Admin email + password, or user ID (LR55573) with access key SUPERADMIN.
-                    Backend: {process.env.NODE_ENV === "development" ? "see src/config.js ENV" : "configured server"}.
+                    Enter your admin credentials to continue.
                   </p>
 
                   <form className="needs-validation" noValidate>
                     <div className="form-group">
                       <label htmlFor="userid">
-                        Admin email or user ID (LR55573)
+                        Admin email or user ID
                         <span className="login-danger">*</span>
                       </label>
                       <input
