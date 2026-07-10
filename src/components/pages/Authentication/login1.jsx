@@ -6,7 +6,6 @@ import { login } from "../../imagepath";
 
 import { Link } from "react-router-dom";
 import axios from "axios";
-import { API_USER_URL } from "../../../config";
 import FeatherIcon from "feather-icons-react";
 import "./login.css";
 import { useNavigate } from "react-router-dom";
@@ -105,7 +104,7 @@ const Login = () => {
 
       axios({
         method: "post",
-        url: `${API_USER_URL}login?grantType=PWD`,
+        url: "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/login?grantType=PWD",
         data: data,
         headers: {
           "Content-Type": "application/json",

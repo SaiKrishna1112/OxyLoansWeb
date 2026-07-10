@@ -41,7 +41,6 @@ import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
 import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
-import ReactivationMyOffers from "./components/pages/Oxyloans/Lender/ReactivationMyOffers";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
@@ -196,31 +195,12 @@ import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILende
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges.jsx";
 import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees.jsx";
-import OfferManagementLayout from "./components/pages/Oxyloans/Admin/OfferManagement/OfferManagementLayout";
-import OfferDashboard from "./components/pages/Oxyloans/Admin/OfferManagement/pages/OfferDashboard";
-import GenerateOffers from "./components/pages/Oxyloans/Admin/OfferManagement/pages/GenerateOffers";
-import EligibleLenders from "./components/pages/Oxyloans/Admin/OfferManagement/pages/EligibleLenders";
-import PendingOffers from "./components/pages/Oxyloans/Admin/OfferManagement/pages/PendingOffers";
-import ApprovedOffers from "./components/pages/Oxyloans/Admin/OfferManagement/pages/ApprovedOffers";
-import RejectedOffers from "./components/pages/Oxyloans/Admin/OfferManagement/pages/RejectedOffers";
-import OfferHistory from "./components/pages/Oxyloans/Admin/OfferManagement/pages/OfferHistory";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
 
 const PrivateRoute = ({ element }) =>
   isAuthenticated() ? element : <Navigate to="/loginotp" replace />;
-
-const isAdminUser = () => {
-  const primaryType = localStorage.getItem("primaryType") || "";
-  return ["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(primaryType);
-};
-
-const AdminPrivateRoute = ({ element }) => {
-  if (!isAuthenticated()) return <Navigate to="/loginotp" replace />;
-  if (!isAdminUser()) return <Navigate to="/loginotp" replace />;
-  return element;
-};
 
 const CatchAll = () => {
   if (!isAuthenticated()) return <Navigate to="/loginotp" replace />;
@@ -580,7 +560,6 @@ const AppRouter = () => {
         <Route path="/escalation-dashboard" element={<PrivateRoute element={<EscalationDashboard />} />} />
         <Route path="/my-marketplace-loans" element={<PrivateRoute element={<BorrowerMarketplaceListings />} />} />
         <Route path="/my-offers" element={<PrivateRoute element={<MyOffers />} />} />
-        <Route path="/my-reactivation-offers" element={<PrivateRoute element={<ReactivationMyOffers />} />} />
         <Route path="/nearby-borrowers" element={<PrivateRoute element={<NearbyBorrowers />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
@@ -615,23 +594,6 @@ const AppRouter = () => {
         <Route path="/ai/subscription-success" element={<PrivateRoute element={<AISubscriptionSuccess />} />} />
         <Route path="/ai/test-admin" element={<PrivateRoute element={<AITestAdmin />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
-
-        {/* OFFER MANAGEMENT (Admin) */}
-        <Route
-          path="/admin/offers"
-          element={<AdminPrivateRoute element={<OfferManagementLayout />} />}
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<OfferDashboard />} />
-          <Route path="create" element={<GenerateOffers />} />
-          <Route path="segments" element={<EligibleLenders />} />
-          <Route path="templates" element={<Navigate to="/admin/offers/create" replace />} />
-          <Route path="approvals" element={<PendingOffers />} />
-          <Route path="approved" element={<ApprovedOffers />} />
-          <Route path="rejected" element={<RejectedOffers />} />
-          <Route path="history" element={<OfferHistory />} />
-        </Route>
-
         <Route path="*" element={<CatchAll />} />
       </Routes>
     </BrowserRouter>
