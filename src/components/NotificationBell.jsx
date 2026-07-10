@@ -6,16 +6,19 @@ import { MARKETPLACE_URL as BASE } from "../config";
 
 // Derive the route to navigate to when a notification is clicked
 function getNotificationRoute(n) {
-  if (n.link) return n.link;
+  // Backend field is actionUrl, not link
+  if (n.actionUrl && n.actionUrl.startsWith("/")) return n.actionUrl;
 
   const type = (n.type || "").toUpperCase();
   const primaryType = localStorage.getItem("primaryType") || sessionStorage.getItem("primaryType") || "";
   const isBorrower = primaryType === "BORROWER";
 
-  // Try to pull a loanRequestId out of referenceId or message
-  const refId = n.referenceId || n.loanRequestId || null;
+  const refId = n.loanRequestId || null;
   const msgMatch = n.message && n.message.match(/LRQ-[\w-]+/);
   const lrqId = refId || (msgMatch ? msgMatch[0] : null);
+
+  // Maturity reminders always go to the AI portfolio maturity section
+  if (type === "MATURITY_REMINDER") return "/ai/portfolio";
 
   if (type.includes("OFFER")) {
     return isBorrower ? "/my-marketplace-loans" : "/my-offers";
@@ -28,7 +31,8 @@ function getNotificationRoute(n) {
     }
     return isBorrower ? "/my-marketplace-loans" : "/marketplace-loans";
   }
-  if (type.includes("EMI") || type.includes("LOAN")) {
+  // Use exact prefix to avoid "REMINDER" accidentally matching "EMI"
+  if (type.startsWith("EMI") || type === "LOAN_DISBURSED" || type === "LOAN_CLOSED") {
     return isBorrower ? "/borrower-emi-schedule" : "/lender-emi-dashboard";
   }
   if (type.includes("OXYSCORE")) return "/my-oxyscore";
