@@ -90,6 +90,11 @@ const GenerateOffers = () => {
             <strong>{result.totalEligibleLenders}</strong> eligible lenders in segment{" "}
             <code>{result.segment}</code> — generated{" "}
             <strong>{result.generatedOffersCount}</strong> offer strategies (status: GENERATED, awaiting approval).
+            {result.eligibleLendersTruncated && (
+              <span className="d-block mt-1 small text-muted">
+                Showing first {result.eligibleLenders?.length || 0} lenders below (full list assigned on approve).
+              </span>
+            )}
           </div>
 
           <div className="card border-0 shadow-sm mb-4">
@@ -108,7 +113,8 @@ const GenerateOffers = () => {
 
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white fw-semibold">
-              Eligible Lenders ({result.eligibleLenders?.length || 0})
+              Eligible Lenders preview ({result.eligibleLenders?.length || 0}
+              {result.eligibleLendersTruncated ? ` of ${result.totalEligibleLenders}` : ""})
             </div>
             <div className="card-body p-0">
               <div className="table-responsive" style={{ maxHeight: 400 }}>

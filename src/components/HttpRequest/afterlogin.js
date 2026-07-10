@@ -3224,18 +3224,41 @@ export const getLenderAIPortfolio = async (lenderId) => {
   return response;
 };
 
-/** Approved reactivation offers mapped to the logged-in user (GET /v1/ai/user/offers). */
+/** Approved reactivation offers for the logged-in lender (GET /v1/ai/reactivation/offers/lender/{lenderId}). */
 export const getUserReactivationOffers = async () => {
   const token = getToken();
-  const response = await axios.get(`${MARKETPLACE_BASE}/v1/ai/user/offers`, {
-    headers: { accessToken: token, "Content-Type": "application/json" },
-    timeout: 30000,
-  });
+  const lenderId = getUserId();
+  if (!lenderId) {
+    throw new Error("Not logged in. Please log in again.");
+  }
+  const response = await axios.get(
+    `${MARKETPLACE_URL}/v1/ai/reactivation/offers/lender/${lenderId}`,
+    {
+      headers: { accessToken: token, "Content-Type": "application/json" },
+      timeout: 60000,
+    }
+  );
   const body = response.data;
   if (body && typeof body.success === "boolean" && !body.success) {
     throw new Error(body.message || "Failed to load offers");
   }
-  return body?.data?.offers || [];
+  const list = Array.isArray(body?.data) ? body.data : [];
+  // Map SegmentOfferStrategyDto → UI card shape
+  return list.map((o) => ({
+    offerId: o.id,
+    title: o.title,
+    description: o.message,
+    benefitSummary: o.benefitSummary,
+    offerType: o.offerType,
+    status: o.status === "APPROVED" ? "ACTIVE" : o.status || "ACTIVE",
+    ctaUrl: o.ctaUrl,
+    redeemed: false,
+    assignedAt: o.approvedAt || o.generatedAt,
+    expiresAt: null,
+    minimumInvestment: o.minimumInvestment,
+    participationFeeSaved: o.participationFeeSaved,
+    validityDays: o.validityDays,
+  }));
 };
 
 export const getLenderAIEarnings = async (lenderId, fy, from, to) => {

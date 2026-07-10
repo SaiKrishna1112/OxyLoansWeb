@@ -54,15 +54,36 @@ function OfferCard({ offer }) {
             </p>
           )}
 
+          {(offer.minimumInvestment != null || offer.participationFeeSaved != null) && (
+            <div className="small mb-2">
+              {offer.minimumInvestment != null && (
+                <div>Min investment: ₹{Number(offer.minimumInvestment).toLocaleString("en-IN")}</div>
+              )}
+              {offer.participationFeeSaved != null && (
+                <div className="text-success">Fee saved: ₹{Number(offer.participationFeeSaved).toLocaleString("en-IN")}</div>
+              )}
+            </div>
+          )}
+
           <div className="small text-muted mb-3">
-            <div>
-              <i className="fa fa-clock me-1" />
-              Expires: {formatDate(offer.expiresAt)}
-            </div>
-            <div>
-              <i className="fa fa-calendar-check me-1" />
-              Assigned: {formatDate(offer.assignedAt)}
-            </div>
+            {offer.expiresAt && (
+              <div>
+                <i className="fa fa-clock me-1" />
+                Expires: {formatDate(offer.expiresAt)}
+              </div>
+            )}
+            {offer.assignedAt && (
+              <div>
+                <i className="fa fa-calendar-check me-1" />
+                Assigned: {formatDate(offer.assignedAt)}
+              </div>
+            )}
+            {offer.validityDays != null && (
+              <div>
+                <i className="fa fa-hourglass-half me-1" />
+                Validity: {offer.validityDays} days
+              </div>
+            )}
           </div>
 
           {!isRedeemed && (

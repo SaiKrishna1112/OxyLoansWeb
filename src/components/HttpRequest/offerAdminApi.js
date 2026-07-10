@@ -51,7 +51,11 @@ const request = async (method, path, { params, data } = {}) => {
 };
 
 const offerAdminApi = {
-  getSegmentSummary: async () => unwrap(await request("GET", "/segments/summary")),
+  /** Dashboard: counts only (fast). Pass includeLenders=true for Eligible Lenders page. */
+  getSegmentSummary: async (includeLenders = false) =>
+    unwrap(await request("GET", "/segments/summary", { params: { includeLenders } })),
+
+  getOfferCounts: async () => unwrap(await request("GET", "/offers/counts")),
 
   generateOffers: async (segment, limit = 5) =>
     unwrap(await request("POST", "/offers/generate", { data: { segment, limit } })),
@@ -82,7 +86,7 @@ const offerAdminApi = {
     unwrap(await request("POST", "/offers/approve", { data: { offerIds } })),
 
   getEligibleLenders: async () => {
-    const summary = await offerAdminApi.getSegmentSummary();
+    const summary = await offerAdminApi.getSegmentSummary(true);
     const seen = new Set();
     const lenders = [];
     (summary || []).forEach((seg) => {

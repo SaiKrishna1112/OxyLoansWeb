@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import offerAdminApi from "../../../../../HttpRequest/offerAdminApi";
-import useOfferApi from "../hooks/useOfferApi";
 import OfferLoadingSpinner from "../components/OfferLoadingSpinner";
 import OfferErrorAlert from "../components/OfferErrorAlert";
 import OfferPageHeader from "../components/OfferPageHeader";
@@ -23,44 +22,65 @@ const StatCard = ({ title, value, subtitle, color = "primary" }) => (
 );
 
 const OfferDashboard = () => {
-  const { loading, error, execute, clearError } = useOfferApi();
-  const [stats, setStats] = useState(null);
-  const [pending, setPending] = useState([]);
-  const [approved, setApproved] = useState([]);
-  const [rejected, setRejected] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState([]);
+  const [counts, setCounts] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const [summary, pendingList, approvedList, rejectedList] = await Promise.all([
-          execute(offerAdminApi.getSegmentSummary),
-          execute(offerAdminApi.getAllPendingOffers),
-          execute(offerAdminApi.getApprovedOffers),
-          execute(offerAdminApi.getRejectedOffers),
+        // Load independently so one slow/failing call does not zero the whole dashboard
+        const [summaryResult, countsResult] = await Promise.allSettled([
+          offerAdminApi.getSegmentSummary(false),
+          offerAdminApi.getOfferCounts(),
         ]);
-        setStats(summary);
-        setPending(pendingList || []);
-        setApproved(approvedList || []);
-        setRejected(rejectedList || []);
-      } catch {
-        /* error handled by hook */
+
+        if (cancelled) return;
+
+        if (summaryResult.status === "fulfilled") {
+          setStats(Array.isArray(summaryResult.value) ? summaryResult.value : []);
+        } else {
+          setStats([]);
+          setError(summaryResult.reason?.message || "Failed to load segment summary");
+        }
+
+        if (countsResult.status === "fulfilled" && countsResult.value) {
+          setCounts({
+            pending: Number(countsResult.value.pending) || 0,
+            approved: Number(countsResult.value.approved) || 0,
+            rejected: Number(countsResult.value.rejected) || 0,
+            total: Number(countsResult.value.total) || 0,
+          });
+        } else if (summaryResult.status === "fulfilled" && countsResult.status === "rejected") {
+          setError((prev) => prev || countsResult.reason?.message || "Failed to load offer counts");
+        }
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Failed to load dashboard");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
     load();
-  }, [execute]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const totalLenders = stats?.reduce((s, seg) => s + (seg.lenderCount || 0), 0) || 0;
-  const inactiveLenders =
-    stats
-      ?.filter((s) => !["ACTIVE_RECENT", "REPEAT_LOYAL"].includes(s.segment))
-      .reduce((s, seg) => s + (seg.lenderCount || 0), 0) || 0;
+  const totalLenders = stats.reduce((s, seg) => s + (seg.lenderCount || 0), 0);
+  const inactiveLenders = stats
+    .filter((s) => !["ACTIVE_RECENT", "REPEAT_LOYAL"].includes(s.segment))
+    .reduce((s, seg) => s + (seg.lenderCount || 0), 0);
 
   const segmentChart = {
-    labels: (stats || []).map((s) => getSegmentLabel(s.segment)),
+    labels: stats.map((s) => getSegmentLabel(s.segment)),
     datasets: [
       {
         label: "Lenders",
-        data: (stats || []).map((s) => s.lenderCount),
+        data: stats.map((s) => s.lenderCount),
         backgroundColor: [
           "#0d6efd", "#6610f2", "#6f42c1", "#d63384",
           "#fd7e14", "#ffc107", "#198754", "#20c997",
@@ -73,13 +93,13 @@ const OfferDashboard = () => {
     labels: ["Approved", "Rejected", "Pending"],
     datasets: [
       {
-        data: [approved.length, rejected.length, pending.length],
+        data: [counts.approved, counts.rejected, counts.pending],
         backgroundColor: ["#198754", "#dc3545", "#ffc107"],
       },
     ],
   };
 
-  if (loading && !stats) {
+  if (loading && stats.length === 0 && counts.total === 0) {
     return <OfferLoadingSpinner fullPage message="Loading dashboard..." />;
   }
 
@@ -89,20 +109,20 @@ const OfferDashboard = () => {
         title="Dashboard"
         subtitle="Lender reactivation & offer generation overview"
       />
-      <OfferErrorAlert message={error} onDismiss={clearError} />
+      <OfferErrorAlert message={error} onDismiss={() => setError(null)} />
 
       <div className="row g-3 mb-4">
         <StatCard title="Total Lenders" value={totalLenders} color="primary" />
         <StatCard title="Inactive Lenders" value={inactiveLenders} color="warning" />
         <StatCard
           title="Offers Generated"
-          value={pending.length + approved.length + rejected.length}
-          subtitle="All time (loaded)"
+          value={counts.total}
+          subtitle="All statuses"
           color="info"
         />
-        <StatCard title="Pending Approval" value={pending.length} color="warning" />
-        <StatCard title="Approved Offers" value={approved.length} color="success" />
-        <StatCard title="Rejected Offers" value={rejected.length} color="danger" />
+        <StatCard title="Pending Approval" value={counts.pending} color="warning" />
+        <StatCard title="Approved Offers" value={counts.approved} color="success" />
+        <StatCard title="Rejected Offers" value={counts.rejected} color="danger" />
       </div>
 
       <div className="row g-4">
@@ -110,7 +130,7 @@ const OfferDashboard = () => {
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white fw-semibold">Inactive Lender Segments</div>
             <div className="card-body" style={{ height: 320 }}>
-              {stats?.length ? (
+              {stats.length ? (
                 <Bar
                   data={segmentChart}
                   options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }}
