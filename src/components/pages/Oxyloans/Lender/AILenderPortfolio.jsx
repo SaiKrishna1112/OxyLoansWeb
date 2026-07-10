@@ -1919,7 +1919,7 @@ const LenderPortfolioDashboard = () => {
               {!isPro && (
                 <LockCard title="Investment Analytics — ROI Charts, Deal Distribution &amp; Earnings Trends" requiredTier="PRO" />
               )}
-              {isPro && <div id="monthly-earnings-detail"><DealAnalyticsCharts data={data} earningsData={earningsData} collapsible defaultOpen={false} /></div>}
+              {isPro && <div id="monthly-earnings-detail"><DealAnalyticsCharts data={data} earningsData={momData || earningsData} collapsible defaultOpen={false} /></div>}
 
               {/* ── 5. ACTIVE DEALS ── */}
               {(data.activeDealsWithProgress || []).length > 0 && (() => {
