@@ -6,6 +6,7 @@ import FeatherIcon from "feather-icons-react";
 import { userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import { BsWhatsapp } from "react-icons/bs";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -13,10 +14,10 @@ const Login = () => {
   const staticAdminEmail = "admin@oxyloans.com";
   const staticAdminPassword = "Radha@1234";
   const [userLogInInfo, setUserLoginInfo] = useState({
-    email: staticAdminEmail,
+    email: "",
     moblie: "",
     loginwithotp: false,
-    password: staticAdminPassword,
+    password: "",
     emailerror: "",
     passworderror: "",
     response: null,
@@ -88,7 +89,7 @@ const Login = () => {
         // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
         // alert(retriveresponse.data.accessToken)
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
+          history("/ai/portfolio");
         } else if (retriveresponse.data.primaryType == "ADMIN") {
           history("/oxyloansadmindashboard");
         }else if (retriveresponse.data.primaryType == "HELPDESKADMIN") {
@@ -184,7 +185,7 @@ const Login = () => {
 
                   <div className="forgotpass">
                     <div className="remember-me">
-                      <Link to="/loginotp">Login With OTP ?</Link>
+                      <Link to="/">Login With OTP ?</Link>
                     </div>
                     <Link to="/forgotpassword">Forgot Password?</Link>
                   </div>
@@ -218,7 +219,7 @@ const Login = () => {
                       <i className="fab fa-google-plus-g" />
                     </Link> */}
                     <Link to="/whatsapplogin" className="bg-success text-white">
-                      <i className="fa fa-whatsapp" />{" "}
+                        <BsWhatsapp />{" "}
                     </Link>
                     {/* <Link onClick={() => {}} to="#">
                       <i className="fab fa-facebook-f" />

@@ -4056,4 +4056,7 @@ export const getBorrowerSecureInfo = () => {
     headers: { accessToken: getToken() },
   });
 };
-
+export const saveBorrowerReferenceDetails = (payload) =>
+  axios.patch(`${API_BASE_URL}borrowerReferenceDetails`, payload, {
+    headers: { accessToken: getToken(), "Content-Type": "application/json" },
+  });

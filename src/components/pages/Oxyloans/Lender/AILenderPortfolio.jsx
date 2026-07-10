@@ -374,7 +374,6 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
                 <div style={{ fontSize: 10, color: "#c0c0c0", marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: m.role === "assistant" ? 35 : 0 }}>
                   {fmtTime(m.ts)}
                 </div>
-                {m.data && <div style={{ marginTop: 6 }}><RichMessage data={m.data} /></div>}
               </div>
             ))}
 

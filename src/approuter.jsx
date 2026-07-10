@@ -1,6 +1,6 @@
 import React from "react";
 import WebPushBootstrap from "./components/WebPushBootstrap";
-import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams,useLocation } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
@@ -198,28 +198,44 @@ import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILende
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges.jsx";
 import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees.jsx";
+import Testimonials from "./components/Testimonials.jsx";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
 
 const PrivateRoute = ({ element }) =>
-  isAuthenticated() ? element : <Navigate to="/loginotp" replace />;
+  isAuthenticated() ? element : <Navigate to="/login" replace />;
 
 const CatchAll = () => {
-  if (!isAuthenticated()) return <Navigate to="/loginotp" replace />;
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
   const pt = localStorage.getItem("primaryType") || "";
   if (pt === "ADMIN" || pt === "HELPDESKADMIN") return <Navigate to="/oxyloansadmindashboard" replace />;
   if (pt === "LENDER") return <Navigate to="/dashboard" replace />;
   return <Navigate to="/borrowerDashboard" replace />;
 };
 
+const NavigationTracker = () => {
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (window.gtag) {
+      window.gtag("config", "G-QM0HEXWXSF", {
+        page_path: location.pathname + location.search,
+      });
+    }
+  }, [location]);
+
+  return null;
+};
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
+      <NavigationTracker />
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
-        <Route path="/" element={<Login />} />
-        <Route path="/loginotp" element={<Loginotp />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Loginotp />} />
         <Route path="/admlogin" element={<Admlogin />} />
         <Route path="/register" element={<LenderRegister />} />
         <Route path="/userType" element={<UserType />} />
@@ -253,6 +269,7 @@ const AppRouter = () => {
         <Route path="/admintestDeals" element={<TestDeals />} />
         <Route path="/spining" element={<Spining />} />
         <Route path="/admlogin" element={<Admlogin />} />
+        <Route path="/testimonials" element={<Testimonials />} />
         <Route
           path="/withdrawdealfromDeal"
           element={<WithdrawdealfromDeal />}

@@ -240,7 +240,7 @@ const BorrowerLoansInitiated = () => {
       const response = await borrowerLoanExcute(payload);
       if (response?.status == 200) {
         HandleWithFooter(
-          "Your loan has been successfully executed in accordance with the agreed terms. You may track its status and updates in the Disbursements section.",
+          "Thanks for accepting to execute the loan. You may track its status and updates in the Disbursements section.",
         );
         await fetchLoansInitiated();
       } else {

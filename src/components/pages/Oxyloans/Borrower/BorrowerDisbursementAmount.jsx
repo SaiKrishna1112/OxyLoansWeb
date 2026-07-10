@@ -261,7 +261,7 @@ const BorrowerDisbursementAmount = () => {
             <div className="col-12 col-md-6 col-xl-3 mb-3">
               <div className="card border-0 shadow-sm h-100">
                 <div className="card-body">
-                  <p className="text-muted mb-1">Total Disbursed Loan Amount</p>
+                  <p className="text-muted mb-1">Loan Amount Agreed to Be Disbursed</p>
                   <h4 className="mb-0">₹ {totalDisbursedAmount.toFixed(2)}</h4>
                 </div>
               </div>

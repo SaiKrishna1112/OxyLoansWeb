@@ -255,7 +255,7 @@ const Loginotp = () => {
                         <input type="checkbox" name="remember" />
                         <span className="checkmark" />
                       </label> */}
-                      <Link to="/" >Login ?</Link>
+                      <Link to="/login" >Login with mail?</Link>
                     </div>
                     <Link to="/forgotpassword">Forgot Password?</Link>
                   </div>
@@ -309,7 +309,7 @@ const Loginotp = () => {
                   </div>
 
                   <div className="social-login">
-                    <Link to="/" className="bg-success text-white">
+                    <Link to="/login" className="bg-success text-white">
                       <i className="fab fa-at" />
                     </Link>
                     <Link to="/whatsapplogin" className="bg-success text-white">

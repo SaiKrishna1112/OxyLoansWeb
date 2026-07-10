@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Chart from "react-apexcharts";
 import BorrowerHeader from "../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../SideBar/BorrowerSidebar";
@@ -14,7 +14,7 @@ import { useSelector, useDispatch } from "react-redux";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import axios from "axios";
-import { base_url, getLenderListNearByRedius1, getMyOxyScore } from "../../HttpRequest/afterlogin";
+import { base_url, getLenderListNearByRedius1, getListOfBorrowerLoansInitiated, getDisbursementAmount } from "../../HttpRequest/afterlogin";
 import Swal from "sweetalert2";
 import {
   dashboard1,
@@ -141,9 +141,7 @@ const BorrowerDashboard = () => {
 
   const navigate = useNavigate();
 
-  // OxyScore state
-  const [scoreData, setScoreData] = useState(null);
-  const [scoreLoading, setScoreLoading] = useState(true);
+
 
   // Nearby Lenders state
   const [nearbyInfo, setNearbyInfo] = useState({
@@ -155,59 +153,19 @@ const BorrowerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLenderId, setSelectedLenderId] = useState(null);
 
-  // OxyScore breakdown bar chart configuration
-  const [breakdownChartData, setBreakdownChartData] = useState({
-    series: [
-      {
-        name: "Your Points",
-        data: [0, 0, 0, 0, 0],
-      },
-      {
-        name: "Remaining Potential",
-        data: [600, 50, 200, 150, 50],
-      }
-    ],
-    options: {
-      chart: {
-        type: "bar",
-        height: 260,
-        stacked: true,
-        toolbar: { show: false },
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true,
-          barHeight: "55%",
-          borderRadius: 4,
-        },
-      },
-      colors: ["#3d5ee1", "#e2e8f0"],
-      dataLabels: {
-        enabled: false,
-      },
-      xaxis: {
-        categories: [
-          "CIBIL Factor (600)",
-          "Profile Bonus (50)",
-          "Income Component (200)",
-          "Employment Factor (150)",
-          "Credit History (50)"
-        ],
-        max: 600,
-      },
-      legend: {
-        show: true,
-        position: "top",
-      },
-      tooltip: {
-        y: {
-          formatter: function (val) {
-            return val + " points";
-          }
-        }
-      }
-    }
+  // Borrower loans list state for step indicator
+  const [loansData, setLoansData] = useState({
+    apiData: [],
+    loading: true,
   });
+
+  // Disbursement state for step indicator
+  const [disbursementData, setDisbursementData] = useState({
+    apiData: [],
+    loading: true,
+  });
+
+
 
   const DISTANCE_OPTIONS = [
     { label: "All", value: "ALL" },
@@ -219,21 +177,12 @@ const BorrowerDashboard = () => {
   ];
   useEffect(() => {
     getCall();
-    loadOxyScore();
     fetchNearbyLenders();
+    fetchLoans();
+    fetchDisbursement();
   }, []);
 
-  const loadOxyScore = () => {
-    setScoreLoading(true);
-    getMyOxyScore()
-      .then((res) => {
-        if (res.status === 200) {
-          setScoreData(res.data);
-        }
-      })
-      .catch((err) => console.log("Error loading OxyScore:", err))
-      .finally(() => setScoreLoading(false));
-  };
+
 
   const fetchNearbyLenders = async () => {
     setNearbyInfo((prev) => ({ ...prev, loading: true, errorMessage: "" }));
@@ -270,50 +219,45 @@ const BorrowerDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    if (scoreData?.breakdown) {
-      const breakdown = scoreData.breakdown;
-      setBreakdownChartData((prev) => ({
-        ...prev,
-        series: [
-          {
-            name: "Your Points",
-            data: [
-              breakdown.cibilComponent || 0,
-              breakdown.profileBonus || 0,
-              breakdown.incomeComponent || 0,
-              breakdown.employmentComponent || 0,
-              breakdown.loanCountComponent || 0,
-            ],
-          },
-          {
-            name: "Remaining Potential",
-            data: [
-              600 - (breakdown.cibilComponent || 0),
-              50 - (breakdown.profileBonus || 0),
-              200 - (breakdown.incomeComponent || 0),
-              150 - (breakdown.employmentComponent || 0),
-              50 - (breakdown.loanCountComponent || 0),
-            ]
-          }
-        ]
-      }));
-    } else {
-      setBreakdownChartData((prev) => ({
-        ...prev,
-        series: [
-          {
-            name: "Your Points (Mock)",
-            data: [0, 10, 0, 0, 0],
-          },
-          {
-            name: "Remaining Potential",
-            data: [600, 40, 200, 150, 50],
-          }
-        ]
-      }));
-    }
-  }, [scoreData]);
+  const fetchLoans = () => {
+    setLoansData((prev) => ({ ...prev, loading: true }));
+    getListOfBorrowerLoansInitiated()
+      .then((res) => {
+        if (res.status === 200) {
+          setLoansData({
+            apiData: Array.isArray(res.data) ? res.data : [],
+            loading: false,
+          });
+        } else {
+          setLoansData({ apiData: [], loading: false });
+        }
+      })
+      .catch((err) => {
+        console.log("Error loading loans:", err);
+        setLoansData({ apiData: [], loading: false });
+      });
+  };
+
+  const fetchDisbursement = () => {
+    setDisbursementData((prev) => ({ ...prev, loading: true }));
+    getDisbursementAmount()
+      .then((res) => {
+        if (res.status === 200) {
+          setDisbursementData({
+            apiData: Array.isArray(res.data) ? res.data : [],
+            loading: false,
+          });
+        } else {
+          setDisbursementData({ apiData: [], loading: false });
+        }
+      })
+      .catch((err) => {
+        console.log("Error loading disbursement amount:", err);
+        setDisbursementData({ apiData: [], loading: false });
+      });
+  };
+
+
 
   const profileCompletionPct = useMemo(() => {
     if (!getreducerprofiledata) return 0;
@@ -331,6 +275,40 @@ const BorrowerDashboard = () => {
     return Math.round((filledFields.length / fields.length) * 100);
   }, [getreducerprofiledata]);
 
+  const hasPromptedRef = useRef(false);
+
+  useEffect(() => {
+    if (profileDetails && !hasPromptedRef.current && !sessionStorage.getItem("profileKycPrompted")) {
+      const isKycComplete = profileDetails?.kycStatus === true;
+      if (profileCompletionPct < 75 || !isKycComplete) {
+        hasPromptedRef.current = true;
+        sessionStorage.setItem("profileKycPrompted", "true");
+        let alertText = "";
+        if (profileCompletionPct < 75 && !isKycComplete) {
+          alertText = `Your profile is ${profileCompletionPct}% complete, and your KYC is still pending. Please complete both to unlock all borrower features.`;
+        } else if (profileCompletionPct < 75) {
+          alertText = `Your profile is only ${profileCompletionPct}% complete. Please update your profile details to at least 75%.`;
+        } else {
+          alertText = "Your KYC verification is pending. Please complete your KYC verification.";
+        }
+
+        Swal.fire({
+          icon: "info",
+          title: "Profile & KYC Incomplete",
+          text: alertText,
+          confirmButtonText: "Complete Now",
+          confirmButtonColor: "#3d5ee1",
+          showCancelButton: true,
+          cancelButtonText: "Later",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            navigate("/borrowerProfile");
+          }
+        });
+      }
+    }
+  }, [profileDetails, profileCompletionPct, navigate]);
+
   const hasReferrer = useMemo(() => {
     return getreducerprofiledata?.referredBy && 
            getreducerprofiledata?.referredBy !== "0" && 
@@ -338,8 +316,238 @@ const BorrowerDashboard = () => {
   }, [getreducerprofiledata]);
 
   const hasCibilUploaded = useMemo(() => {
-    return !!(scoreData?.cibilScore && scoreData.cibilScore > 0);
-  }, [scoreData]);
+    return profileDetails?.cibilScore !== undefined && Number(profileDetails.cibilScore) > 0;
+  }, [profileDetails]);
+
+  const handleStepClick = (e, step) => {
+    const isStep1Completed = profileDetails?.personalDetailsInfo === true || profileCompletionPct >= 75;
+    
+    const kycCompleted = profileDetails?.kycStatus === true;
+    const cibilCompleted = hasCibilUploaded;
+    const step2Completed = kycCompleted && cibilCompleted;
+    
+    const step3Completed = loansData.apiData.length > 0 || disbursementData.apiData.length > 0;
+    const step4Completed = getdashboardData?.numberOfActiveDealsCount > 0 || disbursementData.apiData.length > 0;
+
+    const esignCompleted = profileDetails?.esignedStatus === true;
+    const enachCompleted = profileDetails?.enachStatus === true;
+    const step5Completed = esignCompleted && enachCompleted;
+
+    if (step.id === 2 && profileCompletionPct < 75) {
+      e.preventDefault();
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Completion Under 75%",
+        text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before proceeding to KYC & OxyScore.`,
+        confirmButtonText: "Complete Profile",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerProfile");
+        }
+      });
+      return;
+    }
+
+    if (step.id === 2 && !isStep1Completed) {
+      e.preventDefault();
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Setup Pending",
+        text: "Please complete your Profile Details (Personal & Bank Info) and verify that your profile status is active before proceeding to KYC & OxyScore.",
+        confirmButtonText: "Complete Profile Setup",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerProfile");
+        }
+      });
+      return;
+    }
+
+    if (step.id === 3 && (profileCompletionPct < 75 || !step2Completed)) {
+      e.preventDefault();
+      let missing = [];
+      if (profileCompletionPct < 75) missing.push(`Profile completion (current: ${profileCompletionPct}%, required: 75%)`);
+      if (!kycCompleted) missing.push("KYC verification");
+      if (!cibilCompleted) missing.push("OxyScore (CIBIL report upload)");
+      
+      Swal.fire({
+        icon: "warning",
+        title: "Profile, KYC & OxyScore Incomplete",
+        text: `Please complete the following requirements: ${missing.join(", ")} before raising a loan request.`,
+        confirmButtonText: "Complete Now",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          if (profileCompletionPct < 75 || !kycCompleted) {
+            navigate("/borrowerProfile");
+          } else {
+            navigate("/my-oxyscore");
+          }
+        }
+      });
+      return;
+    }
+
+    if (step.id === 4 && !step3Completed) {
+      e.preventDefault();
+      Swal.fire({
+        icon: "warning",
+        title: "No Active Loan Request",
+        text: "Lenders can only bid on active loan requests. Please create a new request first.",
+        confirmButtonText: "Create Request",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerLoanRequestCreate");
+        }
+      });
+      return;
+    }
+
+    if (step.id === 5 && !step4Completed) {
+      e.preventDefault();
+      Swal.fire({
+        icon: "warning",
+        title: "Funding Bids Required",
+        text: "E-Sign and E-NACH require active lender funding or bids. Please monitor your ongoing bids first.",
+        confirmButtonText: "Monitor Bids",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerLoansInitiated");
+        }
+      });
+      return;
+    }
+
+    if (step.id === 6 && !step5Completed) {
+      e.preventDefault();
+      Swal.fire({
+        icon: "warning",
+        title: "E-Sign & E-NACH Mandate Required",
+        text: "Please complete your loan agreement e-signing and e-NACH mandate registration before disbursement.",
+        confirmButtonText: "Complete E-Sign & E-NACH",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Cancel"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerMarketplaceListings");
+        }
+      });
+      return;
+    }
+  };
+
+  const borrowerSteps = useMemo(() => {
+    const hasPersonalDetails = profileDetails?.personalDetailsInfo === true;
+    const hasBankDetails = profileDetails?.bankDetailsInfo === true;
+    const isUserActive = profileDetails?.userStatus === true;
+    const step1Completed = hasPersonalDetails || profileCompletionPct >= 75;
+
+    let step1Subtitle = step1Completed ? "Completed" : `${profileCompletionPct}% filled`;
+    if (!isUserActive && (hasPersonalDetails && hasBankDetails)) {
+      step1Subtitle = "Awaiting Activation";
+    }
+
+    const kycCompleted = profileDetails?.kycStatus === true;
+    const cibilCompleted = hasCibilUploaded;
+    const step2Completed = kycCompleted && cibilCompleted;
+
+    let step2Subtitle = "KYC & CIBIL required";
+    if (kycCompleted && !cibilCompleted) step2Subtitle = "CIBIL report required";
+    else if (!kycCompleted && cibilCompleted) step2Subtitle = "KYC verification pending";
+    else if (kycCompleted && cibilCompleted) {
+      step2Subtitle = `Verified & Uploaded (Score: ${profileDetails?.profileScore ?? 0})`;
+    }
+
+    const step3Completed = loansData.apiData.length > 0 || (getdashboardData?.numberOfActiveDealsCount > 0 || getdashboardData?.numberOfClosedDealsCount > 0) || disbursementData.apiData.length > 0;
+    const step4Completed = getdashboardData?.numberOfActiveDealsCount > 0 || getdashboardData?.numberOfClosedDealsCount > 0 || disbursementData.apiData.length > 0;
+    
+    const esignCompleted = profileDetails?.esignedStatus === true;
+    const enachCompleted = profileDetails?.enachStatus === true;
+    const step5Completed = esignCompleted && enachCompleted;
+
+    let step5Subtitle = "eSign & eNACH registration required";
+    if (esignCompleted && !enachCompleted) step5Subtitle = "eNACH mandate registration pending";
+    else if (!esignCompleted && enachCompleted) step5Subtitle = "Agreement e-signing pending";
+    else if (step5Completed) step5Subtitle = "Agreement e-signed & eNACH registered";
+
+    const step6Completed = disbursementData.apiData.some(item => item.borrowerStatus === "DISBURSED" || (item.disbursedAmount > 0 && item.borrowerStatus !== "PROCESSING"));
+    const step6Active = !step6Completed && disbursementData.apiData.some(item => item.borrowerStatus === "PROCESSING" || item.disbursedAmount > 0);
+    
+    let step6Subtitle = "Review & sign agreement to receive funds";
+    if (step6Completed) step6Subtitle = "Funds Disbursed & Completed";
+    else if (step6Active) step6Subtitle = "Processing disbursement to your bank";
+
+    return [
+      {
+        id: 1,
+        title: "Profile Setup",
+        subtitle: step1Subtitle,
+        icon: "fa-solid fa-user",
+        path: "/borrowerProfile",
+        isCompleted: step1Completed,
+      },
+      {
+        id: 2,
+        title: "KYC & OxyScore",
+        subtitle: step2Subtitle,
+        icon: "fa-solid fa-id-card",
+        path: "/my-oxyscore",
+        isCompleted: step2Completed,
+      },
+      {
+        id: 3,
+        title: "Loan Request",
+        subtitle: step3Completed ? "Request Submitted" : "Create new request",
+        icon: "fa-solid fa-file-invoice-dollar",
+        path: "/borrowerLoanRequestCreate",
+        isCompleted: step3Completed,
+      },
+      {
+        id: 4,
+        title: "Funding Progress",
+        subtitle: step6Completed ? "Repayment in Progress" : step4Completed ? "Funding Bids Received" : "Matching with Eligible Lenders",
+        icon: "fa-solid fa-hand-holding-dollar",
+        path: "/borrowerLoansInitiated",
+        isCompleted: step4Completed,
+      },
+      {
+        id: 5,
+        title: "E-Sign & E-NACH",
+        subtitle: step5Subtitle,
+        icon: "fa-solid fa-signature",
+        path: "/borrowerMarketplaceListings",
+        isCompleted: step5Completed,
+      },
+      {
+        id: 6,
+        title: "Loan Disbursement",
+        subtitle: step6Subtitle,
+        icon: "fa-solid fa-wallet",
+        path: "/borrowerDisbursementAmount",
+        isCompleted: step6Completed,
+      },
+    ];
+  }, [profileCompletionPct, hasCibilUploaded, loansData.apiData, disbursementData.apiData, getdashboardData, profileDetails]);
+
+  const activeStepIndex = useMemo(() => {
+    const idx = borrowerSteps.findIndex(s => !s.isCompleted);
+    return idx === -1 ? borrowerSteps.length : idx;
+  }, [borrowerSteps]);
 
   const safePageLenders = useMemo(() => {
     return nearbyInfo.apiData.filter(
@@ -571,6 +779,94 @@ const BorrowerDashboard = () => {
            
 
             {/* /Page Header */}
+
+            {/* Step Indicator Process Bar */}
+            <div className="row mb-4">
+              <div className="col-12">
+                <div className="stepper-container">
+                  <div className="stepper-header">
+                    <h5 className="stepper-title">
+                      <i className="fa-solid fa-route text-primary" />
+                      Your Onboarding & Loan Journey
+                    </h5>
+                    <span className="stepper-badge">
+                      {activeStepIndex === borrowerSteps.length ? (
+                        <span className="text-success"><i className="fa-solid fa-circle-check me-1" /> All Steps Completed</span>
+                      ) : (
+                        `Step ${activeStepIndex + 1} of ${borrowerSteps.length}: ${borrowerSteps[activeStepIndex]?.title}`
+                      )}
+                    </span>
+                  </div>
+                  
+                  {/* Overview Progress bar */}
+                  <div className="stepper-progress-wrapper">
+                    <div className="d-flex justify-content-between align-items-center mb-1">
+                      <span className="text-muted small">Overall Completion</span>
+                      <span className="fw-bold text-primary small">
+                        {Math.round((borrowerSteps.filter(s => s.isCompleted).length / borrowerSteps.length) * 100)}%
+                      </span>
+                    </div>
+                    <div className="stepper-progress-bar-bg">
+                      <div 
+                        className="stepper-progress-bar-fill" 
+                        style={{ width: `${(borrowerSteps.filter(s => s.isCompleted).length / borrowerSteps.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="stepper-steps-wrapper" style={{ position: "relative" }}>
+                    {/* Horizontal Line for Desktop */}
+                    <div className="stepper-line d-none d-md-block">
+                      <div 
+                        className="stepper-line-active" 
+                        style={{ width: `${Math.min(100, activeStepIndex * 25)}%` }}
+                      />
+                    </div>
+
+                    {/* Vertical Line for Mobile */}
+                    <div className="stepper-line-vertical d-md-none">
+                      <div 
+                        className="stepper-line-active" 
+                        style={{ height: `${Math.min(100, activeStepIndex * 25)}%`, width: "100%" }}
+                      />
+                    </div>
+
+                    <div className="stepper-steps">
+                      {borrowerSteps.map((step, idx) => {
+                        const isCompleted = step.isCompleted;
+                        const isActive = idx === activeStepIndex;
+                        
+                        let stepClass = "locked";
+                        if (isCompleted) stepClass = "completed";
+                        else if (isActive) stepClass = "active";
+
+                        return (
+                          <Link 
+                            key={step.id} 
+                            to={step.path} 
+                            onClick={(e) => handleStepClick(e, step)}
+                            className={`stepper-step ${stepClass}`}
+                          >
+                            <div className="stepper-circle">
+                              {isCompleted ? (
+                                <i className="fa-solid fa-check" />
+                              ) : (
+                                <i className={step.icon} />
+                              )}
+                            </div>
+                            <div className="stepper-content">
+                              <div className="stepper-step-title">{step.title}</div>
+                              <div className="stepper-step-desc">{step.subtitle}</div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Overview Section */}
             <div className="row">
               <div className="col-xl-3 col-sm-6 col-12 d-flex">
@@ -823,8 +1119,8 @@ const BorrowerDashboard = () => {
                           1. Complete Profile Details <span className="text-muted">(Max 50 pts)</span>
                         </span>
                         <span style={{ fontSize: "11px" }}>
-                          {profileCompletionPct === 100 ? (
-                            <span className="text-success fw-bold"><i className="fa fa-check-circle" /> 100% Filled</span>
+                          {profileCompletionPct >= 75 ? (
+                            <span className="text-success fw-bold"><i className="fa fa-check-circle" /> Completed</span>
                           ) : (
                             <span className="text-warning fw-bold">{profileCompletionPct}% Filled</span>
                           )}
@@ -833,7 +1129,7 @@ const BorrowerDashboard = () => {
                       <Progress percent={profileCompletionPct} size="small" strokeColor="#10b981" showInfo={false} />
                       <div className="d-flex justify-content-between align-items-center mt-1">
                         <span className="text-muted" style={{ fontSize: "11px" }}>Verify KYC, Address, and PAN card.</span>
-                        {profileCompletionPct < 100 && (
+                        {profileCompletionPct < 75 && (
                           <Link to="/borrowerProfile" style={{ fontSize: "11.5px", fontWeight: "600", color: "#2563eb" }}>
                             Complete Profile →
                           </Link>
@@ -1274,6 +1570,239 @@ const BorrowerDashboard = () => {
                   color: #1d4ed8;
                   font-weight: 600;
                   text-align: center;
+                }
+
+                /* Stepper Process Bar Styles */
+                .stepper-container {
+                  background: #ffffff;
+                  border-radius: 12px;
+                  padding: 24px;
+                  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+                  margin-bottom: 24px;
+                  border: 1px solid #e2e8f0;
+                  transition: all 0.3s ease;
+                }
+
+                .stepper-header {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 20px;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                }
+
+                .stepper-title {
+                  font-size: 16px;
+                  font-weight: 700;
+                  color: #1e293b;
+                  margin: 0;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                }
+
+                .stepper-badge {
+                  background-color: #f1f5f9;
+                  color: #475569;
+                  font-size: 11.5px;
+                  font-weight: 600;
+                  padding: 6px 14px;
+                  border-radius: 20px;
+                  border: 1px solid #e2e8f0;
+                }
+
+                .stepper-progress-wrapper {
+                  margin-bottom: 24px;
+                }
+
+                .stepper-progress-bar-bg {
+                  height: 6px;
+                  background-color: #f1f5f9;
+                  border-radius: 3px;
+                  overflow: hidden;
+                }
+
+                .stepper-progress-bar-fill {
+                  height: 100%;
+                  background: linear-gradient(90deg, #3d5ee1, #6366f1);
+                  transition: width 0.4s ease;
+                }
+
+                .stepper-steps {
+                  display: flex;
+                  justify-content: space-between;
+                  position: relative;
+                }
+
+                .stepper-step {
+                  flex: 1;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  text-align: center;
+                  position: relative;
+                  cursor: pointer;
+                  text-decoration: none !important;
+                  color: inherit;
+                  transition: transform 0.2s ease;
+                  z-index: 2;
+                }
+
+                .stepper-step:hover {
+                  transform: translateY(-2px);
+                }
+
+                .stepper-circle {
+                  width: 44px;
+                  height: 44px;
+                  border-radius: 50%;
+                  background-color: #ffffff;
+                  border: 2px solid #cbd5e1;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 16px;
+                  color: #64748b;
+                  transition: all 0.3s ease;
+                  box-shadow: 0 0 0 4px #ffffff;
+                }
+
+                .stepper-step.completed .stepper-circle {
+                  border-color: #10b981;
+                  background-color: #10b981;
+                  color: #ffffff;
+                  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2), 0 0 0 4px #ffffff;
+                }
+
+                .stepper-step.active .stepper-circle {
+                  border-color: #3d5ee1;
+                  background-color: #ffffff;
+                  color: #3d5ee1;
+                  box-shadow: 0 0 0 4px #ffffff, 0 4px 12px rgba(61, 94, 225, 0.25);
+                  font-weight: 700;
+                  animation: pulse-border 2s infinite;
+                }
+
+                @keyframes pulse-border {
+                  0% {
+                    box-shadow: 0 0 0 0 rgba(61, 94, 225, 0.4), 0 0 0 4px #ffffff;
+                  }
+                  70% {
+                    box-shadow: 0 0 0 8px rgba(61, 94, 225, 0), 0 0 0 4px #ffffff;
+                  }
+                  100% {
+                    box-shadow: 0 0 0 0 rgba(61, 94, 225, 0), 0 0 0 4px #ffffff;
+                  }
+                }
+
+                .stepper-step.locked .stepper-circle {
+                  background-color: #f8fafc;
+                  border-color: #e2e8f0;
+                  color: #94a3b8;
+                }
+
+                .stepper-line {
+                  position: absolute;
+                  top: 22px;
+                  left: 10%;
+                  right: 10%;
+                  height: 3px;
+                  background-color: #cbd5e1;
+                  z-index: 1;
+                }
+
+                .stepper-line-vertical {
+                  display: none;
+                }
+
+                .stepper-line .stepper-line-active {
+                  height: 100%;
+                  background: linear-gradient(90deg, #10b981, #3d5ee1);
+                  transition: width 0.3s ease;
+                }
+
+                .stepper-content {
+                  margin-top: 12px;
+                  z-index: 2;
+                }
+
+                .stepper-step-title {
+                  font-size: 13px;
+                  font-weight: 600;
+                  color: #334155;
+                  margin-bottom: 2px;
+                }
+
+                .stepper-step.active .stepper-step-title {
+                  color: #3d5ee1;
+                  font-weight: 700;
+                }
+
+                .stepper-step.completed .stepper-step-title {
+                  color: #0f172a;
+                }
+
+                .stepper-step-desc {
+                  font-size: 11px;
+                  color: #64748b;
+                  max-width: 140px;
+                  line-height: 1.3;
+                }
+
+                /* Responsive Stepper adjustment */
+                @media (max-width: 768px) {
+                  .stepper-steps {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 24px;
+                    padding-left: 20px;
+                  }
+                  
+                  .stepper-step {
+                    flex-direction: row;
+                    align-items: flex-start;
+                    text-align: left;
+                    width: 100%;
+                  }
+                  
+                  .stepper-step:hover {
+                    transform: translateX(4px);
+                  }
+                  
+                  .stepper-circle {
+                    margin-right: 16px;
+                    flex-shrink: 0;
+                  }
+                  
+                  .stepper-content {
+                    margin-top: 0;
+                  }
+                  
+                  .stepper-step-desc {
+                    max-width: 100%;
+                  }
+                  
+                  .stepper-line {
+                    display: none;
+                  }
+
+                  .stepper-line-vertical {
+                    display: block;
+                    position: absolute;
+                    left: 42px;
+                    top: 22px;
+                    bottom: 22px;
+                    width: 3px;
+                    background-color: #cbd5e1;
+                    z-index: 1;
+                  }
+
+                  .stepper-line-vertical .stepper-line-active {
+                    width: 100%;
+                    background: linear-gradient(180deg, #10b981, #3d5ee1);
+                    transition: height 0.3s ease;
+                  }
                 }
               `}
             </style>

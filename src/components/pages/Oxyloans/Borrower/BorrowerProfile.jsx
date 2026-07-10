@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import PhoneInput from "react-phone-number-input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Success, WarningBackendApi } from "../../Base UI Elements/SweetAlert";
 import {
   notifications1,
@@ -45,8 +45,8 @@ import {
   getPCreditReportDoc,
   borrowerSecureInfo,
   getBorrowerSecureInfo,
+  saveBorrowerReferenceDetails,
   base_url,
-
 } from "../../../HttpRequest/afterlogin";
 
 import { useSelector } from "react-redux";
@@ -80,6 +80,19 @@ const BorrowerProfile = () => {
     otperror: "",
   });
 
+
+  const [referenceDetails, setReferenceDetails] = useState({
+    reference1: "",
+    reference2: "",
+    reference3: "",
+    reference4: "",
+    reference5: "",
+    reference6: "",
+    reference7: "",
+    reference8: "",
+    loading: false,
+    errors: {}
+  });
 
   const [value, setValue] = useState("");
 
@@ -124,6 +137,22 @@ const BorrowerProfile = () => {
     emailerror: "",
     studentOrNot: "",
   });
+
+  const profileCompletionPct = useMemo(() => {
+    if (!userProfile) return 0;
+    const fields = [
+      userProfile.firstName,
+      userProfile.lastName,
+      userProfile.panNumber,
+      userProfile.aadharNumber,
+      userProfile.city,
+      userProfile.state,
+      userProfile.address || userProfile.residenceAddress,
+      userProfile.whatsAppNumber || userProfile.mobileNumber,
+    ];
+    const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
+    return Math.round((filledFields.length / fields.length) * 100);
+  }, [userProfile]);
   const [localityOptions, setLocalityOptions] = useState([]);
   const [isVerifyingPan, setIsVerifyingPan] = useState(false);
   const [isPanVerified, setIsPanVerified] = useState(false);
@@ -292,6 +321,96 @@ const BorrowerProfile = () => {
         "warning",
         response?.response?.data?.errorMessage || "Unable to save secure info."
       );
+    }
+  };
+
+  const handleReferenceChange = (e) => {
+    const { name, value } = e.target;
+    if (value !== "" && (!/^\d+$/.test(value) || value.length > 10)) {
+      return;
+    }
+    setReferenceDetails(prev => ({
+      ...prev,
+      [name]: value,
+      errors: { ...prev.errors, [name]: "" }
+    }));
+  };
+
+  const handleReferenceSave = async (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    const refKeys = [
+      { key: "reference1", label: "Father Mobile Number" },
+      { key: "reference2", label: "Mother Mobile Number" },
+      { key: "reference3", label: "Brother Mobile Number" },
+      { key: "reference4", label: "Sister Mobile Number" },
+      { key: "reference5", label: "Wife Mobile Number" },
+      { key: "reference6", label: "First Friend Mobile Number" },
+      { key: "reference7", label: "Second Friend Mobile Number" },
+      { key: "reference8", label: "Third Friend Mobile Number" }
+    ];
+
+    refKeys.forEach(ref => {
+      const val = referenceDetails[ref.key];
+      if (!val || val.trim() === "") {
+        newErrors[ref.key] = `${ref.label} is required`;
+      } else if (val.length !== 10) {
+        newErrors[ref.key] = `${ref.label} must be exactly 10 digits`;
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setReferenceDetails(prev => ({ ...prev, errors: newErrors }));
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Please enter valid 10-digit mobile numbers for all references.",
+        confirmButtonColor: "#3d5ee1"
+      });
+      return;
+    }
+
+    setReferenceDetails(prev => ({ ...prev, loading: true }));
+    try {
+      const payload = {
+        reference1: referenceDetails.reference1,
+        reference2: referenceDetails.reference2,
+        reference3: referenceDetails.reference3,
+        reference4: referenceDetails.reference4,
+        reference5: referenceDetails.reference5,
+        reference6: referenceDetails.reference6,
+        reference7: referenceDetails.reference7,
+        reference8: referenceDetails.reference8,
+        userId: sessionStorage.getItem("userId")
+      };
+
+      const res = await saveBorrowerReferenceDetails(payload);
+      if (res.status === 200) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Given Details Saved Successfully",
+          confirmButtonColor: "#3d5ee1"
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: res.data?.errorMessage || "Failed to save details. Please try again.",
+          confirmButtonColor: "#3d5ee1"
+        });
+      }
+    } catch (error) {
+      console.error("Error saving reference details:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: error.response?.data?.errorMessage || "Failed to save details. Please try again.",
+        confirmButtonColor: "#3d5ee1"
+      });
+    } finally {
+      setReferenceDetails(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -696,6 +815,19 @@ const BorrowerProfile = () => {
     });
   }, [userProfile.dob]);
   const handlefileupload = (event) => {
+    if (profileCompletionPct < 75) {
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Completion Under 75%",
+        text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before uploading KYC.`,
+        confirmButtonText: "Okay",
+        confirmButtonColor: "#3d5ee1",
+      });
+      if (event.target) {
+        event.target.value = "";
+      }
+      return;
+    }
     const response = uploadkyc(event);
     response
       .then((data) => {
@@ -1529,6 +1661,16 @@ const BorrowerProfile = () => {
     }
   }, [userProfile.pinCode]);
   const openTheActiveTabs = (type) => {
+    if (type === "Kyc" && profileCompletionPct < 75) {
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Completion Under 75%",
+        text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before uploading KYC.`,
+        confirmButtonText: "Okay",
+        confirmButtonColor: "#3d5ee1",
+      });
+      return;
+    }
     var i, j;
     let tablinks = document.getElementsByClassName("nav-link");
     let tapPan = document.getElementsByClassName("tab-pane");
@@ -1641,6 +1783,20 @@ const BorrowerProfile = () => {
         bankCity: data.data.bankAddress,
         moblieNumber: data.data.mobileNumber,
       });
+      if (data.data.referenceDetailsResponseDto) {
+        setReferenceDetails({
+          reference1: data.data.referenceDetailsResponseDto.reference1 || "",
+          reference2: data.data.referenceDetailsResponseDto.reference2 || "",
+          reference3: data.data.referenceDetailsResponseDto.reference3 || "",
+          reference4: data.data.referenceDetailsResponseDto.reference4 || "",
+          reference5: data.data.referenceDetailsResponseDto.reference5 || "",
+          reference6: data.data.referenceDetailsResponseDto.reference6 || "",
+          reference7: data.data.referenceDetailsResponseDto.reference7 || "",
+          reference8: data.data.referenceDetailsResponseDto.reference8 || "",
+          loading: false,
+          errors: {}
+        });
+      }
     }
     else{
 console.log("data",data.status);
@@ -1928,8 +2084,20 @@ console.log("data",data.status);
                     <li className="nav-item">
                       <Link
                         className="nav-link Kyc"
-                        data-bs-toggle="tab"
-                        to="#uploadKyc_tab"
+                        data-bs-toggle={profileCompletionPct >= 75 ? "tab" : undefined}
+                        to={profileCompletionPct >= 75 ? "#uploadKyc_tab" : "#"}
+                        onClick={(e) => {
+                          if (profileCompletionPct < 75) {
+                            e.preventDefault();
+                            Swal.fire({
+                              icon: "warning",
+                              title: "Profile Completion Under 75%",
+                              text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before uploading KYC.`,
+                              confirmButtonText: "Okay",
+                              confirmButtonColor: "#3d5ee1",
+                            });
+                          }
+                        }}
                       >
                         <i className="fa-solid fa-upload"></i> Upload KYC
                       </Link>
@@ -1951,6 +2119,15 @@ console.log("data",data.status);
                         to="#secure_info_tab"
                       >
                         <i className="fa-solid fa-user-shield"></i> Secure Info
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className="nav-link References"
+                        data-bs-toggle="tab"
+                        to="#references_tab"
+                      >
+                        <i className="fa-solid fa-users"></i> Reference Details
                       </Link>
                     </li>
                   </ul>
@@ -2083,17 +2260,34 @@ console.log("data",data.status);
                               <span>Secure Info</span>
                               <Link
                                 className="edit-link"
-                                to="#"
-                                onClick={(e) => {
-                                  openTheActiveTabs("Secure");
-                                }}
-                              >
-                                <i className="far fa-edit me-1" />
-                                Edit
-                              </Link>
-                            </h5>
+                                  to="#"
+                                  onClick={(e) => {
+                                    openTheActiveTabs("Secure");
+                                  }}
+                                >
+                                  <i className="far fa-edit me-1" />
+                                  Edit
+                                </Link>
+                              </h5>
+                            </div>
                           </div>
-                        </div>
+                          <div className="card">
+                            <div className="card-body">
+                              <h5 className="card-title d-flex justify-content-between">
+                                <span>Reference Details</span>
+                                <Link
+                                  className="edit-link"
+                                  to="#"
+                                  onClick={(e) => {
+                                    openTheActiveTabs("References");
+                                  }}
+                                >
+                                  <i className="far fa-edit me-1" />
+                                  Edit
+                                </Link>
+                              </h5>
+                            </div>
+                          </div>
                       </div>
                     </div>
                     {/* /Personal Details */}
@@ -4119,6 +4313,147 @@ console.log("data",data.status);
                             Save Details
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="references_tab" className="tab-pane fade References">
+                    <div className="card">
+                      <div className="card-body">
+                        <h5 className="card-title mb-4">Reference Details</h5>
+                        <form onSubmit={handleReferenceSave}>
+                          <div className="row g-3">
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Father Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference1"
+                                value={referenceDetails.reference1}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Father Number"
+                              />
+                              {referenceDetails.errors.reference1 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference1}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Mother Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference2"
+                                value={referenceDetails.reference2}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Mother Number"
+                              />
+                              {referenceDetails.errors.reference2 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference2}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Brother Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference3"
+                                value={referenceDetails.reference3}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Brother Number"
+                              />
+                              {referenceDetails.errors.reference3 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference3}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Sister Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference4"
+                                value={referenceDetails.reference4}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Sister Number"
+                              />
+                              {referenceDetails.errors.reference4 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference4}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Wife Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference5"
+                                value={referenceDetails.reference5}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Wife Number"
+                              />
+                              {referenceDetails.errors.reference5 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference5}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>First Friend Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference6"
+                                value={referenceDetails.reference6}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter First Friend Number"
+                              />
+                              {referenceDetails.errors.reference6 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference6}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Second Friend Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference7"
+                                value={referenceDetails.reference7}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Second Friend Number"
+                              />
+                              {referenceDetails.errors.reference7 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference7}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Third Friend Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference8"
+                                value={referenceDetails.reference8}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Third Friend Number"
+                              />
+                              {referenceDetails.errors.reference8 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference8}</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-start mt-3">
+                            <button
+                              type="submit"
+                              className="btn btn-primary"
+                              disabled={referenceDetails.loading}
+                            >
+                              {referenceDetails.loading ? "Saving..." : "Save Reference Details"}
+                            </button>
+                          </div>
+                        </form>
                       </div>
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import {
   submitBorrowerLoanRequest,
   getBorrowerRequestAmount,
   getCibilBasedRoi,
+  getUserDetails,
 } from "../../../HttpRequest/afterlogin";
 
 const formatCurrency = (amount) => {
@@ -43,6 +44,59 @@ const BorrowerLoanRequestCreate = () => {
   });
   const hasShownBlockedAlertRef = useRef(false);
   const [cibilInfo, setCibilInfo] = useState({ loading: true, data: null });
+
+  useEffect(() => {
+    const checkProfileAndKyc = async () => {
+      try {
+        const res = await getUserDetails();
+        if (res?.status === 200) {
+          const profileData = res.data;
+          
+          const fields = [
+            profileData.firstName,
+            profileData.lastName,
+            profileData.panNumber,
+            profileData.aadharNumber,
+            profileData.city,
+            profileData.state,
+            profileData.address,
+            profileData.whatsAppNumber || profileData.mobileNumber,
+          ];
+          const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
+          const completionPct = Math.round((filledFields.length / fields.length) * 100);
+                    const isProfileComplete = profileData?.personalDetailsInfo === true || completionPct >= 75;
+          const isKycComplete = profileData?.kycStatus === true;
+          const isCibilUploaded = profileData?.cibilScore !== undefined && Number(profileData.cibilScore) > 0;
+          
+          // if ((!isProfileComplete || !isKycComplete || !isCibilUploaded) && !hasShownBlockedAlertRef.current) {
+          //   hasShownBlockedAlertRef.current = true;
+          //   let missing = [];
+          //   if (!isProfileComplete) missing.push("Profile Setup (or 75% completeness)");
+          //   if (!isKycComplete) missing.push("KYC verification");
+          //   if (!isCibilUploaded) missing.push("OxyScore (CIBIL report upload)");
+ 
+          //   Swal.fire({
+          //     icon: "warning",
+          //     title: "Requirements Pending",
+          //     text: `Please complete the following requirements: ${missing.join(", ")} before raising a loan request.`,
+          //     confirmButtonText: "Complete Now",
+          //     confirmButtonColor: "#3d5ee1",
+          //     allowOutsideClick: false,
+          //   }).then(() => {
+          //     if (!isProfileComplete || !isKycComplete) {
+          //       navigate("/borrowerProfile");
+          //     } else {
+          //       navigate("/my-oxyscore");
+          //     }
+          //   });
+          // }
+        }
+      } catch (err) {
+        console.error("Error checking profile, KYC, and OxyScore requirements:", err);
+      }
+    };
+    checkProfileAndKyc();
+  }, [navigate]);
 
   const borrowerId = getUserId() || "";
   useEffect(() => {
@@ -280,7 +334,7 @@ const BorrowerLoanRequestCreate = () => {
 
     const confirmation = await Swal.fire({
       title: " Confirm Your Loan Request",
-      text: `You are requesting a loan amount of ₹ ${normalizedAmount}. This request will be shared with nearby lenders for review. You may receive loan offers based on your profile.`,
+      text: `You are requesting a loan amount of ₹ ${normalizedAmount}. This request will be shared with nearby lenders for review.This is a pure P2P platform; we are not responsible for lender response. You may receive loan offers based on your profile.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Confirm & Continue",
@@ -535,7 +589,7 @@ const BorrowerLoanRequestCreate = () => {
                     <form onSubmit={handleSubmit}>
                       <div className="mb-3">
                         <label className="form-label fw-semibold">
-                          Enter Loan Amount
+                          Enter Loan Required Amount
                           <span className="text-danger">*</span>
                         </label>
 

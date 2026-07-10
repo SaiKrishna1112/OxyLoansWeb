@@ -19,7 +19,7 @@ const Admlogin = () => {
     email: "",
     moblie: "",
     loginwithotp: false,
-    password: staticAdminPassword,
+    password: "",
     response: null,
     dataIpv4: "",
     oftermoblieotp: false,

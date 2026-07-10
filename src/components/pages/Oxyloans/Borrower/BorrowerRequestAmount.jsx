@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Table } from "antd";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
-import { getBorrowerRequestAmount } from "../../../HttpRequest/afterlogin";
+import { getBorrowerRequestAmount,getBorrowerEligibleAmount } from "../../../HttpRequest/afterlogin";
 
 const formatLoanRequestStatus = (status) => {
   const normalized = String(status || "").trim().toUpperCase();
@@ -30,6 +30,7 @@ const BorrowerRequestAmount = () => {
     loading: true,
     errorMessage: "",
   });
+  const [eligibleAmount, setEligibleAmount] = useState(0);
 
   useEffect(() => {
     const getApiErrorMessage = (response) => {
@@ -73,7 +74,21 @@ const BorrowerRequestAmount = () => {
       }
     };
 
+    const fetchEligibleAmount = async () => {
+      try {
+        const response = await getBorrowerEligibleAmount();
+        if (response?.status == 200) {
+          const amount = Number(response.data?.amount || 0);
+          setEligibleAmount(amount);
+          return;
+        }
+      } catch (error) {
+        console.error("Error fetching eligible amount:", error);
+      }
+    };
+
     fetchRequestAmount();
+    fetchEligibleAmount();
   }, []);
 
   const latestLoanRequest = useMemo(() => {
@@ -265,16 +280,44 @@ const BorrowerRequestAmount = () => {
             </div>
 
             <div className="row mb-3">
-              <div className="col-12 col-md-6 col-xl-3 mb-3">
+              {/* <div className="col-12 col-md-6 col-xl-3 mb-3">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
                     <p className="text-muted mb-1">Total Loan Request Amount</p>
                     <h4 className="mb-0">
                       ₹ {totalRequestedAmount.toFixed(2)}
                     </h4>
+                    <span className="text-muted small "> Eligible Loan Amount: ₹ {eligibleAmount.toFixed(2)}</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
+              <div className="card border-0 shadow-sm h-100 rounded-4">
+  <div className="card-body p-4">
+
+    <p className="text-uppercase text-muted fw-semibold small mb-2">
+      Total Loan Request
+    </p>
+
+    <h2 className="fw-bold text-dark mb-2">
+      ₹ {totalRequestedAmount.toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+      })}
+    </h2>
+
+    <div className="d-inline-flex align-items-center bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mt-2">
+      <i className="bi bi-check-circle-fill me-2"></i>
+      <span className="fw-semibold text-white small">
+        Eligible Amount:
+      </span>
+      <span className="ms-2 fw-bold text-white">
+        ₹ {eligibleAmount.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+        })}
+      </span>
+    </div>
+
+  </div>
+</div>
               {/* <div className="col-12 col-md-6 col-xl-3 mb-3">
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">

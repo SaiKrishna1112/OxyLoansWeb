@@ -120,8 +120,8 @@ const OfferGivenList = () => {
     // ✅ Clean message mapping
     const actionMap = {
       LOANACCEPTED: {
-        title: "Offer Accepted!",
-        text: "The offer has been accepted successfully.",
+        title: "Funding Confirmed!",
+        text: "Your confirmation has been received. Once the borrower agreest to executes the loan, you will be navigated to the agreement and loan disbursement process.",
         icon: "success",
       },
       LENDER_REJECTED: {
@@ -792,21 +792,18 @@ const OfferGivenList = () => {
             {/* Modal Body */}
             <div style={{ padding: "20px 24px" }}>
               <p className="mb-3" style={{ fontSize: 14 }}>
-                Are you sure you want to{" "}
-                <strong>
-                  {confirmModal.action === "LOANACCEPTED"
-                    ? "proceed"
-                    : confirmModal.action === "LOANPROCESSED"
-                      ? "process"
-                      : "reject"}
-                </strong>{" "}
-                with this offer for{" "}
-                <strong>
+               <strong>
                   {confirmModal.offer.borrowerName ||
                     confirmModal.offer.firstName ||
                     "this borrower"}
                 </strong>
-                ?
+                <strong>
+                  {confirmModal.action === "LOANACCEPTED"
+                    ? "has accepted your loan offer. Are you ready to proceed with funding this loan?"
+                    : confirmModal.action === "LOANPROCESSED"
+                      ? "Are you sure you want to process and disburse this loan?"
+                      : "Are you sure you want to reject this offer?"}
+                </strong>{" "}
               </p>
               <div
                 className="rounded p-3 mb-0"

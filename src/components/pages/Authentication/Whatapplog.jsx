@@ -245,12 +245,12 @@ const Whatapplog = () => {
                           <i className="fab fa-google-plus-g" />
                         </Link> */}
                             <Link
-                              to="/"
+                              to="/login"
                               className="bg-success text-white"
                             >
                               <i class="fa-solid fa-at"></i>
                             </Link>
-                              <Link to="/loginotp" className="bg-success text-white">
+                              <Link to="/" className="bg-success text-white">
                           <i class="fa-solid fa-phone"></i>{" "}
                         </Link>
                             {/* <Link to="#">
@@ -304,7 +304,7 @@ const Whatapplog = () => {
                           {/* Social Login */}
                           <div className="social-login">
                             <Link
-                              to="/"
+                              to="/login"
                               className="bg-success text-white"
                             >
                               <i class="fa-solid fa-at"></i>

@@ -231,7 +231,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Offers Received Amount
+                          Loan Offers Received From Lenders
                         </Link>
                       </li>
                       <li>
@@ -243,7 +243,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Disburse Loans
+                          Loan Disbursement Status
                         </Link>
                       </li>
                     </ul>
