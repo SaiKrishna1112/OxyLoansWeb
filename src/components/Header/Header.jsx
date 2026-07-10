@@ -29,8 +29,8 @@ const Header = (profile) => {
   const [currentPage, setCurrentPage] = useState("");
 
   const isTestRecording = !!process.env.REACT_APP_REFERENCE_DATE;
-  const displayLenderId = (isTestRecording && reduxStoreData?.userId === 27127) ? 72217 : reduxStoreData?.userId;
-  const displayFirstName = (isTestRecording && reduxStoreData?.userId === 27127) ? "Pradeep" : (reduxStoreData?.firstName ? reduxStoreData.firstName.charAt(0).toUpperCase() + reduxStoreData.firstName.slice(1).toLowerCase() : "");
+  const displayLenderId = (isTestRecording && reduxStoreData?.userId === 27127) ? 72271 : reduxStoreData?.userId;
+  const displayFirstName = (isTestRecording && reduxStoreData?.userId === 27127) ? "Pradeep Chakravarthy" : (reduxStoreData?.firstName ? reduxStoreData.firstName.charAt(0).toUpperCase() + reduxStoreData.firstName.slice(1).toLowerCase() : "");
 
    // In-app notification bell
     const [bellOpen, setBellOpen] = useState(false);

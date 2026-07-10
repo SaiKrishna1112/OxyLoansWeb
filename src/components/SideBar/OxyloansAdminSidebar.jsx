@@ -92,10 +92,10 @@ const OxyloansAdminSidebar = () => {
     },
     {
       key: "adminAIDashboard",
-      label: "🤖 AI Platform Stats",
+      label: "Admin Control Panel",
       link: "/adminAIDashboard",
       icon: "fa-solid fa-robot",
-      type: ["ADMIN"],
+      type: ["ADMIN", "HELPDESKADMIN"],
     },
       {
       key: "adminNotifications",

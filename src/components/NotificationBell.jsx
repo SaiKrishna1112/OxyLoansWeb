@@ -6,16 +6,19 @@ import { MARKETPLACE_URL as BASE } from "../config";
 
 // Derive the route to navigate to when a notification is clicked
 function getNotificationRoute(n) {
-  if (n.link) return n.link;
+  // Backend field is actionUrl, not link
+  if (n.actionUrl && n.actionUrl.startsWith("/")) return n.actionUrl;
 
   const type = (n.type || "").toUpperCase();
   const primaryType = localStorage.getItem("primaryType") || sessionStorage.getItem("primaryType") || "";
   const isBorrower = primaryType === "BORROWER";
 
-  // Try to pull a loanRequestId out of referenceId or message
-  const refId = n.referenceId || n.loanRequestId || null;
+  const refId = n.loanRequestId || null;
   const msgMatch = n.message && n.message.match(/LRQ-[\w-]+/);
   const lrqId = refId || (msgMatch ? msgMatch[0] : null);
+
+  // Maturity reminders always go to the AI portfolio maturity section
+  if (type === "MATURITY_REMINDER") return "/ai/portfolio";
 
   if (type.includes("OFFER")) {
     return isBorrower ? "/my-marketplace-loans" : "/my-offers";
@@ -28,7 +31,8 @@ function getNotificationRoute(n) {
     }
     return isBorrower ? "/my-marketplace-loans" : "/marketplace-loans";
   }
-  if (type.includes("EMI") || type.includes("LOAN")) {
+  // Use exact prefix to avoid "REMINDER" accidentally matching "EMI"
+  if (type.startsWith("EMI") || type === "LOAN_DISBURSED" || type === "LOAN_CLOSED") {
     return isBorrower ? "/borrower-emi-schedule" : "/lender-emi-dashboard";
   }
   if (type.includes("OXYSCORE")) return "/my-oxyscore";
@@ -43,15 +47,16 @@ const NotificationBell = () => {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
   const dropdownRef = useRef(null);
 
-  const headers = () => ({
-    "Content-Type": "application/json",
+  const headers = (includeContentType = false) => ({
+    ...(includeContentType ? { "Content-Type": "application/json" } : {}),
     accessToken:
       sessionStorage.getItem("accessToken") ||
       localStorage.getItem("accessToken") ||
       "",
-    userId: getUserId(),
+    userId: sessionStorage.getItem("activeLenderId") || getUserId(),
   });
 
   const fetchCount = () => {
@@ -67,27 +72,30 @@ const NotificationBell = () => {
   };
 
   const fetchNotifications = () => {
-    const userId = getUserId();
+    const userId = sessionStorage.getItem("activeLenderId") || getUserId();
     if (!userId) return;
     setLoading(true);
+    setFetchError(null);
     axios
       .get(`${BASE}/v1/notifications/my`, { headers: headers() })
       .then((res) => {
         if (res.status === 200) {
-          const list = res.data || [];
+          const list = Array.isArray(res.data) ? res.data : [];
           setNotifications(list.slice(0, 10));
           setUnreadCount(list.filter((n) => !n.read).length);
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        const status = err?.response?.status;
+        setFetchError(status === 401 ? "Session expired — please log in again" : `Error ${status || "network"}`);
         setLoading(false);
       });
   };
 
   const markRead = (id) => {
     axios
-      .put(`${BASE}/v1/notifications/${id}/read`, {}, { headers: headers() })
+      .put(`${BASE}/v1/notifications/${id}/read`, {}, { headers: headers(true) })
       .then(() => {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, read: true } : n))
@@ -99,7 +107,7 @@ const NotificationBell = () => {
 
   const markAllRead = () => {
     axios
-      .put(`${BASE}/v1/notifications/read-all`, {}, { headers: headers() })
+      .put(`${BASE}/v1/notifications/read-all`, {}, { headers: headers(true) })
       .then(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
@@ -234,6 +242,10 @@ const NotificationBell = () => {
           {loading ? (
             <div className="text-center py-3 text-muted" style={{ fontSize: 13 }}>
               Loading...
+            </div>
+          ) : fetchError ? (
+            <div className="text-center py-4" style={{ color: "#ff4d4f", fontSize: 13 }}>
+              {fetchError}
             </div>
           ) : notifications.length === 0 ? (
             <div className="text-center py-4 text-muted">

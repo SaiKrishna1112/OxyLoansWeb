@@ -6,7 +6,7 @@ import { registerImage } from "../../imagepath";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 
-import { Admlog } from "../../HttpRequest/beforelogin";
+import { Admlog, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 
@@ -68,7 +68,8 @@ const Admlogin = () => {
   }, [userLogInInfo.userid, userLogInInfo.password]);
 
   const loginhandler = async () => {
-    let { userid, password } = userLogInInfo;
+    const { userid, password } = userLogInInfo;
+
     if (userid === staticAdminEmail && password === staticAdminPassword) {
       localStorage.setItem("primaryType", "ADMIN");
       sessionStorage.setItem("email", staticAdminEmail);
@@ -79,19 +80,45 @@ const Admlogin = () => {
       history("/adminAIDashboard");
       return;
     }
-
-    const retriveresponse = await Admlog(userid.substring(2), password);
-    if (retriveresponse.request.status == 200) {
-      toastrSuccess("Login Success!");
-      if (retriveresponse.data.primaryType == "LENDER") {
-        history("/dashboard");
-      } else if (retriveresponse.data.primaryType == "ADMIN") {
-        history("/oxyloansadmindashboard");
+    if (!userid?.trim() || !password?.trim()) {
+      toastrWarning("Enter user ID and password.");
+      return;
+    }
+    try {
+      const retriveresponse = await Admlog(userid.trim(), password);
+      if (isApiSuccess(retriveresponse)) {
+        toastrSuccess("Login Success!");
+        const role = retriveresponse.data.primaryType;
+        localStorage.setItem("primaryType", role || "");
+        if (role === "LENDER") {
+          history("/dashboard");
+        } else if (
+          role === "ADMIN" ||
+          role === "HELPDESKADMIN" ||
+          role === "SUPERADMIN" ||
+          role === "PRIMARYADMIN"
+        ) {
+          history("/adminAIDashboard");
+        } else {
+          history("/borrowerDashboard");
+        }
       } else {
-        history("/borrowerDashboard");
+        const { message } = warnApiError(
+          retriveresponse,
+          "Login failed",
+          "Login failed. Use admin email + password, or user ID with SUPERADMIN."
+        );
+        const hint =
+          retriveresponse?.code === "ERR_NETWORK" || String(message).toLowerCase().includes("network")
+            ? " Start backend on port 8181, then restart npm start (proxy needs restart after config change)."
+            : "";
+        toastrWarning(message + hint);
       }
-    } else {
-      toastrWarning(retriveresponse.response.data.errorMessage);
+    } catch (err) {
+      toastrWarning(
+        (err?.message || "Cannot reach backend.") +
+          " Start Spring Boot on port 8181 and restart npm start."
+      );
     }
   };
 
@@ -115,12 +142,16 @@ const Admlogin = () => {
                   <p className="account-subtitle">
                     Need an account? <Link to="/register">Sign Up</Link>
                   </p>
-                  <h2>Admin Login..</h2>
+                  <h2>Admin Login</h2>
+                  <p className="account-subtitle small text-muted mb-3">
+                    Admin email + password, or user ID (LR55573) with access key SUPERADMIN.
+                    Backend: {process.env.NODE_ENV === "development" ? "see src/config.js ENV" : "configured server"}.
+                  </p>
 
                   <form className="needs-validation" noValidate>
                     <div className="form-group">
                       <label htmlFor="userid">
-                        Enter The Lender/Borrower ID
+                        Admin email or user ID (LR55573)
                         <span className="login-danger">*</span>
                       </label>
                       <input

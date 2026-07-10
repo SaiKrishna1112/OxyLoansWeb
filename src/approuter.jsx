@@ -1,6 +1,6 @@
 import React from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import WebPushBootstrap from "./components/WebPushBootstrap";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
@@ -9,9 +9,16 @@ import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSu
 import AITestAdmin from "./components/pages/Dashboard/AITestAdmin";
 import LenderUpgradePortal from "./components/pages/Dashboard/LenderUpgradePortal";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminAIFeaturePage from "./components/pages/Oxyloans/Admin/AdminAIFeaturePage";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
+
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
+
+const AdminAIFeatureRedirect = () => {
+  const { featureId } = useParams();
+  return <Navigate to={`/adminAIDashboard/${featureId}`} replace />;
+};
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -265,8 +272,13 @@ const AppRouter = () => {
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/adminAIDashboard/:featureId" element={<AdminAIFeaturePage />} />
+        <Route path="/adminAiDashboard" element={<Navigate to="/adminAIDashboard" replace />} />
+        <Route path="/adminAiDashboard/:featureId" element={<AdminAIFeatureRedirect />} />
+        <Route path="/AdminAIDashboard" element={<Navigate to="/adminAIDashboard" replace />} />
         <Route path="/adminAICreatedDeals" element={<AdminAICreatedDealsPage />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
+
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
         <Route path="/configautoInvest" element={<ConfigautoInvest />} />
         <Route path="/membership" element={<Membership />} />

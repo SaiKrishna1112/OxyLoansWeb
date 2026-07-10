@@ -12,6 +12,24 @@ function registerFcmAfterLogin(userId, accessToken) {
     initWebPush(userId, accessToken).catch(() => {});
   }
 }
+/** True when axios returned HTTP 200 (not an error object). */
+export const isApiSuccess = (response) => {
+  if (!response) return false;
+  const status = response.status ?? response.response?.status;
+  return status === 200;
+};
+
+/** User-facing title + message from API error or axios error. */
+export const warnApiError = (response, title = "Error", fallback = "Request failed") => {
+  const data = response?.response?.data ?? response?.data;
+  const message =
+    (typeof data === "string" && data.trim()) ||
+    data?.errorMessage ||
+    data?.error ||
+    response?.message ||
+    fallback;
+  return { title, message };
+};
 
 const handleApiRequestBeforeLogin = async (
   method,
@@ -34,14 +52,12 @@ const handleApiRequestBeforeLogin = async (
       return response;
     }
   } catch (error) {
-    // Ensure callers can always safely read error.response.data
-    if (!error.response) {
-      error.response = {
-        data: {
-          errorCode: "NETWORK_ERROR",
-          errorMessage: "Unable to reach server. Please check your connection.",
-        },
-      };
+    if (!error?.response) {
+      const netErr = new Error(
+        `Cannot reach API at ${BASE_URL}. Start backend on port 8181 (test profile), then restart npm start.`
+      );
+      netErr.code = "ERR_NETWORK";
+      return netErr;
     }
     return error;
   }
@@ -61,10 +77,35 @@ export const sendotpemail = async (email) => {
   return response;
 };
 
+/** Parse LR55573, BR123, or plain numeric admin user id */
+export const parseAdminUserId = (raw) => {
+  const s = String(raw || "").trim();
+  if (!s) return null;
+  const match = s.match(/\d+/);
+  return match ? parseInt(match[0], 10) : null;
+};
+
 export const Admlog = async (userid, password) => {
+  const trimmedId = String(userid || "").trim();
+  const trimmedPwd = String(password || "").trim();
+
+  if (trimmedId.includes("@")) {
+    return userloginSection(trimmedId, trimmedPwd);
+  }
+
+  const id = parseAdminUserId(trimmedId);
+  if (!id) {
+    return {
+      response: {
+        status: 400,
+        data: { errorMessage: "Enter a valid user ID (e.g. LR55573 or 55573) or admin email." },
+      },
+    };
+  }
+
   const data = {
-    id: userid,
-    primaryType: password,
+    id,
+    primaryType: trimmedPwd.toUpperCase(),
   };
   const response = await handleApiRequestBeforeLogin(
     "POST",
@@ -73,7 +114,7 @@ export const Admlog = async (userid, password) => {
     data
   );
 
-  if (response.status == 200) {
+  if (response?.status === 200) {
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
     localStorage.setItem("accessToken", accessTokenFromHeader);
@@ -85,8 +126,11 @@ export const Admlog = async (userid, password) => {
     registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
     return response;
   } else {
+    sessionStorage.setItem("email", response.data.email || "");
+    localStorage.setItem("primaryType", response.data.primaryType || "");
     return response;
   }
+  return response;
 };
 export const partnerlogin = async (userid, password) => {
   const data = {
@@ -130,7 +174,7 @@ export const userloginSection = async (email, password) => {
     postdata
   );
 
-  if (response.status == 200) {
+  if (response?.status === 200) { 
     const accessTokenFromHeader = response.headers["accesstoken"];
     sessionStorage.setItem("accessToken", accessTokenFromHeader);
     localStorage.setItem("accessToken", accessTokenFromHeader);
@@ -138,6 +182,8 @@ export const userloginSection = async (email, password) => {
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
     registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
+    sessionStorage.setItem("email", response.data.email || "");
+    localStorage.setItem("primaryType", response.data.primaryType || "");
     return response;
   } else {
     return response;
