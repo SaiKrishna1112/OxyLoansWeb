@@ -202,7 +202,6 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
 
 // ── AI CHAT WIDGET ─────────────────────────────────────────────────────────
 const DEFAULT_QUESTIONS = [
-<<<<<<< HEAD
   "Show my wallet balance",
   "What is my average ROI?",
   "How much have I invested in total?",
@@ -213,27 +212,12 @@ const DEFAULT_QUESTIONS = [
   "In which deal did I invest recently?",
 ];
 const CHIPS_VISIBLE = 3;
-=======
-  "How much did I earn this year?",
-  "Show my wallet balance",
-  "Show my active deals",
-  "Compare my earnings month on month",
-  "What is my highest interest amount received till now",
-  "Show upcoming payments",
-  "What is my average ROI?",
-  "Show my principal returned",
-];
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
 
 const AIChatWidget = ({ lenderId, lenderName }) => {
   const [open, setOpen] = useState(false);
   const [panelSize, setPanelSize] = useState("normal"); // "normal" | "maximized" | "minimized"
   const [messages, setMessages] = useState([
-<<<<<<< HEAD
     { role: "assistant", text: `Hi ${lenderName || "there"}! 👋 I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null, ts: Date.now() }
-=======
-    { role: "assistant", text: `Hi ${lenderName || "there"}! I'm your OxyLoans AI assistant. Ask me anything about your investments — earnings, deals, wallet, ROI and more.`, data: null }
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -245,23 +229,16 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
     if (open && panelSize !== "minimized") setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
   }, [messages, open, panelSize]);
 
-<<<<<<< HEAD
   useEffect(() => {
     if (open && panelSize !== "minimized") setTimeout(() => inputRef.current?.focus(), 120);
   }, [open, panelSize]);
 
-=======
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
   const sendMessage = async (text) => {
     const msg = (text || input).trim();
     if (!msg || sending) return;
     setInput("");
-<<<<<<< HEAD
     setChipsExpanded(false);
     setMessages((prev) => [...prev, { role: "user", text: msg, data: null, ts: Date.now() }]);
-=======
-    setMessages((prev) => [...prev, { role: "user", text: msg, data: null }]);
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
     setSending(true);
     try {
       const res = await axios.post(
@@ -271,15 +248,9 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       );
       const reply = res.data?.answer || (typeof res.data === "string" ? res.data : "I couldn't find an answer for that.");
       const responseData = res.data?.responseData || null;
-<<<<<<< HEAD
       setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData, ts: Date.now() }]);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null, ts: Date.now() }]);
-=======
-      setMessages((prev) => [...prev, { role: "assistant", text: reply, data: responseData }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: "assistant", text: "Sorry, I'm having trouble connecting right now. Please try again.", data: null }]);
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
     } finally {
       setSending(false);
     }
@@ -341,26 +312,15 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
       {/* Chat panel */}
       {open && (
         <div style={{
-<<<<<<< HEAD
           ...panelStyles[panelSize],
           background: "#fff", borderRadius: 20,
           boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 4px 16px rgba(106,27,154,0.12)",
           display: "flex", flexDirection: "column",
           border: "1px solid #e8e8e8", overflow: "hidden",
           transition: "width 0.25s, height 0.25s",
-=======
-          position: "fixed", bottom: 96, right: 24, zIndex: 9998,
-          width: 380, maxWidth: "calc(100vw - 48px)",
-          background: "#fff", borderRadius: 16,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
-          display: "flex", flexDirection: "column",
-          border: "1px solid #e8e8e8", overflow: "hidden",
-          maxHeight: "80vh",
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
         }}>
 
           {/* Header */}
-<<<<<<< HEAD
           <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "13px 14px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: panelSize === "minimized" ? "pointer" : "default" }}
             onClick={() => panelSize === "minimized" && setPanelSize("normal")}
           >
@@ -401,32 +361,10 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
                     color: m.role === "user" ? "#fff" : "#1a1a2e",
                     fontSize: 13, lineHeight: 1.55,
                     boxShadow: m.role === "user" ? "0 3px 10px rgba(26,35,126,0.28)" : "0 1px 4px rgba(0,0,0,0.07)",
-=======
-          <div style={{ background: "linear-gradient(135deg, #1a237e, #6a1b9a)", padding: "14px 18px", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            <span style={{ fontSize: 22 }}>🤖</span>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>OxyLoans AI Assistant</div>
-              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 11 }}>Ask about your investments</div>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "14px 14px 8px", minHeight: 200 }}>
-            {messages.map((m, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
-                  <div style={{
-                    maxWidth: "85%", padding: "10px 14px",
-                    borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
-                    background: m.role === "user" ? "linear-gradient(135deg, #1a237e, #6a1b9a)" : "#f5f5f5",
-                    color: m.role === "user" ? "#fff" : "#262626",
-                    fontSize: 13, lineHeight: 1.5,
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
                   }}>
                     {m.data ? <TopicBadge type={m.data.type} /> : null}
                     <FormattedText text={m.text} />
                   </div>
-<<<<<<< HEAD
                 </div>
                 {m.data && (
                   <div style={{ marginLeft: m.role === "assistant" ? 35 : 0, marginTop: 6 }}>
@@ -435,15 +373,12 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
                 )}
                 <div style={{ fontSize: 10, color: "#c0c0c0", marginTop: 3, textAlign: m.role === "user" ? "right" : "left", paddingLeft: m.role === "assistant" ? 35 : 0 }}>
                   {fmtTime(m.ts)}
-=======
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
                 </div>
                 {m.data && <div style={{ marginTop: 6 }}><RichMessage data={m.data} /></div>}
               </div>
             ))}
 
             {sending && (
-<<<<<<< HEAD
               <div style={{ display: "flex", alignItems: "flex-end", gap: 7, marginBottom: 14 }}>
                 <div style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg, #1a237e, #6a1b9a)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
                 <div style={{ background: "#f4f4f6", borderRadius: "4px 18px 18px 18px", padding: "12px 16px", display: "flex", gap: 5, alignItems: "center" }}>
@@ -451,18 +386,11 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
                     <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#6a1b9a", animation: `chatBounce 1.2s ${i * 0.18}s infinite` }} />
                   ))}
                 </div>
-=======
-              <div style={{ display: "flex", gap: 6, padding: "8px 4px" }}>
-                {[0, 1, 2].map((i) => (
-                  <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#6a1b9a", animation: `bounce 1.2s ${i * 0.2}s infinite` }} />
-                ))}
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
               </div>
             )}
             <div ref={bottomRef} />
           </div>}
 
-<<<<<<< HEAD
           {/* Quick chips + input — hidden when minimized */}
           {panelSize !== "minimized" && <>
             <div style={{ padding: "7px 12px 5px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
@@ -529,45 +457,6 @@ const AIChatWidget = ({ lenderId, lenderName }) => {
               >↑</button>
             </div>
           </>}
-=======
-          {/* Quick question chips — always visible, wrapped */}
-          <div style={{ padding: "8px 10px 6px", borderTop: "1px solid #f0f0f0", flexShrink: 0, background: "#fafafa" }}>
-            <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>Quick questions</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {DEFAULT_QUESTIONS.map((q, i) => (
-                <button key={i} onClick={() => sendMessage(q)} disabled={sending} style={{
-                  background: "#fff", border: "1px solid #c7d2fe",
-                  borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#3730a3",
-                  cursor: sending ? "default" : "pointer", whiteSpace: "nowrap",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}>{q}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Input */}
-          <div style={{ padding: "8px 12px 10px", borderTop: "1px solid #f0f0f0", display: "flex", gap: 8, flexShrink: 0 }}>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              placeholder="Ask about your deals, earnings…"
-              style={{ flex: 1, border: "1px solid #e8e8e8", borderRadius: 24, padding: "8px 14px", fontSize: 13, outline: "none" }}
-              disabled={sending}
-            />
-            <button
-              onClick={() => sendMessage()}
-              disabled={sending || !input.trim()}
-              style={{
-                background: sending || !input.trim() ? "#d9d9d9" : "linear-gradient(135deg, #1a237e, #6a1b9a)",
-                border: "none", borderRadius: 24, padding: "8px 16px",
-                color: "#fff", cursor: sending || !input.trim() ? "default" : "pointer", fontSize: 13, fontWeight: 600,
-              }}
-            >
-              Send
-            </button>
-          </div>
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
         </div>
       )}
       <style>{`
@@ -1271,9 +1160,11 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
-  const ID_ALIASES = { "77221": "27127" };
+  const ID_ALIASES = { "72271": "27127" };
   const rawId = paramLenderId || getUserId();
   const resolvedLenderId = ID_ALIASES[rawId] || rawId;
+  // Store portfolio owner's ID so bell can read notifications for correct lender
+  if (resolvedLenderId) sessionStorage.setItem("activeLenderId", resolvedLenderId);
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
@@ -1321,7 +1212,7 @@ const LenderPortfolioDashboard = () => {
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
       .then((res) => {
         const d = res.data;
-        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
+        if (process.env.REACT_APP_REFERENCE_DATE && String(resolvedLenderId) === "27127") {
           d.lenderName = "Pradeep Chakravarthy";
           d.email      = "pradeepchk@gmail.com";
         }
@@ -1578,7 +1469,6 @@ const LenderPortfolioDashboard = () => {
                   })()} />
               </div>
 
-<<<<<<< HEAD
               {/* ── RBI ₹50L Lending Limit Bar ── */}
               {(() => {
                 const RBI_LIMIT = 5000000;
@@ -1614,18 +1504,12 @@ const LenderPortfolioDashboard = () => {
                 );
               })()}
 
-=======
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
               {/* ── 3. MONTH-ON-MONTH EARNINGS — always visible ── */}
               {(() => {
                 const allMonths = momData ? [...(momData.monthlyEarnings || [])].reverse() : [];
 
                 // Apply filter to allMonths (already sorted oldest→newest after reverse)
-<<<<<<< HEAD
                 const now = REF_DATE;
-=======
-                const now = new Date();
->>>>>>> 0d0503fb1f876ac442e845b69dddcf0b6cc4fd71
                 const curYear  = now.getFullYear();
                 const curMonth = now.getMonth() + 1; // 1-based
                 // FY starts April of current or previous year
@@ -2284,10 +2168,18 @@ const LenderPortfolioDashboard = () => {
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
                     <div className="table-responsive">
-                      <table className="table table-sm mb-0">
+                      <table className="table table-sm mb-0" style={{ tableLayout: "fixed", minWidth: 620 }}>
+                        <colgroup>
+                          <col style={{ width: 70 }} />
+                          <col style={{ width: 110 }} />
+                          <col style={{ width: 100 }} />
+                          <col style={{ width: 90 }} />
+                          <col style={{ width: 190 }} />
+                          <col style={{ width: 120 }} />
+                        </colgroup>
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested at Same ROI</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2314,7 +2206,7 @@ const LenderPortfolioDashboard = () => {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
-                              }, { headers: { accessToken: getToken() } })
+                              }, { headers: { accessToken: getToken(), userId: resolvedLenderId || getUserId() } })
                                 .then(() => setRemindedDeals(prev => {
                                   const next = new Set(prev);
                                   next.delete(`sending-${m.dealId}`);
@@ -2330,26 +2222,25 @@ const LenderPortfolioDashboard = () => {
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td><strong>#{m.dealId}</strong></td>
-                                <td>{fmtDate(m.maturityDate)}</td>
-                                <td>₹{fmt(m.principalAmount)}</td>
-                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ overflow: "hidden" }}><strong>#{m.dealId}</strong></td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>₹{fmt(m.principalAmount)}</td>
+                                <td style={{ overflow: "hidden" }}><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600, fontSize: 12 }}>{m.daysToMaturity}d</span></td>
                                 <td>
-                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's ROI: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
-                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}<span style={{ fontWeight: 400, fontSize: 11 }}>/mo</span></div>
+                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c" }}>{(annualRoi / 12).toFixed(2)}% p.m. · ₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))}/yr</div>}
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
                                     <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>🔔 Reminder sent</span>
                                   ) : isSending ? (
                                     <span style={{ fontSize: 12, color: "#d46b08" }}>Sending...</span>
-                                  ) : nudgeIsPast ? (
+                                  ) : m.daysToMaturity <= 30 ? (
                                     <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
                                       🔔 Remind Me
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
+                                    <span style={{ fontSize: 11, color: "#8c8c8c" }}>Auto-reminder:<br/>{fmtDate(m.nudgeSendDate)}</span>
                                   )}
                                 </td>
                               </tr>
@@ -2384,8 +2275,18 @@ const LenderPortfolioDashboard = () => {
                       const roi      = data.earningsForecast?.weightedAvgRoi || 0;
                       const active   = data.earningsForecast?.totalActiveAmount || 0;
                       const fyEnd    = data.earningsForecast?.financialYearEnd;
-                      const needed   = data.amountNeededForOneLakhTarget || data.earningsForecast?.amountNeededToReachOneLakh || 0;
-                      const monthsLeft = fyEnd ? Math.max(0, Math.round((new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30))) : 0;
+                      const monthsLeft = fyEnd ? Math.max(0, (new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30.44)) : 0;
+                      const nextLakhTarget = Math.ceil((forecast + 1) / 100000) * 100000;
+                      const secondLakhTarget = nextLakhTarget + 100000;
+                      const gap1 = nextLakhTarget - forecast;
+                      const gap2 = secondLakhTarget - forecast;
+                      const additionalNeeded1 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap1 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const additionalNeeded2 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap2 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const monthsLeftDisplay = Math.round(monthsLeft);
                       return (
                         <div style={{ background: "linear-gradient(135deg, #e6f7ff, #bae7ff)", borderRadius: 12, padding: 20, height: "100%" }}>
                           <div style={{ fontSize: 13, color: "#0050b3", fontWeight: 700, marginBottom: 12 }}>
@@ -2394,16 +2295,24 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ fontSize: 36, fontWeight: 800, color: "#1890ff", lineHeight: 1 }}>
                             ₹{fmt(forecast)}
                           </div>
-                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 6, marginBottom: 14 }}>
-                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeft} months remaining)
+                          <div style={{ fontSize: 11, color: "#0050b3", marginTop: 4, fontStyle: "italic" }}>
+                            interest earnings (not principal)
+                          </div>
+                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 4, marginBottom: 14 }}>
+                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeftDisplay} months remaining)
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             <div style={{ background: "rgba(24,144,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
                               <strong>₹{fmt(active)}</strong> actively deployed at avg <strong>{roi}% p.a.</strong> weighted ROI
                             </div>
-                            {needed > 0 && (
+                            {additionalNeeded1 > 0 && (
                               <div style={{ background: "rgba(24,144,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
-                                To earn <strong>₹1 Lakh</strong> this FY: invest <strong>₹{fmt(needed)}</strong> more at your current avg ROI for the remaining {monthsLeft} months
+                                Invest <strong>₹{fmt(additionalNeeded1)}</strong> more to reach <strong>₹{fmt(nextLakhTarget)}</strong> this FY
+                              </div>
+                            )}
+                            {additionalNeeded2 > 0 && (
+                              <div style={{ background: "rgba(82,196,26,0.10)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#135200" }}>
+                                Invest <strong>₹{fmt(additionalNeeded2)}</strong> more to reach <strong>₹{fmt(secondLakhTarget)}</strong> this FY
                               </div>
                             )}
                           </div>
