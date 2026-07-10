@@ -1162,6 +1162,8 @@ const LenderPortfolioDashboard = () => {
   const ID_ALIASES = { "72271": "27127" };
   const rawId = paramLenderId || getUserId();
   const resolvedLenderId = ID_ALIASES[rawId] || rawId;
+  // Store portfolio owner's ID so bell can read notifications for correct lender
+  if (resolvedLenderId) sessionStorage.setItem("activeLenderId", resolvedLenderId);
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
@@ -2165,10 +2167,18 @@ const LenderPortfolioDashboard = () => {
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
                     <div className="table-responsive">
-                      <table className="table table-sm mb-0">
+                      <table className="table table-sm mb-0" style={{ tableLayout: "fixed", minWidth: 620 }}>
+                        <colgroup>
+                          <col style={{ width: 70 }} />
+                          <col style={{ width: 110 }} />
+                          <col style={{ width: 100 }} />
+                          <col style={{ width: 90 }} />
+                          <col style={{ width: 190 }} />
+                          <col style={{ width: 120 }} />
+                        </colgroup>
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested at Same ROI</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2195,7 +2205,7 @@ const LenderPortfolioDashboard = () => {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
-                              }, { headers: { accessToken: getToken(), userId: getUserId() } })
+                              }, { headers: { accessToken: getToken(), userId: resolvedLenderId || getUserId() } })
                                 .then(() => setRemindedDeals(prev => {
                                   const next = new Set(prev);
                                   next.delete(`sending-${m.dealId}`);
@@ -2211,14 +2221,13 @@ const LenderPortfolioDashboard = () => {
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td><strong>#{m.dealId}</strong></td>
-                                <td>{fmtDate(m.maturityDate)}</td>
-                                <td>₹{fmt(m.principalAmount)}</td>
-                                <td><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ overflow: "hidden" }}><strong>#{m.dealId}</strong></td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>₹{fmt(m.principalAmount)}</td>
+                                <td style={{ overflow: "hidden" }}><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600, fontSize: 12 }}>{m.daysToMaturity}d</span></td>
                                 <td>
-                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's ROI: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
-                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}<span style={{ fontWeight: 400, fontSize: 11 }}>/mo</span></div>
+                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c" }}>{(annualRoi / 12).toFixed(2)}% p.m. · ₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))}/yr</div>}
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
