@@ -22,6 +22,104 @@ import {
 } from "../../HttpRequest/afterlogin";
 import { toastrSuccess } from "./Toast";
 
+
+export const OFFER_MIN_PARTICIPATION = 10000;
+export const OFFER_STATUS_ACTIVE = "ACTIVE";
+export const OFFER_STATUS_DEACTIVATED = "DEACTIVATED";
+
+export const hasActiveReactivationOffer = (apidata) => {
+  if (!apidata) return false;
+  if (apidata.offerStatus === OFFER_STATUS_DEACTIVATED) return false;
+  if (apidata.offerStatus === OFFER_STATUS_ACTIVE) return true;
+  if (apidata.offerActive === true || apidata.offerActive === "true") return true;
+  if (apidata.activeOfferId) return true;
+  if (Array.isArray(apidata.activeOffers) && apidata.activeOffers.length > 0) {
+    return !apidata.activeOffers.every((o) => o.redeemed === true);
+  }
+  return false;
+};
+
+export const isOfferDeactivated = (apidata) =>
+  apidata?.offerStatus === OFFER_STATUS_DEACTIVATED;
+
+export const isMandatoryFeeDeal = (apidata) =>
+  apidata?.feeStatusToParticipate === "MANDATORY" || apidata?.mandatoryDeal === true;
+
+/** True when lender should participate without membership/per-deal fee payment. */
+export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
+  if (!apidata) return false;
+  if (apidata.feeStatusToParticipate === "OPTIONAL") return true;
+  if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
+    return true;
+  }
+
+  const amount = Number(participationAmount) || 0;
+  if (!isMandatoryFeeDeal(apidata)) {
+    return false;
+  }
+
+  if (amount >= OFFER_MIN_PARTICIPATION && hasActiveReactivationOffer(apidata)) {
+    return true;
+  }
+
+  if (
+    (apidata.offerEligible === true || apidata.offerEligible === "true") &&
+    amount >= OFFER_MIN_PARTICIPATION
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const participateWithoutFee = (deal) => {
+  const response = dealparticipationValidityUser(deal);
+  response.then((data) => {
+    if (data.request.status === 200) {
+      const resp = data.data || {};
+      const offerWasConsumed =
+        resp.offerConsumed === true ||
+        resp.offerConsumed === "true" ||
+        resp.offerStatus === OFFER_STATUS_DEACTIVATED;
+      const subscriptionGranted =
+        resp.subscriptionGrantedThroughOffer === true ||
+        resp.subscriptionGrantedThroughOffer === "true";
+      const defaultOfferText = subscriptionGranted
+        ? "Your participation fee has been waived and a free one-month membership is now active. No subscription payment is required."
+        : offerWasConsumed
+          ? "Your participation fee has been waived. This offer has now been deactivated."
+          : `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. No participation fee required.`;
+      Swal.fire({
+        title: subscriptionGranted
+          ? "Offer Applied — Free Membership Activated"
+          : offerWasConsumed
+            ? "Special Offer Applied Successfully"
+            : "Congratulations!",
+        text: resp.message || resp.offerMessage || deal.apidata?.offerMessage || defaultOfferText,
+        icon: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "OK",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.reload();
+        }
+      });
+    } else {
+      Swal.fire({
+        title: "Error!",
+        text: `${data.response.data.errorMessage}`,
+        icon: "error",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "OK",
+      });
+    }
+  });
+};
+
 // Inside your component
 export const HandleClick = () => {
   Swal.fire({
@@ -314,37 +412,13 @@ export const participatedapi = async (deal) => {
     confirmButtonText: "Ok!",
   }).then((result) => {
     if (result.isConfirmed) {
-      if (deal.apidata.feeStatusToParticipate == "OPTIONAL") {
-        const response = dealparticipationValidityUser(deal);
-        response.then((data) => {
-          if (data.request.status === 200) {
-            Swal.fire({
-              title: "Congratulations!",
-              text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. `,
-              icon: "success",
-              showCancelButton: true,
-              confirmButtonColor: "#3085d6",
-              cancelButtonColor: "#d33",
-              confirmButtonText: "OK",
-            }).then((result) => {
-              if (result.isConfirmed) {
-                window.location.reload();
-              }
-            });
-          } else {
-            Swal.fire({
-              title: "Error!",
-              text: `${data.response.data.errorMessage}`,
-              icon: "error",
-              showCancelButton: true,
-              confirmButtonColor: "#3085d6",
-              cancelButtonColor: "#d33",
-              confirmButtonText: "OK",
-            });
-          }
-        });
-      } else {
-        if (deal.apidata.groupName == "NewLender") {
+      // Fee waived: optional deal, active subscription, or one-time offer (>= ₹10k on mandatory deal)
+      if (isParticipationFeeWaived(deal.apidata, deal.participatedAmount)) {
+        participateWithoutFee(deal);
+        return;
+      }
+
+      if (deal.apidata.groupName == "NewLender") {
           const response = newlenderdealparticipation(deal);
           var newLenderFeePercentage =
             (parseInt(deal.participatedAmount) * 1) / 100;
@@ -432,11 +506,7 @@ export const participatedapi = async (deal) => {
           deal.apidata.lenderValidityStatus == true &&
           deal.apidata.groupName != "NewLender"
         ) {
-          const membershipExpiredUser = membership(
-            deal.urldealId,
-            deal,
-            deal.participatedAmount
-          );
+          membership(deal.urldealId, deal, deal.participatedAmount);
         } else if (
           deal.apidata.lenderValidityStatus == false &&
           deal.apidata.groupName != "NewLender"
@@ -455,41 +525,6 @@ export const participatedapi = async (deal) => {
               });
             } else {
               console.log(data.response);
-              //           if (data.response.status === 403) {
-              //   Swal.fire({
-              //     title: "Error!",
-              //     text: `${data.response.data.errorMessage}`,
-              //     icon: "error",
-              //     showCancelButton: true,
-              //     cancelButtonText: "Cancel",
-              //     showConfirmButton: true,
-              //     confirmButtonText: "OK",
-              //   }).then(async (result) => {
-              //     if (result.isConfirmed) {
-              //       try {
-              //         const res = await feeapicallforonedeal(newLenderGstAndFeeCalculation, deal.urldealId);
-              //         if (res.request.status === 200) {
-              //           Swal.fire({
-              //             title: "Congratulations!",
-              //             text: `You have successfully paid the fee`,
-              //             icon: "success",
-              //             showCancelButton: true,
-              //             cancelButtonText: "Cancel",
-              //             showConfirmButton: true,
-              //             confirmButtonText: "OK",
-              //           });
-              //         }
-              //       } catch (error) {
-              //         console.error("Error while making fee API call:", error);
-              //         Swal.fire({
-              //           title: "Error!",
-              //           text: "There was an error processing your request. Please try again later.",
-              //           icon: "error",
-              //         });
-              //       }
-              //     }
-              //   });
-              // }
               Swal.fire({
                 title: "Error!",
                 text: `${data.response.data.errorMessage}`,
@@ -502,12 +537,16 @@ export const participatedapi = async (deal) => {
             }
           });
         }
-      }
     }
   });
 };
 
 export const membership = async (dealId, dealInfo, participatedAmount) => {
+  if (isParticipationFeeWaived(dealInfo?.apidata, participatedAmount)) {
+    participateWithoutFee(dealInfo);
+    return;
+  }
+
   let amount;
   let calculate;
   const tenure = {
@@ -1278,5 +1317,13 @@ export const Success = (tittle, message) => {
 };
 
 export const WarningBackendApi = (tittle, message) => {
-  Swal.fire(`${tittle}`, `${message}`, "warning");
+  const safeTitle =
+    tittle != null && String(tittle).trim() && String(tittle) !== "undefined"
+      ? String(tittle).trim()
+      : "Warning";
+  const safeMessage =
+    message != null && String(message).trim() && String(message) !== "undefined"
+      ? String(message).trim()
+      : "Something went wrong. Please try again.";
+  Swal.fire(safeTitle, safeMessage, "warning");
 };

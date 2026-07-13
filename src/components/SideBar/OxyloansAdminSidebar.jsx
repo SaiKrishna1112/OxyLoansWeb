@@ -12,7 +12,9 @@ const OxyloansAdminSidebar = () => {
   useEffect(() => {
     menuItems.forEach((item) => {
       if (item.children) {
-        const hasActiveChild = item.children.some((child) => child.link === pathname);
+        const hasActiveChild = item.children.some(
+          (child) => pathname === child.link || pathname.startsWith(`${child.link}/`)
+        );
         if (hasActiveChild) {
           setOpenSubmenus((prev) => ({
             ...prev,
@@ -92,10 +94,10 @@ const OxyloansAdminSidebar = () => {
     },
     {
       key: "adminAIDashboard",
-      label: "🤖 AI Platform Stats",
+      label: "Admin Control Panel",
       link: "/adminAIDashboard",
       icon: "fa-solid fa-robot",
-      type: ["ADMIN"],
+      type: ["ADMIN", "HELPDESKADMIN"],
     },
     {
       key: "adminAIReconciliation",
@@ -122,6 +124,22 @@ const OxyloansAdminSidebar = () => {
       link: "/activeLendersParticipation",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
+    {
+      key: "offerManagement",
+      label: "Offer Management",
+      icon: "fa-solid fa-gift",
+      type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
+      children: [
+        { key: "offerDashboard", label: "Dashboard", link: "/admin/offers/dashboard" },
+        { key: "offerCreate", label: "Generate Offers", link: "/admin/offers/create" },
+        { key: "offerSegments", label: "Eligible Lenders", link: "/admin/offers/segments" },
+        { key: "offerTemplates", label: "Templates", link: "/admin/offers/templates" },
+        { key: "offerApprovals", label: "Pending Approval", link: "/admin/offers/approvals" },
+        { key: "offerApproved", label: "Approved", link: "/admin/offers/approved" },
+        { key: "offerRejected", label: "Rejected", link: "/admin/offers/rejected" },
+        { key: "offerHistory", label: "History", link: "/admin/offers/history" },
+      ],
+    },
     {
       key: "participationamountinfo",
       label: " Participation Amount Info",

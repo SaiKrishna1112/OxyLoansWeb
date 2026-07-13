@@ -39,7 +39,16 @@
 
 
 
-.bg-succe11{
-  background-color: #0a58ca !important;
+.subscription-offer-pricing .subscription-discount-badge {
+  font-size: 13px;
+  padding: 6px 10px;
 }
 
+.subscription-offer-pricing .subscription-you-pay {
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.subscription-offer-pricing .subscription-offer-note {
+  font-style: italic;
+}

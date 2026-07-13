@@ -6,7 +6,7 @@ import { registerImage } from "../../imagepath";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 
-import { Admlog } from "../../HttpRequest/beforelogin";
+import { Admlog, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 
@@ -83,7 +83,8 @@ const Admlogin = () => {
   }, [userLogInInfo.userid, userLogInInfo.password]);
 
   const loginhandler = async () => {
-    let { userid, password } = userLogInInfo;
+    const { userid, password } = userLogInInfo;
+
     if (userid === staticAdminEmail && password === staticAdminPassword) {
       localStorage.setItem("primaryType", "ADMIN");
       sessionStorage.setItem("email", staticAdminEmail);
@@ -94,22 +95,41 @@ const Admlogin = () => {
       history("/adminAIDashboard");
       return;
     }
-
-    const retriveresponse = await Admlog(userid.substring(2), password);
-    if (retriveresponse?.request?.status == 200) {
-      toastrSuccess("Login Success!");
-      const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
-      if (primaryType === "LENDER") {
-        history("/dashboard");
-      } else if (ADMIN_PRIMARY_TYPES.has(primaryType)) {
-        history("/adminAIDashboard");
+    if (!userid?.trim() || !password?.trim()) {
+      toastrWarning("Enter user ID and password.");
+      return;
+    }
+    try {
+      const trimmedUserId = userid.trim();
+      const userIdForApi = /^RA/i.test(trimmedUserId) ? trimmedUserId.substring(2) : trimmedUserId;
+      const retriveresponse = await Admlog(userIdForApi, password);
+      if (isApiSuccess(retriveresponse)) {
+        toastrSuccess("Login Success!");
+        const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
+        localStorage.setItem("primaryType", primaryType || "");
+        if (primaryType === "LENDER") {
+          history("/dashboard");
+        } else if (ADMIN_PRIMARY_TYPES.has(primaryType)) {
+          history("/adminAIDashboard");
+        } else {
+          history("/borrowerDashboard");
+        }
       } else {
-        history("/borrowerDashboard");
+        const { message } = warnApiError(
+          retriveresponse,
+          "Login failed",
+          "Login failed. On test server use User ID like RA6680 and Password SUPERADMIN."
+        );
+        const hint =
+          retriveresponse?.code === "ERR_NETWORK" || String(message).toLowerCase().includes("network")
+            ? " Start backend on port 8181, then restart npm start (proxy needs restart after config change)."
+            : "";
+        toastrWarning(message + hint);
       }
-    } else {
+    } catch (err) {
       toastrWarning(
-        retriveresponse?.response?.data?.errorMessage
-          || "Login failed. On test server use User ID like RA6680 and Password SUPERADMIN."
+        (err?.message || "Cannot reach backend.") +
+          " Start Spring Boot on port 8181 and restart npm start."
       );
     }
   };
@@ -134,12 +154,15 @@ const Admlogin = () => {
                   <p className="account-subtitle">
                     Need an account? <Link to="/register">Sign Up</Link>
                   </p>
-                  <h2>Admin Login..</h2>
+                  <h2>Admin Login</h2>
+                  <p className="account-subtitle small text-muted mb-3">
+                    Enter your admin credentials to continue.
+                  </p>
 
                   <form className="needs-validation" noValidate>
                     <div className="form-group">
                       <label htmlFor="userid">
-                        Enter The Lender/Borrower ID
+                        Admin email or user ID
                         <span className="login-danger">*</span>
                       </label>
                       <input
