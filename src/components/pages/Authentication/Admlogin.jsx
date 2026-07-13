@@ -10,6 +10,21 @@ import { Admlog } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 
+const ADMIN_PRIMARY_TYPES = new Set([
+  "ADMIN",
+  "SUPERADMIN",
+  "MASTERADMIN",
+  "TESTADMIN",
+  "RADHAADMIN",
+  "HELPDESKADMIN",
+  "SUBBUADMIN",
+  "PARTNERADMIN",
+  "OXYWHEELSADMIN",
+  "PAYMENTSADMIN",
+  "BORROWERADMIN",
+  "STUDENTADMIN",
+]);
+
 const Admlogin = () => {
   const dispatch = useDispatch();
   const history = useNavigate();
@@ -81,17 +96,21 @@ const Admlogin = () => {
     }
 
     const retriveresponse = await Admlog(userid.substring(2), password);
-    if (retriveresponse.request.status == 200) {
+    if (retriveresponse?.request?.status == 200) {
       toastrSuccess("Login Success!");
-      if (retriveresponse.data.primaryType == "LENDER") {
+      const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
+      if (primaryType === "LENDER") {
         history("/dashboard");
-      } else if (retriveresponse.data.primaryType == "ADMIN") {
-        history("/oxyloansadmindashboard");
+      } else if (ADMIN_PRIMARY_TYPES.has(primaryType)) {
+        history("/adminAIDashboard");
       } else {
         history("/borrowerDashboard");
       }
     } else {
-      toastrWarning(retriveresponse.response.data.errorMessage);
+      toastrWarning(
+        retriveresponse?.response?.data?.errorMessage
+          || "Login failed. On test server use User ID like RA6680 and Password SUPERADMIN."
+      );
     }
   };
 
