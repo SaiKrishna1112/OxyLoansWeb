@@ -7,7 +7,7 @@ import "./InvoiceGrid.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isOfferDeactivated, isMandatoryFeeDeal, OFFER_MIN_PARTICIPATION, OFFER_STATUS_ACTIVE } from "../../Base UI Elements/SweetAlert";
+import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isOfferDeactivated, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -57,31 +57,24 @@ const Participatedeal = () => {
     "LOYALTY_REWARD",
   ]);
 
-  const FREE_SUBSCRIPTION_OFFER_TYPES = new Set([
-    "FIRST_DEAL_FREE",
-    "COMEBACK_ZERO_FEE",
-    "COMEBACK_BONUS",
-  ]);
-
   const shouldShowPaymentSection =
     deal.apidata &&
     !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
 
   const participationAmount = Number(deal.participatedAmount) || 0;
+  const hasActiveSubscription =
+    deal.apidata?.subscriptionActive === true ||
+    deal.apidata?.subscriptionActive === "true";
+  // Active offer → fee waived for any amount (no ₹10,000 gate)
   const offerAppliesNow =
     deal.apidata &&
+    !hasActiveSubscription &&
     isMandatoryFeeDeal(deal.apidata) &&
     hasActiveReactivationOffer(deal.apidata) &&
-    participationAmount >= OFFER_MIN_PARTICIPATION;
-  const offerActiveBelowMinimum =
-    deal.apidata &&
-    isMandatoryFeeDeal(deal.apidata) &&
-    hasActiveReactivationOffer(deal.apidata) &&
-    participationAmount > 0 &&
-    participationAmount < OFFER_MIN_PARTICIPATION;
+    participationAmount > 0;
   const offerAlreadyUsed =
     deal.apidata &&
-    !deal.apidata.subscriptionActive &&
+    !hasActiveSubscription &&
     isOfferDeactivated(deal.apidata) &&
     !isParticipationFeeWaived(deal.apidata, participationAmount);
 
@@ -93,28 +86,38 @@ const Participatedeal = () => {
         !offer.redeemed &&
         FEE_WAIVER_OFFER_TYPES.has(offer.offerType)
     );
-    if (activeOffers.length === 0) {
-      return dealData;
+
+    let merged = { ...dealData };
+
+    // Offer-granted or paid membership → treat like old valid subscription (no fee, any amount)
+    if (merged.subscriptionActive === true || merged.subscriptionActive === "true") {
+      merged.lenderValidityStatus = false;
+      merged.validityStatus = false;
+      merged.paymentRequired = false;
+      merged.feeAmount = 0;
+      return merged;
     }
+
+    if (activeOffers.length === 0) {
+      return merged;
+    }
+
     const primaryOffer = activeOffers[0];
-    const grantsFreeSubscription =
-      primaryOffer.grantsFreeSubscription === true ||
-      FREE_SUBSCRIPTION_OFFER_TYPES.has(primaryOffer.offerType);
     const freeMonths = primaryOffer.freeSubscriptionMonths || 1;
-    const subscriptionNote = grantsFreeSubscription
-      ? ` A free ${freeMonths}-month membership will also be activated after this participation.`
-      : "";
     return {
-      ...dealData,
+      ...merged,
       offerActive: true,
       offerStatus: OFFER_STATUS_ACTIVE,
       activeOfferId: primaryOffer.offerId,
       activeOfferType: primaryOffer.offerType,
       activeOfferTitle: primaryOffer.title,
-      grantsFreeSubscription,
+      grantsFreeSubscription: true,
       freeSubscriptionMonths: freeMonths,
       activeOffers,
-      offerMessage: `Your special offer "${primaryOffer.title}" is active. Invest at least ₹10,000 on this mandatory deal to waive the participation fee (one-time use).${subscriptionNote}`,
+      // Fee waived for ANY amount while offer is active (claim activates 1-month membership)
+      paymentRequired: false,
+      feeAmount: 0,
+      offerMessage: `Your special offer "${primaryOffer.title}" is active. Participate for any amount to waive the fee (one-time). After this participation a free ${freeMonths}-month membership is activated — same as a normal subscription (₹0 deal fee while valid).`,
     };
   };
 
@@ -166,11 +169,28 @@ const Participatedeal = () => {
         }
 
         let newObj = { ...apiData };
+        // Normalize membership flags first (offer-granted uses same renewal rows as paid sub)
+        if (newObj.subscriptionActive === true || newObj.subscriptionActive === "true") {
+          newObj.lenderValidityStatus = false;
+          newObj.validityStatus = false;
+          newObj.paymentRequired = false;
+          newObj.feeAmount = 0;
+        }
         try {
           const offers = await getUserReactivationOffers();
           newObj = mergeActiveOffersIntoDealData(newObj, offers);
         } catch (error) {
           /* single-deal API still carries offer flags when backend is updated */
+        }
+        // If backend says offer active / payment not required, never show fee for any amount
+        if (
+          newObj.paymentRequired === false ||
+          newObj.paymentRequired === "false" ||
+          newObj.offerStatus === OFFER_STATUS_ACTIVE ||
+          newObj.offerActive === true
+        ) {
+          newObj.paymentRequired = false;
+          newObj.feeAmount = 0;
         }
         if (newObj.monthlyInterest != 0) {
           newObj.rateOfInterest = newObj.monthlyInterest + " % PM";
@@ -623,6 +643,8 @@ const Participatedeal = () => {
                 </div>
 
                 {deal.apidata.lenderValidityStatus == true &&
+                  !hasActiveSubscription &&
+                  deal.apidata.paymentRequired !== false &&
                   !isParticipationFeeWaived(deal.apidata, deal.participatedAmount) && (
                   <div className="row notepoint text-center m-5 align-self-center">
                     {deal.apidata.feeStatusToParticipate == "OPTIONAL" ? (
@@ -648,40 +670,22 @@ const Participatedeal = () => {
                   <div className="alert alert-success text-center m-4" role="alert">
                     <h5 className="mb-2">Special Offer Applied Successfully</h5>
                     <p className="mb-0">
-                      Your participation fee has been waived.
-                      This offer will be deactivated after this participation.
+                      Your participation fee is waived for this amount.
+                      A free {deal.apidata?.freeSubscriptionMonths || 1}-month membership will be
+                      activated after this participation. The offer will then be deactivated.
                     </p>
                   </div>
                 )}
 
-                {offerActiveBelowMinimum && (
-                  <div className="alert alert-warning text-center m-4" role="alert">
-                    <h5 className="mb-2">Special Offer Active</h5>
-                    <p className="mb-0">
-                      Invest at least ₹{OFFER_MIN_PARTICIPATION.toLocaleString("en-IN")} to use your
-                      one-time offer. Normal fee applies below this amount. Your offer stays active.
-                    </p>
-                  </div>
-                )}
-
-                {hasActiveReactivationOffer(deal.apidata) &&
+                {!hasActiveSubscription &&
+                  hasActiveReactivationOffer(deal.apidata) &&
                   isMandatoryFeeDeal(deal.apidata) &&
                   participationAmount === 0 && (
                   <div className="alert alert-info text-center m-4" role="alert">
                     <h5 className="mb-2">Special Offer Available</h5>
                     <p className="mb-0">
                       {deal.apidata?.offerMessage ||
-                        `Invest at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString("en-IN")} on this mandatory deal to waive the participation fee (one-time use).`}
-                    </p>
-                  </div>
-                )}
-
-                {offerAppliesNow && deal.apidata?.grantsFreeSubscription && (
-                  <div className="alert alert-success text-center m-4" role="alert">
-                    <p className="mb-0">
-                      Your offer also includes a free{" "}
-                      {deal.apidata?.freeSubscriptionMonths || 1}-month membership after participation.
-                      You will not need to pay a separate subscription fee.
+                        "Your fee waiver offer is active. Participate for any amount to waive the participation fee (one-time use) and unlock a free 1-month membership."}
                     </p>
                   </div>
                 )}
@@ -695,7 +699,7 @@ const Participatedeal = () => {
                   </div>
                 )}
 
-                {deal.apidata?.subscriptionActive && !hasActiveReactivationOffer(deal.apidata) && (
+                {hasActiveSubscription && (
                   <div className="alert alert-info text-center m-4" role="alert">
                     <h5 className="mb-2">Active Subscription Detected</h5>
                     <p className="mb-0">
@@ -705,9 +709,8 @@ const Participatedeal = () => {
                   </div>
                 )}
 
-                {deal.apidata?.subscriptionActive &&
-                  deal.apidata?.grantsFreeSubscription &&
-                  !hasActiveReactivationOffer(deal.apidata) && (
+                {hasActiveSubscription &&
+                  deal.apidata?.grantsFreeSubscription && (
                   <div className="alert alert-success text-center m-4" role="alert">
                     <p className="mb-0">
                       Your free {deal.apidata?.freeSubscriptionMonths || 1}-month membership is active.

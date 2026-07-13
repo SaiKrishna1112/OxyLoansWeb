@@ -55,7 +55,42 @@ const offerAdminApi = {
   getSegmentSummary: async (includeLenders = false) =>
     unwrap(await request("GET", "/segments/summary", { params: { includeLenders } })),
 
-  getOfferCounts: async () => unwrap(await request("GET", "/offers/counts")),
+  getOfferCounts: async () => {
+    // Prefer dedicated counts APIs; fall back to listing by status (works on older deploys)
+    const tryPaths = ["/offer-counts", "/offers/counts"];
+    for (const path of tryPaths) {
+      try {
+        const data = unwrap(await request("GET", path));
+        if (data && typeof data === "object") {
+          return {
+            pending: Number(data.pending) || 0,
+            approved: Number(data.approved) || 0,
+            rejected: Number(data.rejected) || 0,
+            total: Number(data.total) || 0,
+          };
+        }
+      } catch {
+        /* try next / fallback */
+      }
+    }
+
+    let pending = 0;
+    let approved = 0;
+    let rejected = 0;
+    await Promise.all(
+      OFFER_SEGMENTS.map(async (s) => {
+        const [gen, app, rej] = await Promise.all([
+          offerAdminApi.getOffersBySegment(s.value, "GENERATED", 500).catch(() => []),
+          offerAdminApi.getOffersBySegment(s.value, "APPROVED", 500).catch(() => []),
+          offerAdminApi.getOffersBySegment(s.value, "REJECTED", 500).catch(() => []),
+        ]);
+        pending += (gen || []).length;
+        approved += (app || []).length;
+        rejected += (rej || []).length;
+      })
+    );
+    return { pending, approved, rejected, total: pending + approved + rejected };
+  },
 
   generateOffers: async (segment, limit = 5) =>
     unwrap(await request("POST", "/offers/generate", { data: { segment, limit } })),

@@ -49,23 +49,31 @@ export const isMandatoryFeeDeal = (apidata) =>
 export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
   if (!apidata) return false;
   if (apidata.feeStatusToParticipate === "OPTIONAL") return true;
+
+  // Paid or offer-granted membership (old subscription flow) → no fee for ANY amount
   if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
     return true;
   }
+  if (apidata.lenderValidityStatus === false || apidata.lenderValidityStatus === "false") {
+    // Valid membership on file — same as historical zero-fee participate path
+    if (apidata.groupName !== "NewLender") {
+      return true;
+    }
+  }
+  if (apidata.paymentRequired === false || apidata.paymentRequired === "false") {
+    return true;
+  }
 
-  const amount = Number(participationAmount) || 0;
   if (!isMandatoryFeeDeal(apidata)) {
     return false;
   }
 
-  if (amount >= OFFER_MIN_PARTICIPATION && hasActiveReactivationOffer(apidata)) {
+  // Active fee-waiver offer → waive for ANY amount (no ₹10,000 gate)
+  if (hasActiveReactivationOffer(apidata)) {
     return true;
   }
 
-  if (
-    (apidata.offerEligible === true || apidata.offerEligible === "true") &&
-    amount >= OFFER_MIN_PARTICIPATION
-  ) {
+  if (apidata.offerEligible === true || apidata.offerEligible === "true") {
     return true;
   }
 
@@ -85,9 +93,9 @@ const participateWithoutFee = (deal) => {
         resp.subscriptionGrantedThroughOffer === true ||
         resp.subscriptionGrantedThroughOffer === "true";
       const defaultOfferText = subscriptionGranted
-        ? "Your participation fee has been waived and a free one-month membership is now active. No subscription payment is required."
+        ? "Your participation fee has been waived and a free one-month membership is now active. No fee for deals during this membership."
         : offerWasConsumed
-          ? "Your participation fee has been waived. This offer has now been deactivated."
+          ? "Your participation fee has been waived for this participation. The offer is now deactivated."
           : `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. No participation fee required.`;
       Swal.fire({
         title: subscriptionGranted
@@ -412,7 +420,8 @@ export const participatedapi = async (deal) => {
     confirmButtonText: "Ok!",
   }).then((result) => {
     if (result.isConfirmed) {
-      // Fee waived: optional deal, active subscription, or one-time offer (>= ₹10k on mandatory deal)
+      // Active offer OR active/valid membership → same zero-fee path as old subscription flow
+      // (dealparticipationValidityUser). No ₹10,000 amount gate.
       if (isParticipationFeeWaived(deal.apidata, deal.participatedAmount)) {
         participateWithoutFee(deal);
         return;
