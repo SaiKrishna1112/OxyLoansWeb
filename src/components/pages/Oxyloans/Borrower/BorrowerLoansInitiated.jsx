@@ -12,6 +12,8 @@ import {
   borrowerLoanAcceptOrReject,
   borrowerLoanExcute,
   getListOfBorrowerLoansInitiated,
+  getRadiusBasedFee,
+  getBorrowerEligibleAmount,
 } from "../../../HttpRequest/afterlogin";
 
 const BorrowerLoansInitiated = () => {
@@ -23,6 +25,15 @@ const BorrowerLoansInitiated = () => {
   });
   const [updatingRowId, setUpdatingRowId] = useState(null);
   const [executingRowId, setExecutingRowId] = useState(null);
+  const [processingFees, setProcessingFees] = useState({});
+  const [feeSlabs, setFeeSlabs] = useState([]);
+  const [eligibleAmount, setEligibleAmount] = useState(null);
+
+  useEffect(() => {
+    getBorrowerEligibleAmount()
+      .then((res) => { if (res?.status == 200) setEligibleAmount(res.data?.amount ?? null); })
+      .catch(() => {});
+  }, []);
 
   const normalizeStatus = (status) =>
     String(status || "")
@@ -115,6 +126,27 @@ const BorrowerLoansInitiated = () => {
     );
   };
 
+  const getMatchingSlab = (slabs, distance) =>
+    slabs.find((s) => distance >= s.startingKm && distance <= s.endingKm) || null;
+
+  const fetchProcessingFees = async (loans) => {
+    try {
+      const res = await getRadiusBasedFee();
+      const slabs = res?.status == 200 && Array.isArray(res.data) ? res.data : [];
+      setFeeSlabs(slabs);
+      const fees = {};
+      loans.forEach((loan) => {
+        const slab = getMatchingSlab(slabs, loan.distance ?? 0);
+        fees[loan.id] = slab
+          ? ((loan.lenderInterestedAmount ?? 0) * slab.feePercentage) / 100
+          : null;
+      });
+      setProcessingFees(fees);
+    } catch {
+      setProcessingFees({});
+    }
+  };
+
   const fetchLoansInitiated = async () => {
     try {
       const response = await getListOfBorrowerLoansInitiated();
@@ -127,6 +159,7 @@ const BorrowerLoansInitiated = () => {
           loading: false,
           errorMessage: "",
         });
+        if (data.length > 0) fetchProcessingFees(data);
         return;
       }
 
@@ -280,6 +313,7 @@ const BorrowerLoansInitiated = () => {
     lenderStatus: data.lenderStatus || "-",
     borrowerStatus: data.borrowerStatus || "-",
     createdAt: data.createdAt || null,
+    distance: data.distance ?? 0,
   }));
 
   const RemainingTime = ({ createdAt, duration }) => {
@@ -358,6 +392,16 @@ const BorrowerLoansInitiated = () => {
     {
       title: "Borrower Status",
       dataIndex: "borrowerStatus",
+    },
+    {
+      title: "Processing Fee",
+      key: "processingFee",
+      render: (_, record) => {
+        const fee = processingFees[record.id];
+        if (fee === undefined) return <span className="text-muted small">Loading...</span>;
+        if (fee === null) return <span className="text-muted small">N/A</span>;
+        return <span>₹ {fee.toFixed(2)}</span>;
+      },
     },
     {
       title: "Action",
@@ -488,44 +532,31 @@ const BorrowerLoansInitiated = () => {
               <span className="text-muted">Compare offers from lenders and choose the best option for your needs.</span>
             </div>
 
-            <div className="row mb-3">
-              <div className="col-12 col-md-6 col-xl-3 mb-3">
-                <div className="card border-0 shadow-sm h-100">
-                  <div className="card-body">
-                    <p className="text-muted mb-1">
-                      Total Amount of Offers Received
-                    </p>
-                    <h4 className="mb-0">
-                      ₹ {totalInitiatedAmount.toFixed(2)}
-                    </h4>
-                  </div>
-                </div>
-              </div>
-              {/* <div className="col-12 col-md-6 col-xl-3 mb-3">
-                <div className="card border-0 shadow-sm h-100">
-                  <div className="card-body">
-                    <p className="text-muted mb-1">Pending your action</p>
-                    <h4 className="mb-0">{loanSummary.pendingActionCount}</h4>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-6 col-xl-3 mb-3">
-                <div className="card border-0 shadow-sm h-100">
-                  <div className="card-body">
-                    <p className="text-muted mb-1">Accepted offers</p>
-                    <h4 className="mb-0">{loanSummary.acceptedOffersCount}</h4>
-                  </div>
-                </div>
-              </div>
-              <div className="col-12 col-md-6 col-xl-3 mb-3">
-                <div className="card border-0 shadow-sm h-100">
-                  <div className="card-body">
-                    <p className="text-muted mb-1">Executed loans</p>
-                    <h4 className="mb-0">{loanSummary.executedLoansCount}</h4>
-                  </div>
-                </div>
-              </div> */}
-            </div>
+                          <div className="card border-0 shadow-sm h-100 rounded-4">
+  <div className="card-body p-4">
+
+    <p className="text-uppercase text-muted fw-semibold small mb-2">
+       Total Amount of Offers Received
+    </p>
+
+    <h2 className="fw-bold text-dark mb-2">
+     ₹ {totalInitiatedAmount.toFixed(2)}
+    </h2>
+
+    <div className="d-inline-flex align-items-center bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mt-2">
+      <i className="bi bi-check-circle-fill me-2"></i>
+      <span className="fw-semibold text-white small">
+        Eligible Amount:
+      </span>
+      <span className="ms-2 fw-bold text-white">
+        ₹ {eligibleAmount?.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+        })}
+      </span>
+    </div>
+
+  </div>
+</div>
 
             <div className="row">
               <div className="col-sm-12">

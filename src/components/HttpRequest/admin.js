@@ -853,6 +853,52 @@ export const adminUpdateProcessingFee = async (payload) => {
   return response;
 };
 
+export const radiusBasedFee = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `radiusBasedFee`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getRadiusBasedFee = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getRadiusBasedfee`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const updateBorrowerScore = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateBorrowerScore`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerCibilScore = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerCibilScore`,
+    "GET",
+    token
+  );
+  return response;
+};
+
 export const adminBorrowerSecureInfo = async (payload) => {
   const token = getToken();
   const response = await handleApiRequestAfterLoginService(
@@ -861,6 +907,29 @@ export const adminBorrowerSecureInfo = async (payload) => {
     "PATCH",
     token,
     payload
+  );
+  return response;
+};
+
+export const getAdminCreditReport = async (borrowerUserId) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${borrowerUserId}/adminCreditReport`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const updateOxyScore = async (borrowerId, oxyScore, comments) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateOxyScore`,
+    "PATCH",
+    token,
+    { borrowerId, oxyScore, comments }
   );
   return response;
 };

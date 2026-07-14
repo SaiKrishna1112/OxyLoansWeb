@@ -91,15 +91,7 @@ const BorrowerNearbyLendersPage = () => {
     loading: true,
     errorMessage: "",
   });
-  const [pageInfo, setPageInfo] = useState({
-    hasNextPage: false,
-    rawCount: 0,
-  });
-  const [pagination, setPagination] = useState({
-    pageNo: 1,
-    pageSize: 200,
-  });
-  const [maxPageReached, setMaxPageReached] = useState(1);
+
   const [selectedRadiusKm, setSelectedRadiusKm] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLenderId, setSelectedLenderId] = useState(null);
@@ -112,10 +104,6 @@ const BorrowerNearbyLendersPage = () => {
     { label: "50 km", value: 50 },
     { label: "100 km", value: 100 },
   ];
-
-  useEffect(() => {
-    setMaxPageReached((previous) => Math.max(previous, pagination.pageNo));
-  }, [pagination.pageNo]);
 
   useEffect(() => {
     const getApiErrorMessage = (response) => {
@@ -136,17 +124,10 @@ const BorrowerNearbyLendersPage = () => {
       }));
 
       try {
-        const response = await getLenderListNearByRedius1(
-          pagination.pageNo,
-          pagination.pageSize,
-        );
+        const response = await getLenderListNearByRedius1(1, 10000);
 
         if (response?.status === 200) {
           const pageData = Array.isArray(response?.data) ? response.data : [];
-          setPageInfo({
-            hasNextPage: pageData.length === pagination.pageSize,
-            rawCount: pageData.length,
-          });
           const uniqueLenders = pageData.filter(
             (item, index, self) =>
               index ===
@@ -169,34 +150,17 @@ const BorrowerNearbyLendersPage = () => {
           loading: false,
           errorMessage: getApiErrorMessage(response),
         });
-        setPageInfo({
-          hasNextPage: false,
-          rawCount: 0,
-        });
       } catch (error) {
         setNearbyInfo({
           apiData: [],
           loading: false,
           errorMessage: getApiErrorMessage(error),
         });
-        setPageInfo({
-          hasNextPage: false,
-          rawCount: 0,
-        });
       }
     };
 
     fetchNearbyLenders();
-  }, [pagination.pageNo, pagination.pageSize]);
-
-  const pageDropdownOptions = useMemo(() => {
-    const maxOption = Math.max(
-      maxPageReached,
-      pagination.pageNo + (pageInfo.hasNextPage ? 1 : 0),
-    );
-    const count = Math.max(1, maxOption);
-    return Array.from({ length: count }, (_, index) => index + 1);
-  }, [maxPageReached, pagination.pageNo, pageInfo.hasNextPage]);
+  }, []);
 
   const safePageLenders = useMemo(
     () =>
@@ -513,7 +477,7 @@ const BorrowerNearbyLendersPage = () => {
                 alignItems: "center",
               }}
             >
-              <div style={{ position: "relative", minWidth: 220, flex: "0 1 260px" }}>
+              {/* <div style={{ position: "relative", minWidth: 220, flex: "0 1 260px" }}>
                 <i
                   className="fa fa-search"
                   style={{
@@ -540,13 +504,14 @@ const BorrowerNearbyLendersPage = () => {
                     outline: "none",
                   }}
                 />
-              </div>
+              </div> */}
               <div className="d-flex align-items-center gap-2 flex-wrap">
                 <small className="text-muted fw-semibold">Distance:</small>
                 {DISTANCE_OPTIONS.map((option) => (
                   <button
                     key={option.label}
                     className="btn btn-sm"
+                    disabled={true}
                     style={{
                       borderRadius: 16,
                       fontSize: 11,
@@ -676,7 +641,7 @@ const BorrowerNearbyLendersPage = () => {
                                     : "—"}
                                 </div>
                                 <div className="text-muted mt-1">
-                                  Lender ID {lender?.lenderId ?? "—"}
+                                  Lender ID {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}
                                 </div>
                               </div>
                             </div>
@@ -761,7 +726,7 @@ const BorrowerNearbyLendersPage = () => {
                               <div className="fw-semibold text-truncate" style={{ fontSize: 12, color: isSelected ? PRIMARY : "#1a1f36" }}>
                                 {lender?.lenderName || "Lender"}
                               </div>
-                              <div style={{ fontSize: 10, color: "#888" }}>ID: {lender?.lenderId ?? "—"}</div>
+                              <div style={{ fontSize: 10, color: "#888" }}>ID: {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}</div>
                             </div>
                             <div className="ms-auto text-end" style={{ flexShrink: 0 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: lender?.distance <= 5 ? "#16a34a" : lender?.distance <= 25 ? "#d97706" : "#dc3545" }}>
@@ -775,56 +740,7 @@ const BorrowerNearbyLendersPage = () => {
                     })
                   )}
                 </div>
-                <div
-                  style={{
-                    borderTop: "1px solid #e9ecef",
-                    padding: 10,
-                    background: "#f8f9fa",
-                  }}
-                >
-                  <div className="d-flex align-items-center gap-2 flex-wrap">
-                    <label className="small text-muted mb-0">Page</label>
-                    <select
-                      className="form-select form-select-sm"
-                      style={{ width: "84px" }}
-                      value={pagination.pageNo}
-                      disabled={nearbyInfo.loading}
-                      onChange={(event) =>
-                        setPagination((prev) => ({
-                          ...prev,
-                          pageNo: Number(event.target.value),
-                        }))
-                      }
-                    >
-                      {pageDropdownOptions.map((pageNumber) => (
-                        <option key={pageNumber} value={pageNumber}>
-                          {pageNumber}
-                        </option>
-                      ))}
-                    </select>
-                    <label className="small text-muted mb-0">Rows</label>
-                    <select
-                      className="form-select form-select-sm"
-                      style={{ width: "86px" }}
-                      value={pagination.pageSize}
-                      disabled={nearbyInfo.loading}
-                      onChange={(event) => {
-                        setMaxPageReached(1);
-                        setPagination({
-                          pageNo: 1,
-                          pageSize: Number(event.target.value),
-                        });
-                      }}
-                    >
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={150}>150</option>
-                      <option value={200}>200</option>
-                      <option value={500}>500</option>
-                    </select>
-                  </div>
-                 
-                </div>
+
               </div>
             </div>
           </div>

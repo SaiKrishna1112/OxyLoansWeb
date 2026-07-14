@@ -32,7 +32,8 @@ L.Icon.Default.mergeOptions({
 });
 
 const PRIMARY = "#3d5ee1";
-const PAGE_SIZE = 6;
+const LOAD_SIZE = 50;
+const PAGE_FETCH_SIZE = 1000;
 
 // ── Custom Leaflet marker icons ───────────────────────────────────
 const borrowerIcon = new L.DivIcon({
@@ -74,10 +75,7 @@ const MapView = ({
   onSearchChange,
   onSelect,
   DISTANCE_OPTIONS,
-  currentPage,
-  totalPages,
   totalCount,
-  onPageChange,
 }) => {
   const [hoveredId, setHoveredId] = useState(null);
 
@@ -306,7 +304,7 @@ const MapView = ({
                             {borrower.borrowerName || `Borrower #${idx + 1}`}
                           </div>
                           <div style={{ fontSize: 11, color: "#6c757d" }}>
-                            ID: {borrower.borrowerId}
+                            ID: {borrower.borrowerId ? `••••${String(borrower.borrowerId).slice(-2)}` : "—"}
                           </div>
                         </div>
                       </div>
@@ -507,130 +505,18 @@ const MapView = ({
               })
             )}
           </div>
-          {/* Footer: legend + pagination */}
-          <div
-            style={{
-              padding: "10px 16px",
-              borderTop: "1px solid #e9ecef",
-              background: "#f8f9fa",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                gap: 16,
-                marginBottom: totalPages > 1 ? 8 : 0,
-              }}
-            >
+          {/* Footer: legend */}
+          <div style={{ padding: "10px 16px", borderTop: "1px solid #e9ecef", background: "#f8f9fa" }}>
+            <div style={{ display: "flex", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div
-                  style={{
-                    width: 10,
-                    height: 10,
-                    background: "#28a745",
-                    borderRadius: "50%",
-                  }}
-                />
-                <small className="text-muted" style={{ fontSize: 11 }}>
-                  Borrower
-                </small>
+                <div style={{ width: 10, height: 10, background: "#28a745", borderRadius: "50%" }} />
+                <small className="text-muted" style={{ fontSize: 11 }}>Borrower</small>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div
-                  style={{
-                    width: 10,
-                    height: 10,
-                    background: "#3d5ee1",
-                    borderRadius: "50%",
-                  }}
-                />
-                <small className="text-muted" style={{ fontSize: 11 }}>
-                  You
-                </small>
+                <div style={{ width: 10, height: 10, background: "#3d5ee1", borderRadius: "50%" }} />
+                <small className="text-muted" style={{ fontSize: 11 }}>You</small>
               </div>
             </div>
-            {totalPages > 1 && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 6,
-                }}
-              >
-                <small className="text-muted" style={{ fontSize: 11 }}>
-                  Page <strong>{currentPage}</strong> / {totalPages}
-                </small>
-                <div style={{ display: "flex", gap: 4 }}>
-                  <button
-                    className="btn btn-sm"
-                    style={{
-                      padding: "3px 8px",
-                      fontSize: 11,
-                      border: "1px solid #ddd",
-                      background: currentPage === 1 ? "#f0f0f0" : "#fff",
-                      color: currentPage === 1 ? "#aaa" : "#333",
-                      borderRadius: 4,
-                    }}
-                    disabled={currentPage === 1}
-                    onClick={() => onPageChange(1)}
-                    title="First"
-                  >
-                    <i className="fa fa-angle-double-left" />
-                  </button>
-                  <button
-                    className="btn btn-sm"
-                    style={{
-                      padding: "3px 8px",
-                      fontSize: 11,
-                      border: "1px solid #ddd",
-                      background: currentPage === 1 ? "#f0f0f0" : "#fff",
-                      color: currentPage === 1 ? "#aaa" : "#333",
-                      borderRadius: 4,
-                    }}
-                    disabled={currentPage === 1}
-                    onClick={() => onPageChange(currentPage - 1)}
-                    title="Prev"
-                  >
-                    <i className="fa fa-chevron-left" />
-                  </button>
-                  <button
-                    className="btn btn-sm"
-                    style={{
-                      padding: "3px 8px",
-                      fontSize: 11,
-                      border: "1px solid #ddd",
-                      background:
-                        currentPage === totalPages ? "#f0f0f0" : "#fff",
-                      color: currentPage === totalPages ? "#aaa" : "#333",
-                      borderRadius: 4,
-                    }}
-                    disabled={currentPage === totalPages}
-                    onClick={() => onPageChange(currentPage + 1)}
-                    title="Next"
-                  >
-                    <i className="fa fa-chevron-right" />
-                  </button>
-                  <button
-                    className="btn btn-sm"
-                    style={{
-                      padding: "3px 8px",
-                      fontSize: 11,
-                      border: "1px solid #ddd",
-                      background:
-                        currentPage === totalPages ? "#f0f0f0" : "#fff",
-                      color: currentPage === totalPages ? "#aaa" : "#333",
-                      borderRadius: 4,
-                    }}
-                    disabled={currentPage === totalPages}
-                    onClick={() => onPageChange(totalPages)}
-                    title="Last"
-                  >
-                    <i className="fa fa-angle-double-right" />
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -827,7 +713,7 @@ const ProximityLoans = () => {
   const [borrowers, setBorrowers] = useState([]);
   const [allBorrowers, setAllBorrowers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(LOAD_SIZE);
   const [distanceFilter, setDistanceFilter] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState("map"); // "map" | "list"
@@ -869,14 +755,20 @@ const ProximityLoans = () => {
     { label: "Within 100 km", value: 100 },
   ];
 
-  // ── Fetch ────────────────────────────────────────────────────────
+  // ── Fetch all pages ──────────────────────────────────────────────
   const fetchBorrowers = async () => {
     setLoading(true);
     try {
-      const res = await getBorrowerListNearByRedius(1, 1000);
-      const data = res?.data;
-      const borrowerList = Array.isArray(data) ? data : [];
-      setAllBorrowers(borrowerList);
+      const all = [];
+      let page = 1;
+      while (true) {
+        const res = await getBorrowerListNearByRedius(page, PAGE_FETCH_SIZE);
+        const batch = Array.isArray(res?.data) ? res.data : [];
+        all.push(...batch);
+        if (batch.length < PAGE_FETCH_SIZE) break;
+        page++;
+      }
+      setAllBorrowers(all);
     } catch {
       setAllBorrowers([]);
     } finally {
@@ -888,9 +780,9 @@ const ProximityLoans = () => {
     fetchBorrowers();
   }, []);
 
-  // Reset page when filters change
+  // Reset visible count when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(LOAD_SIZE);
   }, [distanceFilter, searchQuery]);
 
   // Distance filter
@@ -923,46 +815,8 @@ const ProximityLoans = () => {
     );
   }, [borrowers, searchQuery]);
 
-  // Client-side pagination
   const totalCount = filteredBorrowers.length;
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const pagedBorrowers = filteredBorrowers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  const goToPage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
-
-  const pageNumbers = () => {
-    if (totalPages <= 7)
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    const pages = [];
-    if (currentPage <= 4) pages.push(1, 2, 3, 4, 5, "...", totalPages);
-    else if (currentPage >= totalPages - 3)
-      pages.push(
-        1,
-        "...",
-        totalPages - 4,
-        totalPages - 3,
-        totalPages - 2,
-        totalPages - 1,
-        totalPages,
-      );
-    else
-      pages.push(
-        1,
-        "...",
-        currentPage - 1,
-        currentPage,
-        currentPage + 1,
-        "...",
-        totalPages,
-      );
-    return pages;
-  };
+  const visibleBorrowers = filteredBorrowers.slice(0, visibleCount);
 
   // ── Borrower Detail ──────────────────────────────────────────────
   const fetchBorrowerDetail = async (borrower) => {
@@ -1740,13 +1594,13 @@ const ProximityLoans = () => {
                               .filter(Boolean)
                               .join(" "),
                           ],
-                          ["Mobile", p.mobileNumber],
-                          ["WhatsApp", p.whatsAppNumber],
-                          ["Email", p.email],
+                          ["Mobile", p.mobileNumber ? `••••••${String(p.mobileNumber).slice(-5)}` : null],
+                          ["WhatsApp", p.whatsAppNumber ? `••••••${String(p.whatsAppNumber).slice(-5)}` : null],
+                          ["Email", p.email ? p.email.replace(/^(..)[^@]*(@.*)$/, "$1••••$2") : null],
                           ["Date of Birth", p.dob],
                           ["Father Name", p.fatherName],
-                          ["PAN Number", p.panNumber],
-                          ["Aadhaar", p.aadharNumber],
+                          ["PAN Number", p.panNumber ? `••••••${String(p.panNumber).slice(-5)}` : null],
+                          ["Aadhaar", p.aadharNumber ? `••••••${String(p.aadharNumber).slice(-5)}` : null],
                           ["Employment", p.employment],
                           ["Company", p.companyName],
                           [
@@ -1765,10 +1619,8 @@ const ProximityLoans = () => {
                           ["City", p.city],
                           ["State", p.state],
                           ["Pin Code", p.pinCode],
-                          ["Bank Name", p.bankName],
                           ["Account Number", p.accountNumber],
                           ["IFSC Code", p.ifscCode],
-                          ["Branch", p.branchName],
                         ].map(([label, value]) =>
                           value ? (
                             <div className="col-md-4 mb-3" key={label}>
@@ -2276,23 +2128,20 @@ const ProximityLoans = () => {
               </div>
             )}
             <MapView
-              borrowers={pagedBorrowers}
+              borrowers={visibleBorrowers}
               allBorrowers={allBorrowers}
               distanceFilter={distanceFilter}
               searchQuery={searchQuery}
               onDistanceChange={(val) => {
                 setDistanceFilter(val);
-                setCurrentPage(1);
+                setVisibleCount(LOAD_SIZE);
               }}
               onSearchChange={setSearchQuery}
               onSelect={(b) => {
                 if (!loading) fetchBorrowerDetail(b);
               }}
               DISTANCE_OPTIONS={DISTANCE_OPTIONS}
-              currentPage={currentPage}
-              totalPages={totalPages}
               totalCount={totalCount}
-              onPageChange={goToPage}
             />
           </div>
         )}
@@ -2370,7 +2219,7 @@ const ProximityLoans = () => {
                         }}
                         onClick={() => {
                           setDistanceFilter(opt.value);
-                          setCurrentPage(1);
+                          setVisibleCount(LOAD_SIZE);
                         }}
                       >
                         {opt.label}
@@ -2400,7 +2249,7 @@ const ProximityLoans = () => {
             ) : (
               <>
                 <div className="row">
-                  {pagedBorrowers.map((borrower, idx) => (
+                  {visibleBorrowers.map((borrower, idx) => (
                     <div
                       className="col-md-6 col-xl-4 mb-4"
                       key={borrower.borrowerId || idx}
@@ -2410,36 +2259,19 @@ const ProximityLoans = () => {
                           <div className="d-flex align-items-center gap-3 mb-3">
                             <div
                               className="d-flex align-items-center justify-content-center rounded-circle"
-                              style={{
-                                width: 46,
-                                height: 46,
-                                background: PRIMARY + "18",
-                                flexShrink: 0,
-                              }}
+                              style={{ width: 46, height: 46, background: PRIMARY + "18", flexShrink: 0 }}
                             >
-                              <i
-                                className="fa fa-user"
-                                style={{ color: PRIMARY, fontSize: 20 }}
-                              />
+                              <i className="fa fa-user" style={{ color: PRIMARY, fontSize: 20 }} />
                             </div>
                             <div>
                               <h6 className="mb-0 fw-bold">
-                                {borrower.borrowerName ||
-                                  `Borrower #${(currentPage - 1) * PAGE_SIZE + idx + 1}`}
+                                {borrower.borrowerName || `Borrower #${idx + 1}`}
                               </h6>
-                              <small className="text-muted">
-                                ID: {borrower.borrowerId}
-                              </small>
+                              <small className="text-muted">ID: {borrower.borrowerId ? `••••${String(borrower.borrowerId).slice(-2)}` : "—"}</small>
                             </div>
                           </div>
-                          <div
-                            className="d-flex align-items-center gap-1 text-muted"
-                            style={{ fontSize: 13 }}
-                          >
-                            <i
-                              className="fa fa-map-marker"
-                              style={{ color: PRIMARY }}
-                            />
+                          <div className="d-flex align-items-center gap-1 text-muted" style={{ fontSize: 13 }}>
+                            <i className="fa fa-map-marker" style={{ color: PRIMARY }} />
                             <span>
                               {borrower.distance != null
                                 ? `${Number(borrower.distance).toFixed(2)} km away`
@@ -2453,8 +2285,7 @@ const ProximityLoans = () => {
                             style={{ background: PRIMARY, color: "#fff" }}
                             onClick={() => fetchBorrowerDetail(borrower)}
                           >
-                            <i className="fa fa-eye me-1" />
-                            View Details
+                            <i className="fa fa-eye me-1" />View Details
                           </button>
                           <button
                             className="btn btn-sm btn-outline-success"
@@ -2470,86 +2301,14 @@ const ProximityLoans = () => {
                   ))}
                 </div>
 
-                {totalPages > 1 && (
-                  <div className="d-flex align-items-center justify-content-between mt-2 mb-4 flex-wrap gap-2">
-                    <small className="text-muted">
-                      Showing {(currentPage - 1) * PAGE_SIZE + 1}–
-                      {Math.min(
-                        currentPage * PAGE_SIZE,
-                        filteredBorrowers.length,
-                      )}{" "}
-                      of <strong>{filteredBorrowers.length}</strong> borrowers
-                    </small>
-                    <ul className="pagination mb-0">
-                      <li
-                        className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => goToPage(1)}
-                        >
-                          <i className="fa fa-angle-double-left" />
-                        </button>
-                      </li>
-                      <li
-                        className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => goToPage(currentPage - 1)}
-                        >
-                          <i className="fa fa-chevron-left" />
-                        </button>
-                      </li>
-                      {pageNumbers().map((page, i) =>
-                        page === "..." ? (
-                          <li key={`e-${i}`} className="page-item disabled">
-                            <span className="page-link">&hellip;</span>
-                          </li>
-                        ) : (
-                          <li
-                            key={page}
-                            className={`page-item ${currentPage === page ? "active" : ""}`}
-                          >
-                            <button
-                              className="page-link"
-                              style={
-                                currentPage === page
-                                  ? {
-                                      background: PRIMARY,
-                                      borderColor: PRIMARY,
-                                      color: "#fff",
-                                    }
-                                  : {}
-                              }
-                              onClick={() => goToPage(page)}
-                            >
-                              {page}
-                            </button>
-                          </li>
-                        ),
-                      )}
-                      <li
-                        className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => goToPage(currentPage + 1)}
-                        >
-                          <i className="fa fa-chevron-right" />
-                        </button>
-                      </li>
-                      <li
-                        className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => goToPage(totalPages)}
-                        >
-                          <i className="fa fa-angle-double-right" />
-                        </button>
-                      </li>
-                    </ul>
+                {visibleCount < filteredBorrowers.length && (
+                  <div className="text-center mt-2 mb-4">
+                    <button
+                      className="btn btn-outline-primary px-5"
+                      onClick={() => setVisibleCount((prev) => prev + LOAD_SIZE)}
+                    >
+                      Load More ({filteredBorrowers.length - visibleCount} remaining)
+                    </button>
                   </div>
                 )}
               </>

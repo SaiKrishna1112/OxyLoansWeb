@@ -129,6 +129,16 @@ const OxyloansAdminSidebar = () => {
       link: "/activeLendersParticipation",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
+      {
+      key: "borrowerFees",
+      label: "Borrower Fees",
+      icon: "fa-solid fa-indian-rupee-sign",
+      children: [
+        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
+        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
+      ],
+      type: ["ADMIN", "SUPERADMIN"],
+    },
     {
       key: "participationamountinfo",
       label: " Participation Amount Info",
@@ -276,16 +286,6 @@ const OxyloansAdminSidebar = () => {
       link: "/monthlyReturnedInterest",
       icon: "fas fa-hand-holding-usd",
       type: ["ADMIN","SUPERADMIN"],
-    },
-    {
-      key: "borrowerFees",
-      label: "Borrower Fees",
-      icon: "fa-solid fa-indian-rupee-sign",
-      children: [
-        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
-        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
-      ],
-      type: ["ADMIN", "SUPERADMIN"],
     },
 
   ];

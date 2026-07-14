@@ -3,7 +3,7 @@ import { Table, Select, Input, Button, Tag, Space, Typography, Card, message, } 
 import {  Spinner } from 'react-bootstrap';
 
 import { EyeOutlined, EditOutlined, UserSwitchOutlined, CommentOutlined,FileSearchOutlined  } from "@ant-design/icons";
-import { commentsAdminApiCall, searchCall, handleChangePrimaryType, handleInterestStatus, adminBorrowerSecureInfo, calculateRoiBasedOnCibilScore } from "../../../../HttpRequest/admin";
+import { commentsAdminApiCall, searchCall, handleChangePrimaryType, handleInterestStatus, adminBorrowerSecureInfo, calculateRoiBasedOnCibilScore, getAdminCreditReport, updateOxyScore, handleComments, getcommentsHistory } from "../../../../HttpRequest/admin";
 import Swal from 'sweetalert2';
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
@@ -38,13 +38,22 @@ const BorrowerLoanApplications = () => {
   const [verifyForm, setVerifyForm] = useState({ verifiedMonthIncome: "", cibilScore: "", adminComments: "", verificationStatus: "VERIFIED" });
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [roiResult, setRoiResult] = useState(null);
+  const [cibilModalOpen, setCibilModalOpen] = useState(false);
+  const [cibilRecord, setCibilRecord] = useState(null);
+  const [cibilReport, setCibilReport] = useState(null);
+  const [oxyScoreForm, setOxyScoreForm] = useState({ oxyScore: "", comments: "" });
+  const [cibilLoading, setCibilLoading] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [commentError, setCommentError] = useState("");
+  const [commentHistory, setCommentHistory] = useState([]);
 
   const pageSize = 10; // Fixed page size
   const navigate = useNavigate();
 
   const [show, setShow] = useState(false);
 
-  const handleClose = () => { setShow(false); setCommentsAdmin(false); setInterestStatus(false); setShowVerifyModal(false); };
+  const handleClose = () => { setShow(false); setCommentsAdmin(false); setInterestStatus(false); setShowVerifyModal(false); setShowCommentModal(false); };
   
   const [formData, setFormData] = useState({
     location: "",
@@ -483,6 +492,36 @@ const BorrowerLoanApplications = () => {
     setShowComments(!showComments); // Toggle the visibility of the comment fields
   };
 
+  const today = new Date();
+  const formattedDate = `${String(today.getDate()).padStart(2,'0')}-${String(today.getMonth()+1).padStart(2,'0')}-${today.getFullYear()} ${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}:${String(today.getSeconds()).padStart(2,'0')}`;
+
+  const writeComments = async (record) => {
+    setSelectedRecord(record);
+    setCommentText("");
+    setCommentError("");
+    try {
+      const res = await getcommentsHistory(record);
+      setCommentHistory(res?.status === 200 ? res.data : []);
+    } catch { setCommentHistory([]); }
+    setShowCommentModal(true);
+  };
+
+  const commentsFunc = async () => {
+    if (!commentText.trim()) { setCommentError("Comments are required"); return; }
+    if (!selectedRecord) return;
+    try {
+      const res = await handleComments(selectedRecord, commentText, formattedDate);
+      if (res?.status === 200) {
+        setShowCommentModal(false);
+        setCommentText("");
+        Swal.fire("Success!", "Comment added successfully", "success");
+        fetchLoanData();
+      } else {
+        Swal.fire({ icon: "error", title: "Failed", text: res?.response?.data?.errorMessage || "Could not add comment." });
+      }
+    } catch { Swal.fire({ icon: "error", title: "Error", text: "Request failed." }); }
+  };
+
   const ViewTheComments = (index, data) => {
     if (index === selectedCommentIndex) {
       // Clicking again hides the comment
@@ -608,6 +647,25 @@ const BorrowerLoanApplications = () => {
             >
               Upload Cibil
             </Button>
+
+            <Button 
+              type="primary"
+              size="small"
+              onClick={() => {
+                setCibilRecord(record);
+                setCibilReport(null);
+                setOxyScoreForm({ oxyScore: "", comments: "" });
+                setCibilModalOpen(true);
+              }}
+            >Get Cibil and Update Score</Button>
+
+            <Button
+              icon={<CommentOutlined />}
+              size="small"
+              onClick={() => writeComments(record)}
+            >
+              Add Comments
+            </Button>
     
             <Button
               type="default"
@@ -732,6 +790,46 @@ const BorrowerLoanApplications = () => {
     }
   };
   
+  const handleGetCibil = async () => {
+    if (!cibilRecord) return;
+    setCibilLoading(true);
+    try {
+      const res = await getAdminCreditReport(cibilRecord.userDisplayId);
+      if (res?.status === 200) {
+        setCibilReport(res.data);
+      } else {
+        Swal.fire({ icon: "error", title: "Failed", text: res?.response?.data?.errorMessage || "Could not fetch credit report." });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to fetch credit report." });
+    } finally {
+      setCibilLoading(false);
+    }
+  };
+
+  const handleUpdateOxyScore = async () => {
+    if (!cibilRecord) return;
+    setCibilLoading(true);
+    try {
+      const res = await updateOxyScore(
+        cibilRecord.userDisplayId,
+        Number(oxyScoreForm.oxyScore),
+        oxyScoreForm.comments
+      );
+      if (res?.status === 200) {
+        Swal.fire({ icon: "success", title: "Success!", text: "OxyScore updated successfully.", confirmButtonColor: "#3085d6" });
+        setCibilModalOpen(false);
+        fetchLoanData();
+      } else {
+        Swal.fire({ icon: "error", title: "Failed", text: res?.response?.data?.errorMessage || "Could not update OxyScore." });
+      }
+    } catch {
+      Swal.fire({ icon: "error", title: "Error", text: "Failed to update OxyScore." });
+    } finally {
+      setCibilLoading(false);
+    }
+  };
+
   return (
     <div className="main-wrapper">
       <OxyloansAdminSidebar />
@@ -1182,6 +1280,175 @@ const BorrowerLoanApplications = () => {
                           </Button>
                         </Modal.Footer>
                       </Modal>
+
+      {/* Add Comments Modal */}
+      <Modal show={showCommentModal} onHide={handleClose} size="md" centered>
+        <Modal.Header closeButton style={{ background: "#f0f4ff", borderBottom: "1px solid #d0d9f0", padding: "14px 20px" }}>
+          <Modal.Title style={{ fontSize: 15, fontWeight: 700, color: "#1a3c8f" }}>
+            💬 Add Comment
+            <span style={{ fontSize: 12, fontWeight: 400, color: "#666", marginLeft: 8 }}>
+              {selectedRecord?.user?.firstName} {selectedRecord?.user?.lastName} (ID: {selectedRecord?.userDisplayId})
+            </span>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ padding: 0 }}>
+
+          {/* Comment History */}
+          {commentHistory?.length > 0 && (
+            <div style={{ maxHeight: 240, overflowY: "auto", padding: "16px 20px", background: "#f8f9fb", borderBottom: "1px solid #e8eaf0" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Previous Comments</div>
+              {commentHistory.map((c, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, marginBottom: i < commentHistory.length - 1 ? 14 : 0 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: "50%", background: "#1a3c8f",
+                    color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, fontWeight: 700, flexShrink: 0
+                  }}>
+                    {c.updatedByName?.charAt(0)?.toUpperCase() || "A"}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#333", marginBottom: 2 }}>{c.updatedByName || "Admin"}</div>
+                    <div style={{ fontSize: 13, color: "#555", background: "#fff", border: "1px solid #e0e4f0", borderRadius: "0 8px 8px 8px", padding: "7px 12px", lineHeight: 1.5 }}>
+                      {c.comment}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New Comment Input */}
+          <div style={{ padding: "16px 20px" }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "#444", marginBottom: 6, display: "block" }}>
+              New Comment <span style={{ color: "#e53e3e" }}>*</span>
+            </label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={commentText}
+              onChange={(e) => { setCommentText(e.target.value); if (commentError) setCommentError(""); }}
+              placeholder="Type your comment here..."
+              style={{ resize: "none", fontSize: 13, borderColor: commentError ? "#e53e3e" : "#d0d9f0", borderRadius: 8 }}
+            />
+            {commentError && <div style={{ fontSize: 12, color: "#e53e3e", marginTop: 4 }}>{commentError}</div>}
+          </div>
+
+        </Modal.Body>
+        <Modal.Footer style={{ background: "#f8f9fa", padding: "10px 20px", gap: 8 }}>
+          <button
+            onClick={handleClose}
+            style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "7px 18px", fontWeight: 500, fontSize: 13, cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={commentsFunc}
+            style={{ background: "#1a3c8f", color: "#fff", border: "none", borderRadius: 6, padding: "7px 20px", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+          >
+            Submit Comment
+          </button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Get Cibil & Update OxyScore Modal */}
+      <Modal show={cibilModalOpen} onHide={() => setCibilModalOpen(false)} size="lg">
+        <Modal.Header closeButton style={{ background: "#f0f4ff", borderBottom: "1px solid #d0d9f0" }}>
+          <Modal.Title style={{ fontSize: 16, fontWeight: 700, color: "#1a3c8f" }}>
+            Cibil Report &amp; Update OxyScore
+            <span style={{ fontSize: 13, fontWeight: 400, color: "#555", marginLeft: 8 }}>
+              — {cibilRecord?.user?.firstName} {cibilRecord?.user?.lastName} (ID: {cibilRecord?.userDisplayId})
+            </span>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ padding: "24px" }}>
+
+          {/* Section 1: Get Cibil Report */}
+          <div style={{ background: "#f8faff", border: "1px solid #d0e0ff", borderRadius: 8, padding: "16px 20px", marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: cibilReport ? 12 : 0 }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: "#1a3c8f" }}>CIBIL Credit Report</div>
+                <div style={{ fontSize: 12, color: "#777", marginTop: 2 }}>Fetch the latest credit report for this borrower</div>
+              </div>
+              <button
+                onClick={handleGetCibil}
+                disabled={cibilLoading}
+                style={{
+                  background: cibilLoading ? "#a0b4e8" : "#1a3c8f",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  padding: "8px 20px",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: cibilLoading ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cibilLoading ? <><Spinner animation="border" size="sm" /> Fetching...</> : "Get Cibil Report"}
+              </button>
+            </div>
+            {cibilReport && (
+              <pre style={{ background: "#fff", border: "1px solid #e0e8ff", borderRadius: 6, padding: 12, maxHeight: 260, overflow: "auto", fontSize: 12, margin: 0, color: "#333" }}>
+                {JSON.stringify(cibilReport, null, 2)}
+              </pre>
+            )}
+          </div>
+
+          {/* Section 2: Update OxyScore */}
+          <div style={{ background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "16px 20px" }}>
+            <div style={{ fontWeight: 600, fontSize: 14, color: "#1a3c8f", marginBottom: 14 }}>Update OxyScore</div>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label style={{ fontWeight: 500, fontSize: 13 }}>OxyScore</Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="e.g. 870"
+                  value={oxyScoreForm.oxyScore}
+                  onChange={(e) => setOxyScoreForm((p) => ({ ...p, oxyScore: e.target.value }))}
+                />
+              </Form.Group>
+              <Form.Group>
+                <Form.Label style={{ fontWeight: 500, fontSize: 13 }}>Comments</Form.Label>
+                <Form.Control
+                  placeholder="e.g. credit score + oxyscore = 870"
+                  value={oxyScoreForm.comments}
+                  onChange={(e) => setOxyScoreForm((p) => ({ ...p, comments: e.target.value }))}
+                />
+              </Form.Group>
+            </Form>
+          </div>
+
+        </Modal.Body>
+        <Modal.Footer style={{ background: "#f8f9fa" }}>
+          <button
+            onClick={() => setCibilModalOpen(false)}
+            style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "7px 18px", fontWeight: 500, cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleUpdateOxyScore}
+            disabled={cibilLoading || !oxyScoreForm.oxyScore}
+            style={{
+              background: cibilLoading || !oxyScoreForm.oxyScore ? "#a0b4e8" : "#1a3c8f",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "7px 20px",
+              fontWeight: 600,
+              cursor: cibilLoading || !oxyScoreForm.oxyScore ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {cibilLoading ? <><Spinner animation="border" size="sm" /> Updating...</> : "Update OxyScore"}
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };  

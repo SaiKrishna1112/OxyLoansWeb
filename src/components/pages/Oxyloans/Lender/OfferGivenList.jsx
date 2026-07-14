@@ -121,7 +121,7 @@ const OfferGivenList = () => {
     const actionMap = {
       LOANACCEPTED: {
         title: "Funding Confirmed!",
-        text: "Your confirmation has been received. Once the borrower agreest to executes the loan, you will be navigated to the agreement and loan disbursement process.",
+        text: "Your confirmation has been received. Once the borrower agrees to execute the loan, you will be navigated to the agreement and loan disbursement process.",
         icon: "success",
       },
       LENDER_REJECTED: {

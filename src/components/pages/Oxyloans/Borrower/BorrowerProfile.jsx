@@ -157,6 +157,7 @@ const BorrowerProfile = () => {
   const [isVerifyingPan, setIsVerifyingPan] = useState(false);
   const [isPanVerified, setIsPanVerified] = useState(false);
   const [panVerificationStatus, setPanVerificationStatus] = useState("");
+  const [addressGeoStatus, setAddressGeoStatus] = useState({ loading: false, lat: null, lng: null, message: "", valid: null });
   const [bankaccountprofile, setBankaccountProfile] = useState({
     sendMobileOtp: "",
     moblieNumber: "",
@@ -1477,6 +1478,48 @@ const BorrowerProfile = () => {
       toastrWarning("fill the mandatory fields");
     }
   };
+
+  useEffect(() => {
+    const address = (userProfile.residenceAddress || "").trim();
+    const pinCode = String(userProfile.pinCode || "").trim();
+    const city = (userProfile.city || "").trim();
+    const state = (userProfile.state || "").trim();
+
+    if (!address || pinCode.length < 6 || !city || !state) {
+      setAddressGeoStatus({ loading: false, lat: null, lng: null, message: "", valid: null });
+      return;
+    }
+
+    setAddressGeoStatus({ loading: true, lat: null, lng: null, message: "Verifying address...", valid: null });
+
+    const timer = setTimeout(async () => {
+      try {
+        const query = encodeURIComponent(`${address}, ${pinCode}, ${city}, ${state}, India`);
+        const res = await axios.get(
+          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=in`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        if (res.data && res.data.length > 0) {
+          const { lat, lon, display_name } = res.data[0];
+          setAddressGeoStatus({
+            loading: false,
+            lat: parseFloat(lat),
+            lng: parseFloat(lon),
+            message: `✓ Address verified — Lat: ${parseFloat(lat).toFixed(5)}, Lng: ${parseFloat(lon).toFixed(5)}`,
+            valid: true,
+            displayName: display_name,
+          });
+        } else {
+          setAddressGeoStatus({ loading: false, lat: null, lng: null, message: "Address not found. Please check the address and pin code.", valid: false });
+        }
+      } catch (err) {
+        console.error("Address geocoding failed", err);
+        setAddressGeoStatus({ loading: false, lat: null, lng: null, message: "Failed to verify address. Please try again.", valid: false });
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [userProfile.residenceAddress, userProfile.pinCode, userProfile.city, userProfile.state]);
 
   const handleVerifyPan = async () => {
     if (!userProfile.panNumber || userProfile.panNumber.length !== 10) {
@@ -3005,6 +3048,20 @@ console.log("data",data.status);
                                 {userProfile.residenceAddresserror && (
                                   <div className="text-danger">
                                     {userProfile.residenceAddresserror}
+                                  </div>
+                                )}
+                                {addressGeoStatus.loading && (
+                                  <div className="text-muted small mt-1">
+                                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    Verifying address...
+                                  </div>
+                                )}
+                                {!addressGeoStatus.loading && addressGeoStatus.message && (
+                                  <div className={`mt-1 small ${addressGeoStatus.valid === true ? "text-success" : "text-danger"}`}>
+                                    {addressGeoStatus.message}
+                                    {addressGeoStatus.valid === true && addressGeoStatus.displayName && (
+                                      <div className="text-muted" style={{ fontSize: "0.75rem" }}>{addressGeoStatus.displayName}</div>
+                                    )}
                                   </div>
                                 )}
 

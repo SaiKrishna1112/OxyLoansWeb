@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import { saveAs } from "file-saver";
@@ -1183,8 +1183,6 @@ const AdminAIDashboard = () => {
           {exportMessage ? <div className="admin-ai-pro-export-msg">{exportMessage}</div> : null}
 
           {loading && <div className="admin-ai-empty-state">Loading Admin AI dashboard...</div>}
-
-          {!loading && <AdminNotificationPanel />}
 
           {!loading && !showActiveLenders && !showAdminUsers && (
             <>

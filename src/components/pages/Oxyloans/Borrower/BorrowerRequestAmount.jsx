@@ -4,6 +4,7 @@ import { Table } from "antd";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
 import { getBorrowerRequestAmount,getBorrowerEligibleAmount } from "../../../HttpRequest/afterlogin";
+import FeeConfigInfo from "./FeeConfigInfo";
 
 const formatLoanRequestStatus = (status) => {
   const normalized = String(status || "").trim().toUpperCase();
@@ -349,6 +350,9 @@ const BorrowerRequestAmount = () => {
             </div>
 
             {statusBanner}
+
+            {/* Fee Configuration Info */}
+            <FeeConfigInfo />
 
             <div className="row">
               <div className="col-sm-12">

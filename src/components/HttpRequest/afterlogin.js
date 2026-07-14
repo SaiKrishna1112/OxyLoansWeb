@@ -3630,8 +3630,8 @@ export const getMyLenderOffers = async () => {
 // PROXIMITY APIs
 // ============================================================
 
-export const getNearbyBorrowers = async (lat, lng, radiusKm = 50) => {
-  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/nearby-borrowers?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}`, {
+export const getNearbyBorrowers = async (lat, lng, radiusKm = 50, page = 0, size = 100) => {
+  return axios.get(`${MARKETPLACE_URL}/v1/marketplace/nearby-borrowers?lat=${lat}&lng=${lng}&radiusKm=${radiusKm}&page=${page}&size=${size}`, {
     headers: marketplaceHeaders(),
   });
 };
@@ -4056,6 +4056,28 @@ export const getBorrowerSecureInfo = () => {
     headers: { accessToken: getToken() },
   });
 };
+export const getRadiusBasedFee = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getRadiusBasedfee`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const getBorrowerCibilScore = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerCibilScore`,
+    "GET",
+    token
+  );
+  return response;
+};
+
 export const saveBorrowerReferenceDetails = (payload) =>
   axios.patch(`${API_BASE_URL}borrowerReferenceDetails`, payload, {
     headers: { accessToken: getToken(), "Content-Type": "application/json" },

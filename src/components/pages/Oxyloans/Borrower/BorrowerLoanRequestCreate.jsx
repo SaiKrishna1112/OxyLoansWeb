@@ -12,6 +12,7 @@ import {
   getCibilBasedRoi,
   getUserDetails,
 } from "../../../HttpRequest/afterlogin";
+import FeeConfigInfo from "./FeeConfigInfo";
 
 const formatCurrency = (amount) => {
   const numericValue = Number(amount || 0);
@@ -502,6 +503,9 @@ const BorrowerLoanRequestCreate = () => {
               </div>
             </div>
           </div>
+
+          {/* Fee Configuration Info */}
+          <FeeConfigInfo />
 
           {isFormBlockedByStatus ? (
             <div className="row">

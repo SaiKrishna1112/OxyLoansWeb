@@ -14,7 +14,7 @@ import { useSelector, useDispatch } from "react-redux";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import axios from "axios";
-import { base_url, getLenderListNearByRedius1, getListOfBorrowerLoansInitiated, getDisbursementAmount } from "../../HttpRequest/afterlogin";
+import { base_url, getLenderListNearByRedius1, getListOfBorrowerLoansInitiated, getDisbursementAmount, getBorrowerEligibleAmount, getBorrowerRequestAmount } from "../../HttpRequest/afterlogin";
 import Swal from "sweetalert2";
 import {
   dashboard1,
@@ -143,6 +143,10 @@ const BorrowerDashboard = () => {
 
 
 
+  // Eligible amount & active request state
+  const [eligibleInfo, setEligibleInfo] = useState({ amount: 0, loading: true });
+  const [hasActiveRequest, setHasActiveRequest] = useState(false);
+
   // Nearby Lenders state
   const [nearbyInfo, setNearbyInfo] = useState({
     apiData: [],
@@ -180,14 +184,37 @@ const BorrowerDashboard = () => {
     fetchNearbyLenders();
     fetchLoans();
     fetchDisbursement();
+    fetchEligibleInfo();
   }, []);
 
-
+  const fetchEligibleInfo = async () => {
+    try {
+      const [eligibleRes, requestRes] = await Promise.all([
+        getBorrowerEligibleAmount(),
+        getBorrowerRequestAmount(),
+      ]);
+      if (eligibleRes?.status === 200) {
+        setEligibleInfo({ amount: Number(eligibleRes.data?.amount || 0), loading: false });
+      } else {
+        setEligibleInfo({ amount: 0, loading: false });
+      }
+      if (requestRes?.status === 200) {
+        const list = Array.isArray(requestRes.data) ? requestRes.data : [];
+        const active = list.some((r) => {
+          const s = String(r?.loanRequestStatus || "").trim().toUpperCase();
+          return s && s !== "CLOSED";
+        });
+        setHasActiveRequest(active);
+      }
+    } catch {
+      setEligibleInfo({ amount: 0, loading: false });
+    }
+  };
 
   const fetchNearbyLenders = async () => {
     setNearbyInfo((prev) => ({ ...prev, loading: true, errorMessage: "" }));
     try {
-      const response = await getLenderListNearByRedius1(1, 100);
+      const response = await getLenderListNearByRedius1(1, 1000);
       if (response?.status === 200) {
         const pageData = Array.isArray(response?.data) ? response.data : [];
         const uniqueLenders = pageData.filter(
@@ -780,6 +807,66 @@ const BorrowerDashboard = () => {
 
             {/* /Page Header */}
 
+            {/* Eligible Amount Banner */}
+            {!eligibleInfo.loading && eligibleInfo.amount > 0 && !hasActiveRequest && (
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div style={{
+                    background: "linear-gradient(135deg, #1a56db 0%, #3b82f6 100%)",
+                    borderRadius: 16,
+                    padding: "24px 28px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 16,
+                    boxShadow: "0 8px 24px rgba(26,86,219,0.25)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                      <div style={{
+                        width: 52, height: 52, borderRadius: 12,
+                        background: "rgba(255,255,255,0.2)",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="1" x2="12" y2="23" />
+                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                          YOU ARE ELIGIBLE FOR A LOAN
+                        </div>
+                        <div style={{ color: "#fff", fontSize: 26, fontWeight: 800, lineHeight: 1 }}>
+                          ₹ {Number(eligibleInfo.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        </div>
+                        <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 4 }}>
+                          Based on your profile, income & credit score
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate("/borrowerLoanRequestCreate")}
+                      style={{
+                        background: "#fff",
+                        color: "#1a56db",
+                        border: "none",
+                        borderRadius: 10,
+                        padding: "12px 28px",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Apply Now →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Step Indicator Process Bar */}
             <div className="row mb-4">
               <div className="col-12">
@@ -1318,7 +1405,7 @@ const BorrowerDashboard = () => {
                                       <strong style={{ color: PRIMARY }}>{displayName}</strong>
                                       <div className="mt-1 small">
                                         <div><strong>Distance:</strong> {Number(lender.distance).toFixed(2)} km</div>
-                                        <div className="text-muted mt-1">Lender ID: {lender?.lenderId ?? "—"}</div>
+                                        <div className="text-muted mt-1">Lender ID: {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}</div>
                                       </div>
                                     </div>
                                   </Popup>
@@ -1374,7 +1461,7 @@ const BorrowerDashboard = () => {
                                       <div className="fw-semibold text-truncate" style={{ fontSize: "11.5px", color: isSelected ? PRIMARY : "#1e293b" }}>
                                         {lender?.lenderName || "Lender"}
                                       </div>
-                                      <div style={{ fontSize: "9.5px", color: "#64748b" }}>ID: {lender?.lenderId ?? "—"}</div>
+                                      <div style={{ fontSize: "9.5px", color: "#64748b" }}>ID: {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}</div>
                                     </div>
                                     {/* <div className="text-end" style={{ flexShrink: 0 }}>
                                       <div style={{ fontSize: "10.5px", fontWeight: "700", color: lender?.distance <= 5 ? "#10b981" : lender?.distance <= 25 ? "#f59e0b" : "#ef4444" }}>
