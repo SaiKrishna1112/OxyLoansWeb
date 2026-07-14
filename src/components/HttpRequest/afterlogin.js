@@ -3243,22 +3243,25 @@ export const getUserReactivationOffers = async () => {
     throw new Error(body.message || "Failed to load offers");
   }
   const list = Array.isArray(body?.data) ? body.data : [];
-  // Map SegmentOfferStrategyDto → UI card shape
-  return list.map((o) => ({
-    offerId: o.id,
-    title: o.title,
-    description: o.message,
-    benefitSummary: o.benefitSummary,
-    offerType: o.offerType,
-    status: o.status === "APPROVED" ? "ACTIVE" : o.status || "ACTIVE",
-    ctaUrl: o.ctaUrl,
-    redeemed: false,
-    assignedAt: o.approvedAt || o.generatedAt,
-    expiresAt: null,
-    minimumInvestment: o.minimumInvestment,
-    participationFeeSaved: o.participationFeeSaved,
-    validityDays: o.validityDays,
-  }));
+  // Map API offer → UI card shape (redeemed comes from user_offer_mapping after claim)
+  return list.map((o) => {
+    const redeemed = o.redeemed === true || o.redeemed === "true" || o.status === "CLAIMED";
+    return {
+      offerId: o.id ?? o.offerId,
+      title: o.title,
+      description: o.message || o.description,
+      benefitSummary: o.benefitSummary,
+      offerType: o.offerType,
+      status: redeemed ? "CLAIMED" : o.status === "APPROVED" || o.status === "ACTIVE" ? "ACTIVE" : o.status || "ACTIVE",
+      ctaUrl: o.ctaUrl,
+      redeemed,
+      assignedAt: o.approvedAt || o.assignedAt || o.generatedAt,
+      expiresAt: o.expiresAt || null,
+      minimumInvestment: o.minimumInvestment,
+      participationFeeSaved: o.participationFeeSaved,
+      validityDays: o.validityDays,
+    };
+  });
 };
 
 export const getLenderAIEarnings = async (lenderId, fy, from, to) => {

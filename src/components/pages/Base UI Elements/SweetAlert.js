@@ -92,23 +92,42 @@ const participateWithoutFee = (deal) => {
       const subscriptionGranted =
         resp.subscriptionGrantedThroughOffer === true ||
         resp.subscriptionGrantedThroughOffer === "true";
-      const defaultOfferText = subscriptionGranted
-        ? "Your participation fee has been waived and a free one-month membership is now active. No fee for deals during this membership."
-        : offerWasConsumed
-          ? "Your participation fee has been waived for this participation. The offer is now deactivated."
-          : `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. No participation fee required.`;
+
+      // Normal users (no offer claim) — keep classic congratulations popup
+      if (!offerWasConsumed && !subscriptionGranted) {
+        Swal.fire({
+          title: "Congratulations!",
+          text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. No participation fee required.`,
+          icon: "success",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "OK",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.reload();
+          }
+        });
+        return;
+      }
+
+      // Offer claimed — short, clear success message
+      const months =
+        resp.freeSubscriptionMonths ||
+        deal.apidata?.freeSubscriptionMonths ||
+        1;
+      const offerPopupTitle = "Offer Claimed Successfully!";
+      const offerPopupText = subscriptionGranted
+        ? `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. Participation fee waived. Free ${months}-month membership is now active.`
+        : `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. Participation fee waived. This offer is now claimed.`;
+
       Swal.fire({
-        title: subscriptionGranted
-          ? "Offer Applied — Free Membership Activated"
-          : offerWasConsumed
-            ? "Special Offer Applied Successfully"
-            : "Congratulations!",
-        text: resp.message || resp.offerMessage || deal.apidata?.offerMessage || defaultOfferText,
+        title: offerPopupTitle,
+        text: offerPopupText,
         icon: "success",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
+        confirmButtonColor: "#198754",
         confirmButtonText: "OK",
+        showCancelButton: false,
       }).then((result) => {
         if (result.isConfirmed) {
           window.location.reload();

@@ -6,14 +6,29 @@ import OfferLoadingSpinner from "../components/OfferLoadingSpinner";
 import OfferErrorAlert from "../components/OfferErrorAlert";
 import OfferToast from "../components/OfferToast";
 import OfferTable from "../components/OfferTable";
-import { OFFER_SEGMENTS } from "../utils/offerConstants";
+import {
+  OFFER_SEGMENTS,
+  getSegmentDescription,
+  getDefaultOfferType,
+  getOfferTypeLabel,
+} from "../utils/offerConstants";
+
+const formatParticipationRate = (rate) => {
+  if (rate == null || rate === "") return "—";
+  const n = Number(rate);
+  if (Number.isNaN(n)) return "—";
+  return n.toFixed(2);
+};
 
 const GenerateOffers = () => {
   const { loading, error, execute, clearError } = useOfferApi();
-  const [segment, setSegment] = useState("NEVER_INVESTED");
-  const [limit, setLimit] = useState(5);
+  const [segment, setSegment] = useState("NEW_LENDER");
+  const [limit, setLimit] = useState(1);
   const [result, setResult] = useState(null);
   const [toast, setToast] = useState(null);
+
+  const defaultOfferType = getDefaultOfferType(segment);
+  const isRegular = segment === "REGULAR_PARTICIPANT";
 
   const handleGenerate = async () => {
     clearError();
@@ -26,11 +41,15 @@ const GenerateOffers = () => {
     }
   };
 
+  const offerColumns = isRegular
+    ? ["id", "title", "segment", "offerType", "subscriptionDiscountPercent", "status", "generatedAt"]
+    : ["id", "title", "segment", "offerType", "minimumInvestment", "participationFeeSaved", "status", "generatedAt"];
+
   return (
     <div>
       <OfferPageHeader
         title="Generate Offers"
-        subtitle="Create AI-powered segment offer strategies"
+        subtitle="One fixed offer type per segment — New & Inactive get deal-fee free; Regular gets subscription % off"
       />
       <OfferErrorAlert message={error} onDismiss={clearError} />
       <OfferToast message={toast} onClose={() => setToast(null)} />
@@ -43,12 +62,24 @@ const GenerateOffers = () => {
               <select
                 className="form-select"
                 value={segment}
-                onChange={(e) => setSegment(e.target.value)}
+                onChange={(e) => {
+                  setSegment(e.target.value);
+                  setResult(null);
+                }}
               >
                 {OFFER_SEGMENTS.map((s) => (
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
+              <div className="form-text mt-2">
+                {getSegmentDescription(segment)}
+              </div>
+              <div className="small mt-1">
+                Offer type:{" "}
+                <span className="badge bg-primary-subtle text-primary border">
+                  {getOfferTypeLabel(defaultOfferType)}
+                </span>
+              </div>
             </div>
             <div className="col-md-3">
               <label className="form-label fw-semibold">Number of offers</label>
@@ -88,8 +119,10 @@ const GenerateOffers = () => {
         <>
           <div className="alert alert-info">
             <strong>{result.totalEligibleLenders}</strong> eligible lenders in segment{" "}
-            <code>{result.segment}</code> — generated{" "}
-            <strong>{result.generatedOffersCount}</strong> offer strategies (status: GENERATED, awaiting approval).
+            <code>{result.segment}</code>
+            {isRegular && " (Regulars at/above median participation rate only)"}
+            {" — "}generated <strong>{result.generatedOffersCount}</strong> offer strategies
+            (status: GENERATED, awaiting approval).
             {result.eligibleLendersTruncated && (
               <span className="d-block mt-1 small text-muted">
                 Showing first {result.eligibleLenders?.length || 0} lenders below (full list assigned on approve).
@@ -106,7 +139,7 @@ const GenerateOffers = () => {
                   segment: result.segment,
                   status: o.status || "GENERATED",
                 }))}
-                columns={["id", "title", "segment", "offerType", "minimumInvestment", "participationFeeSaved", "status", "generatedAt"]}
+                columns={offerColumns}
               />
             </div>
           </div>
@@ -126,6 +159,9 @@ const GenerateOffers = () => {
                       <th>Email</th>
                       <th>City</th>
                       <th>Deals</th>
+                      <th>Inactive days</th>
+                      <th>Participation rate</th>
+                      {isRegular && <th>Discount eligible</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -136,6 +172,17 @@ const GenerateOffers = () => {
                         <td>{l.email || "—"}</td>
                         <td>{l.city || "—"}</td>
                         <td>{l.dealCount ?? 0}</td>
+                        <td>{l.daysInactive ?? "—"}</td>
+                        <td>{formatParticipationRate(l.participationRate)}</td>
+                        {isRegular && (
+                          <td>
+                            {l.discountOfferEligible ? (
+                              <span className="badge bg-success">Yes</span>
+                            ) : (
+                              <span className="badge bg-secondary">No</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>

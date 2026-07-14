@@ -5,7 +5,7 @@ import offerAdminApi from "../../../../../HttpRequest/offerAdminApi";
 import OfferLoadingSpinner from "../components/OfferLoadingSpinner";
 import OfferErrorAlert from "../components/OfferErrorAlert";
 import OfferPageHeader from "../components/OfferPageHeader";
-import { getSegmentLabel } from "../utils/offerConstants";
+import { OFFER_SEGMENTS, getSegmentLabel, getDefaultOfferType, getOfferTypeLabel } from "../utils/offerConstants";
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -71,20 +71,23 @@ const OfferDashboard = () => {
   }, []);
 
   const totalLenders = stats.reduce((s, seg) => s + (seg.lenderCount || 0), 0);
-  const inactiveLenders = stats
-    .filter((s) => !["ACTIVE_RECENT", "REPEAT_LOYAL"].includes(s.segment))
-    .reduce((s, seg) => s + (seg.lenderCount || 0), 0);
+  const countFor = (code) =>
+    stats
+      .filter((s) => s.segment === code)
+      .reduce((s, seg) => s + (seg.lenderCount || 0), 0);
+
+  const orderedStats = OFFER_SEGMENTS.map((meta) => {
+    const found = stats.find((s) => s.segment === meta.value);
+    return found || { segment: meta.value, lenderCount: 0 };
+  });
 
   const segmentChart = {
-    labels: stats.map((s) => getSegmentLabel(s.segment)),
+    labels: orderedStats.map((s) => getSegmentLabel(s.segment)),
     datasets: [
       {
         label: "Lenders",
-        data: stats.map((s) => s.lenderCount),
-        backgroundColor: [
-          "#0d6efd", "#6610f2", "#6f42c1", "#d63384",
-          "#fd7e14", "#ffc107", "#198754", "#20c997",
-        ],
+        data: orderedStats.map((s) => s.lenderCount || 0),
+        backgroundColor: ["#0d6efd", "#fd7e14", "#198754"],
       },
     ],
   };
@@ -107,28 +110,38 @@ const OfferDashboard = () => {
     <div>
       <OfferPageHeader
         title="Dashboard"
-        subtitle="Lender reactivation & offer generation overview"
+        subtitle="3-segment reactivation — New & Inactive: deal fee free · Regular: subscription % off"
       />
       <OfferErrorAlert message={error} onDismiss={() => setError(null)} />
 
       <div className="row g-3 mb-4">
         <StatCard title="Total Lenders" value={totalLenders} color="primary" />
-        <StatCard title="Inactive Lenders" value={inactiveLenders} color="warning" />
         <StatCard
-          title="Offers Generated"
-          value={counts.total}
-          subtitle="All statuses"
+          title="New Lenders"
+          value={countFor("NEW_LENDER")}
+          subtitle={getOfferTypeLabel(getDefaultOfferType("NEW_LENDER"))}
           color="info"
+        />
+        <StatCard
+          title="Inactive Lenders"
+          value={countFor("INACTIVE_LENDER")}
+          subtitle={getOfferTypeLabel(getDefaultOfferType("INACTIVE_LENDER"))}
+          color="warning"
+        />
+        <StatCard
+          title="Regular Participants"
+          value={countFor("REGULAR_PARTICIPANT")}
+          subtitle={getOfferTypeLabel(getDefaultOfferType("REGULAR_PARTICIPANT"))}
+          color="success"
         />
         <StatCard title="Pending Approval" value={counts.pending} color="warning" />
         <StatCard title="Approved Offers" value={counts.approved} color="success" />
-        <StatCard title="Rejected Offers" value={counts.rejected} color="danger" />
       </div>
 
       <div className="row g-4">
         <div className="col-lg-7">
           <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white fw-semibold">Inactive Lender Segments</div>
+            <div className="card-header bg-white fw-semibold">Lender Segments</div>
             <div className="card-body" style={{ height: 320 }}>
               {stats.length ? (
                 <Bar

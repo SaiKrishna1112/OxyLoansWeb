@@ -2,6 +2,9 @@ import axios from "axios";
 import { OFFER_ADMIN_API_URL } from "../../config";
 import { OFFER_SEGMENTS } from "../pages/Oxyloans/Admin/OfferManagement/utils/offerConstants";
 
+const getDefaultOfferTypeFromSegment = (segment) =>
+  OFFER_SEGMENTS.find((s) => s.value === segment)?.defaultOfferType || null;
+
 const getToken = () =>
   sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
 
@@ -132,10 +135,17 @@ const offerAdminApi = {
         lenders.push({
           userId: l.lenderId,
           name: l.lenderName,
-          mobile: l.mobile || "—",
+          mobile: l.mobileNumber || l.mobile || "—",
           email: l.email || "—",
+          city: l.city || "—",
           segment: seg.segment,
           segmentLabel: seg.displayName,
+          offerType: l.offerType || getDefaultOfferTypeFromSegment(seg.segment),
+          dealCount: l.dealCount ?? 0,
+          daysInactive: l.daysInactive ?? null,
+          participationRate: l.participationRate ?? null,
+          discountOfferEligible: Boolean(l.discountOfferEligible),
+          joiningDate: l.joiningDate || null,
           offerAssigned: seg.description,
         });
       });

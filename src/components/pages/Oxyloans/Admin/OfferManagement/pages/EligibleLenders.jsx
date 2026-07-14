@@ -6,9 +6,19 @@ import OfferLoadingSpinner from "../components/OfferLoadingSpinner";
 import OfferErrorAlert from "../components/OfferErrorAlert";
 import SearchBar from "../components/SearchBar";
 import SegmentFilter from "../components/SegmentFilter";
-import { getSegmentLabel } from "../utils/offerConstants";
+import {
+  getSegmentLabel,
+  getOfferTypeLabel,
+} from "../utils/offerConstants";
 
 const PAGE_SIZE = 15;
+
+const formatRate = (rate) => {
+  if (rate == null || rate === "") return "—";
+  const n = Number(rate);
+  if (Number.isNaN(n)) return "—";
+  return n.toFixed(2);
+};
 
 const EligibleLenders = () => {
   const { loading, error, execute, clearError } = useOfferApi();
@@ -45,7 +55,7 @@ const EligibleLenders = () => {
     <div>
       <OfferPageHeader
         title="Eligible Lenders"
-        subtitle="All lenders eligible for reactivation offers by segment"
+        subtitle="Classified by deal count & inactive days — Regular discount only when rate ≥ median"
       />
       <OfferErrorAlert message={error} onDismiss={clearError} />
 
@@ -73,13 +83,16 @@ const EligibleLenders = () => {
                   <th>Name</th>
                   <th>Mobile</th>
                   <th>Segment</th>
-                  <th>Assigned Offer Context</th>
+                  <th>Deals</th>
+                  <th>Inactive days</th>
+                  <th>Part. rate</th>
+                  <th>Offer</th>
                 </tr>
               </thead>
               <tbody>
                 {paged.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="text-center text-muted py-5">No lenders found</td>
+                    <td colSpan={8} className="text-center text-muted py-5">No lenders found</td>
                   </tr>
                 ) : (
                   paged.map((l) => (
@@ -92,7 +105,16 @@ const EligibleLenders = () => {
                           {getSegmentLabel(l.segment)}
                         </span>
                       </td>
-                      <td className="small text-muted">{l.offerAssigned}</td>
+                      <td>{l.dealCount ?? 0}</td>
+                      <td>{l.daysInactive ?? "—"}</td>
+                      <td>{formatRate(l.participationRate)}</td>
+                      <td className="small">
+                        {l.segment === "REGULAR_PARTICIPANT" && !l.discountOfferEligible ? (
+                          <span className="text-muted">No discount (below median)</span>
+                        ) : (
+                          getOfferTypeLabel(l.offerType)
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

@@ -7,11 +7,17 @@ import OfferErrorAlert from "../components/OfferErrorAlert";
 import OfferToast from "../components/OfferToast";
 import ConfirmModal from "../components/ConfirmModal";
 import OfferCard from "../components/OfferCard";
-import { OFFER_SEGMENTS, getSegmentLabel } from "../utils/offerConstants";
+import {
+  OFFER_SEGMENTS,
+  getSegmentLabel,
+  getSegmentDescription,
+  getDefaultOfferType,
+  getOfferTypeLabel,
+} from "../utils/offerConstants";
 
 const PendingOffers = () => {
   const { loading, error, execute, clearError } = useOfferApi();
-  const [segment, setSegment] = useState("NEVER_INVESTED");
+  const [segment, setSegment] = useState("NEW_LENDER");
   const [offers, setOffers] = useState([]);
   const [toast, setToast] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -30,6 +36,17 @@ const PendingOffers = () => {
   useEffect(() => {
     loadOffers();
   }, [loadOffers]);
+
+  const approveHint = (offer) => {
+    const type = offer?.offerType || getDefaultOfferType(segment);
+    if (type === "FIRST_DEAL_FREE") {
+      return " Approving links eligible users. After they claim via fee-waived participation, they receive 1 free month membership.";
+    }
+    if (type === "SUBSCRIPTION_DISCOUNT") {
+      return " Approving links Regular lenders at/above median rate so they can use the membership % discount.";
+    }
+    return "";
+  };
 
   const handleAction = async () => {
     if (!modal) return;
@@ -57,7 +74,7 @@ const PendingOffers = () => {
     <div>
       <OfferPageHeader
         title="Pending Approval"
-        subtitle="Review and approve AI-generated offers for the selected segment"
+        subtitle="Review fixed segment offers — one offer type per segment"
       >
         <button type="button" className="btn btn-outline-primary btn-sm" onClick={loadOffers} disabled={loading}>
           Refresh
@@ -80,6 +97,13 @@ const PendingOffers = () => {
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
+              <div className="form-text">{getSegmentDescription(segment)}</div>
+              <div className="small mt-1">
+                Expected offer:{" "}
+                <span className="badge bg-light text-dark border">
+                  {getOfferTypeLabel(getDefaultOfferType(segment))}
+                </span>
+              </div>
             </div>
             <div className="col-md-6 d-flex align-items-center">
               <span className="badge bg-warning text-dark fs-6">
@@ -95,7 +119,9 @@ const PendingOffers = () => {
         title={modal?.action === "approve" ? "Approve Offer" : "Reject Offer"}
         message={
           modal
-            ? `Are you sure you want to ${modal.action} offer #${modal.offerId}?`
+            ? `Are you sure you want to ${modal.action} offer #${modal.offerId}?${
+                modal.action === "approve" ? approveHint(modal.offer) : ""
+              }`
             : ""
         }
         confirmLabel={modal?.action === "approve" ? "Approve" : "Reject"}
@@ -120,8 +146,8 @@ const PendingOffers = () => {
                 offer={{ ...offer, segment: offer.segment || segment, status: offer.status || "GENERATED" }}
                 showActions
                 actionLoading={actionLoading}
-                onApprove={(id) => setModal({ action: "approve", offerId: id })}
-                onReject={(id) => setModal({ action: "reject", offerId: id })}
+                onApprove={(id) => setModal({ action: "approve", offerId: id, offer })}
+                onReject={(id) => setModal({ action: "reject", offerId: id, offer })}
               />
             </div>
           ))}

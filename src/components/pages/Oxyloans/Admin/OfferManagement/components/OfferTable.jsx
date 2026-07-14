@@ -2,6 +2,7 @@ import React from "react";
 import {
   OFFER_STATUSES,
   getSegmentLabel,
+  getOfferTypeLabel,
   formatOfferDate,
   formatRupee,
 } from "../utils/offerConstants";
@@ -32,7 +33,11 @@ const OfferTable = ({
       case "segment":
         return getSegmentLabel(offer.segment) || offer.segment || "—";
       case "offerType":
-        return <span className="badge bg-light text-dark">{offer.offerType}</span>;
+        return (
+          <span className="badge bg-light text-dark">
+            {getOfferTypeLabel(offer.offerType)}
+          </span>
+        );
       case "status": {
         const cfg = OFFER_STATUSES[offer.status] || { label: offer.status, variant: "secondary" };
         return <span className={`badge bg-${cfg.variant}`}>{cfg.label}</span>;
@@ -41,6 +46,10 @@ const OfferTable = ({
         return formatRupee(offer.minimumInvestment);
       case "participationFeeSaved":
         return formatRupee(offer.participationFeeSaved);
+      case "subscriptionDiscountPercent":
+        return offer.subscriptionDiscountPercent != null
+          ? `${offer.subscriptionDiscountPercent}% off`
+          : "—";
       case "generatedAt":
         return formatOfferDate(offer.generatedAt);
       case "approvedAt":
@@ -85,6 +94,7 @@ const OfferTable = ({
     status: "Status",
     minimumInvestment: "Min Investment",
     participationFeeSaved: "Fee Saved",
+    subscriptionDiscountPercent: "Discount",
     generatedAt: "Generated",
     approvedAt: "Approved Date",
     rejectedAt: "Rejected Date",

@@ -49,13 +49,7 @@ const Participatedeal = () => {
   const [loadError, setLoadError] = useState("");
   const dealLoadStartedRef = useRef(false);
 
-  const FEE_WAIVER_OFFER_TYPES = new Set([
-    "FIRST_DEAL_FREE",
-    "REINVEST_FEE_WAIVER",
-    "COMEBACK_ZERO_FEE",
-    "COMEBACK_BONUS",
-    "LOYALTY_REWARD",
-  ]);
+  const FEE_WAIVER_OFFER_TYPES = new Set(["FIRST_DEAL_FREE"]);
 
   const shouldShowPaymentSection =
     deal.apidata &&
@@ -65,18 +59,26 @@ const Participatedeal = () => {
   const hasActiveSubscription =
     deal.apidata?.subscriptionActive === true ||
     deal.apidata?.subscriptionActive === "true";
-  // Active offer → fee waived for any amount (no ₹10,000 gate)
-  const offerAppliesNow =
+  const hasActiveOffer =
     deal.apidata &&
     !hasActiveSubscription &&
     isMandatoryFeeDeal(deal.apidata) &&
-    hasActiveReactivationOffer(deal.apidata) &&
-    participationAmount > 0;
+    hasActiveReactivationOffer(deal.apidata);
+  // First claim: amount entered with active offer → fee waived for this participate
+  const offerAppliesNow = hasActiveOffer && participationAmount > 0;
+  // Second time onwards: offer already used and no active membership → normal fee
   const offerAlreadyUsed =
     deal.apidata &&
     !hasActiveSubscription &&
     isOfferDeactivated(deal.apidata) &&
     !isParticipationFeeWaived(deal.apidata, participationAmount);
+  // Hide "validity expired" when offer or subscription covers the fee
+  const showValidityExpiredNote =
+    deal.apidata?.lenderValidityStatus == true &&
+    !hasActiveSubscription &&
+    !hasActiveOffer &&
+    deal.apidata.paymentRequired !== false &&
+    !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
 
   const mergeActiveOffersIntoDealData = (dealData, offers) => {
     const activeOffers = (offers || []).filter(
@@ -117,7 +119,9 @@ const Participatedeal = () => {
       // Fee waived for ANY amount while offer is active (claim activates 1-month membership)
       paymentRequired: false,
       feeAmount: 0,
-      offerMessage: `Your special offer "${primaryOffer.title}" is active. Participate for any amount to waive the fee (one-time). After this participation a free ${freeMonths}-month membership is activated — same as a normal subscription (₹0 deal fee while valid).`,
+      offerMessage:
+        `Special offer ready: participate in this deal for any amount — no participation fee this one time. ` +
+        `After you participate, a free ${freeMonths}-month membership starts (same as normal MONTHLY membership).`,
     };
   };
 
@@ -642,10 +646,7 @@ const Participatedeal = () => {
                   </div>
                 </div>
 
-                {deal.apidata.lenderValidityStatus == true &&
-                  !hasActiveSubscription &&
-                  deal.apidata.paymentRequired !== false &&
-                  !isParticipationFeeWaived(deal.apidata, deal.participatedAmount) && (
+                {showValidityExpiredNote && (
                   <div className="row notepoint text-center m-5 align-self-center">
                     {deal.apidata.feeStatusToParticipate == "OPTIONAL" ? (
                       <h4 className="text-bold font-monospace">
@@ -666,55 +667,49 @@ const Participatedeal = () => {
                   </div>
                 )}
 
+                {/* 1st time — offer active, amount not entered yet */}
+                {hasActiveOffer && participationAmount === 0 && (
+                  <div className="alert alert-info text-center m-4" role="alert">
+                    <h5 className="mb-2">Special Offer — Use Once</h5>
+                    <p className="mb-0">
+                      {deal.apidata?.offerMessage ||
+                        "Enter any participation amount. Your participation fee is free this one time, and a free 1-month membership will start after you participate."}
+                    </p>
+                  </div>
+                )}
+
+                {/* 1st time — offer active, amount entered */}
                 {offerAppliesNow && (
                   <div className="alert alert-success text-center m-4" role="alert">
-                    <h5 className="mb-2">Special Offer Applied Successfully</h5>
+                    <h5 className="mb-2">Ready to claim your offer</h5>
                     <p className="mb-0">
-                      Your participation fee is waived for this amount.
-                      A free {deal.apidata?.freeSubscriptionMonths || 1}-month membership will be
-                      activated after this participation. The offer will then be deactivated.
+                      For ₹{participationAmount.toLocaleString("en-IN")}: no participation fee.
+                      After you click Participate, this offer becomes CLAIMED and a free{" "}
+                      {deal.apidata?.freeSubscriptionMonths || 1}-month membership is activated.
                     </p>
                   </div>
                 )}
 
-                {!hasActiveSubscription &&
-                  hasActiveReactivationOffer(deal.apidata) &&
-                  isMandatoryFeeDeal(deal.apidata) &&
-                  participationAmount === 0 && (
-                  <div className="alert alert-info text-center m-4" role="alert">
-                    <h5 className="mb-2">Special Offer Available</h5>
+                {/* 2nd time onwards — membership active after claim (or paid sub) */}
+                {hasActiveSubscription && (
+                  <div className="alert alert-success text-center m-4" role="alert">
+                    <h5 className="mb-2">Membership active — no deal fee</h5>
                     <p className="mb-0">
-                      {deal.apidata?.offerMessage ||
-                        "Your fee waiver offer is active. Participate for any amount to waive the participation fee (one-time use) and unlock a free 1-month membership."}
+                      Your offer was already claimed. Your MONTHLY membership is active
+                      {deal.apidata?.validityDate
+                        ? ` until ${deal.apidata.validityDate}`
+                        : ""}
+                      . You can participate in deals without paying a participation fee.
                     </p>
                   </div>
                 )}
 
+                {/* Offer used but membership not active */}
                 {offerAlreadyUsed && (
                   <div className="alert alert-secondary text-center m-4" role="alert">
+                    <h5 className="mb-2">Offer already claimed</h5>
                     <p className="mb-0">
-                      {deal.apidata?.offerMessage ||
-                        "Offer already used. Normal participation fee applies."}
-                    </p>
-                  </div>
-                )}
-
-                {hasActiveSubscription && (
-                  <div className="alert alert-info text-center m-4" role="alert">
-                    <h5 className="mb-2">Active Subscription Detected</h5>
-                    <p className="mb-0">
-                      {deal.apidata?.offerMessage ||
-                        "You can participate without paying any deal fee."}
-                    </p>
-                  </div>
-                )}
-
-                {hasActiveSubscription &&
-                  deal.apidata?.grantsFreeSubscription && (
-                  <div className="alert alert-success text-center m-4" role="alert">
-                    <p className="mb-0">
-                      Your free {deal.apidata?.freeSubscriptionMonths || 1}-month membership is active.
-                      No separate subscription payment is required.
+                      This one-time offer is used. Normal participation fee / membership payment applies for this deal.
                     </p>
                   </div>
                 )}

@@ -5,11 +5,8 @@ import Sidebar from "../../../SideBar/SideBar";
 import { getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 
 const OFFER_TYPE_LABELS = {
-  FIRST_DEAL_FREE: "First Deal Free",
-  FEE_WAIVER: "Fee Waiver",
-  CASHBACK: "Cashback",
-  BONUS_INTEREST: "Bonus Interest",
-  MEMBERSHIP_DISCOUNT: "Membership Discount",
+  FIRST_DEAL_FREE: "Deal Fee Free",
+  SUBSCRIPTION_DISCOUNT: "Membership Discount",
 };
 
 function formatDate(value) {
@@ -27,9 +24,31 @@ function formatDate(value) {
   }
 }
 
+function formatRupee(amount) {
+  if (amount == null) return null;
+  return `₹${Number(amount).toLocaleString("en-IN")}`;
+}
+
 function OfferCard({ offer }) {
-  const isRedeemed = Boolean(offer.redeemed);
-  const typeLabel = OFFER_TYPE_LABELS[offer.offerType] || offer.offerType || "Special Offer";
+  const isRedeemed = Boolean(offer.redeemed) || offer.status === "CLAIMED";
+  const typeCode =
+    typeof offer.offerType === "string"
+      ? offer.offerType
+      : offer.offerType?.name || offer.offerType;
+  const typeLabel = OFFER_TYPE_LABELS[typeCode] || typeCode || "Special Offer";
+  const statusLabel = isRedeemed ? "CLAIMED" : offer.status || "ACTIVE";
+  const isDiscount = typeCode === "SUBSCRIPTION_DISCOUNT";
+  const isDealFree = typeCode === "FIRST_DEAL_FREE";
+  const discountPct = Number(offer.subscriptionDiscountPercent) || 0;
+  const freeMonths =
+    offer.freeSubscriptionMonths != null
+      ? Number(offer.freeSubscriptionMonths)
+      : offer.grantsFreeSubscription
+        ? 1
+        : 0;
+
+  const ctaTo = isDiscount ? "/membership" : "/regularRunningDeal";
+  const ctaLabel = isDiscount ? "View Membership Plans" : "Explore Deals";
 
   return (
     <div className="col-md-6 col-lg-4 mb-4">
@@ -38,7 +57,7 @@ function OfferCard({ offer }) {
           <div className="d-flex justify-content-between align-items-start mb-2">
             <span className="badge bg-light text-primary border">{typeLabel}</span>
             <span className={`badge ${isRedeemed ? "bg-secondary" : "bg-success"}`}>
-              {isRedeemed ? "Redeemed" : offer.status || "ACTIVE"}
+              {statusLabel}
             </span>
           </div>
 
@@ -47,26 +66,52 @@ function OfferCard({ offer }) {
             {offer.description || offer.benefitSummary || "Exclusive offer for you."}
           </p>
 
-          {offer.benefitSummary && offer.description && (
+          {isRedeemed && (
+            <p className="small text-muted mb-2">
+              This offer has been claimed and is no longer active.
+            </p>
+          )}
+
+          {offer.benefitSummary && offer.description && !isRedeemed && (
             <p className="small text-success mb-2">
               <i className="fa fa-gift me-1" />
               {offer.benefitSummary}
             </p>
           )}
 
-          {(offer.minimumInvestment != null || offer.participationFeeSaved != null) && (
+          {!isRedeemed && (
             <div className="small mb-2">
-              {offer.minimumInvestment != null && (
-                <div>Min investment: ₹{Number(offer.minimumInvestment).toLocaleString("en-IN")}</div>
+              {isDiscount && discountPct > 0 && (
+                <div className="text-success fw-semibold">{discountPct}% off membership</div>
               )}
-              {offer.participationFeeSaved != null && (
-                <div className="text-success">Fee saved: ₹{Number(offer.participationFeeSaved).toLocaleString("en-IN")}</div>
+              {isDiscount && offer.subscriptionDiscountedPrice != null && (
+                <div>
+                  From {formatRupee(offer.subscriptionDiscountedPrice)}
+                  {offer.subscriptionOriginalPrice != null && (
+                    <span className="text-muted text-decoration-line-through ms-1">
+                      {formatRupee(offer.subscriptionOriginalPrice)}
+                    </span>
+                  )}
+                </div>
+              )}
+              {isDealFree && offer.minimumInvestment != null && (
+                <div>Min investment: {formatRupee(offer.minimumInvestment)}</div>
+              )}
+              {isDealFree && offer.participationFeeSaved != null && (
+                <div className="text-success">
+                  Fee saved: {formatRupee(offer.participationFeeSaved)}
+                </div>
+              )}
+              {isDealFree && freeMonths > 0 && (
+                <div className="text-success">
+                  Includes {freeMonths} free month{freeMonths > 1 ? "s" : ""} membership after you participate
+                </div>
               )}
             </div>
           )}
 
           <div className="small text-muted mb-3">
-            {offer.expiresAt && (
+            {offer.expiresAt && !isRedeemed && (
               <div>
                 <i className="fa fa-clock me-1" />
                 Expires: {formatDate(offer.expiresAt)}
@@ -78,7 +123,7 @@ function OfferCard({ offer }) {
                 Assigned: {formatDate(offer.assignedAt)}
               </div>
             )}
-            {offer.validityDays != null && (
+            {offer.validityDays != null && !isRedeemed && (
               <div>
                 <i className="fa fa-hourglass-half me-1" />
                 Validity: {offer.validityDays} days
@@ -87,11 +132,8 @@ function OfferCard({ offer }) {
           </div>
 
           {!isRedeemed && (
-            <Link
-              to={offer.ctaUrl?.startsWith("/") ? offer.ctaUrl : "/participatedeal"}
-              className="btn btn-primary btn-sm mt-auto"
-            >
-              Explore Deals
+            <Link to={ctaTo} className="btn btn-primary btn-sm mt-auto">
+              {ctaLabel}
             </Link>
           )}
         </div>
@@ -123,7 +165,9 @@ export default function ReactivationMyOffers() {
     loadOffers();
   }, [loadOffers]);
 
-  const activeCount = offers.filter((o) => !o.redeemed).length;
+  const activeCount = offers.filter(
+    (o) => !o.redeemed && o.status !== "CLAIMED"
+  ).length;
 
   return (
     <div className="main-wrapper">
@@ -137,7 +181,7 @@ export default function ReactivationMyOffers() {
                 <div className="col">
                   <h3 className="page-title">My Offers</h3>
                   <p className="text-muted mb-0">
-                    Personalized promotions assigned to you after admin approval.
+                    Deal-fee free for New/Inactive, or membership discount for Regulars — after admin approval.
                   </p>
                 </div>
                 <div className="col-auto">
@@ -197,7 +241,7 @@ export default function ReactivationMyOffers() {
             {!loading && !error && offers.length > 0 && (
               <div className="row">
                 {offers.map((offer) => (
-                  <OfferCard key={offer.offerId} offer={offer} />
+                  <OfferCard key={offer.offerId || offer.id} offer={offer} />
                 ))}
               </div>
             )}
