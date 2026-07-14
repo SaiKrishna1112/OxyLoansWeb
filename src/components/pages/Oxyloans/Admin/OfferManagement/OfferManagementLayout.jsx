@@ -6,7 +6,7 @@ import "./OfferManagement.css";
 const OfferManagementLayout = () => (
   <PageShell
     title="Offer Management"
-    breadcrumb={<li className="breadcrumb-item active">Lender Reactivation</li>}
+    breadcrumb={<li className="breadcrumb-item active">3-segment lender reactivation</li>}
   >
     <div className="offer-management-module">
       <Outlet />

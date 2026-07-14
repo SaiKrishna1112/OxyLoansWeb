@@ -43,7 +43,10 @@ const OfferHistory = () => {
 
   return (
     <div>
-      <OfferPageHeader title="Offer History" subtitle="Complete audit trail of all generated offers" />
+      <OfferPageHeader
+        title="Offer History"
+        subtitle="Audit trail for the 3 segments — Deal Fee Free and Subscription Discount only"
+      />
       <OfferErrorAlert message={error} onDismiss={clearError} />
 
       <div className="row g-2 mb-3">
@@ -69,7 +72,7 @@ const OfferHistory = () => {
           <div className="card-body p-0">
             <OfferTable
               offers={paged}
-              columns={["id", "title", "segment", "offerType", "status", "generatedAt", "approvedAt"]}
+              columns={["id", "title", "segment", "offerType", "benefit", "status", "generatedAt", "approvedAt"]}
               emptyMessage="No offer history found."
             />
           </div>

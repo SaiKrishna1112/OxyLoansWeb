@@ -7,6 +7,7 @@ import OfferErrorAlert from "../components/OfferErrorAlert";
 import OfferTable from "../components/OfferTable";
 import SegmentFilter from "../components/SegmentFilter";
 import SearchBar from "../components/SearchBar";
+import { getOfferTypeLabel, normalizeOfferTypeCode } from "../utils/offerConstants";
 
 const ApprovedOffers = () => {
   const { loading, error, execute, clearError } = useOfferApi();
@@ -34,13 +35,17 @@ const ApprovedOffers = () => {
       (o) =>
         String(o.id).includes(q) ||
         o.title?.toLowerCase().includes(q) ||
-        o.offerType?.toLowerCase().includes(q)
+        getOfferTypeLabel(o.offerType).toLowerCase().includes(q) ||
+        normalizeOfferTypeCode(o.offerType).toLowerCase().includes(q)
     );
   }, [offers, search]);
 
   return (
     <div>
-      <OfferPageHeader title="Approved Offers" subtitle="Offers approved and visible to lenders">
+      <OfferPageHeader
+        title="Approved Offers"
+        subtitle="New/Inactive: deal fee free · Regular: membership % off — visible to mapped lenders"
+      >
         <button type="button" className="btn btn-outline-success btn-sm" onClick={() => load(segment)} disabled={loading}>
           Refresh
         </button>
@@ -62,7 +67,7 @@ const ApprovedOffers = () => {
           <div className="card-body p-0">
             <OfferTable
               offers={filtered}
-              columns={["id", "title", "segment", "offerType", "participationFeeSaved", "status", "approvedAt", "generatedAt"]}
+              columns={["id", "title", "segment", "offerType", "benefit", "status", "approvedAt", "generatedAt"]}
               emptyMessage="No approved offers yet."
             />
           </div>

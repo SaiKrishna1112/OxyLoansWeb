@@ -62,6 +62,22 @@ export const getOfferTypeLabel = (offerType) => {
   return OFFER_TYPES[code]?.label || code;
 };
 
+/** Normalize API offerType (string or enum object) to upper-case code. */
+export const normalizeOfferTypeCode = (offerType) => {
+  if (!offerType) return "";
+  if (typeof offerType === "string") return offerType.trim().toUpperCase();
+  if (typeof offerType === "object" && offerType.name) {
+    return String(offerType.name).trim().toUpperCase();
+  }
+  return String(offerType).trim().toUpperCase();
+};
+
+/** True only for the two active offer types (legacy comeback codes are ignored). */
+export const isActiveOfferType = (offerType) => {
+  const code = normalizeOfferTypeCode(offerType);
+  return code === "FIRST_DEAL_FREE" || code === "SUBSCRIPTION_DISCOUNT";
+};
+
 export const formatOfferDate = (dateStr) => {
   if (!dateStr) return "—";
   try {

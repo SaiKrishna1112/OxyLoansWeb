@@ -39,7 +39,10 @@ const RejectedOffers = () => {
 
   return (
     <div>
-      <OfferPageHeader title="Rejected Offers" subtitle="Offers rejected by admin — not sent to lenders">
+      <OfferPageHeader
+        title="Rejected Offers"
+        subtitle="Rejected strategies for New, Inactive, or Regular segments"
+      >
         <button type="button" className="btn btn-outline-danger btn-sm" onClick={() => load(segment)} disabled={loading}>
           Refresh
         </button>
@@ -61,7 +64,7 @@ const RejectedOffers = () => {
           <div className="card-body p-0">
             <OfferTable
               offers={filtered}
-              columns={["id", "title", "segment", "offerType", "status", "generatedAt"]}
+              columns={["id", "title", "segment", "offerType", "benefit", "status", "generatedAt"]}
               emptyMessage="No rejected offers."
             />
           </div>

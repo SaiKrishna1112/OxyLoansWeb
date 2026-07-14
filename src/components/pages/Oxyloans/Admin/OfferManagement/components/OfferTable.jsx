@@ -3,6 +3,7 @@ import {
   OFFER_STATUSES,
   getSegmentLabel,
   getOfferTypeLabel,
+  normalizeOfferTypeCode,
   formatOfferDate,
   formatRupee,
 } from "../utils/offerConstants";
@@ -18,6 +19,31 @@ const OfferTable = ({
   if (!offers.length) {
     return <div className="text-center py-5 text-muted">{emptyMessage}</div>;
   }
+
+  const renderBenefit = (offer) => {
+    const type = normalizeOfferTypeCode(offer.offerType);
+    if (type === "SUBSCRIPTION_DISCOUNT") {
+      if (offer.subscriptionDiscountPercent != null) {
+        return (
+          <span className="text-success fw-semibold">
+            {offer.subscriptionDiscountPercent}% off membership
+          </span>
+        );
+      }
+      return "Membership discount";
+    }
+    if (type === "FIRST_DEAL_FREE") {
+      return (
+        <div className="small">
+          {offer.participationFeeSaved != null && (
+            <div className="text-success">Fee saved {formatRupee(offer.participationFeeSaved)}</div>
+          )}
+          <div className="text-muted">+ 1 free month after claim</div>
+        </div>
+      );
+    }
+    return offer.benefitSummary || "—";
+  };
 
   const renderCell = (offer, col) => {
     switch (col) {
@@ -50,6 +76,8 @@ const OfferTable = ({
         return offer.subscriptionDiscountPercent != null
           ? `${offer.subscriptionDiscountPercent}% off`
           : "—";
+      case "benefit":
+        return renderBenefit(offer);
       case "generatedAt":
         return formatOfferDate(offer.generatedAt);
       case "approvedAt":
@@ -95,6 +123,7 @@ const OfferTable = ({
     minimumInvestment: "Min Investment",
     participationFeeSaved: "Fee Saved",
     subscriptionDiscountPercent: "Discount",
+    benefit: "Benefit",
     generatedAt: "Generated",
     approvedAt: "Approved Date",
     rejectedAt: "Rejected Date",

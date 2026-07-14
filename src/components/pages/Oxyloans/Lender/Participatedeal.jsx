@@ -51,6 +51,13 @@ const Participatedeal = () => {
 
   const FEE_WAIVER_OFFER_TYPES = new Set(["FIRST_DEAL_FREE"]);
 
+  const normalizeOfferType = (offerType) => {
+    if (!offerType) return "";
+    if (typeof offerType === "string") return offerType.toUpperCase();
+    if (typeof offerType === "object" && offerType.name) return String(offerType.name).toUpperCase();
+    return String(offerType).toUpperCase();
+  };
+
   const shouldShowPaymentSection =
     deal.apidata &&
     !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
@@ -86,7 +93,7 @@ const Participatedeal = () => {
         offer &&
         offer.status === "ACTIVE" &&
         !offer.redeemed &&
-        FEE_WAIVER_OFFER_TYPES.has(offer.offerType)
+        FEE_WAIVER_OFFER_TYPES.has(normalizeOfferType(offer.offerType))
     );
 
     let merged = { ...dealData };

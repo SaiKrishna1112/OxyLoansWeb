@@ -195,10 +195,12 @@ const loadLegacyDealsDirectorySummary = async () => {
 };
 
 const isDealsDirectoryMissing = (err) => {
-  const status = err?.response?.status;
+  // No response = network/CORS block — fall back to legacy deals list
+  if (!err?.response) return true;
+  const status = err.response.status;
   if (status === 404 || status === 500) return true;
   const msg = extractApiError(err) || "";
-  return /internal server error/i.test(msg) || /not found/i.test(msg);
+  return /internal server error/i.test(msg) || /not found/i.test(msg) || /network error/i.test(msg);
 };
 
 /** Live production API — Active Lenders investment (same as sidebar page) */
