@@ -140,8 +140,11 @@ function OfferCard({ offer }) {
                   )}
                 </div>
               )}
-              {isDealFree && offer.minimumInvestment != null && (
-                <div>Min investment: {formatRupee(offer.minimumInvestment)}</div>
+              {isDealFree && (
+                <div>
+                  Min investment to claim:{" "}
+                  {formatRupee(offer.minimumInvestment != null ? offer.minimumInvestment : 10000)}
+                </div>
               )}
               {isDealFree && offer.participationFeeSaved != null && (
                 <div className="text-success">
@@ -150,7 +153,8 @@ function OfferCard({ offer }) {
               )}
               {isDealFree && freeMonths > 0 && (
                 <div className="text-success">
-                  Includes {freeMonths} free month{freeMonths > 1 ? "s" : ""} membership after you participate
+                  Includes {freeMonths} free month{freeMonths > 1 ? "s" : ""} membership after eligible
+                  participate (offer stays ACTIVE until then)
                 </div>
               )}
             </div>

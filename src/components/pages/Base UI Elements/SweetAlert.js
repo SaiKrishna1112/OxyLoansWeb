@@ -61,8 +61,20 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
     }
   }
 
-  // Backend said no payment required (offer or subscription context on deal)
+  // Backend said no payment required — only treat as waived when membership OR offer eligible for this amount
   if (apidata.paymentRequired === false || apidata.paymentRequired === "false") {
+    if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
+      return true;
+    }
+    if (apidata.lenderValidityStatus === false || apidata.lenderValidityStatus === "false") {
+      if (apidata.groupName !== "NewLender") {
+        return true;
+      }
+    }
+    // Offer-driven paymentRequired=false: only if amount meets minimum for FIRST_DEAL_FREE
+    if (hasActiveReactivationOffer(apidata) || apidata.offerEligible === true || apidata.offerEligible === "true") {
+      return Number(participationAmount) >= OFFER_MIN_PARTICIPATION;
+    }
     return true;
   }
 
@@ -70,12 +82,20 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
     return false;
   }
 
-  // Active fee-waiver offer → waive FEE only (participate still debits lending amount)
+  // Active FIRST_DEAL_FREE offer → waive FEE only when amount meets minimum
   if (hasActiveReactivationOffer(apidata)) {
-    return true;
+    const amount = Number(participationAmount) || 0;
+    if (amount >= OFFER_MIN_PARTICIPATION) {
+      return true;
+    }
+    // Amount below minimum: normal fee applies; offer stays ACTIVE until eligible participate
+    return false;
   }
 
-  if (apidata.offerEligible === true || apidata.offerEligible === "true") {
+  if (
+    (apidata.offerEligible === true || apidata.offerEligible === "true") &&
+    Number(participationAmount) >= OFFER_MIN_PARTICIPATION
+  ) {
     return true;
   }
 
@@ -449,8 +469,8 @@ export const participatedapi = async (deal) => {
     confirmButtonText: "Ok!",
   }).then((result) => {
     if (result.isConfirmed) {
-      // Active offer OR active/valid membership → same zero-fee path as old subscription flow
-      // (dealparticipationValidityUser). No ₹10,000 amount gate.
+      // Fee waived only when membership is active OR FIRST_DEAL_FREE amount >= ₹10,000.
+      // Below minimum: normal fee path (1% + GST).
       if (isParticipationFeeWaived(deal.apidata, deal.participatedAmount)) {
         participateWithoutFee(deal);
         return;

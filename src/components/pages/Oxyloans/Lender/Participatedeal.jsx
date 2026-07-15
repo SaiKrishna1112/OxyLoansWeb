@@ -7,7 +7,7 @@ import "./InvoiceGrid.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE } from "../../Base UI Elements/SweetAlert";
+import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -73,8 +73,14 @@ const Participatedeal = () => {
     !hasActiveSubscription &&
     isMandatoryFeeDeal(deal.apidata) &&
     hasActiveReactivationOffer(deal.apidata);
-  // First claim: amount entered with active offer → fee waived for this participate
-  const offerAppliesNow = hasActiveOffer && participationAmount > 0;
+  // First claim: offer applies only when amount meets minimum (₹10,000+)
+  const offerAppliesNow =
+    hasActiveOffer && participationAmount >= OFFER_MIN_PARTICIPATION;
+  // Offer active but amount too low — pay normal fee, offer stays ACTIVE
+  const offerAmountTooLow =
+    hasActiveOffer &&
+    participationAmount > 0 &&
+    participationAmount < OFFER_MIN_PARTICIPATION;
   // Offer already claimed (from offers API) — show claim day + subscription validity
   const offerIsClaimed =
     deal.apidata?.offerClaimed === true ||
@@ -198,6 +204,10 @@ const Participatedeal = () => {
 
     const primaryOffer = activeOffers[0];
     const freeMonths = primaryOffer.freeSubscriptionMonths || 1;
+    const minInvest =
+      Number(primaryOffer.minimumInvestment) > 0
+        ? Number(primaryOffer.minimumInvestment)
+        : OFFER_MIN_PARTICIPATION;
     return {
       ...merged,
       offerActive: true,
@@ -209,13 +219,14 @@ const Participatedeal = () => {
       activeOfferTitle: primaryOffer.title,
       grantsFreeSubscription: true,
       freeSubscriptionMonths: freeMonths,
+      minimumInvestment: minInvest,
       activeOffers,
-      // Fee waived for ANY amount while offer is active (claim activates 1-month membership)
-      paymentRequired: false,
-      feeAmount: 0,
+      // Do NOT force paymentRequired=false here — fee waiver only after eligible amount on participate
       offerMessage:
-        `Special offer ready: participate in this deal for any amount — no participation fee this one time. ` +
-        `After you participate, a free ${freeMonths}-month membership starts (same as normal MONTHLY membership).`,
+        `Special offer ready: participate with at least ₹${minInvest.toLocaleString("en-IN")} — ` +
+        `no participation fee that one time. ` +
+        `After an eligible participation, a free ${freeMonths}-month membership starts (same as normal MONTHLY membership). ` +
+        `Amount below ₹${minInvest.toLocaleString("en-IN")} pays normal fee and keeps the offer ACTIVE.`,
     };
   };
 
@@ -280,12 +291,19 @@ const Participatedeal = () => {
         } catch (error) {
           /* single-deal API still carries offer flags when backend is updated */
         }
-        // If backend says offer active / payment not required, never show fee for any amount
+        // Membership (paid or offer-granted) → no fee. Active unclaimed offer alone does NOT waive fee
+        // until participate amount meets minimum (see isParticipationFeeWaived).
         if (
-          newObj.paymentRequired === false ||
-          newObj.paymentRequired === "false" ||
-          newObj.offerStatus === OFFER_STATUS_ACTIVE ||
-          newObj.offerActive === true
+          newObj.subscriptionActive === true ||
+          newObj.subscriptionActive === "true" ||
+          newObj.lenderValidityStatus === false ||
+          newObj.lenderValidityStatus === "false"
+        ) {
+          newObj.paymentRequired = false;
+          newObj.feeAmount = 0;
+        } else if (
+          (newObj.offerEligible === true || newObj.offerEligible === "true") &&
+          !(newObj.offerStatus === OFFER_STATUS_ACTIVE || newObj.offerActive === true)
         ) {
           newObj.paymentRequired = false;
           newObj.feeAmount = 0;
@@ -767,12 +785,33 @@ const Participatedeal = () => {
                     <h5 className="mb-2">Special Offer — Use Once</h5>
                     <p className="mb-0">
                       {deal.apidata?.offerMessage ||
-                        "Enter any participation amount. Your participation fee is free this one time, and a free 1-month membership will start after you participate."}
+                        `Enter at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                          "en-IN"
+                        )}. Your participation fee is free one time, and a free 1-month membership starts after that eligible participation. Lower amounts pay the normal fee and keep this offer ACTIVE.`}
                     </p>
                   </div>
                 )}
 
-                {/* 1st time — offer active, amount entered */}
+                {/* Offer active but amount below minimum — normal 1% + GST fee applies */}
+                {offerAmountTooLow && !offerIsClaimed && (
+                  <div className="alert alert-warning text-center m-4" role="alert">
+                    <h5 className="mb-2">Amount below offer minimum</h5>
+                    <p className="mb-1">
+                      For ₹{participationAmount.toLocaleString("en-IN")}:{" "}
+                      <strong>
+                        normal participation fee applies (1% + 18% GST) = ₹
+                        {Math.round(participationAmount * 0.01 * 1.18).toLocaleString("en-IN")}
+                      </strong>
+                      .
+                    </p>
+                    <p className="mb-0">
+                      Participate with at least ₹{OFFER_MIN_PARTICIPATION.toLocaleString("en-IN")} to
+                      waive the fee and claim this offer. Your offer stays <strong>ACTIVE</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {/* Eligible amount — fee waived; claim happens after successful participate */}
                 {offerAppliesNow && !offerIsClaimed && (
                   <div className="alert alert-success text-center m-4" role="alert">
                     <h5 className="mb-2">Ready to claim your offer</h5>
@@ -853,8 +892,15 @@ const Participatedeal = () => {
                     deal.participatedAmount !== null &&
                     shouldShowPaymentSection && (
                       <div className="error">
-                        This deal has a fee (1% + 18% GST) of ₹{" "}
+                        {offerAmountTooLow
+                          ? "Normal participation fee applies (1% + 18% GST) of ₹ "
+                          : "This deal has a fee (1% + 18% GST) of ₹ "}
                         {Math.round(deal.participatedAmount * 0.01 * 1.18)}.
+                        {offerAmountTooLow
+                          ? ` Offer fee waiver needs at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                              "en-IN"
+                            )}.`
+                          : ""}
                       </div>
                     )}
                   {console.log(typeof (withdrawriaseapi.amount), withdrawriaseapi.amount)}
