@@ -977,13 +977,72 @@ const getFinancialYear = () => {
                               </span>
                             ) : (
                               <span>
-                                {getdashboardData?.validityDate &&
-                                  `Active until ${getdashboardData?.validityDate}`}{" "}
-                                <span className="badge bg-info mx-2">
-                                  <Link to="/membership" className="text-white">
-                                    Get Membership
-                                  </Link>
-                                </span>
+                                {(() => {
+                                  const validityDate =
+                                    getdashboardData?.validityDate ||
+                                    getreducerprofiledata?.validityDate;
+                                  const lenderValidityStatus =
+                                    getdashboardData?.lenderValidityStatus ??
+                                    getreducerprofiledata?.lenderValidityStatus;
+                                  const dateLabel = validityDate
+                                    ? String(validityDate).slice(0, 10)
+                                    : null;
+                                  // Explicit API flag, else compare date to today
+                                  let membershipActive =
+                                    lenderValidityStatus === false ||
+                                    lenderValidityStatus === "false";
+                                  if (
+                                    !membershipActive &&
+                                    lenderValidityStatus == null &&
+                                    dateLabel
+                                  ) {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    const end = new Date(dateLabel);
+                                    end.setHours(0, 0, 0, 0);
+                                    membershipActive = end >= today;
+                                  }
+                                  if (membershipActive && dateLabel) {
+                                    return `Active until ${dateLabel}`;
+                                  }
+                                  if (dateLabel) {
+                                    return `Expired on ${dateLabel}`;
+                                  }
+                                  return "No active membership";
+                                })()}{" "}
+                                {(() => {
+                                  const validityDate =
+                                    getdashboardData?.validityDate ||
+                                    getreducerprofiledata?.validityDate;
+                                  const lenderValidityStatus =
+                                    getdashboardData?.lenderValidityStatus ??
+                                    getreducerprofiledata?.lenderValidityStatus;
+                                  const dateLabel = validityDate
+                                    ? String(validityDate).slice(0, 10)
+                                    : null;
+                                  let membershipActive =
+                                    lenderValidityStatus === false ||
+                                    lenderValidityStatus === "false";
+                                  if (
+                                    !membershipActive &&
+                                    lenderValidityStatus == null &&
+                                    dateLabel
+                                  ) {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    const end = new Date(dateLabel);
+                                    end.setHours(0, 0, 0, 0);
+                                    membershipActive = end >= today;
+                                  }
+                                  if (membershipActive) return null;
+                                  return (
+                                    <span className="badge bg-info mx-2">
+                                      <Link to="/membership" className="text-white">
+                                        Get Membership
+                                      </Link>
+                                    </span>
+                                  );
+                                })()}
                               </span>
                             ))}
                         </span>

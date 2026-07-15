@@ -50,7 +50,7 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
   if (!apidata) return false;
   if (apidata.feeStatusToParticipate === "OPTIONAL") return true;
 
-  // Paid or offer-granted membership (old subscription flow) → no fee for ANY amount
+  // Paid or offer-granted membership → no fee for ANY amount (same as normal membership flow)
   if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
     return true;
   }
@@ -60,6 +60,8 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
       return true;
     }
   }
+
+  // Backend said no payment required (offer or subscription context on deal)
   if (apidata.paymentRequired === false || apidata.paymentRequired === "false") {
     return true;
   }
@@ -68,7 +70,7 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
     return false;
   }
 
-  // Active fee-waiver offer → waive for ANY amount (no ₹10,000 gate)
+  // Active fee-waiver offer → waive FEE only (participate still debits lending amount)
   if (hasActiveReactivationOffer(apidata)) {
     return true;
   }
@@ -81,9 +83,12 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
 };
 
 const participateWithoutFee = (deal) => {
+  // Same API as normal valid-membership participate (updatingLenderDeal with fee COMPLETED).
+  // Offer only waives the participation FEE — lending amount must still reduce the wallet.
   const response = dealparticipationValidityUser(deal);
   response.then((data) => {
-    if (data.request.status === 200) {
+    const httpStatus = data?.status ?? data?.request?.status;
+    if (httpStatus === 200) {
       const resp = data.data || {};
       const offerWasConsumed =
         resp.offerConsumed === true ||
@@ -111,7 +116,7 @@ const participateWithoutFee = (deal) => {
         return;
       }
 
-      // Offer claimed — short, clear success message
+      // Offer claimed — short, clear success message (wallet already debited like normal flow)
       const months =
         resp.freeSubscriptionMonths ||
         deal.apidata?.freeSubscriptionMonths ||
@@ -134,9 +139,14 @@ const participateWithoutFee = (deal) => {
         }
       });
     } else {
+      const errMsg =
+        data?.response?.data?.errorMessage ||
+        data?.data?.errorMessage ||
+        data?.message ||
+        "Participation failed. Your wallet was not charged.";
       Swal.fire({
         title: "Error!",
-        text: `${data.response.data.errorMessage}`,
+        text: `${errMsg}`,
         icon: "error",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",

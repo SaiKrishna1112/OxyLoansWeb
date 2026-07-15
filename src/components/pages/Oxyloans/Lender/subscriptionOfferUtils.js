@@ -90,12 +90,14 @@ export function calculateDiscount(originalAmount, discountPercentage) {
   const original = Number(originalAmount) || 0;
   const pct = Number(discountPercentage) || 0;
   if (original <= 0 || pct <= 0) return original;
-  return Math.round((original - (original * pct) / 100) * 100) / 100;
+  // Match backend OxyLoansBusinessRules.subscriptionDiscountedPrice (integer rupees)
+  return Math.round((original * (100 - pct)) / 100);
 }
 
 export function calculateTotalWithGST(baseAmount) {
   const base = Number(baseAmount) || 0;
-  return base + (base * 18) / 100;
+  // Match backend: round(discountedBase * 1.18)
+  return Math.round(base + (base * 18) / 100);
 }
 
 export function formatRupee(amount) {
@@ -148,9 +150,9 @@ export function getFinalSubscriptionAmount(planData, subscriptionOffer) {
   return {
     offerApplied: discountPercent > 0 || finalBase < originalBase,
     originalBase,
-    originalWithGst,
-    finalBase,
-    finalWithGst,
+    originalWithGst: Math.round(originalWithGst),
+    finalBase: Math.round(finalBase),
+    finalWithGst: Math.round(finalWithGst),
     discountPercent,
     offerId: subscriptionOffer.offerId,
     offerTitle: subscriptionOffer.title,

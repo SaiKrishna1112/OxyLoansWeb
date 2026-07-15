@@ -20,6 +20,7 @@ import {
   formatRupee,
   calculateTotalWithGST,
   isActiveSubscriptionOffer,
+  resolveDiscountPercent,
 } from "./subscriptionOfferUtils";
 import {
   registersuccess,
@@ -274,7 +275,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
 
   const getPaymentAmount = (planData) => {
     const pricing = getFinalSubscriptionAmount(planData, subscriptionOffer);
-    return Math.round(pricing.finalWithGst * 100) / 100;
+    return Math.round(pricing.finalWithGst);
   };
 
   const renderMembershipPricing = (data) => {
@@ -300,8 +301,11 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
           <p className="text-muted small mb-1">
             + 18% GST = ₹{formatRupee(Math.round(pricing.finalWithGst))}
           </p>
+          <p className="text-muted small mb-1">
+            <del>Was ₹{formatRupee(Math.round(pricing.originalWithGst))} with GST</del>
+          </p>
           <p className="text-success small subscription-offer-note mb-0">
-            Subscription discount applied successfully.
+            Same membership plan &amp; validity as full price — only the amount is discounted.
           </p>
         </div>
       );
@@ -414,9 +418,14 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                       {subscriptionOffer && isActiveSubscriptionOffer(subscriptionOffer) && (
                         <div className="col-12 mb-3">
                           <div className="alert alert-success subscription-offer-banner mb-0">
-                            <strong>Subscription offer active:</strong>{" "}
-                            {subscriptionOffer.title || "Special membership discount"} — discounted
-                            pricing is applied to all plans below.
+                            <strong>
+                              {resolveDiscountPercent(subscriptionOffer) || 50}% membership
+                              discount active
+                            </strong>
+                            {" — "}
+                            pay the discounted amount below. After payment you get the same
+                            membership validity and benefits as a normal subscription. The offer
+                            then becomes CLAIMED.
                           </div>
                         </div>
                       )}

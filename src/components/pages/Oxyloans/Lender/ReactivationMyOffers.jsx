@@ -29,14 +29,33 @@ function formatRupee(amount) {
   return `₹${Number(amount).toLocaleString("en-IN")}`;
 }
 
+function formatDay(value) {
+  if (!value) return null;
+  try {
+    const s = String(value).slice(0, 10);
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return s;
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return String(value);
+  }
+}
+
 function OfferCard({ offer }) {
-  const isRedeemed = Boolean(offer.redeemed) || offer.status === "CLAIMED";
+  const isRedeemed =
+    Boolean(offer.redeemed) ||
+    offer.status === "CLAIMED" ||
+    offer.claimStatus === "CLAIMED";
   const typeCode =
     typeof offer.offerType === "string"
       ? offer.offerType
       : offer.offerType?.name || offer.offerType;
   const typeLabel = OFFER_TYPE_LABELS[typeCode] || typeCode || "Special Offer";
-  const statusLabel = isRedeemed ? "CLAIMED" : offer.status || "ACTIVE";
+  const statusLabel = isRedeemed ? "CLAIMED" : "ACTIVE";
   const isDiscount = typeCode === "SUBSCRIPTION_DISCOUNT";
   const isDealFree = typeCode === "FIRST_DEAL_FREE";
   const discountPct = Number(offer.subscriptionDiscountPercent) || 0;
@@ -46,6 +65,7 @@ function OfferCard({ offer }) {
       : offer.grantsFreeSubscription
         ? 1
         : 0;
+  const membershipValidity = formatDay(offer.subscriptionValidityDate);
 
   const ctaTo = isDiscount ? "/membership" : "/regularRunningDeal";
   const ctaLabel = isDiscount ? "View Membership Plans" : "Explore Deals";
@@ -67,9 +87,30 @@ function OfferCard({ offer }) {
           </p>
 
           {isRedeemed && (
-            <p className="small text-muted mb-2">
-              This offer has been claimed and is no longer active.
-            </p>
+            <div className="alert alert-secondary py-2 px-3 mb-2" role="status">
+              <div className="fw-semibold mb-1">Offer claimed</div>
+              <div className="small mb-0">
+                {offer.claimedAt
+                  ? `You claimed this offer on ${formatDay(offer.claimedAt)}.`
+                  : "This one-time offer has been used and is no longer active."}
+              </div>
+              {membershipValidity && (
+                <div className="small text-success mt-2 mb-0">
+                  <i className="fa fa-id-card me-1" />
+                  Subscription validity: Active until {membershipValidity}
+                </div>
+              )}
+              {!membershipValidity && isDiscount && (
+                <div className="small text-muted mt-2 mb-0">
+                  Membership was activated at the discounted price (check Dashboard for validity).
+                </div>
+              )}
+              {!membershipValidity && !isDiscount && freeMonths > 0 && (
+                <div className="small text-muted mt-2 mb-0">
+                  Free membership was granted with this claim (check Dashboard for validity).
+                </div>
+              )}
+            </div>
           )}
 
           {offer.benefitSummary && offer.description && !isRedeemed && (
@@ -83,6 +124,11 @@ function OfferCard({ offer }) {
             <div className="small mb-2">
               {isDiscount && discountPct > 0 && (
                 <div className="text-success fw-semibold">{discountPct}% off membership</div>
+              )}
+              {isDiscount && (
+                <div className="text-muted">
+                  Pay discounted amount on Membership; same validity as a normal plan.
+                </div>
               )}
               {isDiscount && offer.subscriptionDiscountedPrice != null && (
                 <div>
@@ -166,7 +212,16 @@ export default function ReactivationMyOffers() {
   }, [loadOffers]);
 
   const activeCount = offers.filter(
-    (o) => !o.redeemed && o.status !== "CLAIMED"
+    (o) =>
+      !o.redeemed &&
+      o.status !== "CLAIMED" &&
+      o.claimStatus !== "CLAIMED"
+  ).length;
+  const claimedCount = offers.filter(
+    (o) =>
+      o.redeemed ||
+      o.status === "CLAIMED" ||
+      o.claimStatus === "CLAIMED"
   ).length;
 
   return (
@@ -208,6 +263,16 @@ export default function ReactivationMyOffers() {
                     </div>
                   </div>
                 </div>
+                {claimedCount > 0 && (
+                  <div className="col-md-4">
+                    <div className="card bg-secondary text-white">
+                      <div className="card-body py-3">
+                        <h4 className="mb-0">{claimedCount}</h4>
+                        <small>Claimed offers</small>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -3243,23 +3243,35 @@ export const getUserReactivationOffers = async () => {
     throw new Error(body.message || "Failed to load offers");
   }
   const list = Array.isArray(body?.data) ? body.data : [];
-  // Map API offer → UI card shape (redeemed comes from user_offer_mapping after claim)
+  // Map API offer → UI card shape (claimStatus / redeemed from user_offer_mapping after claim)
   return list.map((o) => {
-    const redeemed = o.redeemed === true || o.redeemed === "true" || o.status === "CLAIMED";
+    const redeemed =
+      o.redeemed === true ||
+      o.redeemed === "true" ||
+      o.claimStatus === "CLAIMED" ||
+      o.status === "CLAIMED";
     return {
       offerId: o.id ?? o.offerId,
       title: o.title,
       description: o.message || o.description,
       benefitSummary: o.benefitSummary,
       offerType: o.offerType,
-      status: redeemed ? "CLAIMED" : o.status === "APPROVED" || o.status === "ACTIVE" ? "ACTIVE" : o.status || "ACTIVE",
+      status: redeemed ? "CLAIMED" : "ACTIVE",
+      claimStatus: redeemed ? "CLAIMED" : o.claimStatus || "ACTIVE",
       ctaUrl: o.ctaUrl,
       redeemed,
       assignedAt: o.approvedAt || o.assignedAt || o.generatedAt,
+      claimedAt: o.claimedAt || null,
       expiresAt: o.expiresAt || null,
       minimumInvestment: o.minimumInvestment,
       participationFeeSaved: o.participationFeeSaved,
       validityDays: o.validityDays,
+      freeSubscriptionMonths: o.freeSubscriptionMonths,
+      grantsFreeSubscription: o.grantsFreeSubscription,
+      subscriptionValidityDate: o.subscriptionValidityDate || null,
+      subscriptionDiscountPercent: o.subscriptionDiscountPercent,
+      subscriptionOriginalPrice: o.subscriptionOriginalPrice,
+      subscriptionDiscountedPrice: o.subscriptionDiscountedPrice,
     };
   });
 };

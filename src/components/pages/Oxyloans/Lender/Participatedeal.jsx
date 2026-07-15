@@ -7,7 +7,7 @@ import "./InvoiceGrid.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isOfferDeactivated, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE } from "../../Base UI Elements/SweetAlert";
+import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -65,7 +65,9 @@ const Participatedeal = () => {
   const participationAmount = Number(deal.participatedAmount) || 0;
   const hasActiveSubscription =
     deal.apidata?.subscriptionActive === true ||
-    deal.apidata?.subscriptionActive === "true";
+    deal.apidata?.subscriptionActive === "true" ||
+    deal.apidata?.lenderValidityStatus === false ||
+    deal.apidata?.lenderValidityStatus === "false";
   const hasActiveOffer =
     deal.apidata &&
     !hasActiveSubscription &&
@@ -73,30 +75,113 @@ const Participatedeal = () => {
     hasActiveReactivationOffer(deal.apidata);
   // First claim: amount entered with active offer → fee waived for this participate
   const offerAppliesNow = hasActiveOffer && participationAmount > 0;
-  // Second time onwards: offer already used and no active membership → normal fee
+  // Offer already claimed (from offers API) — show claim day + subscription validity
+  const offerIsClaimed =
+    deal.apidata?.offerClaimed === true ||
+    deal.apidata?.offerStatus === "DEACTIVATED" ||
+    deal.apidata?.claimStatus === "CLAIMED";
+  // Membership from claim (or paid) — primary post-claim banner
+  const showClaimedOfferMembershipBanner =
+    offerIsClaimed && (hasActiveSubscription || !!deal.apidata?.subscriptionValidityDate);
+  // Offer used but membership not active → fee applies again
   const offerAlreadyUsed =
-    deal.apidata &&
+    offerIsClaimed &&
     !hasActiveSubscription &&
-    isOfferDeactivated(deal.apidata) &&
+    !deal.apidata?.subscriptionValidityDate &&
     !isParticipationFeeWaived(deal.apidata, participationAmount);
   // Hide "validity expired" when offer or subscription covers the fee
   const showValidityExpiredNote =
     deal.apidata?.lenderValidityStatus == true &&
     !hasActiveSubscription &&
     !hasActiveOffer &&
+    !offerIsClaimed &&
     deal.apidata.paymentRequired !== false &&
     !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
 
+  const formatOfferDay = (value) => {
+    if (!value) return null;
+    try {
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
+      return d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return String(value).slice(0, 10);
+    }
+  };
+
   const mergeActiveOffersIntoDealData = (dealData, offers) => {
-    const activeOffers = (offers || []).filter(
+    const list = offers || [];
+    const activeOffers = list.filter(
       (offer) =>
         offer &&
-        offer.status === "ACTIVE" &&
+        (offer.status === "ACTIVE" || offer.claimStatus === "ACTIVE") &&
         !offer.redeemed &&
+        offer.claimStatus !== "CLAIMED" &&
         FEE_WAIVER_OFFER_TYPES.has(normalizeOfferType(offer.offerType))
+    );
+    const claimedOffers = list.filter(
+      (offer) =>
+        offer &&
+        FEE_WAIVER_OFFER_TYPES.has(normalizeOfferType(offer.offerType)) &&
+        (offer.redeemed === true ||
+          offer.status === "CLAIMED" ||
+          offer.claimStatus === "CLAIMED")
     );
 
     let merged = { ...dealData };
+
+    // Claimed fee-waiver offer → tell lender claim day + 1-month membership validity
+    if (claimedOffers.length > 0) {
+      const claimed = claimedOffers[0];
+      const validity =
+        claimed.subscriptionValidityDate ||
+        merged.validityDate ||
+        null;
+      merged.offerClaimed = true;
+      merged.offerStatus = "DEACTIVATED";
+      merged.offerActive = false;
+      merged.claimStatus = "CLAIMED";
+      merged.claimedAt = claimed.claimedAt || null;
+      merged.subscriptionValidityDate = validity;
+      if (validity) {
+        merged.validityDate = String(validity).slice(0, 10);
+      }
+      merged.freeSubscriptionMonths =
+        claimed.freeSubscriptionMonths || merged.freeSubscriptionMonths || 1;
+      merged.offerMessage =
+        `Your offer was claimed` +
+        (claimed.claimedAt ? ` on ${formatOfferDay(claimed.claimedAt)}` : "") +
+        `. Your free 1-month membership` +
+        (validity ? ` is valid until ${formatOfferDay(validity)}` : " was granted with this claim") +
+        `.`;
+      const membershipStillActive =
+        merged.subscriptionActive === true ||
+        merged.subscriptionActive === "true" ||
+        (() => {
+          if (!validity) return false;
+          try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const end = new Date(String(validity).slice(0, 10));
+            end.setHours(0, 0, 0, 0);
+            return end >= today;
+          } catch {
+            return false;
+          }
+        })();
+      if (membershipStillActive) {
+        merged.lenderValidityStatus = false;
+        merged.validityStatus = false;
+        merged.paymentRequired = false;
+        merged.feeAmount = 0;
+        merged.subscriptionActive = true;
+      }
+      return merged;
+    }
 
     // Offer-granted or paid membership → treat like old valid subscription (no fee, any amount)
     if (merged.subscriptionActive === true || merged.subscriptionActive === "true") {
@@ -117,6 +202,8 @@ const Participatedeal = () => {
       ...merged,
       offerActive: true,
       offerStatus: OFFER_STATUS_ACTIVE,
+      offerClaimed: false,
+      claimStatus: "ACTIVE",
       activeOfferId: primaryOffer.offerId,
       activeOfferType: primaryOffer.offerType,
       activeOfferTitle: primaryOffer.title,
@@ -675,7 +762,7 @@ const Participatedeal = () => {
                 )}
 
                 {/* 1st time — offer active, amount not entered yet */}
-                {hasActiveOffer && participationAmount === 0 && (
+                {hasActiveOffer && participationAmount === 0 && !offerIsClaimed && (
                   <div className="alert alert-info text-center m-4" role="alert">
                     <h5 className="mb-2">Special Offer — Use Once</h5>
                     <p className="mb-0">
@@ -686,7 +773,7 @@ const Participatedeal = () => {
                 )}
 
                 {/* 1st time — offer active, amount entered */}
-                {offerAppliesNow && (
+                {offerAppliesNow && !offerIsClaimed && (
                   <div className="alert alert-success text-center m-4" role="alert">
                     <h5 className="mb-2">Ready to claim your offer</h5>
                     <p className="mb-0">
@@ -697,14 +784,36 @@ const Participatedeal = () => {
                   </div>
                 )}
 
-                {/* 2nd time onwards — membership active after claim (or paid sub) */}
-                {hasActiveSubscription && (
+                {/* Claimed offer — show claim day + 1-month subscription validity (not "active offer") */}
+                {showClaimedOfferMembershipBanner && (
+                  <div className="alert alert-success text-center m-4" role="alert">
+                    <h5 className="mb-2">Your offer is claimed</h5>
+                    <p className="mb-1">
+                      {deal.apidata?.claimedAt
+                        ? `You claimed this offer on ${formatOfferDay(deal.apidata.claimedAt)}.`
+                        : "You have already claimed this one-time offer."}
+                    </p>
+                    <p className="mb-0 fw-semibold">
+                      {deal.apidata?.subscriptionValidityDate || deal.apidata?.validityDate
+                        ? `Your free 1-month membership is valid until ${formatOfferDay(
+                            deal.apidata.subscriptionValidityDate || deal.apidata.validityDate
+                          )}.`
+                        : "Your free 1-month membership is active."}{" "}
+                      You can participate in deals without paying a participation fee during this period.
+                    </p>
+                  </div>
+                )}
+
+                {/* Active paid / offer membership without claim metadata */}
+                {hasActiveSubscription && !offerIsClaimed && (
                   <div className="alert alert-success text-center m-4" role="alert">
                     <h5 className="mb-2">Membership active — no deal fee</h5>
                     <p className="mb-0">
-                      Your offer was already claimed. Your MONTHLY membership is active
-                      {deal.apidata?.validityDate
-                        ? ` until ${deal.apidata.validityDate}`
+                      Your MONTHLY membership is active
+                      {deal.apidata?.validityDate || deal.apidata?.subscriptionValidityDate
+                        ? ` until ${formatOfferDay(
+                            deal.apidata.subscriptionValidityDate || deal.apidata.validityDate
+                          )}`
                         : ""}
                       . You can participate in deals without paying a participation fee.
                     </p>
@@ -716,7 +825,10 @@ const Participatedeal = () => {
                   <div className="alert alert-secondary text-center m-4" role="alert">
                     <h5 className="mb-2">Offer already claimed</h5>
                     <p className="mb-0">
-                      This one-time offer is used. Normal participation fee / membership payment applies for this deal.
+                      {deal.apidata?.claimedAt
+                        ? `You claimed this offer on ${formatOfferDay(deal.apidata.claimedAt)}. `
+                        : ""}
+                      Your free membership period has ended. Normal participation fee / membership payment applies for this deal.
                     </p>
                   </div>
                 )}
