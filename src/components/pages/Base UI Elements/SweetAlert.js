@@ -27,14 +27,38 @@ export const OFFER_MIN_PARTICIPATION = 10000;
 export const OFFER_STATUS_ACTIVE = "ACTIVE";
 export const OFFER_STATUS_DEACTIVATED = "DEACTIVATED";
 
+/** Deal participation fee waiver offers only — not SUBSCRIPTION_DISCOUNT. */
+export const PARTICIPATION_FEE_OFFER_TYPES = new Set(["FIRST_DEAL_FREE"]);
+
+export const normalizeOfferTypeCode = (offerType) => {
+  if (!offerType) return "";
+  if (typeof offerType === "string") return offerType.toUpperCase();
+  if (typeof offerType === "object" && offerType.name) return String(offerType.name).toUpperCase();
+  return String(offerType).toUpperCase();
+};
+
+export const isParticipationFeeOfferType = (offerType) =>
+  PARTICIPATION_FEE_OFFER_TYPES.has(normalizeOfferTypeCode(offerType));
+
 export const hasActiveReactivationOffer = (apidata) => {
   if (!apidata) return false;
   if (apidata.offerStatus === OFFER_STATUS_DEACTIVATED) return false;
+
+  const activeType = apidata.activeOfferType || apidata.activeOfferTypeCode;
+  if (activeType && !isParticipationFeeOfferType(activeType)) {
+    return false;
+  }
+
   if (apidata.offerStatus === OFFER_STATUS_ACTIVE) return true;
   if (apidata.offerActive === true || apidata.offerActive === "true") return true;
   if (apidata.activeOfferId) return true;
   if (Array.isArray(apidata.activeOffers) && apidata.activeOffers.length > 0) {
-    return !apidata.activeOffers.every((o) => o.redeemed === true);
+    return apidata.activeOffers.some(
+      (o) =>
+        !o.redeemed &&
+        o.claimStatus !== "CLAIMED" &&
+        isParticipationFeeOfferType(o.offerType || o.activeOfferType)
+    );
   }
   return false;
 };
@@ -100,6 +124,79 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
   }
 
   return false;
+};
+
+export const calculatePerDealProcessingFee = (participatedAmount) => {
+  const amount = Number(participatedAmount) || 0;
+  const onePercent = (amount * 1) / 100;
+  return (onePercent * 118) / 100;
+};
+
+/** Participate with PENDING per-deal fee, then deduct fee from wallet automatically. */
+export const participateWithPerDealFee = (deal) => {
+  const feeAmount = calculatePerDealProcessingFee(deal.participatedAmount);
+  const response = newlenderdealparticipation(deal);
+  return response.then((data) => {
+    const httpStatus = data?.status ?? data?.request?.status;
+    if (httpStatus !== 200) {
+      return Promise.reject(data);
+    }
+    return feeapicallforonedeal(feeAmount, deal.urldealId).then((feeRes) => {
+      const feeStatus = feeRes?.status ?? feeRes?.request?.status;
+      if (feeStatus !== 200) {
+        return Promise.reject({ participate: data, fee: feeRes });
+      }
+      return { participate: data, fee: feeRes, feeAmount };
+    });
+  });
+};
+
+const showPerDealFeeParticipationSuccess = (deal, feeAmount) => {
+  Swal.fire({
+    title: "Congratulations!",
+    text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. INR ${feeAmount} participation fee was deducted from your wallet.`,
+    icon: "success",
+    showCancelButton: true,
+    cancelButtonText: "cancel",
+    showConfirmButton: true,
+    confirmButtonText: "OK",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.reload();
+    }
+  });
+};
+
+const showPerDealFeeParticipationError = (data) => {
+  const participateErr = data?.response?.data || data?.participate?.response?.data;
+  const feeErr = data?.fee?.response?.data;
+  const errPayload = participateErr || feeErr || data?.response?.data;
+  if (errPayload?.errorCode == "123") {
+    const paymentErrormessage = String(errPayload.errorMessage || "").match(/\d+(\.\d+)?/g);
+    Swal.fire({
+      title: "Fee Alert",
+      text: `${errPayload.errorMessage}`,
+      icon: "info",
+      showCancelButton: true,
+      cancelButtonText: "cancel",
+      showConfirmButton: true,
+      confirmButtonText: "Wallet",
+    }).then(async (result) => {
+      if (result.isConfirmed && paymentErrormessage?.length >= 2) {
+        paypendingprocessingAmount(paymentErrormessage[1], parseInt(paymentErrormessage[0], 10));
+      }
+    });
+    return;
+  }
+  Swal.fire({
+    title: "Error!",
+    text: `${errPayload?.errorMessage || "Participation or fee payment failed."}`,
+    icon: "error",
+    showCancelButton: true,
+    cancelButtonText: "cancel",
+    showConfirmButton: true,
+    confirmButtonText: "ok",
+  });
 };
 
 const participateWithoutFee = (deal) => {
@@ -477,89 +574,19 @@ export const participatedapi = async (deal) => {
       }
 
       if (deal.apidata.groupName == "NewLender") {
-          const response = newlenderdealparticipation(deal);
-          var newLenderFeePercentage =
-            (parseInt(deal.participatedAmount) * 1) / 100;
-          var newLenderGstAndFeeCalculation =
-            (newLenderFeePercentage * 118) / 100;
-          response.then((data) => {
-            if (data.request.status === 200) {
-              Swal.fire({
-                title: "Congratulations!",
-                text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName} .please pay the INR ${newLenderGstAndFeeCalculation}
-					    	 for the deal processing fee. `,
-                icon: "success",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "Pay Fee",
-              }).then(async (result) => {
-                if (result.isConfirmed) {
-                  const res = feeapicallforonedeal(
-                    newLenderGstAndFeeCalculation,
-                    deal.urldealId
-                  );
-                  res.then((data) => {
-                    if (data.request.status === 200) {
-                      Swal.fire({
-                        title: "Congratulations!",
-                        text: `You have successfully paid the fee`,
-                        icon: "success",
-                        showCancelButton: true,
-                        cancelButtonText: "cancel",
-                        showConfirmButton: true,
-                        confirmButtonText: "ok",
-                      });
-                    } else {
-                      Swal.fire({
-                        title: "Error!",
-                        text: `${data.response.data.errorMessage}`,
-                        icon: "error",
-                        showCancelButton: true,
-                        cancelButtonText: "cancel",
-                        showConfirmButton: true,
-                        confirmButtonText: "ok",
-                      });
-                    }
-                  });
-                }
-              });
-            } else {
-              console.log(data.response);
-
-              if (data.response.data.errorCode == "123") {
-                let paymentErrormessage =
-                  data.response.data.errorMessage.match(/\d+(\.\d+)?/g);
-
-                Swal.fire({
-                  title: "Fee Alert",
-                  text: `${data.response.data.errorMessage}`, // Displaying the error message
-                  icon: "info",
-                  showCancelButton: true,
-                  cancelButtonText: "cancel",
-                  showConfirmButton: true,
-                  confirmButtonText: "Wallet",
-                }).then(async (result) => {
-                  if (result.isConfirmed) {
-                    paypendingprocessingAmount(
-                      paymentErrormessage[1],
-                      parseInt(paymentErrormessage[0])
-                    );
-                  }
-                });
-              } else {
-                Swal.fire({
-                  title: "Error!",
-                  text: `${data.response.data.errorMessage}`, // Displaying the error message
-                  icon: "error",
-                  showCancelButton: true,
-                  cancelButtonText: "cancel",
-                  showConfirmButton: true,
-                  confirmButtonText: "ok",
-                });
-              }
-            }
-          });
+          participateWithPerDealFee(deal)
+            .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
+            .catch((err) => showPerDealFeeParticipationError(err));
+        } else if (
+          deal.apidata.lenderValidityStatus == true &&
+          deal.apidata.groupName != "NewLender" &&
+          isMandatoryFeeDeal(deal.apidata) &&
+          hasActiveReactivationOffer(deal.apidata) &&
+          Number(deal.participatedAmount) < OFFER_MIN_PARTICIPATION
+        ) {
+          participateWithPerDealFee(deal)
+            .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
+            .catch((err) => showPerDealFeeParticipationError(err));
         } else if (
           deal.apidata.lenderValidityStatus == true &&
           deal.apidata.groupName != "NewLender"
@@ -656,89 +683,9 @@ export const membership = async (dealId, dealInfo, participatedAmount) => {
       calculate = (amount * 118) / 100;
     }
 if(choosenPayoutMethod == "PerDeal"){
-  const response = newlenderdealparticipation(dealInfo);
-  var newLenderFeePercentage =
-    (parseInt(dealInfo.participatedAmount) * 1) / 100;
-  var newLenderGstAndFeeCalculation =
-    (newLenderFeePercentage * 118) / 100;
-  response.then((data) => {
-    if (data.request.status === 200) {
-      Swal.fire({
-        title: "Congratulations!",
-        text: `We are reserving ${dealInfo.participatedAmount} for ${dealInfo.apidata.dealName} .please pay the INR ${newLenderGstAndFeeCalculation}
-         for the deal processing fee. `,
-        icon: "success",
-        showCancelButton: true,
-        cancelButtonText: "cancel",
-        showConfirmButton: true,
-        confirmButtonText: "Pay Fee",
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          const res = feeapicallforonedeal(
-            newLenderGstAndFeeCalculation,
-            dealInfo.urldealId
-          );
-          res.then((data) => {
-            if (data.request.status === 200) {
-              Swal.fire({
-                title: "Congratulations!",
-                text: `You have successfully paid the fee`,
-                icon: "success",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "ok",
-              });
-            } else {
-              Swal.fire({
-                title: "Error!",
-                text: `${data.response.data.errorMessage}`,
-                icon: "error",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "ok",
-              });
-            }
-          });
-        }
-      });
-    } else {
-      console.log(data.response);
-
-      if (data.response.data.errorCode == "123") {
-        let paymentErrormessage =
-          data.response.data.errorMessage.match(/\d+(\.\d+)?/g);
-
-        Swal.fire({
-          title: "Fee Alert",
-          text: `${data.response.data.errorMessage}`, // Displaying the error message
-          icon: "info",
-          showCancelButton: true,
-          cancelButtonText: "cancel",
-          showConfirmButton: true,
-          confirmButtonText: "Wallet",
-        }).then(async (result) => {
-          if (result.isConfirmed) {
-            paypendingprocessingAmount(
-              paymentErrormessage[1],
-              parseInt(paymentErrormessage[0])
-            );
-          }
-        });
-      } else {
-        Swal.fire({
-          title: "Error!",
-          text: `${data.response.data.errorMessage}`, // Displaying the error message
-          icon: "error",
-          showCancelButton: true,
-          cancelButtonText: "cancel",
-          showConfirmButton: true,
-          confirmButtonText: "ok",
-        });
-      }
-    }
-  });
+  participateWithPerDealFee(dealInfo)
+    .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(dealInfo, feeAmount))
+    .catch((err) => showPerDealFeeParticipationError(err));
 }else{
     Swal.fire({
       html: `You selected: ${choosenPayoutMethod}  membership tenure and you have to pay the ${calculate} to participate the deal `,

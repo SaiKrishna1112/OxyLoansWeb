@@ -81,11 +81,16 @@ const Participatedeal = () => {
     hasActiveOffer &&
     participationAmount > 0 &&
     participationAmount < OFFER_MIN_PARTICIPATION;
-  // Offer already claimed (from offers API) — show claim day + subscription validity
+  // Offer already claimed (FIRST_DEAL_FREE only — not SUBSCRIPTION_DISCOUNT)
   const offerIsClaimed =
     deal.apidata?.offerClaimed === true ||
-    deal.apidata?.offerStatus === "DEACTIVATED" ||
-    deal.apidata?.claimStatus === "CLAIMED";
+    (deal.apidata?.claimStatus === "CLAIMED" &&
+      (!deal.apidata?.activeOfferType ||
+        normalizeOfferType(deal.apidata.activeOfferType) === "FIRST_DEAL_FREE")) ||
+    (deal.apidata?.offerStatus === "DEACTIVATED" &&
+      (deal.apidata?.offerClaimed === true ||
+        deal.apidata?.grantsFreeSubscription === true ||
+        normalizeOfferType(deal.apidata?.activeOfferType) === "FIRST_DEAL_FREE"));
   // Membership from claim (or paid) — primary post-claim banner
   const showClaimedOfferMembershipBanner =
     offerIsClaimed && (hasActiveSubscription || !!deal.apidata?.subscriptionValidityDate);

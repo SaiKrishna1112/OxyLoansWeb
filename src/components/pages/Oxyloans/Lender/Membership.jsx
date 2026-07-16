@@ -273,7 +273,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
     return discountPercentage.toFixed(2);
   }
 
-  const getPaymentAmount = (planData) => {
+   const getPaymentAmount = (planData) => {
     const pricing = getFinalSubscriptionAmount(planData, subscriptionOffer);
     return Math.round(pricing.finalWithGst);
   };
@@ -415,7 +415,9 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                           </div>
                         </div>
                       )}
-                      {subscriptionOffer && isActiveSubscriptionOffer(subscriptionOffer) && (
+                      {subscriptionOffer &&
+                        isActiveSubscriptionOffer(subscriptionOffer) &&
+                        !membershipPaymentBlocked && (
                         <div className="col-12 mb-3">
                           <div className="alert alert-success subscription-offer-banner mb-0">
                             <strong>
@@ -425,7 +427,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                             {" — "}
                             pay the discounted amount below. After payment you get the same
                             membership validity and benefits as a normal subscription. The offer
-                            then becomes CLAIMED.
+                            becomes CLAIMED only after your wallet payment succeeds.
                           </div>
                         </div>
                       )}

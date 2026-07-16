@@ -127,7 +127,8 @@ function OfferCard({ offer }) {
               )}
               {isDiscount && (
                 <div className="text-muted">
-                  Pay discounted amount on Membership; same validity as a normal plan.
+                  Deal participation uses the normal flow until you pay membership. Claim happens
+                  only after discounted membership payment succeeds from your wallet.
                 </div>
               )}
               {isDiscount && offer.subscriptionDiscountedPrice != null && (
