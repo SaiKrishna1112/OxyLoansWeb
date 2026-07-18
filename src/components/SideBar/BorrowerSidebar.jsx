@@ -234,7 +234,7 @@ const BorrowerSidebar = (props) => {
                           Loan Offers Received From Lenders
                         </Link>
                       </li>
-                      <li>
+                      {/* <li>
                         <Link
                           to="/borrowerDisbursementAmount"
                           className={`${
@@ -245,7 +245,7 @@ const BorrowerSidebar = (props) => {
                         >
                           Loan Disbursement Status
                         </Link>
-                      </li>
+                      </li> */}
                     </ul>
                   ) : (
                     ""

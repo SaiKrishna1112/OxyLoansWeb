@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Table, Select, Input, Button, Tag, Space, Typography, Card, message, } from "antd";
+import { Table, Select, Input, Tag, Space, Typography, Card, message, } from "antd";
 import {  Spinner } from 'react-bootstrap';
 
 import { EyeOutlined, EditOutlined, UserSwitchOutlined, CommentOutlined,FileSearchOutlined  } from "@ant-design/icons";
@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import { base_url } from "../../../../HttpRequest/afterlogin";
-import { Modal,  Form } from 'react-bootstrap';
+import { Modal,  Form,Button } from 'react-bootstrap';
 import { Link, useNavigate } from "react-router-dom";
 
 const { Option } = Select;
@@ -625,32 +625,36 @@ const BorrowerLoanApplications = () => {
             style={{ display: 'flex', flexDirection: 'column', gap: '8px' , textAlign:'center' }}
           >
             <Button
-              type="primary"
-              icon={<CommentOutlined style={{textAlign:'center'}}/>}
-              size="small"
-              onClick={() => {
-                viewAdmin(record);
-                setCommentsAdmin(!commentsAdmin);
-                localStorage.setItem("admincomment", record.id);
-              }}
-            >
-              Comments by Admin
-            </Button>
+  variant="primary"
+  size="sm"
+  className="action-btn"
+  onClick={() => {
+    viewAdmin(record);
+    setCommentsAdmin(!commentsAdmin);
+    localStorage.setItem("admincomment", record.id);
+  }}
+>
+  <CommentOutlined className="me-1" />
+  Admin Comments
+</Button>
     
             <Button
-              icon={<UserSwitchOutlined />}
-              size="small"
+               variant="primary"
+  size="sm"
+  className="action-btn"
               onClick={() => {
                 setIsUploadModalOpen(true);
                 setSelectedRecord(record);
               }}
             >
+<UserSwitchOutlined />
               Upload Cibil
             </Button>
 
             <Button 
-              type="primary"
-              size="small"
+              variant="primary"
+              size="sm"
+              className="action-btn"
               onClick={() => {
                 setCibilRecord(record);
                 setCibilReport(null);
@@ -661,16 +665,19 @@ const BorrowerLoanApplications = () => {
 
             <Button
               icon={<CommentOutlined />}
-              size="small"
+              size="sm"
+              className="action-btn"
+              variant="secondary"
               onClick={() => writeComments(record)}
             >
               Add Comments
             </Button>
     
             <Button
-              type="default"
+              variant="primary"
               icon={<EditOutlined />}
-              size="small"
+              size="sm"
+              className="action-btn"
               onClick={() => ViewTheComments(index, loanData)}
             >
               Click here to View the Comments
@@ -706,41 +713,54 @@ const BorrowerLoanApplications = () => {
       key: "actions",
       render: (_, record) => (
         <Space size="small" style={{display:'flex', flexDirection:'column'}}>
+          <Button
+          variant="primary"
+            size="sm"
+            className="action-btn"
+            onClick={() => navigate(`/borrowernearbyLenders/${record.user.id}`)}
+          >
+            View Nearby Lenders
+          </Button>
           <Button 
-            type="primary" 
+            variant="secondary"
             icon={<FileSearchOutlined />} 
-            size="small"
+            size="sm"
+            className="action-btn"
             onClick={() => viewDetailsBorrower(record)}
           >
             View Documents
           </Button>
           <Button 
-            type="primary" 
+            variant="primary"
             icon={<UserSwitchOutlined />} 
-            size="small"
+            size="sm"
+            className="action-btn"
             onClick={() => viewDetails(record)}
           >
             Change to Lender
           </Button>
           <Button 
             icon={<CommentOutlined />} 
-            size="small"
+            size="sm"
+            className="action-btn"
             onClick={() => interestedStatus(record)}
           >
             Interested
           </Button>
           <Button 
-            type="default" 
+            variant="info"
             icon={<UserSwitchOutlined />} 
-            size="small"
+            size="sm"
+            className="action-btn"
             onClick={() => changeUserStatus(record)}
           >
             View Experian Report
           </Button>
           <Button
-            type="default"
+            variant="success"
             icon={<EditOutlined />}
-            size="small"
+            size="sm"
+            className="action-btn"
             onClick={() => openVerifyModal(record)}
           >
             Verify Borrower

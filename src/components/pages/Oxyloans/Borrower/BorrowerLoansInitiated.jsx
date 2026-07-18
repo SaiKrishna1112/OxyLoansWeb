@@ -106,7 +106,8 @@ const BorrowerLoansInitiated = () => {
     const canShowExecuteButton =
       isAcceptedStatus(borrowerStatus) &&
       isAcceptedStatus(lenderStatus) &&
-      (isAcceptedStatus(loanStatus) || loanStatus === "PROCESSING");
+      (isAcceptedStatus(loanStatus) || loanStatus === "PROCESSING") &&
+      record?.borrowerEsigned === true;
 
     return {
       canShowAcceptButton,
@@ -314,6 +315,8 @@ const BorrowerLoansInitiated = () => {
     borrowerStatus: data.borrowerStatus || "-",
     createdAt: data.createdAt || null,
     distance: data.distance ?? 0,
+    borrowerAggrement: data.borrowerAggrement || null,
+    borrowerEsigned: data.borrowerEsigned || false,
   }));
 
   const RemainingTime = ({ createdAt, duration }) => {
@@ -452,6 +455,29 @@ const BorrowerLoansInitiated = () => {
                 )}
               </div>
             ) : null}
+            {borrowerStatus === "LOANACCEPTED" && !record.borrowerEsigned && record.borrowerAggrement ? (
+              <Link
+                to={`/esign/${record.id}`}
+                className="btn btn-sm btn-warning fw-semibold"
+              >
+                <i className="fa-solid fa-signature me-1"></i> eSign Agreement
+              </Link>
+            ) : null}
+            {record.borrowerAggrement && (
+              <a
+                href={record.borrowerAggrement}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-sm btn-outline-info"
+              >
+                <i className="fa-solid fa-file-pdf me-1"></i> View Agreement
+              </a>
+            )}
+            {record.borrowerEsigned && (
+              <span className="badge bg-success-subtle text-success p-2 small">
+                <i className="fa-solid fa-circle-check me-1"></i> eSigned
+              </span>
+            )}
             {canShowExecuteButton ? (
               <button
                 type="button"
@@ -462,7 +488,7 @@ const BorrowerLoansInitiated = () => {
                 {isExecuting ? "Please wait..." : "Execute loan"}
               </button>
             ) : null}
-            {!canShowAcceptButton && !showRejectButton && !canShowExecuteButton ? (
+            {!canShowAcceptButton && !showRejectButton && !canShowExecuteButton && !record.borrowerEsigned && !record.borrowerAggrement ? (
               <span className="text-muted small">No actions available</span>
             ) : null}
           </div>

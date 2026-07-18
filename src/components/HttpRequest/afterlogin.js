@@ -123,11 +123,40 @@ const handleApiRequestAfterLoginService = async (
         ...headers,
       },
     });
+
+    if (response && response.data) {
+      const resData = response.data;
+      if (
+        resData.errorCode === "100" ||
+        resData.errorCode === 100 ||
+        (resData.errorMessage &&
+          resData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+        return response;
+      }
+    }
+
     // Add your common logic here
     if (response.status == 200) {
       return response;
     }
   } catch (error) {
+    if (error && error.response && error.response.data) {
+      const errData = error.response.data;
+      if (
+        errData.errorCode === "100" ||
+        errData.errorCode === 100 ||
+        (errData.errorMessage &&
+          errData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
     return error;
   }
 };
@@ -3050,7 +3079,15 @@ export const getBorrowerDocuments = async (borrowerId) => {
   return response;
 };
 
-export const lenderInterestedBorrowers = async ({ borrowerId, lenderInterestedAmount, roi, duration, lenderComments }) => {
+export const lenderInterestedBorrowers = async ({ 
+  borrowerId, 
+  lenderInterestedAmount, 
+  roi, 
+  duration, 
+  lenderComments,
+  durationType,
+  repaymentMethodForLender 
+}) => {
   const token = getToken();
   const lenderId = Number(getUserId());
   const data = {
@@ -3059,6 +3096,8 @@ export const lenderInterestedBorrowers = async ({ borrowerId, lenderInterestedAm
     lenderInterestedAmount: Number(lenderInterestedAmount),
     roi: Number(roi),
     duration: Number(duration),
+    durationType: durationType || "Days",
+    repaymentMethodForLender: repaymentMethodForLender || "PI",
     lenderComments: lenderComments || "",
   };
   const response = await handleApiRequestAfterLoginService(
@@ -4082,3 +4121,146 @@ export const saveBorrowerReferenceDetails = (payload) =>
   axios.patch(`${API_BASE_URL}borrowerReferenceDetails`, payload, {
     headers: { accessToken: getToken(), "Content-Type": "application/json" },
   });
+
+export const lenderBorrowerEsign = async (loanId) => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/${loanId}/lenderBorrowerEsign`,
+    "POST",
+    token
+  );
+  return response;
+};
+
+// Cashfree eSign + eNACH Frontend APIs
+export const startCashfreeEsign = async (loanRequestId, aadharNumber) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/lenderBorrowerEsign`,
+    {},
+    {
+      params: { aadharNumber },
+      headers: {
+        "Content-Type": "application/json",
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const completeCashfreeEsign = async (loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/uploadAgreementForLRAndBr`,
+    { },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const listBorrowerLoanEnachMandates = async (loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.get(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/borrowerLoanEnachMandates`,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const startCashfreeEnachAuthorization = async (mandateId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/${mandateId}/start`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const getCashfreeEnachStatus = async (mandateId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.get(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/${mandateId}/status`,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const raiseCashfreeEnachCharge = async (emiCardId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/emi/${emiCardId}/raiseCharge`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const cancelCashfreeEnach = async (mandateId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/${mandateId}/cancel`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const adminReverseFalsePaidEmi = async (emiCardId, reason = "false paid without debit", force = "false") => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/emi/${emiCardId}/reverseFalsePaid`,
+    null,
+    {
+      params: { reason, force },
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const adminReconcilePaidEmis = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/reconcilePaidEmis`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+

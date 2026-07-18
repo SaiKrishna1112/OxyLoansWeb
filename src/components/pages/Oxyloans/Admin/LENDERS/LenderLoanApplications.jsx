@@ -706,6 +706,14 @@ const getCommentsfun=async(record)=>{
           size="small"
           style={{ display: "flex", flexDirection: "column" }}
         >
+          <Button 
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={()=> navigate('/lenderNearbyBorrowers/'+record.user.id)}
+          >
+            Nearby Borrowers
+          </Button>
           <Button
             type="primary"
             icon={<EyeOutlined />}
@@ -714,6 +722,7 @@ const getCommentsfun=async(record)=>{
           >
             Change to Borrower
           </Button>
+
           <Button size="small" onClick={() => viewComments(record)}>
             Change to Test Lender
           </Button>

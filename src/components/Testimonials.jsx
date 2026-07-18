@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { oxylogodashboard } from "./imagepath";
 
 const CheckBadge = () => (
@@ -37,83 +37,243 @@ const QuoteIcon = () => (
   </svg>
 );
 
-const VIDEOS = [
-  "1nJrUkMdTJLi4VsHPTg0Pj-sbJVSsYMaL",
-  "1pwgUnIJjzbOEwrRhkf9ETHlBHUuDnqN0",
-  "1sJpWDG8JS_1gtqTH9MxQmPV6z48zdz2t",
-  "1DtlWjNwxGzIKP5xkR8qxjLcP3BDR-vml",
-  "12qfYMtpYOSNbl9vBC4SNLjG8uU37rxf3",
-  "15MfwiHhOGV4ULyk70JOAz_xbR94fdu2Y",
-  "1oqLf8xS_q-arf0VxRZHq2ag1RnBeXAbI",
-  "1c1d3PyIk6cNO-W5rzF95fH63Ghp6WziT",
-  "1mlR9tWt7f5Vev1V8x7xrWyKejWLC5gOy",
-  "1wruWMLzazVN-90v2MW9UmW5HT9GYIoxD",
-  "1hcp_o3pWQKcs87c0BU3SnRiCgDZHszUN",
-  "1CqqNqAj-B1VElkKZ-jdx63PWHq53tsX3",
-  "1rFmxDHLmWmzfI0ddqT-Di_hD9oDEx9pO",
-  "1pVsvQ4iB_zZcE4hbwUBV6NuS1KWg-zht",
-  "1YbAKgkIpp4oZ8WCAoF_DaIWT9Ir-oQ6b",
-  "19m4NmYVTrN1HTExRWA_6RZsOpLfATYdI",
-  "1_iAsYApD9hTa1cPQhNpqutGo1u620i-g",
-  "1pVJp4j59xaHargL2wk8TbCyVoTXRKjfi",
-  "1vjqhZo7rENY-mC9CApxScQik_Njk8Dpw",
-  "1RDHq3fsVj67FEXKhzy3TmzzRMRj6NUN3",
-  "12nhFreFfDE3Mk84CKiy3iL0FCaMeGDwd",
-  "1yoOrji9bWgxUaZefgUXc7iTF1OP0LL4G",
-  "1yje-Qv6P0vyUTfoEthF70FHXn7r3YLHL",
-  "1cVQ3SOpggsghOYsy5pSUkckH7g98Vj-G",
-  "1Sk1TRgb2pYzSqbPr8KBYT7XTGx5qmZ-S",
-  "1sX8-l6_pvpvk4RwABRSgpqRcl1LIZ30m",
-  "10Gr7o5PIyfqiMtuJEG7Ew0yVbbjp8yZZ",
-  "1ejP_TnQDR_xJHjP2v_6Z3oi8cWSNrvbd",
-  "1skNORxHvju0rC-LJwJizSt4giEoDY1zJ",
-  "1m8Gdcnw3gp12NvK4PjP2OvbgH828W9_A",
-  "14HfvKxPc82vMELRX3qLEBWNaI_9VU-HF",
-  "1V3CPztV4_QUIOommUUgDerktmSEgI8AZ",
-  "1HSe9zsKaf8D0mwWVPAGQfHpmD8vBKxAv",
-  "1E-_G0PxoNzsoyghfxu5Gwt8IDOKBoDPh",
-  "13rb19rSRu9T0gP4WXLIdpLM43BYj9WFb",
-  "1iBmC1FyEECd9NvE5b7_NSnfNERhJqX95",
-  "1_uEGf7-O4ce0i5I_ENydHGNIvyhVQP98",
-  "1UGeN9-iM8Y3oXdr7dzp1Q2U7aL7MoTpn",
-  "1tVXzPaUasUOY1dN_pB0Jssg_VJpMc0c5",
-  "1rK3PFYAHYZptbtk-VlVfPfm7DkoW0IAY",
-  "17GPm_yiIfO1CzPFzKPm9tBcItfJF8kOu",
-  "199LZ_Nxj9Env5Tcb_0968hxteJcQbgW_",
-  "1p4NDyxfnXW2iJCn6nT9cPuv4fc3QLBun",
-  "1z8Y3DHK73sIbSJrUB37kNTBZJWfkkvEL",
-  "1FesVvvaN6qB5KzC2RFPJ6dPCH_NHvvFj",
-  "1jYxc2tLcQSkZESqs96-2_nBOx0HG3eFs",
-  "1XOYnh34XUeRpuEC-RR9OalCYfNukYwN5",
-  "1mvbuhWFN_lhQHIdJepGtjgHCCQV9PyPm",
-  "18bruD0hqihHpb0cIl7lmzE-q8IlL8I1P",
-  "1wB5omE5f7sERbPA4NoRBh0BpRjt4VWwQ",
+const PopoutIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" y1="14" x2="21" y2="3" />
+  </svg>
+);
+
+const PlayMiniIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+
+const PauseMiniIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="4" width="4" height="16" />
+    <rect x="14" y="4" width="4" height="16" />
+  </svg>
+);
+
+const VolumeIcon = ({ isMuted }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {isMuted ? (
+      <>
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <line x1="23" y1="9" x2="17" y2="15" />
+        <line x1="17" y1="9" x2="23" y2="15" />
+      </>
+    ) : (
+      <>
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+      </>
+    )}
+  </svg>
+);
+
+const SettingsIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
+
+const FullscreenIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+  </svg>
+);
+
+const FALLBACK_VIDEOS = [
+  { name: "lendertest.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_lendertest.mp4" },
+  { name: "test10.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test10.mp4" },
+  { name: "test11.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test11.mp4" },
+  { name: "test12.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test12.mp4" },
+  { name: "test13.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test13.mp4" },
+  { name: "test14.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test14.mp4" },
+  { name: "test15.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test15.mp4" },
+  { name: "test16.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test16.mp4" },
+  { name: "test19.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test19.mp4" },
+  { name: "test2.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test2.mp4" },
+  { name: "test20.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test20.mp4" },
+  { name: "test21.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test21.mp4" },
+  { name: "test22.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test22.mp4" },
+  { name: "test23.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test23.mp4" },
+  { name: "test24.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test24.mp4" },
+  { name: "test25.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test25.mp4" },
+  { name: "test26.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test26.mp4" },
+  { name: "test29.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test29.mp4" },
+  { name: "test3.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test3.mp4" },
+  { name: "test30.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test30.mp4" },
+  { name: "test31.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test31.mp4" },
+  { name: "test32.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test32.mp4" },
+  { name: "test4.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test4.mp4" },
+  { name: "test5.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test5.mp4" },
+  { name: "test6.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test6.mp4" },
+  { name: "test7.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test7.mp4" },
+  { name: "test8.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test8.mp4" },
+  { name: "test9.mp4", path: "https://d15sy6qj2uhi5q.cloudfront.net/14996e93-46c9-46cb-a5fb-8050b8af17ab/kyc_test9.mp4" }
 ];
 
 export default function TestimonialVideos() {
+  const [videos, setVideos] = useState(FALLBACK_VIDEOS);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
 
+  const videoRef = useRef(null);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      try {
+        const response = await fetch(
+          "https://docs.google.com/spreadsheets/d/1FL0dQlXZEh4TY4wUYFfesk7FhXlGFR_s9yAIxEbNVq8/gviz/tq?tqx=out:json"
+        );
+        const text = await response.text();
+        const jsonStart = text.indexOf("{");
+        const jsonEnd = text.lastIndexOf("}");
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          const jsonString = text.substring(jsonStart, jsonEnd + 1);
+          const data = JSON.parse(jsonString);
+          const rows = data.table.rows;
+          const parsedVideos = [];
+          
+          for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || !row.c) continue;
+            
+            const nameCell = row.c[0];
+            const pathCell = row.c[1];
+            
+            const name = nameCell ? String(nameCell.v || "") : "";
+            let path = pathCell ? String(pathCell.v || "") : "";
+            
+            if (path.includes("askoxy.s3.ap-south-1.amazonaws.com")) {
+              path = path.replace(
+                "https://askoxy.s3.ap-south-1.amazonaws.com",
+                "https://d15sy6qj2uhi5q.cloudfront.net"
+              );
+            }
+            
+            if (path && name !== "documentName") {
+              parsedVideos.push({ name, path });
+            }
+          }
+          if (parsedVideos.length > 0) {
+            setVideos(parsedVideos);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching videos from Google Sheet:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVideos();
+  }, []);
+
   useEffect(() => {
     setIsPlaying(false);
+    setVideoPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setPlaybackSpeed(1);
+    setShowSpeedMenu(false);
   }, [currentIndex]);
 
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (videoPlaying) {
+        videoRef.current.pause();
+        setVideoPlaying(false);
+      } else {
+        videoRef.current.play().catch((err) => console.error("Playback error:", err));
+        setVideoPlaying(true);
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeekChange = (e) => {
+    const time = parseFloat(e.target.value);
+    setCurrentTime(time);
+    if (videoRef.current) {
+      videoRef.current.currentTime = time;
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleSpeedChange = (speed) => {
+    setPlaybackSpeed(speed);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    }
+    setShowSpeedMenu(false);
+  };
+
+  const toggleFullscreen = () => {
+    if (videoRef.current) {
+      const container = videoRef.current.parentElement;
+      if (!document.fullscreenElement) {
+        if (container.requestFullscreen) {
+          container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen();
+        } else if (container.msRequestFullscreen) {
+          container.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+  };
+
   const goPrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? VIDEOS.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? videos.length - 1 : prev - 1));
   };
 
   const goNext = () => {
-    setCurrentIndex((prev) => (prev === VIDEOS.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === videos.length - 1 ? 0 : prev + 1));
   };
 
   const handleImageError = (id) => {
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
-  const currentId = VIDEOS[currentIndex];
+  const currentItem = videos[currentIndex] || { name: "", path: "" };
+  const currentPath = currentItem.path;
   const displayNum = currentIndex + 1;
-  const hasImageError = imageErrors[currentId];
+  const hasImageError = imageErrors[currentPath];
 
   return (
     <div className="tv-page">
@@ -343,7 +503,7 @@ export default function TestimonialVideos() {
           margin-top: 8px;
         }
 
-        .tv-iframe-container {
+        .tv-player-container {
           position: relative;
           width: 100%;
           max-width: 290px;
@@ -353,12 +513,214 @@ export default function TestimonialVideos() {
           background: #000;
           box-shadow: 0 20px 40px rgba(0,0,0,0.5);
           border: 1px solid rgba(255,255,255,0.05);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .tv-iframe {
+        .tv-video-element {
           width: 100%;
           height: 100%;
           border: none;
+          display: block;
+        }
+
+        .tv-video-element-direct {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .tv-player-popout {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          z-index: 10;
+          background: rgba(14, 42, 71, 0.7);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          border-radius: 6px;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #FFF;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .tv-player-popout:hover {
+          background: #B8935A;
+          border-color: #B8935A;
+          color: #0E2A47;
+          transform: scale(1.05);
+        }
+
+        .tv-player-bottom-controls {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 10;
+          padding: 16px 12px 20px;
+          background: linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tv-player-play-btn {
+          background: #FFFFFF;
+          color: #000000;
+          border: none;
+          border-radius: 20px;
+          width: 48px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: transform 0.2s ease, background-color 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .tv-player-play-btn:hover {
+          background: #F1F5F9;
+          transform: scale(1.05);
+        }
+
+        .tv-player-play-btn:active {
+          transform: scale(0.95);
+        }
+
+        .tv-player-slider-container {
+          flex-grow: 1;
+          display: flex;
+          align-items: center;
+        }
+
+        .tv-player-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 100%;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 2px;
+          outline: none;
+          cursor: pointer;
+          margin: 0;
+        }
+
+        .tv-player-slider::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 4px;
+          background: transparent;
+        }
+
+        .tv-player-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 3px;
+          height: 14px;
+          background: #FFFFFF;
+          cursor: pointer;
+          border-radius: 0;
+          margin-top: -5px;
+        }
+
+        .tv-player-slider::-moz-range-thumb {
+          width: 3px;
+          height: 14px;
+          background: #FFFFFF;
+          cursor: pointer;
+          border: none;
+          border-radius: 0;
+        }
+
+        .tv-player-right-pill {
+          background: rgba(0, 0, 0, 0.55);
+          backdrop-filter: blur(4px);
+          border-radius: 20px;
+          padding: 3px 6px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          flex-shrink: 0;
+        }
+
+        .tv-player-control-icon-btn {
+          background: none;
+          border: none;
+          color: #FFFFFF;
+          opacity: 0.85;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: opacity 0.2s ease, transform 0.2s ease;
+          position: relative;
+          padding: 0;
+        }
+
+        .tv-player-control-icon-btn:hover {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+
+        .tv-player-speed-menu {
+          position: absolute;
+          bottom: 32px;
+          right: 0;
+          background: rgba(10, 31, 53, 0.95);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(184, 147, 90, 0.3);
+          border-radius: 8px;
+          padding: 4px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          z-index: 100;
+          box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+          min-width: 60px;
+        }
+
+        .tv-player-speed-option {
+          background: none;
+          border: none;
+          color: #FFFFFF;
+          font-size: 11px;
+          padding: 6px 8px;
+          text-align: center;
+          cursor: pointer;
+          border-radius: 4px;
+          transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .tv-player-speed-option:hover {
+          background: rgba(184, 147, 90, 0.15);
+          color: #B8935A;
+        }
+
+        .tv-player-speed-option.active {
+          background: #B8935A;
+          color: #0E2A47;
+          font-weight: bold;
+        }
+
+        .tv-player-container:fullscreen {
+          max-width: none;
+          width: 100vw;
+          height: 100vh;
+          border-radius: 0;
+          background: #000;
+        }
+
+        .tv-player-container:fullscreen .tv-video-element-direct {
+          object-fit: contain;
         }
 
         .tv-quote-container {
@@ -675,27 +1037,116 @@ export default function TestimonialVideos() {
           {/* Left Column: Video Poster or Iframe */}
           <div className="tv-left-column">
             {isPlaying ? (
-              <div className="tv-iframe-container">
-                <iframe
-                  src={`https://drive.google.com/file/d/${currentId}/preview?autoplay=1`}
-                  className="tv-iframe"
-                  allow="autoplay; encrypted-media; fullscreen"
-                  allowFullScreen
-                  title={`Lender testimonial ${displayNum}`}
-                />
-              </div>
+              currentPath.startsWith("http") ? (
+                <div className="tv-player-container">
+
+                  <video
+                    ref={videoRef}
+                    src={currentPath}
+                    className="tv-video-element-direct"
+                    autoPlay
+                    onPlay={() => setVideoPlaying(true)}
+                    onPause={() => setVideoPlaying(false)}
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onClick={togglePlay}
+                  />
+
+                  {/* Bottom Custom Control Bar */}
+                  <div className="tv-player-bottom-controls">
+                    {/* Play/Pause Pill */}
+                    <button
+                      className="tv-player-play-btn"
+                      onClick={togglePlay}
+                      aria-label={videoPlaying ? "Pause" : "Play"}
+                    >
+                      {videoPlaying ? <PauseMiniIcon /> : <PlayMiniIcon />}
+                    </button>
+
+                    {/* Progress Seek Slider */}
+                    <div className="tv-player-slider-container">
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration || 100}
+                        value={currentTime}
+                        onChange={handleSeekChange}
+                        className="tv-player-slider"
+                        aria-label="Seek progress"
+                      />
+                    </div>
+
+                    {/* Right Control Pill (Mute, Settings, Fullscreen) */}
+                    <div className="tv-player-right-pill">
+                      {/* Volume Mute Toggle */}
+                      <button
+                        className="tv-player-control-icon-btn"
+                        onClick={toggleMute}
+                        aria-label={isMuted ? "Unmute" : "Mute"}
+                      >
+                        <VolumeIcon isMuted={isMuted} />
+                      </button>
+
+                      {/* Settings Speed Trigger */}
+                      <div style={{ position: "relative" }}>
+                        <button
+                          className="tv-player-control-icon-btn"
+                          onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                          aria-label="Playback speed"
+                        >
+                          <SettingsIcon />
+                        </button>
+
+                        {/* Speed Popover Menu */}
+                        {showSpeedMenu && (
+                          <div className="tv-player-speed-menu">
+                            {[0.5, 1, 1.5, 2].map((speed) => (
+                              <button
+                                key={speed}
+                                className={`tv-player-speed-option ${playbackSpeed === speed ? "active" : ""}`}
+                                onClick={() => handleSpeedChange(speed)}
+                              >
+                                {speed}x
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Fullscreen Toggle */}
+                      <button
+                        className="tv-player-control-icon-btn"
+                        onClick={toggleFullscreen}
+                        aria-label="Fullscreen"
+                      >
+                        <FullscreenIcon />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="tv-player-container">
+                  <iframe
+                    src={`https://drive.google.com/file/d/${currentPath}/preview?autoplay=1`}
+                    className="tv-video-element"
+                    allow="autoplay; encrypted-media; fullscreen"
+                    allowFullScreen
+                    title={`Lender testimonial ${displayNum}`}
+                  />
+                </div>
+              )
             ) : (
               <div
                 className="tv-poster-container"
                 onClick={() => setIsPlaying(true)}
               >
-                {!hasImageError ? (
+                {!hasImageError && !currentPath.startsWith("http") ? (
                   <>
                     <img
-                      src={`https://drive.google.com/thumbnail?id=${currentId}&sz=w640`}
+                      src={`https://drive.google.com/thumbnail?id=${currentPath}&sz=w640`}
                       alt={`Lender testimonial ${displayNum}`}
                       className="tv-poster-img"
-                      onError={() => handleImageError(currentId)}
+                      onError={() => handleImageError(currentPath)}
                       loading="lazy"
                     />
                     <div className="tv-poster-overlay-shade" />
@@ -778,7 +1229,7 @@ export default function TestimonialVideos() {
                 <div
                   className="tv-progress-fill"
                   style={{
-                    width: `${(displayNum / VIDEOS.length) * 100}%`
+                    width: `${(displayNum / videos.length) * 100}%`
                   }}
                 />
               </div>
@@ -796,7 +1247,7 @@ export default function TestimonialVideos() {
                   </button>
 
                   <span className="tv-pagination-text">
-                    <strong>{String(displayNum).padStart(2, "0")}</strong> / {VIDEOS.length}
+                    <strong>{String(displayNum).padStart(2, "0")}</strong> / {videos.length}
                   </span>
 
                   <button
@@ -816,7 +1267,7 @@ export default function TestimonialVideos() {
                     onChange={(e) => setCurrentIndex(Number(e.target.value))}
                     className="tv-select"
                   >
-                    {VIDEOS.map((_, idx) => (
+                    {videos.map((_, idx) => (
                       <option key={idx} value={idx}>
                         Testimonial #{String(idx + 1).padStart(2, "0")}
                       </option>

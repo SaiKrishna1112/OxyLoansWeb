@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
-import { completeEsign } from "../../../HttpRequest/afterlogin";
+import { lenderBorrowerEsign } from "../../../HttpRequest/afterlogin";
 
 const MarketplaceEsign = () => {
   const { loanRequestId } = useParams();
@@ -33,7 +33,7 @@ const MarketplaceEsign = () => {
     }
     setLoading(true);
     setError("");
-    completeEsign(loanRequestId)
+    lenderBorrowerEsign(loanRequestId)
       .then(() => {
         setStep("success");
       })

@@ -511,7 +511,7 @@ const BorrowerNearbyLendersPage = () => {
                   <button
                     key={option.label}
                     className="btn btn-sm"
-                    disabled={true}
+                    // disabled={true}
                     style={{
                       borderRadius: 16,
                       fontSize: 11,

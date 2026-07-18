@@ -4,6 +4,8 @@ import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
 import { getBorrowerDocuments } from "../../../../HttpRequest/afterlogin";
 import { verifyDocument } from "../../../../HttpRequest/admin";
+import axios from "axios";
+import { API_USER_URL } from "../../../../../config";
 
 const PRIMARY = "#3d5ee1";
 
@@ -130,6 +132,55 @@ const BorrowerDocuments = () => {
   const [viewDoc, setViewDoc] = useState(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState("ALL");
   const [verifying, setVerifying] = useState({});
+
+  const [docUrl, setDocUrl] = useState(null);
+  const [docLoading, setDocLoading] = useState(false);
+  const [docLoadError, setDocLoadError] = useState("");
+
+  useEffect(() => {
+    if (!viewDoc) {
+      setDocUrl(null);
+      setDocLoadError("");
+      return;
+    }
+
+    let active = true;
+    setDocLoading(true);
+    setDocLoadError("");
+    setDocUrl(null);
+
+    const token = sessionStorage.getItem("accessToken");
+    const downloadUrl = `${API_USER_URL}${userId}/download/${viewDoc.documentSubType}`;
+
+    // Get the pre-signed downloadUrl from backend API
+    axios({
+      method: "GET",
+      url: downloadUrl,
+      headers: {
+        accessToken: token,
+      },
+    })
+      .then((response) => {
+        if (!active) return;
+        const resData = response.data;
+        if (resData && resData.downloadUrl) {
+          setDocUrl(resData.downloadUrl);
+        } else {
+          setDocLoadError("Document URL not found in server response.");
+        }
+        setDocLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("Error loading document:", err);
+        setDocLoadError("Failed to fetch document download URL.");
+        setDocLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [viewDoc, userId]);
 
   const handleVerify = async (doc, status) => {
     const key = `${doc.id}-${status}`;
@@ -714,10 +765,20 @@ const BorrowerDocuments = () => {
                 justifyContent: "center",
               }}
             >
-              {isImage(viewDoc.fileName) ? (
+              {docLoading ? (
+                <div className="text-center p-5">
+                  <div className="spinner-border" style={{ color: PRIMARY, width: 40, height: 40 }} />
+                  <p className="mt-2 text-muted fw-semibold">Loading document content...</p>
+                </div>
+              ) : docLoadError ? (
+                <div className="text-center p-5">
+                  <i className="fa fa-exclamation-triangle fa-3x mb-3 text-danger" />
+                  <p className="text-danger fw-semibold">{docLoadError}</p>
+                </div>
+              ) : isImage(viewDoc.fileName) ? (
                 <div style={{ padding: 24, width: "100%", textAlign: "center" }}>
                   <img
-                    src={`https://oxyloansv1.s3.ap-south-1.amazonaws.com/${viewDoc.filePath}`}
+                    src={docUrl}
                     alt={viewDoc.fileName}
                     style={{
                       maxWidth: "100%",
@@ -733,7 +794,7 @@ const BorrowerDocuments = () => {
                 </div>
               ) : isPdf(viewDoc.fileName) ? (
                 <iframe
-                  src={`https://oxyloansv1.s3.ap-south-1.amazonaws.com/${viewDoc.filePath}#toolbar=0&navpanes=0`}
+                  src={docUrl ? `https://docs.google.com/viewer?url=${encodeURIComponent(docUrl)}&embedded=true` : ""}
                   title={viewDoc.fileName}
                   width="100%"
                   height="560"

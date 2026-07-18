@@ -2865,6 +2865,7 @@ console.log("data",data.status);
                                     onChange={handlechange}
                                     value={userProfile.panNumber}
                                     maxLength={10}
+                                    readOnly={isPanVerified}
                                     name="panNumber"
                                     style={{ textTransform: "uppercase" }}
                                   />

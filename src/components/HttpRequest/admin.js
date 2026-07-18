@@ -43,11 +43,40 @@ const handleApiRequestAfterLoginService = async (
         ...headers,
       },
     });
+
+    if (response && response.data) {
+      const resData = response.data;
+      if (
+        resData.errorCode === "100" ||
+        resData.errorCode === 100 ||
+        (resData.errorMessage &&
+          resData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+        return response;
+      }
+    }
+
     // Add your common logic here
     if (response.status == 200) {
       return response;
     }
   } catch (error) {
+    if (error && error.response && error.response.data) {
+      const errData = error.response.data;
+      if (
+        errData.errorCode === "100" ||
+        errData.errorCode === 100 ||
+        (errData.errorMessage &&
+          errData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
     return error;
   }
 };
@@ -1653,4 +1682,46 @@ export const getAdminAIActiveLenderReferralDeals = async (lenderId, refereeId) =
     }
   );
   return response.data;
+};
+
+export const getLenderListNearByRediusForBorrower = async (
+  borrowerUserId,
+  pageNo = 1,
+  pageSize = 10000
+) => {
+  const token = getToken();
+  const payload = {
+    pageNo,
+    pageSize,
+    userId: String(borrowerUserId),
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getLenderListNearByRedius1",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerListNearByRediusForLender = async (
+  lenderUserId,
+  pageNo = 1,
+  pageSize = 1000
+) => {
+  const token = getToken();
+  const payload = {
+    pageNo,
+    pageSize,
+    userId: String(lenderUserId),
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getBorrowerListNearByRedius1",
+    "POST",
+    token,
+    payload
+  );
+  return response;
 };

@@ -728,6 +728,8 @@ const ProximityLoans = () => {
     tenure: "",
     roi: "",
     comments: "",
+    durationType: "Days",
+    repaymentMethodForLender: "PI",
     consentItems: new Array(LENDER_CONSENTS.length).fill(false),
   });
   const [offerErrors, setOfferErrors] = useState({});
@@ -874,7 +876,7 @@ const ProximityLoans = () => {
       isNaN(offerData.tenure) ||
       Number(offerData.tenure) <= 0
     )
-      errors.tenure = "Enter valid tenure (days)";
+      errors.tenure = `Enter valid tenure (${offerData.durationType === "Months" ? "months" : "days"})`;
     if (!offerData.roi || isNaN(offerData.roi) || Number(offerData.roi) <= 0)
       errors.roi = "Enter a valid ROI (%)";
     if (!offerData.consentItems.every(Boolean))
@@ -896,6 +898,8 @@ const ProximityLoans = () => {
         lenderInterestedAmount: offerData.amount,
         roi: offerData.roi,
         duration: offerData.tenure,
+        durationType: offerData.durationType,
+        repaymentMethodForLender: offerData.repaymentMethodForLender,
         lenderComments: offerData.comments,
       });
       if (result.status !== 200) {
@@ -927,6 +931,8 @@ const ProximityLoans = () => {
         tenure: "",
         roi: "",
         comments: "",
+        durationType: "Days",
+        repaymentMethodForLender: "PI",
         consentItems: new Array(LENDER_CONSENTS.length).fill(false),
       });
     } catch (error) {
@@ -972,34 +978,38 @@ const ProximityLoans = () => {
 
                 {/* Buttons (Right) */}
                 <div className="d-flex flex-wrap gap-2">
-                  <button
-                    className="btn"
-                    style={{
-                      background: PRIMARY,
-                      color: "#fff",
-                      fontWeight: 600,
-                      borderRadius: 8,
-                      padding: "8px 18px",
-                      fontSize: 13,
-                      whiteSpace: "nowrap",
-                    }}
-                    onClick={() => {
-                      setShowOffer(true);
-                      setOfferErrors({});
-                      setOfferData({
-                        amount: "",
-                        tenure: "",
-                        roi: "",
-                        comments: "",
-                        consentItems: new Array(LENDER_CONSENTS.length).fill(
-                          false,
-                        ),
-                      });
-                    }}
-                  >
-                    <i className="fa fa-paper-plane me-1" />
-                    Send Loan Offer
-                  </button>
+                  {loanDetails.length > 0 && (
+                    <button
+                      className="btn"
+                      style={{
+                        background: PRIMARY,
+                        color: "#fff",
+                        fontWeight: 600,
+                        borderRadius: 8,
+                        padding: "8px 18px",
+                        fontSize: 13,
+                        whiteSpace: "nowrap",
+                      }}
+                      onClick={() => {
+                        setShowOffer(true);
+                        setOfferErrors({});
+                        setOfferData({
+                          amount: "",
+                          tenure: "",
+                          roi: "",
+                          comments: "",
+                          durationType: "Days",
+                          repaymentMethodForLender: "PI",
+                          consentItems: new Array(LENDER_CONSENTS.length).fill(
+                            false,
+                          ),
+                        });
+                      }}
+                    >
+                      <i className="fa fa-paper-plane me-1" />
+                      Send Loan Offer
+                    </button>
+                  )}
 
                   <Link
                     to="/offerGivenList"
@@ -1151,23 +1161,39 @@ const ProximityLoans = () => {
                           className="form-label fw-semibold"
                           style={{ fontSize: 13 }}
                         >
-                          Duration (Days) <span className="text-danger">*</span>
+                          Duration <span className="text-danger">*</span>
                         </label>
-                        <input
-                          type="number"
-                          className={`form-control ${offerErrors.tenure ? "is-invalid" : ""}`}
-                          placeholder="e.g. 30"
-                          value={offerData.tenure}
-                          onChange={(e) => {
-                            setOfferData({
-                              ...offerData,
-                              tenure: e.target.value,
-                            });
-                            setOfferErrors({ ...offerErrors, tenure: "" });
-                          }}
-                        />
+                        <div className="input-group">
+                          <input
+                            type="number"
+                            className={`form-control ${offerErrors.tenure ? "is-invalid" : ""}`}
+                            placeholder={offerData.durationType === "Months" ? "e.g. 3" : "e.g. 90"}
+                            value={offerData.tenure}
+                            onChange={(e) => {
+                              setOfferData({
+                                ...offerData,
+                                tenure: e.target.value,
+                              });
+                              setOfferErrors({ ...offerErrors, tenure: "" });
+                            }}
+                          />
+                          <select
+                            className="form-select"
+                            style={{ maxWidth: "110px" }}
+                            value={offerData.durationType}
+                            onChange={(e) => {
+                              setOfferData({
+                                ...offerData,
+                                durationType: e.target.value,
+                              });
+                            }}
+                          >
+                            <option value="Days">Days</option>
+                            <option value="Months">Months</option>
+                          </select>
+                        </div>
                         {offerErrors.tenure && (
-                          <div className="invalid-feedback">
+                          <div className="text-danger small mt-1" style={{ fontSize: "12px" }}>
                             {offerErrors.tenure}
                           </div>
                         )}
@@ -1195,6 +1221,27 @@ const ProximityLoans = () => {
                             {offerErrors.roi}
                           </div>
                         )}
+                      </div>
+                      <div className="col-12 mt-3">
+                        <label
+                          className="form-label fw-semibold"
+                          style={{ fontSize: 13 }}
+                        >
+                          Repayment Method <span className="text-danger">*</span>
+                        </label>
+                        <select
+                          className="form-select"
+                          value={offerData.repaymentMethodForLender}
+                          onChange={(e) => {
+                            setOfferData({
+                              ...offerData,
+                              repaymentMethodForLender: e.target.value,
+                            });
+                          }}
+                        >
+                          <option value="PI">Principal + Interest</option>
+                          <option value="I">Interest Only</option>
+                        </select>
                       </div>
                       <div className="col-12">
                         <label

@@ -308,10 +308,10 @@ const BorrowerRequestAmount = () => {
     <div className="d-inline-flex align-items-center bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill mt-2">
       <i className="bi bi-check-circle-fill me-2"></i>
       <span className="fw-semibold text-white small">
-        Eligible Amount:
+        Remaining Amount:
       </span>
       <span className="ms-2 fw-bold text-white">
-        ₹ {eligibleAmount.toLocaleString("en-IN", {
+        ₹ {(eligibleAmount-totalRequestedAmount).toLocaleString("en-IN", {
           minimumFractionDigits: 2,
         })}
       </span>
