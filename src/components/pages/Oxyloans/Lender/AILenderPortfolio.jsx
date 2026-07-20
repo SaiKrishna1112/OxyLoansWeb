@@ -14,6 +14,17 @@ const fmt = (n) =>
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
+const fmtRoi = (rateOfInterest, payoutFrequency) => {
+  const roi = rateOfInterest || 0;
+  const freq = (payoutFrequency || "").toUpperCase();
+  if (freq === "MONTHLY")    return `${roi.toFixed(2)}% p.m.`;
+  if (freq === "QUARTERLY")  return `${roi.toFixed(2)}% p.q.`;
+  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${roi.toFixed(2)}% p.h.`;
+  if (freq === "ENDOFDEAL")  return `${roi.toFixed(2)}% (end of deal)`;
+  if (freq === "YEARLY")     return `${roi.toFixed(2)}% p.a.`;
+  return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi}% p.a.`;
+};
+
 const churnColor = (level) => {
   if (!level) return "#8c8c8c";
   const l = level.toUpperCase();
@@ -1874,7 +1885,7 @@ const LenderPortfolioDashboard = () => {
                                           </td>
                                         )}
                                         {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#595959" }}>{fmtDate(d.startDate)}</td>}
-                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{d.rateOfInterest < 5 ? `${(d.rateOfInterest * 12).toFixed(1)}%` : `${d.rateOfInterest}%`} p.a.</td>}
+                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{fmtRoi(d.rateOfInterest, d.payoutFrequency)}</td>}
                                       </tr>
                                     ))}
                                   </tbody>
@@ -2602,7 +2613,7 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-hover mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal ID</th><th>Amount</th><th>ROI (p.a.)</th><th>Status</th><th>Start Date</th><th>Maturity Date</th><th>Interest Earned</th>
+                            <th>Deal ID</th><th>Amount</th><th>ROI</th><th>Status</th><th>Start Date</th><th>Maturity Date</th><th>Interest Earned</th>
                             {isPro && <th>Est. Next Payout</th>}
                           </tr>
                         </thead>
@@ -2612,14 +2623,12 @@ const LenderPortfolioDashboard = () => {
                           )}
                           {visibleDeals.map((deal, idx) => {
                             const isActive = (deal.status || "").toUpperCase() === "ACTIVE";
-                            const annualRoi = deal.rateOfInterest < 5
-                              ? (deal.rateOfInterest * 12).toFixed(1)
-                              : deal.rateOfInterest;
+                            const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency);
                             return (
                               <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
                                 <td><strong>#{deal.dealId}</strong></td>
                                 <td>₹{fmt(deal.amount)}</td>
-                                <td>{annualRoi}%</td>
+                                <td>{annualRoi}</td>
                                 <td>
                                   <span style={{ color: isActive ? "#52c41a" : "#8c8c8c", fontWeight: 600, background: isActive ? "#f6ffed" : "#f5f5f5", borderRadius: 4, padding: "2px 8px", fontSize: 12 }}>
                                     {deal.status || "—"}
