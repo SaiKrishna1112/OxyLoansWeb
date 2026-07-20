@@ -309,7 +309,10 @@ const Profile = () => {
         });
       }
 
-      // 3. Load Secure Info
+      // 3. Load KYC Files status
+      await fetchKycFiles();
+
+      // 4. Load Secure Info
       const secureRes = await getBorrowerSecureInfo();
       if (secureRes?.status === 200 && secureRes.data) {
         const sd = secureRes.data;
@@ -328,7 +331,7 @@ const Profile = () => {
       }
 
       // 4. Load KYC Files status
-      await fetchKycFiles();
+      // await fetchKycFiles();
 
     } catch (err) {
       console.error("Error populating profile data", err);
@@ -554,7 +557,7 @@ const Profile = () => {
 
   // Save Personal Details form
   const savePersonalDetails = async () => {
-    if (!profileData.firstName || !profileData.lastName || !profileData.dob || !profileData.panNumber) {
+    if (!profileData.firstName || !profileData.dob || !profileData.panNumber) {
       Swal.fire("Missing Fields", "Please complete all mandatory personal fields.", "warning");
       return;
     }
@@ -1224,7 +1227,7 @@ const Profile = () => {
               <input type="text" className="form-control rounded-3" name="middleName" value={profileData.middleName} onChange={handleprofileInput} />
             </div>
             <div className="col-md-4">
-              <label className="form-label text-muted small">Last Name <span className="text-danger">*</span></label>
+              <label className="form-label text-muted small">Last Name</label>
               <input type="text" className="form-control rounded-3" name="lastName" value={profileData.lastName} onChange={handleprofileInput} />
             </div>
             <div className="col-md-6">
@@ -1494,7 +1497,7 @@ const Profile = () => {
         </Modal.Header>
         <Modal.Body className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
           <div className="row g-4">
-            {[
+          {[
               { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, passwordField: "panPassword" },
               { label: "Credit Bureau Report", name: "creditReport", value: kycDocs.creditReport, passwordField: "cibilPassword" },
               { label: "Cancelled Cheque Leaf", name: "CHEQUELEAF", value: kycDocs.CHEQUELEAF },
@@ -1504,7 +1507,17 @@ const Profile = () => {
               { label: "Voter Identity Card", name: "VOTERID", value: kycDocs.VOTERID },
               { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport },
               { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword" },
-            ].map(doc => (
+
+              ...(type === "student"
+                ? [
+                    { label: "Intermediate", name: "INTERMEDIATE", value: kycDocs.intermediate },
+                    { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth },
+                    { label: "Graduation Marksheet", name: "GRADUATION", value: kycDocs.graduation },
+                    { label: "Offer Letter", name: "OFFERLETTER", value: kycDocs.offerLetter },
+                    { label: "Fee Receipt", name: "FEERECEIPT", value: kycDocs.feeReceipt },
+                  ]
+                : [])
+            ].map((doc) => (
               <div className="col-md-6" key={doc.name}>
                 <div className="p-3 border rounded-3 bg-light d-flex flex-column justify-content-between h-100">
                   <div className="d-flex justify-content-between align-items-start mb-2">
@@ -1559,8 +1572,8 @@ const Profile = () => {
             defaultCountry="IN"
             maxLength={15}
           />
-          {whatsappSubmitted && (
-          <Button variant="primary" className="mt-4 mb-3" onClick={handleSendWhatsappOtp} disabled={submitting}>
+          {!whatsappSubmitted && (
+          <Button type="primary" className="mt-4 mb-3" onClick={handleSendWhatsappOtp} disabled={submitting}>
             {submitting ? "Sending..." : "Send Verification Code"}
           </Button>
           )}
@@ -1570,11 +1583,11 @@ const Profile = () => {
           {whatsappSubmitted && (
             <>
             <input type="text" className="form-control mb-3" placeholder="Enter 6-digit code" value={whatsappOtp} onChange={(e) => setWhatsappOtp(e.target.value)} />
-          <Button variant="primary"  onClick={handleVerifyWhatsappOtp} disabled={submitting}>
+          <Button type="primary"  onClick={handleVerifyWhatsappOtp} disabled={submitting}>
             {submitting ? "Verifying..." : "Verify Code"}
           </Button>
           {}
-          <Button variant="secondary" className="ms-2" onClick={handleSendWhatsappOtp} disabled={submitting}>
+          <Button type="secondary" className="ms-2" onClick={handleSendWhatsappOtp} disabled={submitting}>
             {submitting ? "Resending..." : "Resend Code"}
           </Button>
           </>

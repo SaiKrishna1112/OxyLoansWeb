@@ -245,30 +245,30 @@ const LoanRequest = () => {
                 </h5>
               </div>
             </div>
-            <div className="col-md-3">
+            {/*<div className="col-md-3">
               <div className="oxy-card mb-0 h-100 border-start border-warning border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Auto-Debit Limit</span>
+                <span className="text-muted d-block small mb-1 uppercase text-uppercase"> Limit</span>
                 <h5 className="fw-bold text-dark mb-0">
                   {isEligibleLoading ? "..." : `${processingFeePercentage}%`}
                 </h5>
               </div>
-            </div>
+            </div>*/}
             <div className="col-md-3">
               <div className="oxy-card mb-0 h-100 border-start border-success border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Max Eligibility</span>
+                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Max Eligibility Amount</span>
                 <h5 className="fw-bold text-success mb-0">
                   {isEligibleLoading ? "..." : formatCurrency(eligibleAmountValue)}
                 </h5>
               </div>
             </div>
-            {/* <div className="col-md-3">
+            <div className="col-md-3">
               <div className="oxy-card mb-0 h-100 border-start border-secondary border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase">CIBIL Bureau Rate</span>
+                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Oxy Score</span>
                 <h5 className="fw-bold text-dark mb-0">
-                  {cibilInfo.loading ? "..." : cibilInfo.data?.roi != null ? `${cibilInfo.data.roi}%` : "—"}
+                  {cibilInfo.loading ? "..." : cibilInfo.data?.roi != null ? `${cibilInfo.data.cibilScore}` : "—"}
                 </h5>
               </div>
-            </div> */}
+            </div> 
           </div>
 
           <div className="row g-4">

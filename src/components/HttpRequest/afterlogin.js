@@ -4128,6 +4128,7 @@ export const lenderBorrowerEsign = async (loanId) => {
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `${userId}/loan/${loanId}/lenderBorrowerEsign`,
+    {},
     "POST",
     token
   );
