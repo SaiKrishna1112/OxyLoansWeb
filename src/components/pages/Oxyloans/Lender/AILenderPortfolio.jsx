@@ -17,12 +17,13 @@ const fmtDate = (d) =>
 const fmtRoi = (rateOfInterest, payoutFrequency) => {
   const roi = rateOfInterest || 0;
   const freq = (payoutFrequency || "").toUpperCase();
-  if (freq === "MONTHLY")    return `${roi.toFixed(2)}% p.m.`;
-  if (freq === "QUARTERLY")  return `${roi.toFixed(2)}% p.q.`;
-  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${roi.toFixed(2)}% p.h.`;
+  // Old deals store annual rate (≥5); new short-term deals store periodic rate (<5)
+  if (freq === "MONTHLY")    return roi < 5 ? `${roi.toFixed(2)}% p.m.`  : `${roi.toFixed(1)}% p.a.`;
+  if (freq === "QUARTERLY")  return roi < 5 ? `${roi.toFixed(2)}% p.q.`  : `${roi.toFixed(1)}% p.a.`;
+  if (freq === "HALFYEARLY" || freq === "HALFLY") return roi < 5 ? `${roi.toFixed(2)}% p.h.` : `${roi.toFixed(1)}% p.a.`;
   if (freq === "ENDOFDEAL")  return `${roi.toFixed(2)}% (end of deal)`;
-  if (freq === "YEARLY")     return `${roi.toFixed(2)}% p.a.`;
-  return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi}% p.a.`;
+  if (freq === "YEARLY")     return `${roi.toFixed(1)}% p.a.`;
+  return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi.toFixed(1)}% p.a.`;
 };
 
 const churnColor = (level) => {
