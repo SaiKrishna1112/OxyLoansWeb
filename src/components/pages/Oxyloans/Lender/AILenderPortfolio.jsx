@@ -14,17 +14,17 @@ const fmt = (n) =>
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-// annualRate=true → old deal (before 2021-10-04): rate already stored as annual % → show p.a.
-// annualRate=false → new deal: rate stored as periodic % → show p.m./p.q./p.h.
+// annualRate=true  → old deal (before 2021-10-04): roi stored as annual % → show p.a.
+// annualRate=false → new deal: roi stored as MONTHLY rate regardless of payout frequency
 const fmtRoi = (rateOfInterest, payoutFrequency, annualRate) => {
   const roi = rateOfInterest || 0;
   const freq = (payoutFrequency || "").toUpperCase();
   if (annualRate)            return `${roi.toFixed(1)}% p.a.`;
   if (freq === "MONTHLY")    return `${roi.toFixed(2)}% p.m.`;
-  if (freq === "QUARTERLY")  return `${roi.toFixed(2)}% p.q.`;
-  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${roi.toFixed(2)}% p.h.`;
-  if (freq === "ENDOFDEAL")  return `${roi.toFixed(2)}% (end of deal)`;
-  if (freq === "YEARLY")     return `${roi.toFixed(1)}% p.a.`;
+  if (freq === "QUARTERLY")  return `${(roi * 3).toFixed(2)}% p.q.`;
+  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${(roi * 6).toFixed(2)}% p.h.`;
+  if (freq === "ENDOFDEAL")  return `${(roi * 12).toFixed(1)}% (end of deal)`;
+  if (freq === "YEARLY")     return `${(roi * 12).toFixed(1)}% p.a.`;
   return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi.toFixed(1)}% p.a.`;
 };
 
