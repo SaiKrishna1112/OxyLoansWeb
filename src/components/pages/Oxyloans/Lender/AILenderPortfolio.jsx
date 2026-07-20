@@ -14,15 +14,18 @@ const fmt = (n) =>
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-const fmtRoi = (rateOfInterest, payoutFrequency) => {
+// annualRate=true  → old deal (before 2021-10-04): roi stored as annual % → show p.a.
+// annualRate=false → new deal: roi stored as MONTHLY rate regardless of payout frequency
+const fmtRoi = (rateOfInterest, payoutFrequency, annualRate) => {
   const roi = rateOfInterest || 0;
   const freq = (payoutFrequency || "").toUpperCase();
+  if (annualRate)            return `${roi.toFixed(1)}% p.a.`;
   if (freq === "MONTHLY")    return `${roi.toFixed(2)}% p.m.`;
-  if (freq === "QUARTERLY")  return `${roi.toFixed(2)}% p.q.`;
-  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${roi.toFixed(2)}% p.h.`;
-  if (freq === "ENDOFDEAL")  return `${roi.toFixed(2)}% (end of deal)`;
-  if (freq === "YEARLY")     return `${roi.toFixed(2)}% p.a.`;
-  return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi}% p.a.`;
+  if (freq === "QUARTERLY")  return `${(roi * 3).toFixed(2)}% p.q.`;
+  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${(roi * 6).toFixed(2)}% p.h.`;
+  if (freq === "ENDOFDEAL")  return `${(roi * 12).toFixed(1)}% (end of deal)`;
+  if (freq === "YEARLY")     return `${(roi * 12).toFixed(1)}% p.a.`;
+  return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi.toFixed(1)}% p.a.`;
 };
 
 const churnColor = (level) => {
@@ -1885,7 +1888,7 @@ const LenderPortfolioDashboard = () => {
                                           </td>
                                         )}
                                         {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#595959" }}>{fmtDate(d.startDate)}</td>}
-                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{fmtRoi(d.rateOfInterest, d.payoutFrequency)}</td>}
+                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{fmtRoi(d.rateOfInterest, d.payoutFrequency, d.annualRate)}</td>}
                                       </tr>
                                     ))}
                                   </tbody>
@@ -2623,7 +2626,7 @@ const LenderPortfolioDashboard = () => {
                           )}
                           {visibleDeals.map((deal, idx) => {
                             const isActive = (deal.status || "").toUpperCase() === "ACTIVE";
-                            const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency);
+                            const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency, deal.annualRate);
                             return (
                               <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
                                 <td><strong>#{deal.dealId}</strong></td>
