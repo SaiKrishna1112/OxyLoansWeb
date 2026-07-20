@@ -524,7 +524,8 @@ const AppRouter = () => {
         <Route path="/borrower/repayment/:loanRequestId" element={<PrivateRoute element={<RepaymentView />} />} />
         <Route path="/agreement/:loanRequestId" element={<PrivateRoute element={<AgreementPage />} />} />
         <Route path="/my-loans" element={<PrivateRoute element={<MyLoans />} />} />
-        <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolio />} />} />
+        <Route path="/lender-portfolio" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
+        <Route path="/lender-portfolio/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/lenderAIDashboard" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<PrivateRoute element={<LenderPortfolioDashboard />} />} />
         <Route path="/admin/collections" element={<PrivateRoute element={<CollectionsAdminDashboard />} />} />
