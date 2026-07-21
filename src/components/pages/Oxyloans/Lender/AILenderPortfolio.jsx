@@ -617,21 +617,22 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
   });
 
+  const openDownloadUrl = (url) => {
+    if (!url || typeof url !== "string" || url.length < 10) return false;
+    window.open(url, "_blank");
+    return true;
+  };
+
   const downloadPdf = async () => {
     if (!dateRange) return;
     setDlLoading(s => ({ ...s, pdf: true }));
     try {
       const res = await summaryFinancialEarnings({ startDate: dateRange.startDate, endDate: dateRange.endDate, inputType: "DOWNLOAD", status: "dealsum" });
-      if (res?.data) {
-        const link = document.createElement("a");
-        link.href = res.data;
-        link.setAttribute("download", "");
-        link.setAttribute("target", "_blank");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    } catch (e) { console.error("PDF download error", e); }
+      console.log("[AI-Dashboard] PDF response:", res);
+      const url = typeof res?.data === "string" ? res.data
+                : (res?.data?.url || res?.data?.pdfUrl || res?.data?.lenderProfit);
+      if (!openDownloadUrl(url)) alert("PDF not available for this period. Please try from My Deals → Financial Reports.");
+    } catch (e) { console.error("PDF download error", e); alert("PDF download failed. Please try again."); }
     finally { setDlLoading(s => ({ ...s, pdf: false })); }
   };
 
@@ -641,10 +642,10 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     setDlLoading(s => ({ ...s, [key]: true }));
     try {
       const res = await getFinancialReportDownload(dateRange.startDate, dateRange.endDate, "DOWNLOAD", status);
-      if (res?.data?.lenderProfit) {
-        window.open(res.data.lenderProfit, "_blank");
-      }
-    } catch (e) { console.error("Excel download error", e); }
+      console.log("[AI-Dashboard] Excel response:", res, "status:", status);
+      const url = res?.data?.lenderProfit || (typeof res?.data === "string" ? res.data : null);
+      if (!openDownloadUrl(url)) alert("Report not available for this period. Please try from My Deals → Financial Reports.");
+    } catch (e) { console.error("Excel download error", e); alert("Download failed. Please try again."); }
     finally { setDlLoading(s => ({ ...s, [key]: false })); }
   };
 
