@@ -1305,12 +1305,14 @@ export const uploadAdminAILenderCampaignImage = async (file) => {
   return url;
 };
 
-export const getAdminAILenderCampaignHistory = async (segment, { channel, pageNo = 1, pageSize = 10 } = {}) => {
+export const getAdminAILenderCampaignHistory = async (segment, { channel, date, testMode, pageNo = 1, pageSize = 10 } = {}) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history`, {
     headers: adminRegisteredUsersHeaders(),
     params: {
       segment: segment || undefined,
       channel: channel || undefined,
+      date: date || undefined,
+      testMode,
       pageNo,
       pageSize,
     },
@@ -1332,6 +1334,33 @@ export const getAdminAILenderCampaignBatchDeliveries = async (batchId, { pageNo 
         status: status || undefined,
       },
       timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAILenderCampaignBatchEngagement = async (batchId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history/engagement`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { batchId },
+      timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
+export const syncAdminAILenderWhatsAppCampaignHistory = async (batchId) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history/whatsapp-sync`,
+    null,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { batchId },
+      timeout: 300000,
       validateStatus: (status) => status < 500,
     }
   );
@@ -1409,12 +1438,12 @@ export const fetchAllCampaignBatchDeliveries = async (batchId, { status, pageSiz
 };
 
 export const fetchAllCampaignFailedDeliveries = async (batchId) => {
-  const failedFromApi = await fetchAllCampaignBatchDeliveries(batchId, { status: "failed", pageSize: 5000 });
+  const failedFromApi = await fetchAllCampaignBatchDeliveries(batchId, { status: "failed", pageSize: 200 });
   const verifiedFailed = failedFromApi.filter(isCampaignDeliveryFailed);
   if (verifiedFailed.length > 0) {
     return verifiedFailed;
   }
-  const allRows = await fetchAllCampaignBatchDeliveries(batchId, { pageSize: 5000 });
+  const allRows = await fetchAllCampaignBatchDeliveries(batchId, { pageSize: 200 });
   return allRows.filter(isCampaignDeliveryFailed);
 };
 
@@ -1472,7 +1501,10 @@ export const fetchAllActiveLendersForExport = async (onProgress, filters = {}) =
       minParticipationAmount: filters.minParticipationAmount,
       maxParticipationAmount: filters.maxParticipationAmount,
       lenderView: filters.lenderView,
-      participationDate: filters.lenderView === "newParticipated" ? defaultParticipationDate() : undefined,
+      participationDate:
+        filters.lenderView === "newParticipated"
+          ? (filters.participationDate || defaultParticipationDate())
+          : undefined,
     });
 
     effectivePageSize = Number(data?.pageSize) || effectivePageSize;
@@ -1517,6 +1549,53 @@ export const parseAdminUserIdSearch = (value) => {
 export const defaultParticipationDate = () =>
   new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 
+export const getAdminAIReferralRegistrationsSummary = async (date) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations/summary`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      date: date || defaultParticipationDate(),
+    },
+    timeout: 60000,
+  });
+  return response.data;
+};
+
+export const getAdminAIReferralRegistrationsYearlySummary = async (fromYear = 2021) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations/yearly-summary`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      fromYear,
+    },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
+export const getAdminAITopReferrers = async (limit = 10) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations/top-referrers`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: { limit },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
+export const getAdminAIReferralRegistrations = async (pageNo = 1, pageSize = 20, { date, year, status, userType } = {}) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      pageNo,
+      pageSize,
+      date: year ? undefined : (date || defaultParticipationDate()),
+      year: year || undefined,
+      status: year && status ? status : undefined,
+      userType: userType || undefined,
+    },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
 export const getAdminAIUsers = async (
   pageNo = 1,
   pageSize = 20,
@@ -1526,7 +1605,7 @@ export const getAdminAIUsers = async (
 ) => {
   const parsedUserId = parseAdminUserIdSearch(filters.userId);
   const participationDate =
-    userView === "todayParticipated"
+    userView === "todayParticipated" || userView === "todayRegistered"
       ? filters.participationDate || defaultParticipationDate()
       : undefined;
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/users`, {
@@ -1763,4 +1842,3 @@ export const getAdminAIActiveLenderReferralDeals = async (lenderId, refereeId) =
   );
   return response.data;
 };
-

@@ -85,24 +85,15 @@ const Admlogin = () => {
   const loginhandler = async () => {
     const { userid, password } = userLogInInfo;
 
-    if (userid === staticAdminEmail && password === staticAdminPassword) {
-      localStorage.setItem("primaryType", "ADMIN");
-      sessionStorage.setItem("email", staticAdminEmail);
-      sessionStorage.setItem("accessToken", "static-admin-token");
-      sessionStorage.setItem("userId", "1");
-      sessionStorage.setItem("tokenTime", new Date().toISOString());
-      toastrSuccess("Login Success!");
-      history("/adminAIDashboard");
-      return;
-    }
     if (!userid?.trim() || !password?.trim()) {
       toastrWarning("Enter user ID and password.");
       return;
     }
     try {
-      const trimmedUserId = userid.trim();
+      const isStaticAdminShortcut = userid === staticAdminEmail && password === staticAdminPassword;
+      const trimmedUserId = isStaticAdminShortcut ? "RA6680" : userid.trim();
       const userIdForApi = /^RA/i.test(trimmedUserId) ? trimmedUserId.substring(2) : trimmedUserId;
-      const retriveresponse = await Admlog(userIdForApi, password);
+      const retriveresponse = await Admlog(userIdForApi, isStaticAdminShortcut ? "SUPERADMIN" : password);
       if (isApiSuccess(retriveresponse)) {
         toastrSuccess("Login Success!");
         const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();

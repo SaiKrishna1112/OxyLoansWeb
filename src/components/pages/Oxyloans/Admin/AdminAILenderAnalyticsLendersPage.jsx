@@ -18,10 +18,10 @@ import "./AdminAIDashboard.css";
 const pageSize = 20;
 
 const SEGMENT_LABELS = {
-  allTime: "All Time Active",
-  last3Months: "Last 3 Months Active",
-  last6Months: "Last 6 Months Active",
-  last1Year: "Last 1 Year Active",
+  allTime: "All Time Active Lenders",
+  last3Months: "Last 3 Months Active Lenders",
+  last6Months: "Last 6 Months Active Lenders",
+  last1Year: "Last 1 Year Active Lenders",
   inactive3Months: "Inactive 3+ Months",
   inactive6Months: "Inactive 6+ Months",
   inactive1Year: "Inactive 1+ Year",

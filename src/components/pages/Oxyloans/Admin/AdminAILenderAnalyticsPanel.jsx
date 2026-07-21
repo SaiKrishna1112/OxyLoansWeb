@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import { FaChartLine, FaUserClock, FaUsers, FaLayerGroup, FaFileExcel, FaEnvelope, FaWhatsapp, FaSync, FaEye, FaHistory, FaTimes, FaCalendarAlt } from "react-icons/fa";
@@ -18,7 +18,6 @@ import {
   getAdminAIActiveLenderWallet,
 } from "../../../HttpRequest/admin";
 import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
-import AdminAILenderCampaignHistoryPanel from "./AdminAILenderCampaignHistoryPanel";
 import { BASE_URL } from "../../../../config";
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
@@ -246,9 +245,9 @@ const ADMIN_AI_ACCENT = "#1e40af";
 
 const SEGMENT_LABELS = {
   allTime: "All Active Lenders",
-  last3Months: "Last 3 Months Active",
-  last6Months: "Last 6 Months Active",
-  last1Year: "Last 1 Year Active",
+  last3Months: "Last 3 Months Active Lenders",
+  last6Months: "Last 6 Months Active Lenders",
+  last1Year: "Last 1 Year Active Lenders",
   inactive3Months: "Inactive (3+ Months)",
   inactive6Months: "Inactive (6+ Months)",
   inactive1Year: "Inactive (1+ Year)",
@@ -337,9 +336,6 @@ const AdminAILenderAnalyticsPanel = () => {
   const [exportingSegment, setExportingSegment] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [campaignState, setCampaignState] = useState(null);
-  const [campaignHistoryState, setCampaignHistoryState] = useState(null);
-  const [showCampaignHistoryPanel, setShowCampaignHistoryPanel] = useState(false);
-  const campaignHistoryRef = useRef(null);
   const [refreshing, setRefreshing] = useState(false);
   const [reactivationDate, setReactivationDate] = useState(() => defaultParticipationDate());
   const [weekEndDate, setWeekEndDate] = useState(() => defaultParticipationDate());
@@ -610,19 +606,12 @@ const AdminAILenderAnalyticsPanel = () => {
   };
 
   const openCampaignHistory = (segment, label) => {
-    setCampaignHistoryState({
-      segment: segment || "",
-      segmentLabel: label || SEGMENT_LABELS[segment] || segment || "All segments",
-    });
-    setShowCampaignHistoryPanel(true);
-    window.setTimeout(() => {
-      campaignHistoryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  };
-
-  const closeCampaignHistoryPanel = () => {
-    setShowCampaignHistoryPanel(false);
-    setCampaignHistoryState(null);
+    const selectedSegment = segment || "";
+    const selectedLabel = label || SEGMENT_LABELS[segment] || segment || "All segments";
+    const query = new URLSearchParams();
+    if (selectedSegment) query.set("segment", selectedSegment);
+    query.set("segmentLabel", selectedLabel);
+    navigate(`/adminAICampaignHistory?${query.toString()}`);
   };
 
   const openAllCampaignHistory = () => {
@@ -703,10 +692,7 @@ const AdminAILenderAnalyticsPanel = () => {
 
       {exportMessage ? <div className="admin-ai-pro-export-msg">{exportMessage}</div> : null}
 
-      <div
-        ref={campaignHistoryRef}
-        className={`admin-ai-campaign-history-box${showCampaignHistoryPanel ? " is-open" : " is-collapsed"}`}
-      >
+      <div className="admin-ai-campaign-history-box is-collapsed">
         <div className="admin-ai-campaign-history-hero">
           <div className="admin-ai-campaign-history-hero-main">
             <span className="admin-ai-campaign-history-hero-icon" aria-hidden="true">
@@ -715,53 +701,29 @@ const AdminAILenderAnalyticsPanel = () => {
             <div>
               <h4>Campaign History</h4>
               <p>Email and WhatsApp campaigns — data from <code>email_tracking</code></p>
-              {showCampaignHistoryPanel && campaignHistoryState?.segmentLabel ? (
-                <span className="admin-ai-campaign-history-hero-segment">
-                  Viewing: {campaignHistoryState.segmentLabel}
-                </span>
-              ) : null}
             </div>
           </div>
           <div className="admin-ai-campaign-history-hero-actions">
-            {showCampaignHistoryPanel ? (
-              <button
-                type="button"
-                className="admin-ai-campaign-history-hero-toggle admin-ai-campaign-history-hero-toggle--close"
-                onClick={closeCampaignHistoryPanel}
-              >
-                <FaTimes aria-hidden="true" />
-                Close
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="admin-ai-campaign-history-hero-toggle admin-ai-campaign-history-hero-toggle--view"
-                onClick={openAllCampaignHistory}
-              >
-                <FaEye aria-hidden="true" />
-                View campaign history
-              </button>
-            )}
+            <button
+              type="button"
+              className="admin-ai-campaign-history-hero-toggle admin-ai-campaign-history-hero-toggle--view"
+              onClick={openAllCampaignHistory}
+            >
+              <FaEye aria-hidden="true" />
+              View campaign history
+            </button>
           </div>
         </div>
-
-        {showCampaignHistoryPanel ? (
-          <AdminAILenderCampaignHistoryPanel
-            segment={campaignHistoryState?.segment || ""}
-            segmentLabel={campaignHistoryState?.segmentLabel}
-            onClose={closeCampaignHistoryPanel}
-          />
-        ) : null}
       </div>
 
       <div className="admin-ai-analytics-section">
         <h5><FaUsers /> Active Lender Windows</h5>
         <p className="admin-ai-analytics-hint">Lenders with deal participation in each rolling time period.</p>
         <div className="admin-ai-pro-grid admin-ai-pro-grid-analytics">
-          <MetricCard label="All Time Active" value={rolling.allTime} purpose="Lenders who participated in at least one deal, ever" accent="teal" onView={() => openLendersPage("allTime", "All Time Active")} onExport={() => downloadSegmentExcel("allTime", "All Time Active")} exporting={exportingSegment === "allTime"} onCampaign={(channel) => openCampaign("allTime", "All Time Active", rolling.allTime, channel)} />
-          <MetricCard label="Last 3 Months" value={rolling.last3Months} purpose="Participated in any deal in the last 90 days" accent="cyan" onView={() => openLendersPage("last3Months", "Last 3 Months Active")} onExport={() => downloadSegmentExcel("last3Months", "Last 3 Months Active")} exporting={exportingSegment === "last3Months"} onCampaign={(channel) => openCampaign("last3Months", "Last 3 Months Active", rolling.last3Months, channel)} />
-          <MetricCard label="Last 6 Months" value={rolling.last6Months} purpose="Participated in any deal in the last 6 months" accent="blue" onView={() => openLendersPage("last6Months", "Last 6 Months Active")} onExport={() => downloadSegmentExcel("last6Months", "Last 6 Months Active")} exporting={exportingSegment === "last6Months"} onCampaign={(channel) => openCampaign("last6Months", "Last 6 Months Active", rolling.last6Months, channel)} />
-          <MetricCard label="Last 1 Year" value={rolling.last1Year} purpose="Participated in any deal in the last 12 months" accent="indigo" onView={() => openLendersPage("last1Year", "Last 1 Year Active")} onExport={() => downloadSegmentExcel("last1Year", "Last 1 Year Active")} exporting={exportingSegment === "last1Year"} onCampaign={(channel) => openCampaign("last1Year", "Last 1 Year Active", rolling.last1Year, channel)} />
+          <MetricCard label="All Time Active Lenders" value={rolling.allTime} purpose="Lenders who participated in at least one deal, ever" accent="teal" onView={() => openLendersPage("allTime", "All Time Active Lenders")} onExport={() => downloadSegmentExcel("allTime", "All Time Active Lenders")} exporting={exportingSegment === "allTime"} onCampaign={(channel) => openCampaign("allTime", "All Time Active Lenders", rolling.allTime, channel)} />
+          <MetricCard label="Last 3 Months Active Lenders" value={rolling.last3Months} purpose="Participated in any deal in the last 90 days" accent="cyan" onView={() => openLendersPage("last3Months", "Last 3 Months Active Lenders")} onExport={() => downloadSegmentExcel("last3Months", "Last 3 Months Active Lenders")} exporting={exportingSegment === "last3Months"} onCampaign={(channel) => openCampaign("last3Months", "Last 3 Months Active Lenders", rolling.last3Months, channel)} />
+          <MetricCard label="Last 6 Months Active Lenders" value={rolling.last6Months} purpose="Participated in any deal in the last 6 months" accent="blue" onView={() => openLendersPage("last6Months", "Last 6 Months Active Lenders")} onExport={() => downloadSegmentExcel("last6Months", "Last 6 Months Active Lenders")} exporting={exportingSegment === "last6Months"} onCampaign={(channel) => openCampaign("last6Months", "Last 6 Months Active Lenders", rolling.last6Months, channel)} />
+          <MetricCard label="Last 1 Year Active Lenders" value={rolling.last1Year} purpose="Participated in any deal in the last 12 months" accent="indigo" onView={() => openLendersPage("last1Year", "Last 1 Year Active Lenders")} onExport={() => downloadSegmentExcel("last1Year", "Last 1 Year Active Lenders")} exporting={exportingSegment === "last1Year"} onCampaign={(channel) => openCampaign("last1Year", "Last 1 Year Active Lenders", rolling.last1Year, channel)} />
         </div>
       </div>
 

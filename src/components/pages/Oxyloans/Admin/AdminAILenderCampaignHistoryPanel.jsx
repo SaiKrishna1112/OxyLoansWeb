@@ -3,11 +3,14 @@ import { FaEnvelope, FaFileExcel, FaHistory, FaTimes, FaWhatsapp } from "react-i
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { saveAs } from "file-saver";
 import {
+  fetchAllCampaignBatchDeliveries,
   fetchAllCampaignFailedDeliveries,
+  getAdminAILenderCampaignBatchEngagement,
   getAdminAILenderCampaignBatchDeliveries,
   getAdminAILenderCampaignHistory,
   isCampaignDeliveryFailed,
   sendAdminAILenderCampaignAdminReport,
+  syncAdminAILenderWhatsAppCampaignHistory,
 } from "../../../HttpRequest/admin";
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
@@ -63,11 +66,33 @@ ${rowXml}
 
 const statusClass = (status) => {
   const value = String(status || "").toUpperCase();
-  if (value === "SUCCESS" || value === "COMPLETED") return "is-success";
+  if (value === "SUCCESS" || value === "COMPLETED" || value === "DELIVERY" || value === "OPEN" || value === "CLICK") return "is-success";
   if (value === "FAILED") return "is-failed";
   if (value === "PARTIAL" || value === "PROCESSING") return "is-partial";
   if (value === "PENDING" || value === "SCHEDULED") return "is-pending";
   return "";
+};
+
+const engagementText = (row, key) => {
+  const status = String(row?.engagementStatus || "").toUpperCase();
+  if (row?.[key]) return "Yes";
+  if (
+    !status ||
+    status === "NOT_TRACKED" ||
+    status === "SUCCESS" ||
+    status === "SENT" ||
+    status === "TRACKED"
+  ) return "Not tracked";
+  if (status === "TRACKING_ERROR") return "Check failed";
+  return "No";
+};
+
+const responseText = (row) => {
+  const status = String(row?.replyStatus || "").toUpperCase();
+  if (status === "REPLIED") return "Replied";
+  if (status === "NOT_REPLIED") return "No";
+  if (status === "NOT_APPLICABLE") return "N/A";
+  return "Not connected";
 };
 
 const ChannelBadge = ({ channel }) => {
@@ -93,6 +118,8 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   const filterFromQuery = searchParams.get("filter") || "";
   const batchDetailMode = Boolean(batchIdFromQuery);
   const [channelFilter, setChannelFilter] = useState("");
+  const [environmentFilter, setEnvironmentFilter] = useState("");
+  const [campaignDate, setCampaignDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [runs, setRuns] = useState([]);
@@ -105,11 +132,20 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   const [deliveriesError, setDeliveriesError] = useState("");
   const [deliveryPageNo, setDeliveryPageNo] = useState(1);
   const [deliveryTotalCount, setDeliveryTotalCount] = useState(0);
+  const [deliverySearch, setDeliverySearch] = useState("");
+  const [deliverySearchResults, setDeliverySearchResults] = useState(null);
+  const [deliverySearchLoading, setDeliverySearchLoading] = useState(false);
+  const [deliverySearchError, setDeliverySearchError] = useState("");
   const [batchFailedTotal, setBatchFailedTotal] = useState(0);
+  const [engagementStats, setEngagementStats] = useState(null);
+  const [engagementLoading, setEngagementLoading] = useState(false);
+  const [engagementError, setEngagementError] = useState("");
+  const [whatsappSyncing, setWhatsappSyncing] = useState(false);
+  const [whatsappSyncStatus, setWhatsappSyncStatus] = useState("");
   const [cachedFailedDeliveries, setCachedFailedDeliveries] = useState([]);
   const [cachedFailedBatchId, setCachedFailedBatchId] = useState("");
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState(
-    filterFromQuery === "failed" ? "failed" : ""
+    ["failed", "opened", "clicked", "responded", "bounced"].includes(filterFromQuery) ? filterFromQuery : ""
   );
   const [exportingFailed, setExportingFailed] = useState(false);
   const [sendingAdminReport, setSendingAdminReport] = useState(false);
@@ -117,7 +153,9 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   const [reportTargetChoice, setReportTargetChoice] = useState(null);
   const detailSectionRef = useRef(null);
 
-  const effectiveDeliveryFilter = filterFromQuery === "failed" ? "failed" : deliveryStatusFilter;
+  const effectiveDeliveryFilter = ["failed", "opened", "clicked", "responded", "bounced"].includes(filterFromQuery)
+    ? filterFromQuery
+    : deliveryStatusFilter;
 
   const pageSize = 10;
   const deliveryPageSize = 20;
@@ -126,7 +164,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
 
   const titleSuffix = segmentLabel || segment || "All segments";
 
-  const buildHistoryUrl = (run, failedOnly = false) => {
+  const buildHistoryUrl = (run, deliveryFilter = "") => {
     const params = new URLSearchParams();
     if (segment) params.set("segment", segment);
     params.set("segmentLabel", titleSuffix);
@@ -135,12 +173,12 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
     if (run?.failedCount != null) params.set("failedCount", String(run.failedCount));
     if (run?.successCount != null) params.set("successCount", String(run.successCount));
     if (run?.totalCount != null) params.set("totalCount", String(run.totalCount));
-    if (failedOnly) params.set("filter", "failed");
+    if (deliveryFilter) params.set("filter", deliveryFilter);
     return `/adminAICampaignHistory?${params.toString()}`;
   };
 
-  const openBatchDetail = (run, failedOnly = false) => {
-    navigate(buildHistoryUrl(run, failedOnly));
+  const openBatchDetail = (run, deliveryFilter = "") => {
+    navigate(buildHistoryUrl(run, deliveryFilter));
   };
 
   const closeBatchDetail = () => {
@@ -164,13 +202,32 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
     try {
       const data = await getAdminAILenderCampaignHistory(segment, {
         channel: channelFilter || undefined,
+        date: campaignDate || undefined,
+        testMode: environmentFilter === "test" ? true : environmentFilter === "live" ? false : undefined,
         pageNo,
         pageSize,
       });
       if (data?.status === "FAILED") {
         throw new Error(data?.message || "Failed to load campaign history.");
       }
-      setRuns(Array.isArray(data?.runs) ? data.runs : []);
+      const historyRuns = Array.isArray(data?.runs) ? data.runs : [];
+      const enrichedRuns = await Promise.all(historyRuns.map(async (run) => {
+        if (!run?.batchId) {
+          return { ...run, openCount: 0, clickCount: 0, replyCount: 0 };
+        }
+        try {
+          const engagement = await getAdminAILenderCampaignBatchEngagement(run.batchId);
+          return {
+            ...run,
+            openCount: Number(engagement?.openCount) || 0,
+            clickCount: Number(engagement?.clickCount) || 0,
+            replyCount: Number(engagement?.replyCount) || 0,
+          };
+        } catch {
+          return { ...run, openCount: 0, clickCount: 0, replyCount: 0 };
+        }
+      }));
+      setRuns(enrichedRuns);
       setSummary(data?.summary || null);
       setTotalCount(Number(data?.totalCount) || 0);
     } catch (err) {
@@ -262,6 +319,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
       const data = await getAdminAILenderCampaignBatchDeliveries(batchId, {
         pageNo: page,
         pageSize: deliveryPageSize,
+        status: statusFilter || undefined,
       });
       if (data?.status === "FAILED") {
         throw new Error(data?.message || "Failed to load delivery details.");
@@ -278,6 +336,46 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
       setDeliveriesError(err?.message || "Failed to load delivery details.");
     } finally {
       setDeliveriesLoading(false);
+    }
+  };
+
+  const loadEngagement = async (batchId) => {
+    if (!batchId) return;
+    setEngagementLoading(true);
+    setEngagementError("");
+    try {
+      const data = await getAdminAILenderCampaignBatchEngagement(batchId);
+      if (data?.status === "FAILED") {
+        throw new Error(data?.message || "Failed to load email engagement.");
+      }
+      setEngagementStats(data || null);
+    } catch (err) {
+      setEngagementStats(null);
+      setEngagementError(err?.message || "Failed to load email engagement.");
+    } finally {
+      setEngagementLoading(false);
+    }
+  };
+
+  const syncWhatsAppHistory = async () => {
+    const batchId = selectedBatch?.batchId || batchIdFromQuery;
+    if (!batchId) return;
+    setWhatsappSyncing(true);
+    setWhatsappSyncStatus("");
+    try {
+      const data = await syncAdminAILenderWhatsAppCampaignHistory(batchId);
+      if (data?.status === "FAILED") throw new Error(data?.message || "WhatsApp history sync failed.");
+      setWhatsappSyncStatus(
+        `History updated: ${fmtNum(data?.matchedRecipients)} matched, ${fmtNum(data?.readCount)} read, ${fmtNum(data?.replyCount)} replied.`
+      );
+      await Promise.all([
+        loadEngagement(batchId),
+        loadDeliveries(batchId, 1, effectiveDeliveryFilter),
+      ]);
+    } catch (err) {
+      setWhatsappSyncStatus(err?.message || "WhatsApp history sync failed.");
+    } finally {
+      setWhatsappSyncing(false);
     }
   };
 
@@ -318,7 +416,9 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   }, [batchIdFromQuery]);
 
   useEffect(() => {
-    setDeliveryStatusFilter(filterFromQuery === "failed" ? "failed" : "");
+    setDeliveryStatusFilter(
+      ["failed", "opened", "clicked", "responded", "bounced"].includes(filterFromQuery) ? filterFromQuery : ""
+    );
   }, [filterFromQuery]);
 
   useEffect(() => {
@@ -352,17 +452,20 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   useEffect(() => {
     if (batchDetailMode) return;
     loadHistory();
-  }, [segment, channelFilter, pageNo, batchDetailMode]);
-
-  useEffect(() => {
-    if (!batchDetailMode) return;
-    loadHistory();
-  }, [segment, channelFilter, batchDetailMode]);
+  }, [segment, channelFilter, environmentFilter, campaignDate, pageNo, batchDetailMode]);
 
   useEffect(() => {
     if (!selectedBatch?.batchId) return;
     loadDeliveries(selectedBatch.batchId, 1, effectiveDeliveryFilter);
   }, [selectedBatch?.batchId, selectedBatch?.failedCount, effectiveDeliveryFilter]);
+
+  useEffect(() => {
+    if (!selectedBatch?.batchId) {
+      setEngagementStats(null);
+      return;
+    }
+    loadEngagement(selectedBatch.batchId);
+  }, [selectedBatch?.batchId, selectedBatch?.channel]);
 
   useEffect(() => {
     if (!batchDetailMode || deliveriesLoading) return;
@@ -377,11 +480,49 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   }, [summary, totalCount]);
 
   const visibleDeliveries = useMemo(() => {
+    if (deliverySearchResults !== null) {
+      return deliverySearchResults;
+    }
     if (effectiveDeliveryFilter !== "failed") {
       return deliveries;
     }
     return deliveries.filter(isCampaignDeliveryFailed);
-  }, [deliveries, effectiveDeliveryFilter]);
+  }, [deliveries, deliverySearchResults, effectiveDeliveryFilter]);
+
+  const searchBatchDeliveries = async () => {
+    const query = deliverySearch.trim().toLowerCase();
+    if (!query || !selectedBatch?.batchId) {
+      setDeliverySearchResults(null);
+      setDeliverySearchError("");
+      return;
+    }
+    setDeliverySearchLoading(true);
+    setDeliverySearchError("");
+    try {
+      const rows = await fetchAllCampaignBatchDeliveries(selectedBatch.batchId, {
+        status: effectiveDeliveryFilter || undefined,
+        pageSize: 200,
+      });
+      const normalizedId = query.replace(/^lr/i, "");
+      const matches = rows.filter((row) => {
+        const lenderId = String(row?.lenderId || "").toLowerCase();
+        const email = String(row?.email || row?.recipient || "").toLowerCase();
+        return lenderId.includes(normalizedId) || email.includes(query);
+      });
+      setDeliverySearchResults(matches);
+    } catch (err) {
+      setDeliverySearchResults([]);
+      setDeliverySearchError(err?.message || "Could not search this campaign batch.");
+    } finally {
+      setDeliverySearchLoading(false);
+    }
+  };
+
+  const clearDeliverySearch = () => {
+    setDeliverySearch("");
+    setDeliverySearchResults(null);
+    setDeliverySearchError("");
+  };
 
   const actualFailedCount = useMemo(
     () => visibleDeliveries.length,
@@ -406,7 +547,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
 
   const goToDeliveryPage = (page) => {
     if (!selectedBatch?.batchId) return;
-    if (effectiveDeliveryFilter === "failed") {
+    if (["failed", "opened", "clicked", "responded", "bounced"].includes(effectiveDeliveryFilter)) {
       return;
     }
     loadDeliveries(selectedBatch.batchId, page, effectiveDeliveryFilter);
@@ -415,8 +556,8 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
   const updateDeliveryFilter = (nextFilter) => {
     setDeliveryStatusFilter(nextFilter);
     const params = new URLSearchParams(searchParams);
-    if (nextFilter === "failed") {
-      params.set("filter", "failed");
+    if (["failed", "opened", "clicked", "responded", "bounced"].includes(nextFilter)) {
+      params.set("filter", nextFilter);
     } else {
       params.delete("filter");
     }
@@ -534,6 +675,61 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
         >
           <FaWhatsapp /> WhatsApp
         </button>
+        <span className="admin-ai-campaign-filter-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className={environmentFilter === "" ? "active" : ""}
+          onClick={() => {
+            setEnvironmentFilter("");
+            setPageNo(1);
+          }}
+        >
+          All campaigns
+        </button>
+        <button
+          type="button"
+          className={environmentFilter === "live" ? "active admin-ai-campaign-live-filter" : "admin-ai-campaign-live-filter"}
+          onClick={() => {
+            setEnvironmentFilter("live");
+            setPageNo(1);
+          }}
+        >
+          Live
+        </button>
+        <button
+          type="button"
+          className={environmentFilter === "test" ? "active admin-ai-campaign-test-filter" : "admin-ai-campaign-test-filter"}
+          onClick={() => {
+            setEnvironmentFilter("test");
+            setPageNo(1);
+          }}
+        >
+          Test
+        </button>
+        <div className="admin-ai-campaign-date-filter">
+          <label htmlFor="campaign-history-date">Date-wise report</label>
+          <input
+            id="campaign-history-date"
+            type="date"
+            value={campaignDate}
+            onChange={(event) => {
+              setCampaignDate(event.target.value);
+              setPageNo(1);
+            }}
+          />
+          {campaignDate ? (
+            <button
+              type="button"
+              className="admin-ai-campaign-date-clear"
+              onClick={() => {
+                setCampaignDate("");
+                setPageNo(1);
+              }}
+            >
+              Clear date
+            </button>
+          ) : null}
+        </div>
       </div>
       ) : null}
 
@@ -543,7 +739,11 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
 
       {!batchDetailMode && !loading && !error && runs.length === 0 ? (
         <div className="admin-ai-empty-state">
-          {segment ? "No campaigns sent for this segment yet." : "No campaign runs found in email_tracking yet."}
+          {campaignDate
+            ? `No campaigns found for ${new Date(`${campaignDate}T00:00:00`).toLocaleDateString("en-IN")}.`
+            : segment
+              ? "No campaigns sent for this segment yet."
+              : "No campaign runs found in email_tracking yet."}
         </div>
       ) : null}
 
@@ -597,7 +797,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                       <button
                         type="button"
                         className="admin-ai-campaign-failed-link"
-                        onClick={() => openBatchDetail(run, true)}
+                        onClick={() => openBatchDetail(run, "failed")}
                       >
                         {fmtNum(run.failedCount)}
                       </button>
@@ -609,11 +809,37 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                   <td className="admin-ai-campaign-col-action">
                     <button
                       type="button"
-                      className="admin-ai-campaign-detail-btn"
-                      onClick={() => openBatchDetail(run, Number(run.failedCount) > 0)}
+                      className="admin-ai-campaign-detail-btn admin-ai-campaign-detail-btn--view"
+                      onClick={() => openBatchDetail(run)}
                     >
-                      {Number(run.failedCount) > 0 ? "View failed" : "View"}
+                      View
                     </button>
+                    <>
+                        <button
+                          type="button"
+                          className={`admin-ai-campaign-detail-btn admin-ai-campaign-detail-btn--opened ${Number(run.openCount) > 0 ? "has-opens" : ""}`}
+                          onClick={() => openBatchDetail(run, "opened")}
+                          disabled={Number(run.openCount) <= 0}
+                        >
+                          {String(run.channel || "").toLowerCase() === "whatsapp" ? "View Read Users" : "View Opened Users"} ({fmtNum(run.openCount)})
+                        </button>
+                        <button
+                          type="button"
+                          className={`admin-ai-campaign-detail-btn admin-ai-campaign-detail-btn--clicked ${Number(run.clickCount) > 0 ? "has-clicks" : ""}`}
+                          onClick={() => openBatchDetail(run, "clicked")}
+                          disabled={Number(run.clickCount) <= 0}
+                        >
+                          View Clicked Users ({fmtNum(run.clickCount)})
+                        </button>
+                        <button
+                          type="button"
+                          className={`admin-ai-campaign-detail-btn admin-ai-campaign-detail-btn--responded ${Number(run.replyCount) > 0 ? "has-replies" : ""}`}
+                          onClick={() => openBatchDetail(run, "responded")}
+                          disabled={Number(run.replyCount) <= 0}
+                        >
+                          View Responded Users ({fmtNum(run.replyCount)})
+                        </button>
+                    </>
                   </td>
                 </tr>
               ))}
@@ -667,6 +893,34 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
               </button>
               <button
                 type="button"
+                className={effectiveDeliveryFilter === "opened" ? "active" : ""}
+                onClick={() => updateDeliveryFilter("opened")}
+              >
+                {String(selectedBatch?.channel || "").toLowerCase() === "whatsapp" ? "Read" : "Opened"} ({fmtNum(engagementStats?.openCount || selectedBatch?.openCount || 0)})
+              </button>
+              <button
+                type="button"
+                className={effectiveDeliveryFilter === "clicked" ? "active" : ""}
+                onClick={() => updateDeliveryFilter("clicked")}
+              >
+                Clicked ({fmtNum(engagementStats?.clickCount || selectedBatch?.clickCount || 0)})
+              </button>
+              <button
+                type="button"
+                className={effectiveDeliveryFilter === "responded" ? "active" : ""}
+                onClick={() => updateDeliveryFilter("responded")}
+              >
+                Responded ({fmtNum(engagementStats?.replyCount || selectedBatch?.replyCount || 0)})
+              </button>
+              <button
+                type="button"
+                className={effectiveDeliveryFilter === "bounced" ? "active" : ""}
+                onClick={() => updateDeliveryFilter("bounced")}
+              >
+                Bounced ({fmtNum(engagementStats?.bounceCount || 0)})
+              </button>
+              <button
+                type="button"
                 className="admin-ai-campaign-header-refresh"
                 onClick={downloadFailedAsExcel}
                 disabled={exportingFailed || !(failedUsersTotal || selectedBatch?.failedCount)}
@@ -681,6 +935,16 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
               >
                 <FaWhatsapp /> {sendingAdminReport ? "Sending..." : "Send WhatsApp report"}
               </button>
+              {String(selectedBatch?.channel || "").toLowerCase() === "whatsapp" ? (
+                <button
+                  type="button"
+                  className="admin-ai-campaign-header-refresh"
+                  onClick={syncWhatsAppHistory}
+                  disabled={whatsappSyncing}
+                >
+                  <FaHistory /> {whatsappSyncing ? "Syncing history..." : "Sync past WhatsApp activity"}
+                </button>
+              ) : null}
             </div>
             {reportTargetChoice?.batchId ? (
               <div className="admin-ai-campaign-report-target-pick">
@@ -707,8 +971,61 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
               </div>
             ) : null}
           </div>
+          <div className="admin-ai-campaign-report-summary">
+              {engagementLoading ? (
+                `Loading ${String(selectedBatch?.channel || "").toLowerCase() === "whatsapp" ? "WhatsApp" : "email"} engagement...`
+              ) : engagementError ? (
+                <span className="is-failed">{engagementError}</span>
+              ) : engagementStats ? (
+                <>
+                  <strong>{String(selectedBatch?.channel || "").toLowerCase() === "whatsapp" ? "WhatsApp engagement:" : "Email engagement:"}</strong>{" "}
+                  Sent {fmtNum(engagementStats.sentTotal)} · Delivered {fmtNum(engagementStats.deliveryCount)} ·
+                  {String(selectedBatch?.channel || "").toLowerCase() === "whatsapp" ? "Read" : "Opened"} {fmtNum(engagementStats.openCount)} · Clicked {fmtNum(engagementStats.clickCount)} ·
+                  Responded {fmtNum(engagementStats.replyCount)} ·
+                  Bounced {fmtNum(engagementStats.bounceCount)} · Complaints {fmtNum(engagementStats.complaintCount)}
+                  {!engagementStats.eventsAvailable ? (
+                    <small className="admin-ai-campaign-subtext">
+                      {engagementStats.trackingNote || "No delivery/open/click event has been received for this batch yet."}
+                    </small>
+                  ) : null}
+                </>
+              ) : (
+                "Engagement data is not available for this batch."
+              )}
+          </div>
+          {whatsappSyncStatus ? <div className="admin-ai-inline-status">{whatsappSyncStatus}</div> : null}
           {adminReportStatus ? <div className="admin-ai-inline-status">{adminReportStatus}</div> : null}
           {deliveriesError ? <div className="admin-ai-inline-error">{deliveriesError}</div> : null}
+          <form
+            className="admin-ai-campaign-delivery-search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              searchBatchDeliveries();
+            }}
+          >
+            <label htmlFor="campaign-delivery-search">Search Lender ID or Email</label>
+            <div>
+              <input
+                id="campaign-delivery-search"
+                type="search"
+                value={deliverySearch}
+                onChange={(event) => setDeliverySearch(event.target.value)}
+                placeholder="Example: LR64812 or user@gmail.com"
+              />
+              <button type="submit" disabled={deliverySearchLoading || !deliverySearch.trim()}>
+                {deliverySearchLoading ? "Searching..." : "Search"}
+              </button>
+              {deliverySearchResults !== null ? (
+                <button type="button" className="admin-ai-reset-btn" onClick={clearDeliverySearch}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            {deliverySearchError ? <small className="is-failed">{deliverySearchError}</small> : null}
+            {deliverySearchResults !== null && !deliverySearchLoading ? (
+              <small>{fmtNum(deliverySearchResults.length)} matching recipient(s) found in this batch.</small>
+            ) : null}
+          </form>
           {deliveriesLoading ? (
             <div className="admin-ai-inline-loading">
               {effectiveDeliveryFilter === "failed"
@@ -729,9 +1046,11 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                 : "No per-recipient delivery logs for this batch."}
             </div>
           ) : null}
-          {deliveryTotalCount > 0 ? (
+          {(deliveryTotalCount > 0 || deliverySearchResults !== null) ? (
             <div className="admin-ai-campaign-report-summary">
-              {effectiveDeliveryFilter === "failed"
+              {deliverySearchResults !== null
+                ? `Showing ${fmtNum(deliverySearchResults.length)} search result(s)`
+                : effectiveDeliveryFilter === "failed"
                 ? `Showing all ${fmtNum(failedUsersTotal)} failed user(s) at once`
                 : (
                   <>
@@ -752,6 +1071,9 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                     <th>Recipient</th>
                     <th>Channel</th>
                     <th>Status</th>
+                    <th>Opened</th>
+                    <th>Clicked</th>
+                    <th>Response</th>
                     <th>Error</th>
                   </tr>
                 </thead>
@@ -772,6 +1094,38 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                           {row.status || "-"}
                         </span>
                       </td>
+                      <td>
+                        <span className={`admin-ai-campaign-status-pill ${row.opened ? "is-success" : ""}`}>
+                          {engagementText(row, "opened")}
+                        </span>
+                        {row.opened && row.engagementEventAt ? (
+                          <small className="admin-ai-campaign-subtext">{formatDateTime(row.engagementEventAt)}</small>
+                        ) : null}
+                      </td>
+                      <td>
+                        <span className={`admin-ai-campaign-status-pill ${row.clicked ? "is-success" : ""}`}>
+                          {engagementText(row, "clicked")}
+                        </span>
+                        {row.clicked && row.engagementEventAt ? (
+                          <small className="admin-ai-campaign-subtext">{formatDateTime(row.engagementEventAt)}</small>
+                        ) : null}
+                      </td>
+                      <td>
+                        <span className="admin-ai-campaign-status-pill">
+                          {responseText(row)}
+                        </span>
+                        {row.replied && row.replyAt ? (
+                          <small className="admin-ai-campaign-subtext">{formatDateTime(row.replyAt)}</small>
+                        ) : null}
+                        {row.replied && row.whatsappReplyText ? (
+                          <small className="admin-ai-campaign-subtext admin-ai-campaign-reply-text">
+                            Reply: “{row.whatsappReplyText}”
+                          </small>
+                        ) : null}
+                        {row.replyNote ? (
+                          <small className="admin-ai-campaign-subtext">{row.replyNote}</small>
+                        ) : null}
+                      </td>
                       <td>{row.errorMessage || "-"}</td>
                     </tr>
                   ))}
@@ -779,7 +1133,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
               </table>
             </div>
           ) : null}
-          {effectiveDeliveryFilter !== "failed" && (deliveryTotalPages > 1 || deliveryTotalCount > deliveryPageSize) ? (
+          {deliverySearchResults === null && effectiveDeliveryFilter !== "failed" && (deliveryTotalPages > 1 || deliveryTotalCount > deliveryPageSize) ? (
             <div className="admin-ai-pager">
               <button
                 type="button"

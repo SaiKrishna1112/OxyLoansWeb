@@ -31,6 +31,7 @@ import {
   getAdminAIActiveLenderProfile,
   getAdminAIActiveLenderBankDetails,
   getAdminAIActiveLenderWallet,
+  getAdminAIActiveLenderReferrals,
   getAdminAIActiveLenders,
   getAdminAIUsers,
   defaultParticipationDate,
@@ -42,6 +43,10 @@ import {
   getAdminAIActiveLenderStates,
   getRegisteredUsersSummary,
   getOldDashboardActiveLendersCount,
+  getAdminAIReferralRegistrationsSummary,
+  getAdminAIReferralRegistrationsYearlySummary,
+  getAdminAIReferralRegistrations,
+  getAdminAITopReferrers,
   getAdminAILenderAnalyticsLenders,
   downloadAdminAIDashboardExcel,
   downloadAdminAIUsersExcel,
@@ -126,6 +131,10 @@ const fallbackStats = {
   goodLenders: 0,
   goodLendersVerified: 0,
   goodLendersUnverifiedEmail: 0,
+  notParticipatedRegistered1Month: 0,
+  notParticipatedRegistered3Months: 0,
+  notParticipatedRegistered6Months: 0,
+  notParticipatedRegistered1Year: 0,
   eliminatedLenders: 0,
   activeCleanLenders: 0,
   lenderQualityFilterActive: false,
@@ -147,6 +156,7 @@ const fallbackStats = {
   todayRegisteredUsers: 0,
   todayParticipatedUsers: 0,
   newParticipatedLenders: 0,
+  referralRegisteredUsers: 0,
   lastThreeMonthsActiveLenders: 0,
   allDeals: 0,
   activeDeals: 0,
@@ -160,6 +170,10 @@ const userViewByCard = {
   allUsers: "registered",
   allLenders: "lendersRaw",
   goodLenders: "lendersNotParticipated",
+  notParticipatedRegistered1Month: "lendersNotParticipatedRegistered1Month",
+  notParticipatedRegistered3Months: "lendersNotParticipatedRegistered3Months",
+  notParticipatedRegistered6Months: "lendersNotParticipatedRegistered6Months",
+  notParticipatedRegistered1Year: "lendersNotParticipatedRegistered1Year",
   eliminatedLenders: "lendersExcluded",
   allBorrowers: "borrowers",
   lastThreeMonthsActiveLenders: "last3MonthsActive",
@@ -171,6 +185,10 @@ const userExportByCard = {
   allUsers: { type: "users", userView: "registered", label: "Registered Users", fileSlug: "registered-users" },
   allLenders: { type: "users", userView: "lendersRaw", label: "Registered Lenders", fileSlug: "registered-lenders-raw" },
   goodLenders: { type: "users", userView: "lendersNotParticipated", label: "Not Participated Lenders", fileSlug: "not-participated-lenders" },
+  notParticipatedRegistered1Month: { type: "users", userView: "lendersNotParticipatedRegistered1Month", label: "Last 1 Month Registered - Not Participated", fileSlug: "last-1-month-registered-not-participated-lenders" },
+  notParticipatedRegistered3Months: { type: "users", userView: "lendersNotParticipatedRegistered3Months", label: "Last 3 Months Registered - Not Participated", fileSlug: "last-3-months-registered-not-participated-lenders" },
+  notParticipatedRegistered6Months: { type: "users", userView: "lendersNotParticipatedRegistered6Months", label: "Last 6 Months Registered - Not Participated", fileSlug: "last-6-months-registered-not-participated-lenders" },
+  notParticipatedRegistered1Year: { type: "users", userView: "lendersNotParticipatedRegistered1Year", label: "Last 1 Year Registered - Not Participated", fileSlug: "last-1-year-registered-not-participated-lenders" },
   eliminatedLenders: { type: "users", userView: "lendersExcluded", label: "Eliminated Lenders", fileSlug: "eliminated-lenders" },
   allBorrowers: { type: "users", userView: "borrowers", label: "Registered Borrowers", fileSlug: "registered-borrowers" },
   allActiveLenders: { type: "activeLenders", label: "All Active Lenders", fileSlug: "all-active-lenders" },
@@ -483,7 +501,10 @@ const responseData = (payload) => (payload && payload.data ? payload.data : payl
 const valueOrDash = (value) => (value == null || value === "" ? "-" : value);
 const dashboardLoadErrorMessage = (error) => {
   if (!error?.response) {
-    return `Backend is not reachable at ${BASE_URL}. Start oxyloans-rest on port 8181, then click Retry.`;
+    if (error?.code === "ECONNABORTED" || /timeout/i.test(error?.message || "")) {
+      return `Dashboard request timed out at ${BASE_URL}. Backend is usually still warming up or the query is slow. Wait a few seconds, then click Retry.`;
+    }
+    return `Dashboard request could not get a response from ${BASE_URL}. Confirm /oxyloans/healthCheck is OK, then click Retry.`;
   }
   const status = error.response.status;
   const backendMessage = error.response.data?.errorMessage || error.response.data?.message;
@@ -620,6 +641,7 @@ const buildOverviewSummaryRows = (stats) => [
   ["Today Registered", stats.todayRegisteredUsers, "New sign-ups today"],
   ["Today Participated", stats.todayParticipatedUsers, "Eligible lenders active today across all deals"],
   ["New Participated Lenders", stats.newParticipatedLenders, "First-ever participation today"],
+  ["Referral Registered Users", stats.referralRegisteredUsers, "Registered via referral link (today by default)"],
 ];
 
 const buildDealsSummaryRows = (stats) => [
@@ -939,6 +961,18 @@ const AdminAIDashboard = () => {
   const [activeLenderSearchStatus, setActiveLenderSearchStatus] = useState("");
   const [activeLenderParticipationRange, setActiveLenderParticipationRange] = useState(null);
   const [activeLenderView, setActiveLenderView] = useState(null);
+  const [newParticipationDate, setNewParticipationDate] = useState(() => defaultParticipationDate());
+  const [newParticipatedDateCount, setNewParticipatedDateCount] = useState(null);
+  const [newParticipatedDateLoading, setNewParticipatedDateLoading] = useState(false);
+  const [newParticipatedDateError, setNewParticipatedDateError] = useState("");
+  const [participatedDate, setParticipatedDate] = useState(() => defaultParticipationDate());
+  const [participatedDateCount, setParticipatedDateCount] = useState(null);
+  const [participatedDateLoading, setParticipatedDateLoading] = useState(false);
+  const [participatedDateError, setParticipatedDateError] = useState("");
+  const [registeredDate, setRegisteredDate] = useState(() => defaultParticipationDate());
+  const [registeredDateCount, setRegisteredDateCount] = useState(null);
+  const [registeredDateLoading, setRegisteredDateLoading] = useState(false);
+  const [registeredDateError, setRegisteredDateError] = useState("");
 
   const [lenderDeals, setLenderDeals] = useState(null);
   const [lenderDealsTab, setLenderDealsTab] = useState("active");
@@ -962,12 +996,35 @@ const AdminAIDashboard = () => {
   const [exportingCardKey, setExportingCardKey] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [campaignModalState, setCampaignModalState] = useState(null);
+  const [showReferralRegistrations, setShowReferralRegistrations] = useState(false);
+  const [showYearWiseReferrals, setShowYearWiseReferrals] = useState(false);
+  const [referralDate, setReferralDate] = useState(() => defaultParticipationDate());
+  const [referralYear, setReferralYear] = useState(null);
+  const [referralYearStatus, setReferralYearStatus] = useState(null);
+  const [referralYearCards, setReferralYearCards] = useState([]);
+  const [referralYearGrandTotal, setReferralYearGrandTotal] = useState(0);
+  const [topReferrers, setTopReferrers] = useState([]);
+  const [selectedTopReferrerLimit, setSelectedTopReferrerLimit] = useState(null);
+  const [topReferrersLoading, setTopReferrersLoading] = useState(false);
+  const [topReferrerStatusesLoading, setTopReferrerStatusesLoading] = useState(false);
+  const [selectedTopReferrer, setSelectedTopReferrer] = useState(null);
+  const [selectedTopReferrerDetail, setSelectedTopReferrerDetail] = useState(null);
+  const [selectedTopReferrerLoading, setSelectedTopReferrerLoading] = useState(false);
+  const [selectedTopReferrerError, setSelectedTopReferrerError] = useState("");
+  const [referralRows, setReferralRows] = useState([]);
+  const [referralPage, setReferralPage] = useState(1);
+  const [referralTotal, setReferralTotal] = useState(0);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralError, setReferralError] = useState("");
+  const [referralYearsLoading, setReferralYearsLoading] = useState(false);
 
-  const showActiveLenders = activeLenderPanelCardKeys.includes(selectedCard?.key);
+  const showReferralPanel = showReferralRegistrations || showYearWiseReferrals;
+  const showActiveLenders = activeLenderPanelCardKeys.includes(selectedCard?.key) && !showReferralPanel;
   const showAdminUsers = Boolean(
-    (selectedCard && userViewByCard[selectedCard.key] && !activeLenderPanelCardKeys.includes(selectedCard.key)
+    !showReferralPanel
+    && ((selectedCard && userViewByCard[selectedCard.key] && !activeLenderPanelCardKeys.includes(selectedCard.key)
       && selectedCard.key !== "allActiveLenders")
-    || selectedQualityChipKey
+    || selectedQualityChipKey)
   );
 
   const loadStats = async () => {
@@ -976,12 +1033,23 @@ const AdminAIDashboard = () => {
     participationLenderRowsCache = null;
     try {
       const registeredUsersSummary = await getRegisteredUsersSummary();
-      const oldDashboardActiveLendersCount = await getOldDashboardActiveLendersCount();
+      const [oldDashboardActiveLendersCount, referralSummaryPayload, referralYearlyPayload] = await Promise.all([
+        getOldDashboardActiveLendersCount(),
+        getAdminAIReferralRegistrationsSummary(defaultParticipationDate()).catch(() => null),
+        getAdminAIReferralRegistrationsYearlySummary(2021).catch(() => null),
+      ]);
       let registeredUsersData = responseData(registeredUsersSummary);
       const registrationBreakdown = registeredUsersData.registrationBreakdown || {};
       registeredUsersData = await enrichMissingSummaryFields(registeredUsersData, registrationBreakdown);
       const users = registeredUsersData.users || {};
       const today = registeredUsersData.today || {};
+      const referralSummary = responseData(referralSummaryPayload);
+      const referralYearly = responseData(referralYearlyPayload);
+      const yearlyRows = Array.isArray(referralYearly?.years) ? referralYearly.years : [];
+      if (yearlyRows.length) {
+        setReferralYearCards(yearlyRows);
+        setReferralYearGrandTotal(pickNumber(referralYearly?.grandTotal));
+      }
 
       let activeLenderLocationByState = registeredUsersData.activeLenderLocationByState || [];
       if (!activeLenderLocationByState.length) {
@@ -1015,6 +1083,10 @@ const AdminAIDashboard = () => {
         goodLenders,
         goodLendersVerified,
         goodLendersUnverifiedEmail,
+        notParticipatedRegistered1Month: pickNumber(registeredUsersData.notParticipatedRegisteredLast1MonthCount),
+        notParticipatedRegistered3Months: pickNumber(registeredUsersData.notParticipatedRegisteredLast3MonthsCount),
+        notParticipatedRegistered6Months: pickNumber(registeredUsersData.notParticipatedRegisteredLast6MonthsCount),
+        notParticipatedRegistered1Year: pickNumber(registeredUsersData.notParticipatedRegisteredLast1YearCount),
         eliminatedLenders: pickNumber(registeredUsersData.lendersExcludedCount),
         activeCleanLenders: pickNumber(registeredUsersData.activeCleanLendersCount),
         lenderQualityFilterActive: registeredUsersData.lenderQualityFilterActive === true,
@@ -1048,6 +1120,7 @@ const AdminAIDashboard = () => {
           registeredUsersData.newParticipatedLendersCount,
           today.newParticipatedLenders
         ),
+        referralRegisteredUsers: pickNumber(referralSummary?.totalCount),
         lastThreeMonthsActiveLenders: pickNumber(
           registeredUsersData.lastThreeMonthsActiveLenders,
           users.lastThreeMonthsActiveLenders,
@@ -1209,7 +1282,7 @@ const AdminAIDashboard = () => {
         data = responseData(await getAdminAIActiveLenders(pageNo, activeLendersPageSize, {
           ...filters,
           lenderView: "newParticipated",
-          participationDate: defaultParticipationDate(),
+          participationDate: filters?.participationDate || newParticipationDate,
         }));
         setActiveLenders(data?.activeLenders || []);
         setActiveLendersPage(pickNumber(data?.pageNo, pageNo) || 1);
@@ -1386,6 +1459,209 @@ const AdminAIDashboard = () => {
     setInactiveReactivatedCount(0);
     setInactiveReactivatedLoading(false);
     setInactiveReactivatedError("");
+    setShowReferralRegistrations(false);
+    setShowYearWiseReferrals(false);
+    setReferralRows([]);
+    setReferralPage(1);
+    setReferralTotal(0);
+    setReferralLoading(false);
+    setReferralError("");
+    setReferralYear(null);
+    setReferralYearStatus(null);
+    setReferralYearsLoading(false);
+  };
+
+  const buildDefaultReferralYearCards = () => {
+    const currentYear = Number(String(defaultParticipationDate()).slice(0, 4)) || new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= 2021; year -= 1) {
+      years.push({ year, registeredCount: 0, lentCount: 0, totalCount: 0 });
+    }
+    return years;
+  };
+
+  const loadReferralYearCards = async () => {
+    const fallback = buildDefaultReferralYearCards();
+    setReferralYearCards((prev) => (prev.length ? prev : fallback));
+    setReferralYearsLoading(true);
+    try {
+      const data = responseData(await getAdminAIReferralRegistrationsYearlySummary(2021));
+      const years = Array.isArray(data?.years) ? data.years : [];
+      setReferralYearCards(years.length ? years : fallback);
+      setReferralYearGrandTotal(pickNumber(data?.grandTotal, years.reduce((sum, row) => sum + pickNumber(row.totalCount), 0)));
+    } catch {
+      setReferralYearCards((prev) => (prev.length ? prev : fallback));
+    } finally {
+      setReferralYearsLoading(false);
+    }
+  };
+
+  const loadTopReferrers = async () => {
+    setTopReferrersLoading(true);
+    try {
+      const data = responseData(await getAdminAITopReferrers(50));
+      setTopReferrers(Array.isArray(data?.referrers) ? data.referrers : []);
+    } catch {
+      setTopReferrers([]);
+    } finally {
+      setTopReferrersLoading(false);
+    }
+  };
+
+  const loadReferralRegistrations = async (
+    page = 1,
+    { dateValue = referralDate, yearValue = referralYear, statusValue = referralYearStatus } = {}
+  ) => {
+    const safeDate = dateValue || defaultParticipationDate();
+    const safeYear = yearValue ? Number(yearValue) : null;
+    const safeStatus = safeYear && statusValue ? statusValue : null;
+    setReferralLoading(true);
+    setReferralError("");
+    try {
+      const data = responseData(
+        await getAdminAIReferralRegistrations(
+          page,
+          20,
+          safeYear ? { year: safeYear, status: safeStatus } : { date: safeDate }
+        )
+      );
+      setReferralRows(Array.isArray(data?.referees) ? data.referees : []);
+      setReferralPage(pickNumber(data?.pageNo, page) || 1);
+      setReferralTotal(pickNumber(data?.totalCount));
+      if (safeYear) {
+        setReferralYear(safeYear);
+        setReferralYearStatus(safeStatus);
+      } else {
+        setReferralYear(null);
+        setReferralYearStatus(null);
+        setReferralDate(data?.date || safeDate);
+        if (safeDate === defaultParticipationDate()) {
+          setStats((prev) => ({
+            ...prev,
+            referralRegisteredUsers: pickNumber(data?.totalCount, prev.referralRegisteredUsers),
+          }));
+        }
+      }
+    } catch (error) {
+      setReferralRows([]);
+      setReferralTotal(0);
+      setReferralError(error?.response?.data?.message || error?.message || "Failed to load referral registrations.");
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  const openReferralRegistrations = (card) => {
+    const today = defaultParticipationDate();
+    setSelectedQualityChipKey("");
+    resetPanels();
+    setSelectedCard(card);
+    setShowReferralRegistrations(true);
+    setShowYearWiseReferrals(false);
+    setReferralDate(today);
+    setReferralYear(null);
+    setReferralYearStatus(null);
+    loadReferralRegistrations(1, { dateValue: today, yearValue: null, statusValue: null });
+  };
+
+  const openYearWiseReferrals = () => {
+    setSelectedQualityChipKey("");
+    resetPanels();
+    setSelectedCard({ key: "yearWiseReferrals", label: "YearWise referrals" });
+    setShowYearWiseReferrals(true);
+    setShowReferralRegistrations(false);
+    setReferralYear(null);
+    setReferralYearStatus(null);
+    setReferralRows([]);
+    setReferralTotal(0);
+    setSelectedTopReferrerLimit(null);
+    setSelectedTopReferrer(null);
+    setSelectedTopReferrerDetail(null);
+    setSelectedTopReferrerError("");
+    setReferralYearCards((prev) => (prev.length ? prev : buildDefaultReferralYearCards()));
+    loadReferralYearCards();
+    loadTopReferrers();
+  };
+
+  useEffect(() => {
+    const requestedPanel = new URLSearchParams(window.location.search).get("panel");
+    if (requestedPanel === "yearWiseReferrals") {
+      openYearWiseReferrals();
+      navigate("/adminAIDashboard", { replace: true });
+    }
+  }, []);
+
+  const openReferralYearStatus = (year, status) => {
+    const safeYear = Number(year);
+    if (!safeYear || (status !== "Lent" && status !== "Registered")) {
+      return;
+    }
+    if (status === "Registered") {
+      navigate(`/adminAIReferralUsers?year=${safeYear}&status=Registered`);
+      return;
+    }
+    setReferralYear(safeYear);
+    setReferralYearStatus(status);
+    loadReferralRegistrations(1, { yearValue: safeYear, statusValue: status });
+  };
+
+  const openReferralCampaign = (segment, segmentLabel, recipientCount, channel) => {
+    setCampaignModalState({
+      segment,
+      segmentLabel,
+      recipientCount: pickNumber(recipientCount),
+      channel: channel || "email",
+      campaignSetCount: 3,
+    });
+  };
+
+  const openTopReferrerDetail = async (referrer) => {
+    const lenderId = pickNumber(referrer?.referrerId);
+    if (!lenderId) return;
+    setSelectedTopReferrer(referrer);
+    setSelectedTopReferrerDetail(null);
+    setSelectedTopReferrerError("");
+    setSelectedTopReferrerLoading(true);
+    try {
+      const data = responseData(await getAdminAIActiveLenderReferrals(lenderId, 1, 10));
+      setSelectedTopReferrerDetail(data || {});
+    } catch (error) {
+      setSelectedTopReferrerError(error?.response?.data?.message || error?.message || "Failed to load referral earnings.");
+    } finally {
+      setSelectedTopReferrerLoading(false);
+    }
+  };
+
+  const showTopReferrers = async (limit) => {
+    setSelectedTopReferrerLimit(limit);
+    const visibleRows = topReferrers.slice(0, limit);
+    if (!visibleRows.length) return;
+    setTopReferrerStatusesLoading(true);
+    try {
+      const updates = [];
+      for (let start = 0; start < visibleRows.length; start += 5) {
+        const batch = visibleRows.slice(start, start + 5);
+        const batchUpdates = await Promise.all(batch.map(async (row) => {
+          try {
+            const data = responseData(await getAdminAIActiveLenderReferrals(row.referrerId, 1, 1));
+            const summary = data?.referralSummary || {};
+            return {
+              referrerId: row.referrerId,
+              registeredCount: pickNumber(summary.registered),
+              lentCount: pickNumber(summary.lent) + pickNumber(summary.disbursed),
+              invitedCount: pickNumber(summary.invited),
+            };
+          } catch {
+            return null;
+          }
+        }));
+        updates.push(...batchUpdates.filter(Boolean));
+      }
+      const byId = new Map(updates.map((row) => [pickNumber(row.referrerId), row]));
+      setTopReferrers((rows) => rows.map((row) => ({ ...row, ...(byId.get(pickNumber(row.referrerId)) || {}) })));
+    } finally {
+      setTopReferrerStatusesLoading(false);
+    }
   };
 
   const loadBankDetailsForProfile = async (userId) => {
@@ -1421,6 +1697,23 @@ const AdminAIDashboard = () => {
     navigate(`/adminAIUserProfile?${params.toString()}`);
   };
 
+  const openReferralUserProfile = (userId, userCode, roleLabel = "Referral User") => {
+    let id = pickNumber(userId);
+    if (!id && userCode) {
+      const digits = String(userCode).replace(/^(LR|BR|PR)\s*/i, "").replace(/\D/g, "");
+      id = pickNumber(digits);
+    }
+    if (!id) {
+      return;
+    }
+    const params = new URLSearchParams({
+      userId: String(id),
+      view: "referralRegistered",
+      label: roleLabel,
+    });
+    navigate(`/adminAIUserProfile?${params.toString()}`);
+  };
+
   const closeAdminUserProfile = () => {
     setSelectedProfile(null);
     setSelectedProfileError("");
@@ -1435,19 +1728,91 @@ const AdminAIDashboard = () => {
     resetPanels();
     setActiveLenderParticipationRange(participationRange);
     setActiveLenderView(lenderView);
-    setActiveLenderSearch({ lenderId: "", mobileNumber: "" });
-    loadActiveLenders(1, { lenderId: "", mobileNumber: "" }, participationRange, lenderView);
+    const nextSearch = {
+      lenderId: "",
+      mobileNumber: "",
+      ...(lenderView === "newParticipated" ? { participationDate: newParticipationDate } : {}),
+    };
+    setActiveLenderSearch(nextSearch);
+    loadActiveLenders(1, nextSearch, participationRange, lenderView);
+  };
+
+  const searchNewParticipatedByDate = async () => {
+    const participationDate = String(newParticipationDate || "").slice(0, 10);
+    if (!participationDate) {
+      setNewParticipatedDateError("Please select a date.");
+      return;
+    }
+    setNewParticipatedDateLoading(true);
+    setNewParticipatedDateError("");
+    try {
+      const data = responseData(await getAdminAIActiveLenders(1, 1, {
+        lenderView: "newParticipated",
+        participationDate,
+        includeBankDetails: false,
+      }));
+      setNewParticipatedDateCount(pickNumber(data?.totalCount));
+    } catch (error) {
+      setNewParticipatedDateCount(null);
+      setNewParticipatedDateError(error?.response?.data?.errorMessage || error?.message || "Failed to load this date.");
+    } finally {
+      setNewParticipatedDateLoading(false);
+    }
   };
 
   const openAdminUsers = (card) => {
     const nextView = userViewByCard[card.key] || "registered";
     const nextSearch = emptyAdminUserSearch(nextView);
+    if (nextView === "todayParticipated") {
+      nextSearch.participationDate = participatedDate;
+    }
+    if (nextView === "todayRegistered") {
+      nextSearch.participationDate = registeredDate;
+    }
     setSelectedQualityChipKey("");
     setSelectedCard(card);
     resetPanels();
     setAdminUserSearch(nextSearch);
     setAdminUsersView(nextView);
     loadAdminUsers(1, nextView, nextSearch);
+  };
+
+  const searchParticipatedByDate = async () => {
+    const participationDate = String(participatedDate || "").slice(0, 10);
+    if (!participationDate) {
+      setParticipatedDateError("Please select a date.");
+      return;
+    }
+    setParticipatedDateLoading(true);
+    setParticipatedDateError("");
+    try {
+      const data = responseData(await getAdminAIUsers(1, 1, "todayParticipated", { participationDate }));
+      setParticipatedDateCount(pickNumber(data?.totalCount));
+    } catch (error) {
+      setParticipatedDateCount(null);
+      setParticipatedDateError(error?.response?.data?.errorMessage || error?.message || "Failed to load this date.");
+    } finally {
+      setParticipatedDateLoading(false);
+    }
+  };
+
+  const searchRegisteredByDate = async () => {
+    const selectedDate = String(registeredDate || "").slice(0, 10);
+    if (!selectedDate) {
+      setRegisteredDateError("Please select a date.");
+      return;
+    }
+    setRegisteredDateLoading(true);
+    setRegisteredDateError("");
+    try {
+      const data = responseData(await getAdminAIUsers(1, 1, "todayRegistered", { participationDate: selectedDate }));
+      setRegisteredDateCount(pickNumber(data?.totalCount));
+    } catch (error) {
+      setRegisteredDateCount(null);
+      setRegisteredDateError(error?.response?.data?.errorMessage || error?.message || "Failed to load registrations for this date.");
+    } finally {
+      setRegisteredDateLoading(false);
+    }
   };
 
   const openLenderQualityChip = (chipKey) => {
@@ -1467,6 +1832,10 @@ const AdminAIDashboard = () => {
   const handleCardClick = (card) => {
     if (card.key === "allActiveLenders") {
       navigate("/adminAIDeals");
+      return;
+    }
+    if (card.key === "referralRegisteredUsers") {
+      openReferralRegistrations(card);
       return;
     }
     if (activeLenderPanelCardKeys.includes(card.key)) {
@@ -1496,6 +1865,22 @@ const AdminAIDashboard = () => {
       segment: "goodLenders",
       segmentLabel: "Not Participated Lenders",
       recipientCount: pickNumber(stats.goodLendersVerified),
+      channel: channel || "email",
+      campaignSetCount: 3,
+    });
+  };
+
+  const openRegisteredNotParticipatedCampaign = (card, channel) => {
+    const segmentByCard = {
+      notParticipatedRegistered1Month: "notParticipatedRegistered1Month",
+      notParticipatedRegistered3Months: "notParticipatedRegistered3Months",
+      notParticipatedRegistered6Months: "notParticipatedRegistered6Months",
+      notParticipatedRegistered1Year: "notParticipatedRegistered1Year",
+    };
+    setCampaignModalState({
+      segment: segmentByCard[card.key],
+      segmentLabel: card.label,
+      recipientCount: pickNumber(card.value),
       channel: channel || "email",
       campaignSetCount: 3,
     });
@@ -1647,7 +2032,8 @@ const AdminAIDashboard = () => {
     fileSlug = "all-active-lenders",
     minParticipationAmount = null,
     maxParticipationAmount = null,
-    lenderView = null
+    lenderView = null,
+    participationDate = null
   ) => {
     const fileName = cardExportFileName(fileSlug);
     setExportMessage(`Preparing ${label} export...`);
@@ -1675,7 +2061,7 @@ const AdminAIDashboard = () => {
       setExportMessage(`Fetching all ${label} records page by page...`);
       const { rows, totalCount } = await fetchAllActiveLendersForExport((pageNo, fetched) => {
         setExportMessage(`Fetching ${label}... page ${pageNo} (${fetched} loaded)`);
-      }, { minParticipationAmount, maxParticipationAmount, lenderView });
+      }, { minParticipationAmount, maxParticipationAmount, lenderView, participationDate });
       if (!rows.length) {
         throw new Error((await parseAdminAIExportError(error)) || "No active lenders found to export.");
       }
@@ -1734,11 +2120,36 @@ const AdminAIDashboard = () => {
       { key: "allBorrowers", label: "Registered Borrowers", value: stats.allBorrowers, icon: <FaHandshake />, meta: "BORROWER accounts · 10 email sets", accent: "violet", clickable: true },
       { key: "allActiveLenders", label: "All Active Lenders", value: stats.allActiveLenders, icon: <FaUserCheck />, meta: "Participated in deals", accent: "teal", clickable: true },
       { key: "lastThreeMonthsActiveLenders", label: "Last 3 Months Active", value: stats.lastThreeMonthsActiveLenders, icon: <FaChartLine />, meta: "Recent participation", accent: "cyan", clickable: true },
-      { key: "todayRegisteredUsers", label: "Today Registered", value: stats.todayRegisteredUsers, icon: <FaUserFriends />, meta: "New sign-ups today", accent: "amber", clickable: true },
-      { key: "todayParticipatedUsers", label: "Today Participated", value: stats.todayParticipatedUsers, icon: <FaUserClock />, meta: "Lenders active today (all deals)", accent: "orange", clickable: true },
-      { key: "newParticipatedLenders", label: "New Participated Lenders", value: stats.newParticipatedLenders, icon: <FaUserPlus />, meta: "First-ever participation today", accent: "emerald", clickable: true },
+      {
+        key: "todayRegisteredUsers",
+        label: "Registered Users by Date",
+        value: registeredDateCount ?? stats.todayRegisteredUsers,
+        icon: <FaUserFriends />,
+        meta: `New sign-ups on ${registeredDate}`,
+        accent: "amber",
+        clickable: true,
+      },
+      {
+        key: "todayParticipatedUsers",
+        label: "Participated Lenders",
+        value: participatedDateCount ?? stats.todayParticipatedUsers,
+        icon: <FaUserClock />,
+        meta: `Lenders active on ${participatedDate} (all deals)`,
+        accent: "orange",
+        clickable: true,
+      },
+      {
+        key: "newParticipatedLenders",
+        label: "New Participated Lenders",
+        value: newParticipatedDateCount ?? stats.newParticipatedLenders,
+        icon: <FaUserPlus />,
+        meta: `First-ever participation on ${newParticipationDate}`,
+        accent: "emerald",
+        clickable: true,
+      },
+      { key: "referralRegisteredUsers", label: "Referral Registered Users", value: stats.referralRegisteredUsers, icon: <FaUserPlus />, meta: "Via referral link · default today", accent: "rose", clickable: true },
     ],
-    [stats]
+    [stats, newParticipatedDateCount, newParticipationDate, participatedDateCount, participatedDate, registeredDateCount, registeredDate]
   );
 
   const highParticipationCards = useMemo(
@@ -1806,6 +2217,13 @@ const AdminAIDashboard = () => {
     ],
     [stats]
   );
+
+  const registeredNotParticipatedCards = useMemo(() => [
+    { key: "notParticipatedRegistered1Month", label: "Last 1 Month Registered - Not Participated", value: stats.notParticipatedRegistered1Month, icon: <FaUserClock />, meta: "Lenders registered in the last month with no participation", accent: "cyan", clickable: true },
+    { key: "notParticipatedRegistered3Months", label: "Last 3 Months Registered - Not Participated", value: stats.notParticipatedRegistered3Months, icon: <FaUserClock />, meta: "Lenders registered in the last 3 months with no participation", accent: "teal", clickable: true },
+    { key: "notParticipatedRegistered6Months", label: "Last 6 Months Registered - Not Participated", value: stats.notParticipatedRegistered6Months, icon: <FaUserClock />, meta: "Lenders registered in the last 6 months with no participation", accent: "amber", clickable: true },
+    { key: "notParticipatedRegistered1Year", label: "Last 1 Year Registered - Not Participated", value: stats.notParticipatedRegistered1Year, icon: <FaUserClock />, meta: "Lenders registered in the last year with no participation", accent: "rose", clickable: true },
+  ], [stats]);
 
   const dealCards = useMemo(
     () => [
@@ -2007,6 +2425,11 @@ const AdminAIDashboard = () => {
     return {
       registered: "All Registered Users",
       lenders: "Not Participated Lenders",
+      lendersNotParticipated: "Not Participated Lenders",
+      lendersNotParticipatedRegistered1Month: "Last 1 Month Registered - Not Participated Lenders",
+      lendersNotParticipatedRegistered3Months: "Last 3 Months Registered - Not Participated Lenders",
+      lendersNotParticipatedRegistered6Months: "Last 6 Months Registered - Not Participated Lenders",
+      lendersNotParticipatedRegistered1Year: "Last 1 Year Registered - Not Participated Lenders",
       lendersRaw: "All Registered Lenders",
       lendersExcluded: "Eliminated Lenders",
       lendersExcludedTestUsers: "Test Users Removed",
@@ -2077,7 +2500,7 @@ const AdminAIDashboard = () => {
 
           {loading && <div className="admin-ai-empty-state">Loading Admin AI dashboard...</div>}
 
-          {!loading && !showActiveLenders && !showAdminUsers && (
+          {!loading && !showActiveLenders && !showAdminUsers && !showReferralPanel && (
             <>
               <section className="admin-ai-pro-section admin-ai-pro-section--users">
                 <div className="admin-ai-pro-section-head">
@@ -2103,8 +2526,92 @@ const AdminAIDashboard = () => {
                       {...card}
                       active={selectedCard?.key === card.key}
                       onClick={card.clickable ? () => handleCardClick(card) : undefined}
-                      onExport={userExportByCard[card.key] ? () => downloadOverviewCardExcel(card.key) : undefined}
+                      onExport={
+                        card.key === "todayRegisteredUsers"
+                          ? () => downloadUsersExcel(
+                              "todayRegistered",
+                              `Registered Users - ${registeredDate}`,
+                              `registered-users-${registeredDate}`,
+                              { participationDate: registeredDate }
+                            )
+                        : card.key === "newParticipatedLenders"
+                          ? () => downloadActiveLendersExcel(
+                              "New Participated Lenders",
+                              `new-participated-lenders-${newParticipationDate}`,
+                              null,
+                              null,
+                              "newParticipated",
+                              newParticipationDate
+                            )
+                          : card.key === "todayParticipatedUsers"
+                            ? () => downloadUsersExcel(
+                                "todayParticipated",
+                                `Participated Lenders - ${participatedDate}`,
+                                `participated-lenders-${participatedDate}`,
+                                { participationDate: participatedDate }
+                              )
+                          : userExportByCard[card.key]
+                            ? () => downloadOverviewCardExcel(card.key)
+                            : undefined
+                      }
                       exporting={exportingCardKey === card.key}
+                      dateFilter={
+                        card.key === "todayRegisteredUsers"
+                          ? registeredDate
+                        : card.key === "newParticipatedLenders"
+                          ? newParticipationDate
+                          : card.key === "todayParticipatedUsers"
+                            ? participatedDate
+                            : undefined
+                      }
+                      dateFilterLoading={
+                        card.key === "todayRegisteredUsers"
+                          ? registeredDateLoading
+                        : card.key === "newParticipatedLenders"
+                          ? newParticipatedDateLoading
+                          : card.key === "todayParticipatedUsers"
+                            ? participatedDateLoading
+                            : false
+                      }
+                      dateFilterError={
+                        card.key === "todayRegisteredUsers"
+                          ? registeredDateError
+                        : card.key === "newParticipatedLenders"
+                          ? newParticipatedDateError
+                          : card.key === "todayParticipatedUsers"
+                            ? participatedDateError
+                            : ""
+                      }
+                      onDateFilterChange={
+                        card.key === "todayRegisteredUsers"
+                          ? (date) => {
+                              setRegisteredDate(date);
+                              setRegisteredDateCount(null);
+                              setRegisteredDateError("");
+                            }
+                        : card.key === "newParticipatedLenders"
+                          ? (date) => {
+                              setNewParticipationDate(date);
+                              setNewParticipatedDateCount(null);
+                              setNewParticipatedDateError("");
+                            }
+                          : card.key === "todayParticipatedUsers"
+                            ? (date) => {
+                                setParticipatedDate(date);
+                                setParticipatedDateCount(null);
+                                setParticipatedDateError("");
+                              }
+                            : undefined
+                      }
+                      onDateSearch={
+                        card.key === "todayRegisteredUsers"
+                          ? searchRegisteredByDate
+                        : card.key === "newParticipatedLenders"
+                          ? searchNewParticipatedByDate
+                          : card.key === "todayParticipatedUsers"
+                            ? searchParticipatedByDate
+                            : undefined
+                      }
                       onCampaign={
                         card.key === "allBorrowers"
                           ? openRegisteredBorrowersCampaign
@@ -2113,6 +2620,28 @@ const AdminAIDashboard = () => {
                     />
                   ))}
                 </div>
+              </section>
+
+              <section className="admin-ai-pro-section admin-ai-pro-section--yearwise">
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header"
+                  onClick={openYearWiseReferrals}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaChartLine />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>YearWise referrals</h2>
+                    <p>Referral lenders by year (2021 → current). Click to open year boxes and lists.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-count">
+                      {referralYearsLoading ? "…" : fmtNum(referralYearGrandTotal)}
+                    </span>
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
               </section>
 
               <section className="admin-ai-pro-section admin-ai-pro-section--high-participation">
@@ -2193,6 +2722,29 @@ const AdminAIDashboard = () => {
                       onExport={userExportByCard[card.key] ? () => downloadOverviewCardExcel(card.key) : undefined}
                       exporting={exportingCardKey === card.key}
                       onCampaign={card.key === "goodLenders" ? openGoodLendersCampaign : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-ai-pro-section admin-ai-pro-section--lender-quality">
+                <div className="admin-ai-pro-section-head">
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--users"><FaUserClock /></div>
+                  <div>
+                    <h2>Registered Lenders - Not Participated</h2>
+                    <p>Lender-only registration windows. Each list includes registration date, email, mobile, and WhatsApp details for campaigns.</p>
+                  </div>
+                </div>
+                <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
+                  {registeredNotParticipatedCards.map((card) => (
+                    <StatCard
+                      key={card.key}
+                      {...card}
+                      active={selectedCard?.key === card.key}
+                      onClick={() => handleCardClick(card)}
+                      onExport={() => downloadOverviewCardExcel(card.key)}
+                      exporting={exportingCardKey === card.key}
+                      onCampaign={(channel) => openRegisteredNotParticipatedCampaign(card, channel)}
                     />
                   ))}
                 </div>
@@ -2459,6 +3011,415 @@ const AdminAIDashboard = () => {
             />
           )}
 
+          {showYearWiseReferrals && (
+            <section className="admin-ai-panel" id="admin-ai-yearwise-referrals">
+              <div className="admin-ai-panel-head">
+                <div>
+                  <h5>YearWise referrals</h5>
+                  <p>Each year shows Lent and Registered counts. Click a status box to list those users.</p>
+                </div>
+                <div className="admin-ai-panel-actions">
+                  <span className="admin-ai-count-pill">
+                    {referralYear && referralYearStatus
+                      ? `${fmtNum(referralTotal)} ${referralYearStatus} in ${referralYear}`
+                      : `${fmtNum(referralYearGrandTotal)} total`}
+                  </span>
+                  <button className="admin-ai-reset-btn" type="button" onClick={loadReferralYearCards} disabled={referralYearsLoading || topReferrersLoading}>
+                    {referralYearsLoading || topReferrersLoading ? "Refreshing..." : "Refresh"}
+                  </button>
+                  <button className="admin-ai-close-btn" type="button" onClick={backToDashboard}>Close</button>
+                </div>
+              </div>
+
+              <div className="admin-ai-referral-year-head">
+                <div className="admin-ai-referral-year-head-top">
+                  <div className="admin-ai-referral-year-head-copy">
+                    <strong>Yearly referral lenders</strong>
+                    <span>
+                      {referralYearsLoading
+                        ? "Loading yearly totals..."
+                        : "Lent and Registered shown separately — click a box to open users"}
+                    </span>
+                  </div>
+                  <span className="admin-ai-referral-year-head-total">
+                    {referralYearsLoading ? "…" : `${fmtNum(referralYearGrandTotal)} lenders`}
+                  </span>
+                </div>
+                <div className="admin-ai-referral-year-grid">
+                  {referralYearCards.map((item) => {
+                    const year = pickNumber(item.year);
+                    const registeredCount = pickNumber(item.registeredCount);
+                    const registeredLenderCount = pickNumber(item.registeredLenderCount);
+                    const registeredBorrowerCount = pickNumber(item.registeredBorrowerCount);
+                    const lentCount = pickNumber(item.lentCount);
+                    const yearActive = Number(referralYear) === year;
+                    const lentActive = yearActive && referralYearStatus === "Lent";
+                    const registeredActive = yearActive && referralYearStatus === "Registered";
+                    return (
+                      <div
+                        key={year}
+                        className={`admin-ai-referral-year-card${yearActive ? " is-active" : ""}`}
+                      >
+                        <small>YEAR</small>
+                        <strong className="admin-ai-referral-year-number">{year}</strong>
+                        <div className="admin-ai-referral-year-status-row">
+                          <button
+                            type="button"
+                            className={`admin-ai-referral-year-status-box${lentActive ? " is-active" : ""}`}
+                            onClick={() => openReferralYearStatus(year, "Lent")}
+                          >
+                            <small>Lent</small>
+                            <strong>{fmtNum(lentCount)}</strong>
+                            <span>lenders</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`admin-ai-referral-year-status-box${registeredActive ? " is-active" : ""}`}
+                            onClick={() => openReferralYearStatus(year, "Registered")}
+                          >
+                            <small>Registered</small>
+                            <strong>{fmtNum(registeredCount)}</strong>
+                            <span>users</span>
+                            <span>{fmtNum(registeredLenderCount)} L · {fmtNum(registeredBorrowerCount)} B</span>
+                          </button>
+                        </div>
+                        <div className="admin-ai-referral-campaign-grid">
+                          <div className="admin-ai-referral-campaign-group admin-ai-referral-campaign-group--lent">
+                            <span>Lent Campaign ({fmtNum(lentCount)})</span>
+                            <div>
+                              <button type="button" title={`Email ${year} Lent referral lenders`} onClick={() => openReferralCampaign(`referralLentYear${year}`, `${year} Lent Referral Lenders`, lentCount, "email")}><FaEnvelope /> Email</button>
+                              <button type="button" title={`WhatsApp ${year} Lent referral lenders`} onClick={() => openReferralCampaign(`referralLentYear${year}`, `${year} Lent Referral Lenders`, lentCount, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                            </div>
+                          </div>
+                          <div className="admin-ai-referral-campaign-group admin-ai-referral-campaign-group--registered">
+                            <span>Registered Campaign ({fmtNum(registeredCount)})</span>
+                            <div>
+                              <button type="button" title={`Email ${year} Registered referral users`} onClick={() => openReferralCampaign(`referralRegisteredYear${year}`, `${year} Registered Referral Users`, registeredCount, "email")}><FaEnvelope /> Email</button>
+                              <button type="button" title={`WhatsApp ${year} Registered referral users`} onClick={() => openReferralCampaign(`referralRegisteredYear${year}`, `${year} Registered Referral Users`, registeredCount, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="admin-ai-top-referrer-section">
+                <div className="admin-ai-top-referrer-heading">
+                  <div><strong>Top Referrers</strong><span>Ranked by distinct users referred</span></div>
+                  <div className="admin-ai-top-referrer-heading-actions">
+                    {topReferrersLoading ? <span>Loading...</span> : null}
+                    <button type="button" onClick={loadReferralYearCards} disabled={topReferrersLoading}>
+                      {topReferrersLoading ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedTopReferrerLimit) {
+                          setSelectedTopReferrerLimit(null);
+                          setSelectedTopReferrer(null);
+                          setSelectedTopReferrerDetail(null);
+                        } else {
+                          backToDashboard();
+                        }
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+                <div className="admin-ai-top-referrer-boxes">
+                  {[10, 50].map((limit) => {
+                    const available = Math.min(limit, topReferrers.length);
+                    return (
+                      <div key={limit} className={`admin-ai-top-referrer-box${selectedTopReferrerLimit === limit ? " is-active" : ""}`}>
+                        <small>RANKED AUDIENCE</small>
+                        <strong>Top {limit} Referrers</strong>
+                        <span>{fmtNum(available)} available referrers</span>
+                        <button type="button" className="admin-ai-top-referrer-view" disabled={topReferrerStatusesLoading} onClick={() => showTopReferrers(limit)}>
+                          {topReferrerStatusesLoading && selectedTopReferrerLimit === limit ? "Loading status..." : "View"}
+                        </button>
+                        <div className="admin-ai-top-referrer-actions">
+                          <button type="button" onClick={() => openReferralCampaign(`top${limit}Referrers`, `Top ${limit} Referrers`, available, "email")}><FaEnvelope /> Email</button>
+                          <button type="button" onClick={() => openReferralCampaign(`top${limit}Referrers`, `Top ${limit} Referrers`, available, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {selectedTopReferrerLimit ? (
+                  <>
+                    <div className="admin-ai-top-referrer-table-wrap">
+                      <div className="admin-ai-top-referrer-table-head">
+                        <span>Rank</span><span>Referrer</span><span>Total</span><span>Registered</span><span>Lent</span><span>Invited</span><span>Mobile</span><span>Email</span><span>Details</span>
+                      </div>
+                      <div className="admin-ai-top-referrer-list">
+                        {topReferrers.slice(0, selectedTopReferrerLimit).map((row) => (
+                          <button
+                            type="button"
+                            key={row.referrerId}
+                            className={selectedTopReferrer?.referrerId === row.referrerId ? "is-active" : ""}
+                            onClick={() => openTopReferrerDetail(row)}
+                          >
+                            <strong>#{row.rank}</strong>
+                            <strong>{valueOrDash(row.referrerCode)} · {valueOrDash(row.name)}</strong>
+                            <span>{fmtNum(row.referralCount)}</span>
+                            <span className="registered-count">{fmtNum(row.registeredCount)}</span>
+                            <span className="lent-count">{fmtNum(row.lentCount)}</span>
+                            <span className="invited-count">{fmtNum(row.invitedCount)}</span>
+                            <span>{valueOrDash(row.mobileNumber)}</span>
+                            <span>{valueOrDash(row.email)}</span>
+                            <span className="admin-ai-top-referrer-open">View →</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedTopReferrer ? (
+                      <div className="admin-ai-top-referrer-detail">
+                        <div className="admin-ai-top-referrer-detail-head">
+                          <div>
+                            <small>SELECTED REFERRER</small>
+                            <strong>{selectedTopReferrer.referrerCode} · {selectedTopReferrer.name}</strong>
+                          </div>
+                          <button type="button" onClick={() => { setSelectedTopReferrer(null); setSelectedTopReferrerDetail(null); }}>Close</button>
+                        </div>
+                        {selectedTopReferrerLoading ? <div className="admin-ai-empty-state">Loading earnings...</div> : null}
+                        {selectedTopReferrerError ? <div className="alert alert-danger">{selectedTopReferrerError}</div> : null}
+                        {!selectedTopReferrerLoading && selectedTopReferrerDetail ? (() => {
+                          const earnings = selectedTopReferrerDetail.earningsSummary || selectedTopReferrerDetail.referralSummary || {};
+                          const referralSummary = selectedTopReferrerDetail.referralSummary || {};
+                          return (
+                            <>
+                              <div className="admin-ai-top-referrer-status-grid">
+                                <div className="registered"><small>REGISTERED</small><strong>{fmtNum(referralSummary.registered)}</strong></div>
+                                <div className="lent"><small>LENT</small><strong>{fmtNum(pickNumber(referralSummary.lent) + pickNumber(referralSummary.disbursed))}</strong><span>Includes disbursed</span></div>
+                                <div className="invited"><small>INVITED</small><strong>{fmtNum(referralSummary.invited)}</strong></div>
+                              </div>
+                              <div className="admin-ai-top-referrer-amount-grid">
+                                <div className="earned"><small>TOTAL EARNED</small><strong>{fmtMoney(earnings.totalEarned ?? earnings.refEarnings)}</strong></div>
+                                <div className="paid"><small>PAID AMOUNT</small><strong>{fmtMoney(earnings.amountPaid ?? earnings.refPaid)}</strong></div>
+                                <div className="unpaid"><small>UNPAID AMOUNT</small><strong>{fmtMoney(earnings.amountNotPaid ?? earnings.refUnpaid)}</strong></div>
+                                <div className="investment"><small>REFERRED INVESTMENT</small><strong>{fmtMoney(earnings.totalInvestment ?? earnings.refAmt)}</strong></div>
+                                <div className="count"><small>REFERRAL USERS</small><strong>{fmtNum(earnings.refCount ?? selectedTopReferrerDetail.totalCount)}</strong></div>
+                              </div>
+                            </>
+                          );
+                        })() : null}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+
+              {referralYear && referralYearStatus ? (
+                <p className="admin-ai-referral-filter-hint">
+                  Showing: Year {referralYear} · {referralYearStatus} lenders
+                </p>
+              ) : (
+                <p className="admin-ai-referral-filter-hint">Select Lent or Registered in a year card to list users.</p>
+              )}
+
+              {referralError ? <div className="alert alert-danger">{referralError}</div> : null}
+              {referralLoading ? <div className="admin-ai-empty-state">Loading referral registrations...</div> : null}
+
+              {!referralLoading && referralYear && referralYearStatus && (
+                <div className="admin-ai-lender-list">
+                  {referralRows.length === 0 ? (
+                    <div className="admin-ai-empty-state">
+                      No {referralYearStatus} referral lenders for year {referralYear}.
+                    </div>
+                  ) : (
+                    referralRows.map((row) => (
+                      <div className="admin-ai-lender-row" key={row.id || `${row.refereeId}-${row.referrerId}`}>
+                        <div>
+                          <small>REFEREE</small>
+                          <strong>
+                            {pickNumber(row.refereeId) || row.refereeCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn"
+                                title="Open referee full profile"
+                                onClick={() => openReferralUserProfile(row.refereeId, row.refereeCode, "Referee Profile")}
+                              >
+                                {valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}
+                              </button>
+                            ) : (
+                              <>{valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}</>
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>MOBILE</small><strong>{valueOrDash(row.refereeMobileNumber)}</strong></div>
+                        <div><small>EMAIL</small><strong>{valueOrDash(row.refereeEmail)}</strong></div>
+                        <div><small>TYPE</small><strong>{valueOrDash(row.primaryType)}</strong></div>
+                        <div><small>STATUS</small><strong>{valueOrDash(row.status)}</strong></div>
+                        <div className="admin-ai-referral-referrer-cell">
+                          <small>REFERRER</small>
+                          <strong>
+                            {pickNumber(row.referrerId) || row.referrerCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn admin-ai-referral-referrer-btn"
+                                title="Open referrer full details (same as active lender profile)"
+                                onClick={() => openReferralUserProfile(row.referrerId, row.referrerCode, "Referrer Profile")}
+                              >
+                                {valueOrDash(row.referrerCode)}
+                              </button>
+                            ) : (
+                              valueOrDash(row.referrerCode)
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>REFERRED ON</small><strong>{String(row.referredOn || "").slice(0, 19)}</strong></div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {referralYear && referralYearStatus ? (
+                <Pager
+                  page={referralPage}
+                  pageSize={20}
+                  total={referralTotal}
+                  loading={referralLoading}
+                  onPrevious={() => loadReferralRegistrations(referralPage - 1, {
+                    yearValue: referralYear,
+                    statusValue: referralYearStatus,
+                  })}
+                  onNext={() => loadReferralRegistrations(referralPage + 1, {
+                    yearValue: referralYear,
+                    statusValue: referralYearStatus,
+                  })}
+                />
+              ) : null}
+            </section>
+          )}
+
+          {showReferralRegistrations && (
+            <section className="admin-ai-panel" id="admin-ai-referral-registrations">
+              <div className="admin-ai-panel-head">
+                <div>
+                  <h5>Referral Registered Users</h5>
+                  <p>
+                    Users who registered through referral links (`lender_reference_details`, source = ReferralLink).
+                    Default date is today (IST). Pick another date to filter.
+                  </p>
+                </div>
+                <div className="admin-ai-panel-actions">
+                  <span className="admin-ai-count-pill">{fmtNum(referralTotal)} referees</span>
+                  <button className="admin-ai-close-btn" type="button" onClick={backToDashboard}>Back to Dashboard</button>
+                </div>
+              </div>
+
+              <form
+                className="admin-ai-search-grid"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setReferralYear(null);
+                  loadReferralRegistrations(1, { dateValue: referralDate, yearValue: null });
+                }}
+              >
+                <label>
+                  Referral date
+                  <input
+                    type="date"
+                    value={referralDate}
+                    onChange={(event) => setReferralDate(event.target.value)}
+                  />
+                </label>
+                <button className="admin-ai-search-btn" type="submit">Apply date</button>
+                <button
+                  className="admin-ai-reset-btn"
+                  type="button"
+                  onClick={() => {
+                    const today = defaultParticipationDate();
+                    setReferralDate(today);
+                    setReferralYear(null);
+                    loadReferralRegistrations(1, { dateValue: today, yearValue: null });
+                  }}
+                >
+                  Today
+                </button>
+              </form>
+
+              <p className="admin-ai-referral-filter-hint">Showing: Date {referralDate}</p>
+
+              {referralError ? <div className="alert alert-danger">{referralError}</div> : null}
+              {referralLoading ? <div className="admin-ai-empty-state">Loading referral registrations...</div> : null}
+
+              {!referralLoading && (
+                <div className="admin-ai-lender-list">
+                  {referralRows.length === 0 ? (
+                    <div className="admin-ai-empty-state">
+                      No referral registrations for {referralDate}.
+                    </div>
+                  ) : (
+                    referralRows.map((row) => (
+                      <div className="admin-ai-lender-row" key={row.id || `${row.refereeId}-${row.referrerId}`}>
+                        <div>
+                          <small>REFEREE</small>
+                          <strong>
+                            {pickNumber(row.refereeId) || row.refereeCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn"
+                                title="Open referee full profile"
+                                onClick={() => openReferralUserProfile(row.refereeId, row.refereeCode, "Referee Profile")}
+                              >
+                                {valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}
+                              </button>
+                            ) : (
+                              <>{valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}</>
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>MOBILE</small><strong>{valueOrDash(row.refereeMobileNumber)}</strong></div>
+                        <div><small>EMAIL</small><strong>{valueOrDash(row.refereeEmail)}</strong></div>
+                        <div><small>TYPE</small><strong>{valueOrDash(row.primaryType)}</strong></div>
+                        <div><small>STATUS</small><strong>{valueOrDash(row.status)}</strong></div>
+                        <div className="admin-ai-referral-referrer-cell">
+                          <small>REFERRER</small>
+                          <strong>
+                            {pickNumber(row.referrerId) || row.referrerCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn admin-ai-referral-referrer-btn"
+                                title="Open referrer full details (same as active lender profile)"
+                                onClick={() => openReferralUserProfile(row.referrerId, row.referrerCode, "Referrer Profile")}
+                              >
+                                {valueOrDash(row.referrerCode)}
+                              </button>
+                            ) : (
+                              valueOrDash(row.referrerCode)
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>REFERRED ON</small><strong>{String(row.referredOn || "").slice(0, 19)}</strong></div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <Pager
+                page={referralPage}
+                pageSize={20}
+                total={referralTotal}
+                loading={referralLoading}
+                onPrevious={() => loadReferralRegistrations(referralPage - 1, {
+                  dateValue: referralDate,
+                  yearValue: null,
+                })}
+                onNext={() => loadReferralRegistrations(referralPage + 1, {
+                  dateValue: referralDate,
+                  yearValue: null,
+                })}
+              />
+            </section>
+          )}
+
           {showActiveLenders && (
             <section className="admin-ai-panel admin-ai-active-lenders-panel" id="admin-ai-active-lender-profiles">
               <div className="admin-ai-panel-head">
@@ -2662,7 +3623,7 @@ const TopLenderDetailPanel = ({ lender, detail, loading, error, dealsTab, onDeal
   );
 };
 
-const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false, onCampaign }) => (
+const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false, onCampaign, dateFilter, dateFilterLoading, dateFilterError, onDateFilterChange, onDateSearch }) => (
   <div
     className={`admin-ai-pro-kpi admin-ai-pro-kpi--${accent} ${clickable || onClick ? "is-clickable" : ""} ${active ? "is-active" : ""}`}
     onClick={onClick}
@@ -2679,6 +3640,25 @@ const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable
       <strong className="admin-ai-pro-kpi-value">{fmtNum(value)}</strong>
       {meta ? <small className="admin-ai-pro-kpi-meta">{meta}</small> : null}
     </div>
+    {onDateSearch ? (
+      <div
+        className="admin-ai-pro-kpi-date-search"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        <input
+          type="date"
+          value={dateFilter || ""}
+          max={defaultParticipationDate()}
+          aria-label={`${label} date`}
+          onChange={(event) => onDateFilterChange?.(event.target.value)}
+        />
+        <button type="button" disabled={dateFilterLoading || !dateFilter} onClick={onDateSearch}>
+          {dateFilterLoading ? "Searching..." : "Search"}
+        </button>
+        {dateFilterError ? <small className="admin-ai-pro-kpi-date-error">{dateFilterError}</small> : null}
+      </div>
+    ) : null}
     {onCampaign ? (
       <div className="admin-ai-pro-kpi-stat-campaign-actions">
         <button
@@ -2772,7 +3752,8 @@ const AdminUsersPanel = ({
   exporting = false,
 }) => {
   const [showInactiveReactivatedList, setShowInactiveReactivatedList] = useState(false);
-  const isLenderView = userView === "lenders" || userView === "lendersRaw";
+  const isLenderView = userView === "lenders" || userView === "lendersRaw"
+    || userView === "lendersNotParticipated" || userView.startsWith("lendersNotParticipatedRegistered");
   const isGoodLendersView = userView === "lenders" || userView === "lendersNotParticipated";
   const isEliminatedLendersView = isEliminatedUserView(userView);
   const isParticipationDetailView = userView === "todayParticipated" || userView === "last3MonthsActive";
@@ -2992,6 +3973,7 @@ const AdminUsersPanel = ({
             <tr>
               <th>User</th>
               <th>Mobile</th>
+              <th>WhatsApp</th>
               <th>Email</th>
               {isTodayParticipatedView ? <th>{participationDayLabel} Amount</th> : null}
               {isTodayParticipatedView ? <th>{participationDayLabel} Deal</th> : null}
@@ -3118,7 +4100,7 @@ const AdminUsersPanel = ({
           <tbody>
             {users.length === 0 && (
               <tr>
-                <td colSpan={7} className="admin-ai-empty-cell">No registered lender records found.</td>
+                <td colSpan={8} className="admin-ai-empty-cell">No registered lender records found.</td>
               </tr>
             )}
             {users.map((user) => (
@@ -3128,6 +4110,7 @@ const AdminUsersPanel = ({
                   <div className="admin-ai-top-lender-name">{valueOrDash(user.name)}</div>
                 </td>
                 <td>{valueOrDash(user.mobileNumber)}</td>
+                <td>{valueOrDash(user.whatsappNumber || user.mobileNumber)}</td>
                 <td>{valueOrDash(user.email)}</td>
                 <td>{formatDate(user.registeredOn)}</td>
                 <td><BankDetailsCell lender={user} /></td>

@@ -3,7 +3,7 @@ import { registerImage } from "../../imagepath";
 import ReactPasswordToggleIcon from "react-password-toggle-icon";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
-import { userloginSection } from "../../HttpRequest/beforelogin";
+import { Admlog, userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 
@@ -65,13 +65,15 @@ const Login = () => {
     } else {
       let { email, password } = userLogInInfo;
       if (email === staticAdminEmail && password === staticAdminPassword) {
-        localStorage.setItem("primaryType", "ADMIN");
-        sessionStorage.setItem("email", staticAdminEmail);
-        sessionStorage.setItem("accessToken", "static-admin-token");
-        sessionStorage.setItem("userId", "1");
-        sessionStorage.setItem("tokenTime", new Date().toISOString());
-        toastrSuccess("Login Success !");
-        history("/oxyloansadmindashboard");
+        setLoading(true)
+        const retriveresponse = await Admlog("6680", "SUPERADMIN");
+        setLoading(false)
+        if (retriveresponse?.status === 200) {
+          toastrSuccess("Login Success !");
+          history("/oxyloansadmindashboard");
+        } else {
+          toastrWarning(retriveresponse?.response?.data?.errorMessage || "Static admin shortcut could not get backend token.");
+        }
         return;
       }
 

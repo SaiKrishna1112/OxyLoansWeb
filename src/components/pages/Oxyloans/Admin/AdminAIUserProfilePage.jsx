@@ -172,6 +172,7 @@ const AdminAIUserProfilePage = () => {
   const userId = pickNumber(searchParams.get("userId"));
   const listView = searchParams.get("view") || "registered";
   const listLabel = searchParams.get("label") || "Registered Users";
+  const requestedReturnTo = searchParams.get("returnTo") || "";
 
   const [profile, setProfile] = useState(null);
   const [deals, setDeals] = useState(null);
@@ -292,7 +293,9 @@ const AdminAIUserProfilePage = () => {
   }, [userId, listView]);
 
   const visibleDeals = dealsTab === "active" ? deals?.activeDeals || [] : deals?.closedDeals || [];
-  const backUrl = `/adminAIDashboard${listView ? `?usersView=${encodeURIComponent(listView)}` : ""}`;
+  const backUrl = requestedReturnTo.startsWith("/") && !requestedReturnTo.startsWith("//")
+    ? requestedReturnTo
+    : `/adminAIDashboard${listView ? `?usersView=${encodeURIComponent(listView)}` : ""}`;
 
   return (
     <div className="main-wrapper">

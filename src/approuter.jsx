@@ -13,6 +13,7 @@ import AdminAIFeaturePage from "./components/pages/Oxyloans/Admin/AdminAIFeature
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
 import AdminAILenderAnalyticsLendersPage from "./components/pages/Oxyloans/Admin/AdminAILenderAnalyticsLendersPage";
 import AdminAIUserProfilePage from "./components/pages/Oxyloans/Admin/AdminAIUserProfilePage";
+import AdminAIReferralUsersPage from "./components/pages/Oxyloans/Admin/AdminAIReferralUsersPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
@@ -303,6 +304,7 @@ const AppRouter = () => {
         <Route path="/adminAICreatedDeals" element={<AdminAICreatedDealsPage />} />
         <Route path="/adminAILenderAnalytics" element={<AdminAILenderAnalyticsLendersPage />} />
         <Route path="/adminAIUserProfile" element={<AdminAIUserProfilePage />} />
+        <Route path="/adminAIReferralUsers" element={<AdminAIReferralUsersPage />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
 
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
