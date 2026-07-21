@@ -7,7 +7,7 @@ import "./InvoiceGrid.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
+import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -71,7 +71,6 @@ const Participatedeal = () => {
   const hasActiveOffer =
     deal.apidata &&
     !hasActiveSubscription &&
-    isMandatoryFeeDeal(deal.apidata) &&
     hasActiveReactivationOffer(deal.apidata);
   // First claim: offer applies only when amount meets minimum (₹10,000+)
   const offerAppliesNow =
