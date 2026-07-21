@@ -5,7 +5,7 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
-import { getToken, getUserId } from "../../../HttpRequest/afterlogin";
+import { getToken, getUserId, summaryFinancialEarnings, getFinancialReportDownload } from "../../../HttpRequest/afterlogin";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
@@ -581,18 +581,72 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
 };
 
 // ── EARNINGS PERIOD SUMMARY ────────────────────────────────────────────────
+const getFyDateRange = (fyFilter) => {
+  if (fyFilter.mode === "fy" && fyFilter.fyYear) {
+    const y = fyFilter.fyYear;
+    return { startDate: `${y}-04-01`, endDate: `${y + 1}-03-31` };
+  }
+  if (fyFilter.mode === "custom" && fyFilter.from && fyFilter.to) {
+    return { startDate: fyFilter.from, endDate: fyFilter.to };
+  }
+  return null;
+};
+
 const scrollTo = (id) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) => {
+const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter }) => {
+  const [dlLoading, setDlLoading] = useState({ pdf: false, excel: false, monthly: false });
+
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
   const principal = earningsData.fyPrincipalReturned || 0;
   const total     = earningsData.fyTotalReceived     || 0;
   const label     = earningsData.fyLabel             || "Period";
   const narrative = earningsData.narrative           || "";
+
+  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom");
+  const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
+
+  const dlBtnStyle = (color, disabled) => ({
+    padding: "5px 11px", borderRadius: 8, border: `1px solid ${color}`,
+    background: disabled ? "#f5f5f5" : "#fff", color: disabled ? "#aaa" : color,
+    cursor: disabled ? "default" : "pointer", fontSize: 12, fontWeight: 600,
+    display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
+  });
+
+  const downloadPdf = async () => {
+    if (!dateRange) return;
+    setDlLoading(s => ({ ...s, pdf: true }));
+    try {
+      const res = await summaryFinancialEarnings({ startDate: dateRange.startDate, endDate: dateRange.endDate, inputType: "DOWNLOAD", status: "dealsum" });
+      if (res?.data) {
+        const link = document.createElement("a");
+        link.href = res.data;
+        link.setAttribute("download", "");
+        link.setAttribute("target", "_blank");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (e) { console.error("PDF download error", e); }
+    finally { setDlLoading(s => ({ ...s, pdf: false })); }
+  };
+
+  const downloadExcel = async (status) => {
+    if (!dateRange) return;
+    const key = status === "dealsumMonthly" ? "monthly" : "excel";
+    setDlLoading(s => ({ ...s, [key]: true }));
+    try {
+      const res = await getFinancialReportDownload(dateRange.startDate, dateRange.endDate, "DOWNLOAD", status);
+      if (res?.data?.lenderProfit) {
+        window.open(res.data.lenderProfit, "_blank");
+      }
+    } catch (e) { console.error("Excel download error", e); }
+    finally { setDlLoading(s => ({ ...s, [key]: false })); }
+  };
 
   return (
     <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative" }}>
@@ -602,8 +656,23 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) =
           Refreshing
         </div>
       )}
-      <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e", marginBottom: 6 }}>
-        {label} Earnings Summary
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e" }}>
+          {label} Earnings Summary
+        </div>
+        {showDownloads && dateRange && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button onClick={downloadPdf} disabled={dlLoading.pdf} style={dlBtnStyle("#1890ff", dlLoading.pdf)}>
+              {dlLoading.pdf ? "…" : "⬇ PDF"}
+            </button>
+            <button onClick={() => downloadExcel("dealsum")} disabled={dlLoading.excel} style={dlBtnStyle("#52c41a", dlLoading.excel)}>
+              {dlLoading.excel ? "…" : "⬇ Excel"}
+            </button>
+            <button onClick={() => downloadExcel("dealsumMonthly")} disabled={dlLoading.monthly} style={dlBtnStyle("#faad14", dlLoading.monthly)}>
+              {dlLoading.monthly ? "…" : "⬇ MonthWise"}
+            </button>
+          </div>
+        )}
       </div>
       <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
       <div className="row g-3 mb-3">
@@ -1921,7 +1990,7 @@ const LenderPortfolioDashboard = () => {
                       defaultOpen={true}
                       summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
                     >
-                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} />
                     </SectionCard>
                   )}
 
