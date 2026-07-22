@@ -828,7 +828,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         showFoot: "lastPage",
         styles: { fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 }, valign: "middle" },
         headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, halign: "center" },
-        footStyles: { fillColor: [200, 225, 255], textColor: [0, 0, 80], fontStyle: "bold", fontSize: 7.5 },
+        footStyles: { fillColor: [200, 225, 255], textColor: [0, 0, 80], fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 } },
         alternateRowStyles: { fillColor: [240, 246, 255] },
         columnStyles: {
           0: { cellWidth: 46,  halign: "center" },
@@ -873,7 +873,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         showFoot: "lastPage",
         styles: { fontSize: 8, cellPadding: 3.5, valign: "middle" },
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", halign: "center" },
-        footStyles: { fillColor: LGTEAL, textColor: [0, 60, 50], fontStyle: "bold" },
+        footStyles: { fillColor: LGTEAL, textColor: [0, 60, 50], fontStyle: "bold", cellPadding: 3.5 },
         alternateRowStyles: { fillColor: [240, 250, 249] },
         columnStyles: {
           0: { cellWidth: 100 },
