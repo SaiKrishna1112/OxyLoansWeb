@@ -47,6 +47,18 @@ const MarketplaceEsign = () => {
   };
 
   useEffect(() => {
+    // Preserve authentication state when returning from external eSign redirect
+    const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    if (token) {
+      sessionStorage.setItem("accessToken", token);
+      localStorage.setItem("accessToken", token);
+    }
+    if (userId) {
+      sessionStorage.setItem("userId", userId);
+      localStorage.setItem("userId", userId);
+    }
+
     document.body.classList.add("oxy-redesign-active");
     if (verificationId) {
       handleVerifyCompletion();
@@ -76,7 +88,12 @@ const MarketplaceEsign = () => {
         setRedirectUrl(url);
         setStep("redirect");
         
-        // Try to open it in the same window/tab to ensure redirection back to /esign/:id works
+        // Ensure session tokens are stored in localStorage before top-level navigation
+        const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+        const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+        if (token) localStorage.setItem("accessToken", token);
+        if (userId) localStorage.setItem("userId", userId);
+
         window.open(url, "_self");
       } else {
         const msg = res?.data?.message || "Failed to start eSign. Cashfree API did not return redirect URL.";
@@ -217,7 +234,7 @@ const MarketplaceEsign = () => {
                       <i className="fa-solid fa-signature"></i>
                       Proceed to eSign
                     </button>
-                    <Link to="/my-marketplace-loans" className="oxy-btn-secondary">
+                    <Link to="/borrowerLoansInitiated" className="oxy-btn-secondary">
                       Cancel
                     </Link>
                   </div>
@@ -298,7 +315,7 @@ const MarketplaceEsign = () => {
                       Proceed to eNACH Setup
                       <i className="fa-solid fa-arrow-right"></i>
                     </button>
-                    <Link to="/my-marketplace-loans" className="oxy-btn-secondary">
+                    <Link to="/borrowerLoansInitiated" className="oxy-btn-secondary">
                       View My Loans
                     </Link>
                   </div>

@@ -82,7 +82,7 @@ axios.interceptors.response.use(
 );
 
 export const getToken = () => {
-  return sessionStorage.getItem("accessToken");
+  return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
 };
 export const base_url=API_BASE_URL;
 
@@ -4161,6 +4161,7 @@ export const completeCashfreeEsign = async (loanRequestId) => {
     {
       headers: {
         "Content-Type": "application/json",
+        accessToken: token,
         accesstoken: token,
       },
     }
@@ -4234,6 +4235,19 @@ export const cancelCashfreeEnach = async (mandateId) => {
     }
   );
 };
+
+export const getenachStatus = async (loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.get(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/borrowerLoanEnachStatus`,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+}
 
 export const adminReverseFalsePaidEmi = async (emiCardId, reason = "false paid without debit", force = "false") => {
   const token = getToken();

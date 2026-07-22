@@ -507,7 +507,37 @@ const BorrowerLoanRequestCreate = () => {
           {/* Fee Configuration Info */}
           <FeeConfigInfo />
 
-          {isFormBlockedByStatus ? (
+          {eligibleErrorMessage ? (
+            <div className="row">
+              <div className="col-12">
+                <div
+                  className="rounded-3 p-5 text-center"
+                  style={{
+                    background: "#fff5f5",
+                    border: "1.5px solid #f5c6cb",
+                  }}
+                >
+                  <div style={{ fontSize: 42, marginBottom: 12 }}>⚠️</div>
+                  <h4
+                    className="fw-bold mb-2"
+                    style={{ color: "#721c24" }}
+                  >
+                    Verification Required / Pending
+                  </h4>
+                  <p className="text-muted mb-4 mx-auto" style={{ fontSize: 14, maxWidth: 500, lineHeight: "1.6" }}>
+                    {eligibleErrorMessage}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-danger px-4 py-2 fw-semibold"
+                    onClick={() => navigate("/borrowerProfile")}
+                  >
+                    Go to Borrower Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : isFormBlockedByStatus ? (
             <div className="row">
               <div className="col-12">
                 <div

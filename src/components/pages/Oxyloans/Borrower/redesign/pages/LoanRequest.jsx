@@ -11,7 +11,6 @@ import {
   getUserId,
   submitBorrowerLoanRequest,
   getBorrowerRequestAmount,
-  getCibilBasedRoi,
   getUserDetails,
 } from "../../../../../HttpRequest/afterlogin";
 import FeeConfigInfo from "../../FeeConfigInfo";
@@ -21,6 +20,7 @@ const LoanRequest = () => {
   const navigate = useNavigate();
   const [requestAmount, setRequestAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [oxyscore,setOxyScore]=useState()
   
   const [eligibleAmount, setEligibleAmount] = useState({
     amount: null,
@@ -60,6 +60,9 @@ const LoanRequest = () => {
       }
     };
     fetchCibilRoi();
+    getUserDetails().then(res=>{
+      setOxyScore(res.data.profileScore)
+    })
   }, [borrowerId]);
 
   useEffect(() => {
@@ -74,7 +77,8 @@ const LoanRequest = () => {
       setEligibleErrorMessage("");
       try {
         const response = await getBorrowerEligibleAmount();
-        if (response?.status === 200) {
+        const status = response?.status ?? response?.request?.status;
+        if (status === 200) {
           const limitAmount = Number(response?.data?.amount ?? 0);
           const processingFee = Number(response?.data?.processingfee ?? 0);
           const verifiedMonthlyIncome = Number(response?.data?.verifiedMonthlyIncome ?? 0);
@@ -84,10 +88,22 @@ const LoanRequest = () => {
             verifiedMonthlyIncome: isNaN(verifiedMonthlyIncome) ? 0 : verifiedMonthlyIncome,
           });
         } else {
-          setEligibleErrorMessage("Unable to fetch your eligible amount. Please try again.");
+          const apiErrorMsg =
+            response?.data?.errorMessage ||
+            response?.response?.data?.errorMessage ||
+            response?.data?.message ||
+            "Unable to fetch your eligible amount. Please try again.";
+          setEligibleErrorMessage(apiErrorMsg);
         }
       } catch (error) {
-        setEligibleErrorMessage("Unable to fetch your eligible amount. Please try again.");
+        const apiErrorMsg =
+          error?.response?.data?.errorMessage ||
+          error?.data?.errorMessage ||
+          error?.response?.data?.message ||
+          error?.data?.message ||
+          error?.message ||
+          "Unable to fetch your eligible amount. Please try again.";
+        setEligibleErrorMessage(apiErrorMsg);
       }
       setIsEligibleLoading(false);
     };
@@ -265,15 +281,31 @@ const LoanRequest = () => {
               <div className="oxy-card mb-0 h-100 border-start border-secondary border-3" style={{ padding: "16px 20px" }}>
                 <span className="text-muted d-block small mb-1 uppercase text-uppercase">Oxy Score</span>
                 <h5 className="fw-bold text-dark mb-0">
-                  {cibilInfo.loading ? "..." : cibilInfo.data?.roi != null ? `${cibilInfo.data.cibilScore}` : "—"}
+                  {cibilInfo.loading ? "..." : oxyscore != null ? `${oxyscore}` : "—"}
                 </h5>
               </div>
             </div> 
           </div>
 
-          <div className="row g-4">
+          <div className="align-items-center justify-content-center">
             <div className="col-lg-8">
-              {isFormBlockedByStatus ? (
+              {eligibleErrorMessage ? (
+                <div className="oxy-card text-center py-5">
+                  <div 
+                    className="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-4"
+                    style={{ width: "64px", height: "64px", backgroundColor: "#fef2f2", color: "#dc2626" }}
+                  >
+                    <i className="fa-solid fa-triangle-exclamation fa-xl"></i>
+                  </div>
+                  <h5 className="fw-bold text-dark mb-2">Admin Verification Pending</h5>
+                  <p className="text-muted small mb-4 mx-auto" style={{ maxWidth: "480px", lineHeight: "1.6" }}>
+                    {eligibleErrorMessage}
+                  </p>
+                  <button className="oxy-btn-primary btn-danger text-white" onClick={() => navigate("/borrowerProfile")}>
+                    Go to Borrower Profile
+                  </button>
+                </div>
+              ) : isFormBlockedByStatus || (maxLimit) === 0 ? (
                 <div className="oxy-card text-center py-5">
                   <div 
                     className="d-flex align-items-center justify-content-center rounded-circle mx-auto mb-4 bg-primary bg-opacity-10 text-primary"
@@ -291,12 +323,12 @@ const LoanRequest = () => {
                 </div>
               ) : (
                 <div className="oxy-card">
+                  
                   <h5 className="fw-bold mb-3">Request Loan Amount</h5>
                   <span className="text-muted small d-block mb-4">
                     Please key in the amount you would like to raise. We will share this request with our lender group.
                   </span>
-
-                  {requestStatusInfo.status === "PARTIALLYPROCESSING" && (
+                  {requestStatusInfo.status === "PARTIALLYPROCESSING" && !(maxLimit) === 0 &&(
                     <div className="alert alert-info py-2 px-3 small mb-4">
                       <i className="fa-solid fa-circle-info me-2"></i>
                       You have an active request of <strong>{formatCurrency(requestStatusInfo.requestAmount)}</strong> in <strong>PARTIALLY_PROCESSING</strong> status (with <strong>{formatCurrency(requestStatusInfo.pendingAmount)}</strong> still pending match). You can apply for a new loan request for the remaining unused limit: <strong>{formatCurrency(maxLimit)}</strong>.
@@ -307,13 +339,15 @@ const LoanRequest = () => {
                     <div className="alert alert-danger py-2 px-3 small mb-4">{eligibleErrorMessage}</div>
                   )}
 
+                  
+
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                       <label className="form-label text-muted small uppercase text-uppercase">Required Amount (₹)</label>
                       <input 
                         type="number" 
                         className="form-control rounded-3 py-3" 
-                        min="1000"
+                        min="5000"
                         max={maxLimit || undefined}
                         value={requestAmount} 
                         placeholder="e.g. 50000" 
@@ -351,7 +385,7 @@ const LoanRequest = () => {
               )}
             </div>
 
-            <div className="col-lg-4">
+            <div className="col-lg-8">
               <FeeConfigInfo />
             </div>
           </div>

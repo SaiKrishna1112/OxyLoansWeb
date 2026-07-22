@@ -45,6 +45,13 @@ import {
 import LoadingState from "../components/LoadingState";
 import "../redesign.css";
 import { Button } from "antd";
+import {
+  validateBorrowerPersonalDetails,
+  validateBankAccountNumber,
+  validateIfscCode,
+  isBankNameMatching,
+  validateMobileNumber,
+} from "../../../../../../utils/borrowerValidation";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -474,12 +481,40 @@ const Profile = () => {
 
   const handleprofileInput = (e) => {
     const { name, value } = e.target;
-    setProfileData((prev) => ({ ...prev, [name]: value }));
+    let sanitizedValue = value;
+
+    if (name === "firstName" || name === "lastName" || name === "fatherName" || name === "city" || name === "state") {
+      sanitizedValue = value.replace(/[^a-zA-Z\s.-]/g, "");
+    } else if (name === "whatsAppNumber") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
+    } else if (name === "pinCode") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 6);
+    } else if (name === "workExperience") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 2);
+    } else if (name === "panNumber") {
+      sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+    } else if (name === "aadharNumber") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 12);
+    }
+
+    setProfileData((prev) => ({ ...prev, [name]: sanitizedValue }));
   };
 
   const handleBankInput = (e) => {
     const { name, value } = e.target;
-    setBankaccount((prev) => ({ ...prev, [name]: value }));
+    let sanitizedValue = value;
+
+    if (name === "accountNumber" || name === "confirmAccountNumber") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 18);
+    } else if (name === "ifscCode") {
+      sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
+    } else if (name === "moblieNumber") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
+    } else if (name === "mobileOtp") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 6);
+    }
+
+    setBankaccount((prev) => ({ ...prev, [name]: sanitizedValue }));
     if (name === "accountNumber" || name === "confirmAccountNumber" || name === "ifscCode") {
       setIsBankVerified(false);
     }
@@ -577,8 +612,10 @@ const Profile = () => {
 
   // Save Personal Details form
   const savePersonalDetails = async () => {
-    if (!profileData.firstName || !profileData.dob || !profileData.panNumber) {
-      Swal.fire("Missing Fields", "Please complete all mandatory personal fields.", "warning");
+    // Run comprehensive borrower validation rules
+    const validationResult = validateBorrowerPersonalDetails(profileData, category);
+    if (!validationResult.valid) {
+      Swal.fire("Validation Error", validationResult.message, "warning");
       return;
     }
 
@@ -692,13 +729,20 @@ const Profile = () => {
   }, [editSection, verifiedBankAccount, profileData.bankDetailsInfo]);
 
   const verifyBankDetails = async () => {
-    if (!bankaccount.accountNumber || !bankaccount.confirmAccountNumber || !bankaccount.ifscCode) {
-      Swal.fire("Missing Info", "Account Number, Confirm Account Number, and IFSC Code are required to verify.", "warning");
+    const accCheck = validateBankAccountNumber(bankaccount.accountNumber);
+    if (!accCheck.valid) {
+      Swal.fire("Validation Error", accCheck.message, "warning");
       return;
     }
 
     if (bankaccount.accountNumber !== bankaccount.confirmAccountNumber) {
       Swal.fire("Validation Error", "Account numbers do not match!", "warning");
+      return;
+    }
+
+    const ifscCheck = validateIfscCode(bankaccount.ifscCode);
+    if (!ifscCheck.valid) {
+      Swal.fire("Validation Error", ifscCheck.message, "warning");
       return;
     }
 
@@ -709,15 +753,29 @@ const Profile = () => {
       if (status === 200) {
         const resData = response.data;
         if (resData.accountStatus === "VALID") {
+          const nameAtBank = resData?.nameAtBank || bankaccount.nameAtBank || "";
+          const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+
+          // Check if Bank Account Holder Name matches Borrower Full Name
+          if (nameAtBank && borrowerFullName && !isBankNameMatching(nameAtBank, borrowerFullName)) {
+            Swal.fire(
+              "Bank Account Name Mismatch",
+              `Bank Account Holder Name ("${nameAtBank}") does NOT match Borrower Profile Name ("${borrowerFullName}"). Bank account must belong to the borrower.`,
+              "error"
+            );
+            setIsBankVerified(false);
+            return;
+          }
+
           Swal.fire("Verified", "Bank Account & IFSC verified successfully via Cashfree.", "success");
           setIsBankVerified(true);
           console.log("Bank Verification Response:", resData);
           setBankaccount((prev) => ({
             ...prev,
-            nameAtBank: resData?.nameAtBank || "",
-            bankName: resData?.bankName || "",
-            bankCity: resData?.city || "",
-            branchName: resData?.branch || "",
+            nameAtBank: nameAtBank,
+            bankName: resData?.bankName || prev.bankName || "",
+            bankCity: resData?.city || prev.bankCity || "",
+            branchName: resData?.branch || prev.branchName || "",
           }));
         } else {
           Swal.fire("Verification Failed", resData.message || "Failed to verify bank details. Please check your details.", "warning");
@@ -743,29 +801,19 @@ const Profile = () => {
       return;
     }
 
-    console.log("Bank Details for OTP:", bankaccount);
-
-    if (
-      !bankaccount.accountNumber ||
-      !bankaccount.confirmAccountNumber ||
-      !bankaccount.ifscCode ||
-      !bankaccount.bankName ||
-      !bankaccount.branchName ||
-      !bankaccount.nameAtBank ||
-      !bankaccount.bankCity ||
-      !bankaccount.moblieNumber
-    ) {
-      Swal.fire("Missing Info", "Please fill all bank details before requesting OTP.", "warning");
+    const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+    if (bankaccount.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccount.nameAtBank, borrowerFullName)) {
+      Swal.fire(
+        "Bank Account Name Mismatch",
+        `Bank Account Holder Name ("${bankaccount.nameAtBank}") does NOT match Borrower Profile Name ("${borrowerFullName}"). Bank account must belong to the borrower.`,
+        "error"
+      );
       return;
     }
 
-    if (bankaccount.accountNumber !== bankaccount.confirmAccountNumber) {
-      Swal.fire("Validation Error", "Account numbers do not match!", "warning");
-      return;
-    }
-
-    if (bankaccount.moblieNumber.length !== 10) {
-      Swal.fire("Validation Error", "Please enter a valid 10-digit mobile number.", "warning");
+    const phoneCheck = validateMobileNumber(bankaccount.moblieNumber, "Mobile Number");
+    if (!phoneCheck.valid) {
+      Swal.fire("Validation Error", phoneCheck.message, "warning");
       return;
     }
 
@@ -798,22 +846,19 @@ const Profile = () => {
       return;
     }
 
-    if (
-      !bankaccount.accountNumber ||
-      !bankaccount.confirmAccountNumber ||
-      !bankaccount.ifscCode ||
-      !bankaccount.bankName ||
-      !bankaccount.branchName ||
-      !bankaccount.nameAtBank ||
-      !bankaccount.bankCity ||
-      !bankaccount.moblieNumber
-    ) {
-      Swal.fire("Missing Info", "All bank details fields are mandatory.", "warning");
+    const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+    if (bankaccount.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccount.nameAtBank, borrowerFullName)) {
+      Swal.fire(
+        "Bank Account Name Mismatch",
+        `Bank Account Holder Name ("${bankaccount.nameAtBank}") does NOT match Borrower Profile Name ("${borrowerFullName}"). Bank account must belong to the borrower.`,
+        "error"
+      );
       return;
     }
 
-    if (bankaccount.accountNumber !== bankaccount.confirmAccountNumber) {
-      Swal.fire("Validation Error", "Account numbers do not match!", "warning");
+    const phoneCheck = validateMobileNumber(bankaccount.moblieNumber, "Mobile Number");
+    if (!phoneCheck.valid) {
+      Swal.fire("Validation Error", phoneCheck.message, "warning");
       return;
     }
 
@@ -954,6 +999,10 @@ const Profile = () => {
                         {!profileData.bankDetailsInfo ? (
                           <span className="badge px-3 py-1.5 rounded text-dark font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#ffd60a", fontSize: "12px" }}>
                             <i className="fa-solid fa-triangle-exclamation"></i> Bank Pending
+                          </span>
+                        ) : verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, `${profileData.firstName} ${profileData.lastName}`.trim()) ? (
+                          <span className="badge px-3 py-1.5 rounded text-white font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#dc3545", fontSize: "12px" }}>
+                            <i className="fa-solid fa-triangle-exclamation"></i> Name Mismatch
                           </span>
                         ) : (
                           <span className="badge px-3 py-1.5 rounded text-white font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#38b000", fontSize: "12px" }}>
@@ -1107,9 +1156,22 @@ const Profile = () => {
                               </div>
                               <div className="col-6">
                                 <span className="bank-grid-label">Account Holder - </span>
-                                <span className="bank-grid-value text-uppercase">{verifiedBankAccount.nameAtBank}</span>
+                                <span className={`bank-grid-value text-uppercase ${verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, `${profileData.firstName} ${profileData.lastName}`.trim()) ? "text-danger fw-bold" : ""}`}>
+                                  {verifiedBankAccount.nameAtBank}
+                                </span>
                               </div>
                             </div>
+                            {verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, `${profileData.firstName} ${profileData.lastName}`.trim()) && (
+                              <div
+                                className="mt-3 p-3 rounded-3 small fw-semibold d-flex align-items-center gap-2"
+                                style={{ backgroundColor: "#fff5f5", color: "#d9534f", border: "1px solid #f5c6cb" }}
+                              >
+                                <i className="fa-solid fa-triangle-exclamation fs-6 me-1" style={{ color: "#d9534f" }}></i>
+                                <div>
+                                  <strong>Name Mismatch Warning:</strong> Bank Account Holder ("{verifiedBankAccount.nameAtBank}") does not match Borrower Name ("{`${profileData.firstName} ${profileData.lastName}`.trim()}"). Please edit bank info to link an account registered in your own name.
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <p className="text-muted mb-0 small">No bank account linked. Add one to enable withdrawals.</p>

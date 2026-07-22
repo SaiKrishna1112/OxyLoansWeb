@@ -30,6 +30,18 @@ const MarketplaceEnach = () => {
   const pollIntervalRef = useRef(null);
 
   useEffect(() => {
+    // Preserve authentication state when returning from external eNACH redirect
+    const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    if (token) {
+      sessionStorage.setItem("accessToken", token);
+      localStorage.setItem("accessToken", token);
+    }
+    if (userId) {
+      sessionStorage.setItem("userId", userId);
+      localStorage.setItem("userId", userId);
+    }
+
     document.body.classList.add("oxy-redesign-active");
     fetchMandates();
     return () => {
@@ -137,7 +149,7 @@ const MarketplaceEnach = () => {
         const data = res.data;
         setStatusResponse(data);
         
-        if (data.subscription_status === "ACTIVE" || data.status === "ACTIVE" || data.status === "SUCCESS") {
+        if (data.subscription_status === "ACTIVE") {
           stopPolling();
           setStep("success");
           Swal.fire({

@@ -55,6 +55,30 @@ const StatusBadge = ({ status }) => {
     uiText = "Completed";
     badgeClass = "oxy-badge-primary";
     iconClass = "fa-solid fa-circle-check";
+  } else if (norm === "INITIATED") {
+    uiText = "INITIATED";
+    badgeClass = "oxy-badge-primary";
+    iconClass = "fa-solid fa-clock";
+  } else if (norm === "BANK_APPROVAL_PENDING" || norm === "BANKAPPROVALPENDING") {
+    uiText = "BANK_APPROVAL_PENDING";
+    badgeClass = "oxy-badge-warning";
+    iconClass = "fa-solid fa-building-columns";
+  } else if (norm === "SUCCESS") {
+    uiText = "SUCCESS";
+    badgeClass = "oxy-badge-success";
+    iconClass = "fa-solid fa-circle-check";
+  } else if (norm === "FAILED") {
+    uiText = "FAILED";
+    badgeClass = "oxy-badge-danger";
+    iconClass = "fa-solid fa-circle-xmark";
+  } else if (norm === "ADMINREJECTED" || norm === "ADMIN_REJECTED") {
+    uiText = "ADMINREJECTED";
+    badgeClass = "oxy-badge-danger";
+    iconClass = "fa-solid fa-user-xmark";
+  } else if (norm === "NOT_FOUND" || norm === "NOTFOUND") {
+    uiText = "NOT_FOUND";
+    badgeClass = "oxy-badge-secondary";
+    iconClass = "fa-solid fa-circle-question";
   } else if (norm === "REJECTED" || norm === "BORROWER_REJECTED" || norm === "LENDER_REJECTED" || norm === "LENDERREJECTED" || norm === "DECLINED") {
     uiText = "Rejected";
     badgeClass = "oxy-badge-danger";

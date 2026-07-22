@@ -52,6 +52,13 @@ import {
 import { useSelector } from "react-redux";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
+import {
+  validateBorrowerPersonalDetails,
+  validateBankAccountNumber,
+  validateIfscCode,
+  isBankNameMatching,
+  validateMobileNumber,
+} from "../../../../../utils/borrowerValidation";
 import { error } from "jquery";
 
 const BorrowerProfile = () => {
@@ -611,12 +618,34 @@ const BorrowerProfile = () => {
     bankaccountprofile.confirmAccountNumber,
   ]);
   const savebankdetailsProfile = () => {
+    const accCheck = validateBankAccountNumber(bankaccountprofile.accountNumber);
+    if (!accCheck.valid) {
+      WarningBackendApi("warning", accCheck.message);
+      return;
+    }
+
+    if (bankaccountprofile.accountNumber !== bankaccountprofile.confirmAccountNumber) {
+      WarningBackendApi("warning", "Account numbers do not match!");
+      return;
+    }
+
+    const borrowerFullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
+    if (bankaccountprofile.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccountprofile.nameAtBank, borrowerFullName)) {
+      Swal.fire(
+        "Bank Account Name Mismatch",
+        `Bank Account Holder Name ("${bankaccountprofile.nameAtBank}") does NOT match Borrower Profile Name ("${borrowerFullName}"). Bank account must belong to the borrower.`,
+        "error"
+      );
+      return;
+    }
+
     if (dashboarddata.isValid === true) {
       if (bankaccountprofile.mobileOtp === "") {
         setBankaccountProfile({
           ...bankaccountprofile,
           mobileOtperror: "Enter the OTP",
         });
+        return;
       }
     }
     const response = updatebankDetails(bankaccountprofile);
@@ -1384,6 +1413,30 @@ const BorrowerProfile = () => {
       }
     }
   
+    // Run comprehensive borrower validation rules
+    const valData = {
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      fatherName: userProfile.fatherName,
+      dob: userProfile.dob,
+      panNumber: userProfile.panNumber,
+      whatsAppNumber: userProfile.whatsAppNumber,
+      residenceAddress: userProfile.residenceAddress,
+      city: userProfile.city,
+      state: userProfile.state,
+      pinCode: userProfile.pinCode,
+      workExperience: formData.totalExperience,
+      companyName: formData.company,
+      salary: formData.salary,
+      aadharNumber: userProfile.aadharNumber,
+    };
+    const validationResult = validateBorrowerPersonalDetails(valData, category);
+    if (!validationResult.valid) {
+      setError(validationResult.message);
+      WarningBackendApi("warning", validationResult.message);
+      return;
+    }
+
     // If everything is valid
     setError("");
     // Proceed with API call or other logic

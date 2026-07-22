@@ -68,11 +68,33 @@ const OfferCard = ({
   const isRejected = borrowerStatus === "BORROWER_REJECTED" || borrowerStatus === "REJECTED" || lenderStatus === "LENDER_REJECTED" || lenderStatus === "REJECTED";
 
   const hasBorrowerAgreement = offer?.borrowerAggrement !== null && offer?.borrowerAggrement !== undefined && offer?.borrowerAggrement !== "";
-  const showEnachBtn = offer?.borrowerEsignStatus === true || offer?.borrowerEsignStatus === "true" || offer?.borrowerEsigned === true || offer?.borrowerEsigned === "true";
-
   const canAccept = !isExecuted && !isRejected && (borrowerStatus === "INITIATED" || borrowerStatus === "PENDING" || borrowerStatus === "");
-  const canReject = !isExecuted && !isRejected && (borrowerStatus === "INITIATED" || borrowerStatus === "PENDING" || borrowerStatus === "PROCESSING" || borrowerStatus === "IN_PROGRESS" || borrowerStatus === "LOANACCEPTED" || borrowerStatus === "ACCEPTED" || borrowerStatus === "") ;
+  const canReject = !isExecuted && !isRejected && (borrowerStatus === "INITIATED" || borrowerStatus === "PENDING" || borrowerStatus === "PROCESSING" || borrowerStatus === "IN_PROGRESS" || borrowerStatus === "LOANACCEPTED" || borrowerStatus === "ACCEPTED" || borrowerStatus === "");
   const canExecute = !hasBorrowerAgreement && borrowerStatus === "LOANACCEPTED" && lenderStatus === "LOANACCEPTED" && (loanStatus === "LOANACCEPTED" || loanStatus === "PROCESSING" || loanStatus === "INITIATED");
+
+  const getMandateStatus = (off) => {
+    const raw = off?.mandateStatus || off?.MandateStatus || off?.borrowerMandateStatus || off?.enachStatus;
+    if (!raw) return "NOT_FOUND";
+    const norm = String(raw).trim().toUpperCase().replace(/[\s_-]/g, "");
+    if (norm === "INITIATED") return "INITIATED";
+    if (norm === "BANKAPPROVALPENDING" || norm === "BANK_APPROVAL_PENDING") return "BANK_APPROVAL_PENDING";
+    if (norm === "SUCCESS" || norm === "ACTIVE") return "SUCCESS";
+    if (norm === "FAILED") return "FAILED";
+    if (norm === "ADMINREJECTED" || norm === "ADMIN_REJECTED") return "ADMINREJECTED";
+    return "NOT_FOUND";
+  };
+
+  const mandateStatusValue = getMandateStatus(offer);
+  const isMandatePendingOrSuccess = mandateStatusValue === "BANK_APPROVAL_PENDING" || mandateStatusValue === "SUCCESS";
+
+  const showEnachBtn = !isMandatePendingOrSuccess && (
+    offer?.borrowerEsignStatus === true || 
+    offer?.borrowerEsignStatus === "true" || 
+    offer?.borrowerEsigned === true || 
+    offer?.borrowerEsigned === "true" || 
+    offer?.MandateStatus === "NOT_FOUND" ||
+    offer?.mandateStatus === "NOT_FOUND"
+  );
 
   return (
     <div className="col-md-6 col-lg-4 d-flex">
@@ -140,6 +162,35 @@ const OfferCard = ({
               </span>
             </div>
             )}
+             {mandateStatusValue !== "NOT_FOUND" ?
+           <div className="info-row">
+              <span className="info-label">Mandate Status</span>
+              <span className="info-value">
+                {(() => {
+                  let bgStyle = { backgroundColor: "#f3f4f6", color: "#4b5563", border: "1px solid #e5e7eb" };
+
+                  if (mandateStatusValue === "INITIATED") {
+                    bgStyle = { backgroundColor: "#e0f2fe", color: "#0369a1", border: "1px solid #bae6fd" };
+                  } else if (mandateStatusValue === "BANK_APPROVAL_PENDING") {
+                    bgStyle = { backgroundColor: "#fef3c7", color: "#d97706", border: "1px solid #fde68a" };
+                  } else if (mandateStatusValue === "SUCCESS") {
+                    bgStyle = { backgroundColor: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0" };
+                  } else if (mandateStatusValue === "FAILED") {
+                    bgStyle = { backgroundColor: "#fee2e2", color: "#b91c1c", border: "1px solid #fecaca" };
+                  } else if (mandateStatusValue === "ADMINREJECTED") {
+                    bgStyle = { backgroundColor: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" };
+                  } else if (mandateStatusValue === "NOT_FOUND") {
+                    bgStyle = { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #e5e7eb" };
+                  }
+
+                  return (
+                    <span className="badge px-2.5 py-1 rounded fw-semibold" style={{ fontSize: "11px", ...bgStyle }}>
+                      {mandateStatusValue}
+                    </span>
+                  );
+                })()}
+              </span>
+            </div>:null}
             <div className="info-row">
               <span className="info-label">Processing Fee</span>
               <span className="info-value text-dark">
@@ -189,7 +240,16 @@ const OfferCard = ({
               eSign Agreement
             </Link>
           )}
-          {showEnachBtn && (
+          {/* {isMandatePendingOrSuccess ? (
+            <Link 
+              to={`/borrower/repayment/${offer.loanRequestId}`}
+              className="oxy-btn-primary flex-fill btn-success text-white text-center d-flex align-items-center justify-content-center"
+              style={{ textDecoration: "none", fontSize: "12px", fontWeight: "600", borderRadius: "6px", padding: "8px 12px", backgroundColor: "#16a34a" }}
+            >
+              <i className="fa-solid fa-receipt me-1"></i> Repayment
+            </Link>
+          ) : */}
+          { showEnachBtn ? (
             <Link 
               to={`/enach/${offer.loanRequestId}`}
               className="oxy-btn-primary flex-fill btn-info text-white text-center d-flex align-items-center justify-content-center"
@@ -197,8 +257,8 @@ const OfferCard = ({
             >
               Register eNACH
             </Link>
-          )}
-          {!canAccept && !canReject && !canExecute && !showEnachBtn && !(borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement) && (
+          ) : null}
+          {!canAccept && !canReject && !canExecute && !showEnachBtn && !isMandatePendingOrSuccess && !(borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement) && (
             <button className="oxy-btn-secondary flex-fill text-muted" disabled>
               Processed
             </button>

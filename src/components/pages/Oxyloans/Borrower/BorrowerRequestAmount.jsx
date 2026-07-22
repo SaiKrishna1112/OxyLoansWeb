@@ -175,6 +175,21 @@ const BorrowerRequestAmount = () => {
     }, 0);
   }, [requestAmountInfo.apiData]);
 
+  const activeRequestedAmount = useMemo(() => {
+    return requestAmountInfo.apiData.reduce((sum, item) => {
+      const status = String(item?.loanRequestStatus || "").trim().toUpperCase();
+      if (status === "CLOSED" || status === "REJECTED" || status === "CANCELLED") {
+        return sum;
+      }
+      const value = Number(item?.requestAmount || 0);
+      return sum + (Number.isNaN(value) ? 0 : value);
+    }, 0);
+  }, [requestAmountInfo.apiData]);
+
+  const remainingAmount = useMemo(() => {
+    return Math.max(0, Number(eligibleAmount || 0) - activeRequestedAmount);
+  }, [eligibleAmount, activeRequestedAmount]);
+
   const requestSummary = useMemo(() => {
     return requestAmountInfo.apiData.reduce(
       (summary, item) => {
@@ -311,8 +326,9 @@ const BorrowerRequestAmount = () => {
         Remaining Amount:
       </span>
       <span className="ms-2 fw-bold text-white">
-        ₹ {(eligibleAmount-totalRequestedAmount).toLocaleString("en-IN", {
+        ₹ {remainingAmount.toLocaleString("en-IN", {
           minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         })}
       </span>
     </div>
