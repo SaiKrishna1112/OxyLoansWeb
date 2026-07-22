@@ -4122,15 +4122,15 @@ export const saveBorrowerReferenceDetails = (payload) =>
     headers: { accessToken: getToken(), "Content-Type": "application/json" },
   });
 
-export const lenderBorrowerEsign = async (loanId) => {
+export const lenderBorrowerEsign = async (loanId,aadharNumber) => {
   const token = getToken();
   const userId = getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/loan/${loanId}/lenderBorrowerEsign`,
-    {},
+    `${userId}/loan/${loanId}/lenderBorrowerEsign?aadharNumber=${aadharNumber}`,
     "POST",
-    token
+    token,
+    {}
   );
   return response;
 };

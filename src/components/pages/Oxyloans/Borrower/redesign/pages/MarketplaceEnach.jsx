@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import BorrowerHeader from "../../../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../../../SideBar/BorrowerSidebar";
@@ -15,6 +15,8 @@ import "../redesign.css";
 const MarketplaceEnach = () => {
   const { loanRequestId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryMandateId = searchParams.get("mandateId") || searchParams.get("mandate_id");
 
   const [step, setStep] = useState("check"); // check | authorize | success
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,9 @@ const MarketplaceEnach = () => {
       document.body.classList.remove("oxy-redesign-active");
       stopPolling();
     };
-  }, []);
+  }, [loanRequestId, queryMandateId]);
+
+  const cashfree = window.Cashfree({ mode: "sandbox" });
 
   const fetchMandates = async () => {
     setLoading(true);
@@ -45,16 +49,22 @@ const MarketplaceEnach = () => {
       setMandates(list);
       
       if (list.length > 0) {
-        // Use list[0] or first CASHFREE INITIATED/SUCCESS
-        const firstMandate = list[0];
-        setSelectedMandate(firstMandate);
+        // If we have a queryMandateId from URL, find it in the list or use list[0]
+        const mandateFromQuery = queryMandateId ? list.find(m => String(m.id) === String(queryMandateId)) : null;
+        const currentMandate = mandateFromQuery || list[0];
+        setSelectedMandate(currentMandate);
         
         // If already success/active, jump to success step
         if (
-          firstMandate.mandateStatus === "SUCCESS" || 
-          firstMandate.mandateStatus === "ACTIVE"
+          currentMandate.mandateStatus === "SUCCESS" || 
+          currentMandate.mandateStatus === "ACTIVE"
         ) {
           setStep("success");
+        } else if (queryMandateId) {
+          // If returning from redirect with a mandateId, set step to "authorize" and start polling
+          setStep("authorize");
+          startPolling(currentMandate.id);
+          checkMandateStatus(currentMandate.id);
         } else {
           setStep("check");
         }
@@ -72,18 +82,29 @@ const MarketplaceEnach = () => {
     if (!selectedMandate) return;
     setLoading(true);
     setError("");
+    console.log('enach started..........')
 
     try {
       const res = await startCashfreeEnachAuthorization(selectedMandate.id);
-      if (res?.data && res?.data?.authorizationUrl) {
+      if (res?.data && res?.data?.subscriptionSessionId) {
         setAuthData(res.data);
         setStep("authorize");
         
         // Open the authorizationUrl in a new tab
-        window.open(res.data.authorizationUrl, "_blank");
-        
-        // Start polling for status
+        // window.open(res.data.authorizationUrl, "_blank");
+        console.log(res.data)
+         // Start polling for status
         startPolling(selectedMandate.id);
+        
+        cashfree.subscriptionsCheckout({
+          subsSessionId: res.data.subscriptionSessionId,
+          redirectTarget: `https://user.oxyloans.com/enach/${loanRequestId}?mandateId=${selectedMandate.id}`
+        }).then(function (result) {
+          if (result && result.error) {
+            console.error(result.error.message || result.error);
+          }
+        });
+        
       } else {
         setError(res?.data?.message || "Failed to initiate Cashfree eNACH authorization.");
       }
@@ -271,14 +292,14 @@ const MarketplaceEnach = () => {
                       <i className="fa-solid fa-university"></i>
                       Configure Auto-Debit (eNACH)
                     </button>
-                    <button
+                    {/* <button
                       className="oxy-btn-secondary text-danger"
                       onClick={handleCancelMandate}
                     >
                       <i className="fa-solid fa-ban me-1"></i>
                       Cancel Mandate
-                    </button>
-                    <Link to="/my-marketplace-loans" className="oxy-btn-secondary">
+                    </button> */}
+                    <Link to="/borrowerLoansInitiated" className="oxy-btn-secondary">
                       Go Back
                     </Link>
                   </div>
@@ -310,16 +331,6 @@ const MarketplaceEnach = () => {
                       <i className="fa-solid fa-arrows-rotate"></i>
                       Check Mandate Status
                     </button>
-                    {authData?.authorizationUrl && (
-                      <a
-                        href={authData.authorizationUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="oxy-btn-secondary text-decoration-none"
-                      >
-                        <i className="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Gateway
-                      </a>
-                    )}
                   </div>
 
                   <span className="text-muted small">Status checks are automated. This page will update once the bank responds.</span>
@@ -356,7 +367,7 @@ const MarketplaceEnach = () => {
                       <i className="fa-solid fa-house me-2"></i>
                       Go to Dashboard
                     </button>
-                    <Link to="/my-marketplace-loans" className="oxy-btn-secondary">
+                    <Link to="/borrowerLoansInitiated" className="oxy-btn-secondary">
                       View My Loans
                     </Link>
                   </div>

@@ -128,7 +128,7 @@ const OfferCard = ({
             <div className="info-row">
               <span className="info-label">eSign</span>
               <span className="info-value">
-                {offer.borrowerEsigned === true || offer.lenderEsigned === true ? (
+                {offer.borrowerEsigned === true && offer.lenderEsigned === true ? (
                   <span className="text-success fw-bold" style={{ fontSize: "13px" }}>
                     ✓ Signed
                   </span>
@@ -180,7 +180,7 @@ const OfferCard = ({
               {isUpdating ? "Rejecting..." : "Reject"}
             </button>
           )}
-          {borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement && !offer.lenderEsignStatus && (
+          {borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement && offer.lenderEsigned && (
             <Link 
               to={`/esign/${offer.loanRequestId}`}
               className="oxy-btn-primary flex-fill btn-warning text-white text-center d-flex align-items-center justify-content-center"

@@ -555,6 +555,26 @@ const Profile = () => {
     }
   };
 
+  // distance
+    const triggerSavingGoogleDistance = async (userId) => {
+        try {
+          await axios.post(
+            `${base_url}savingGoogleDistance`,
+            {
+              userId: String(userId),
+            },
+            {
+              headers: {
+                accessToken: sessionStorage.getItem("accessToken"),
+              },
+            },
+          );
+        } catch (error) {
+          // Silent background call - no user popup required.
+          console.log("savingGoogleDistance api failed", error);
+        }
+      };
+
   // Save Personal Details form
   const savePersonalDetails = async () => {
     if (!profileData.firstName || !profileData.dob || !profileData.panNumber) {
@@ -633,6 +653,7 @@ const Profile = () => {
       if (response?.status === 200 || response?.request?.status === 200) {
         try {
           await setLatLong();
+           triggerSavingGoogleDistance(response.data.userId);
         } catch (error) {
           console.error("Failed to update google distance", error);
         }
@@ -1508,7 +1529,7 @@ const Profile = () => {
               { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport },
               { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword" },
 
-              ...(type === "student"
+              ...(category
                 ? [
                     { label: "Intermediate", name: "INTERMEDIATE", value: kycDocs.intermediate },
                     { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth },

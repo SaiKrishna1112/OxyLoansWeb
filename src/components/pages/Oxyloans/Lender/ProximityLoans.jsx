@@ -1156,7 +1156,7 @@ const ProximityLoans = () => {
                           </div>
                         )}
                       </div>
-                      <div className="col-md-4">
+                      {/* <div className="col-md-4">
                         <label
                           className="form-label fw-semibold"
                           style={{ fontSize: 13 }}
@@ -1197,7 +1197,64 @@ const ProximityLoans = () => {
                             {offerErrors.tenure}
                           </div>
                         )}
+                      </div> */}
+                      <div className="input-group">
+                        {offerData.durationType === "Months" ? (
+                          <select
+                            className={`form-select ${offerErrors.tenure ? "is-invalid" : ""}`}
+                            value={offerData.tenure}
+                            onChange={(e) => {
+                              setOfferData({
+                                ...offerData,
+                                tenure: e.target.value,
+                              });
+                              setOfferErrors({ ...offerErrors, tenure: "" });
+                            }}
+                          >
+                            <option value="">Select</option>
+                            <option value="3">3</option>
+                            <option value="6">6</option>
+                            <option value="9">9</option>
+                            <option value="12">12</option>
+                          </select>
+                        ) : (
+                          <input
+                            type="number"
+                            className={`form-control ${offerErrors.tenure ? "is-invalid" : ""}`}
+                            placeholder="e.g. 90"
+                            value={offerData.tenure}
+                            onChange={(e) => {
+                              setOfferData({
+                                ...offerData,
+                                tenure: e.target.value,
+                              });
+                              setOfferErrors({ ...offerErrors, tenure: "" });
+                            }}
+                          />
+                        )}
+
+                        <select
+                          className="form-select"
+                          style={{ maxWidth: "110px" }}
+                          value={offerData.durationType}
+                          onChange={(e) => {
+                            setOfferData({
+                              ...offerData,
+                              durationType: e.target.value,
+                              tenure: "", // Reset when switching
+                            });
+                          }}
+                        >
+                          <option value="Days">Days</option>
+                          <option value="Months">Months</option>
+                        </select>
                       </div>
+
+                      {offerErrors.tenure && (
+                        <div className="text-danger small mt-1" style={{ fontSize: "12px" }}>
+                          {offerErrors.tenure}
+                        </div>
+                      )}
                       <div className="col-md-4">
                         <label
                           className="form-label fw-semibold"

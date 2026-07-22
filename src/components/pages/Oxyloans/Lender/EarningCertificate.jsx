@@ -407,18 +407,40 @@ async function handleDownloadFYReportPDF(startDate, endDate) {
   const today = new Date();
 
   // Function for calculating correct "Up To Date" based on FY
-  const getUpToDate = (fyString) => {
-    const [startYear, endYear] = fyString.split("-");
+  // const getUpToDate = (fyString) => {
+  //   const [startYear, endYear] = fyString.split("-");
 
-    const currentFY = FY_LIST[0]; // First item = current FY
+  //   const currentFY = FY_LIST[0]; // First item = current FY
 
-    if (fyString === currentFY) {
-      return formatDate(today); // Today's date
-    }
+  //   if (fyString === currentFY) {
+  //     return formatDate(today); // Today's date
+  //   }
 
-    // For old years → always 31 March
-    return `31/03/${endYear}`;
-  };
+  //   // For old years → always 31 March
+  //   return `31/03/${endYear}`;
+  // };
+
+  // Function for calculating correct "Up To Date" based on FY
+const getCurrentFY = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1; // Jan = 1
+
+  // FY starts in April
+  return month >= 4
+    ? `${year}-${year + 1}`
+    : `${year - 1}-${year}`;
+};
+
+const getUpToDate = (fyString) => {
+  const [, endYear] = fyString.split("-");
+
+  if (fyString === getCurrentFY()) {
+    return formatDate(new Date());
+  }
+
+  return `31/03/${endYear}`;
+};
 
   const datasource = [];
 

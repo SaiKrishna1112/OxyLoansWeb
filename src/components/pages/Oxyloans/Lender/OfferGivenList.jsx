@@ -130,11 +130,54 @@ const OfferGivenList = () => {
       });
       if (!confirm.isConfirmed) return;
 
+      let prefilledAadhar = "";
+      try {
+        const userDetailsRes = await getUserDetails();
+        if (userDetailsRes?.status === 200 || userDetailsRes?.data) {
+          prefilledAadhar = userDetailsRes.data?.aadharNumber || "";
+        }
+      } catch (err) {
+        console.error("Failed to fetch user details for Aadhaar pre-fill:", err);
+      }
+
+      const { value: aadharNumber } = await Swal.fire({
+        title: "Enter Aadhaar Number",
+        input: "text",
+        inputValue: prefilledAadhar,
+        inputLabel: "A 12-digit Aadhaar number is required for verification.",
+        inputPlaceholder: "Enter 12-digit Aadhaar Number",
+        showCancelButton: true,
+        confirmButtonColor: PRIMARY,
+        confirmButtonText: "Submit",
+        inputAttributes: {
+          maxlength: "12",
+          autocapitalize: "off",
+          autocorrect: "off",
+        },
+        inputValidator: (value) => {
+          if (!value) {
+            return "Aadhaar number is required!";
+          }
+          if (!/^\d{12}$/.test(value)) {
+            return "Please enter a valid 12-digit Aadhaar number!";
+          }
+        }
+      });
+
+      if (!aadharNumber) return;
+
       if (rowId) {
         setEsignLoadingById((prev) => ({ ...prev, [rowId]: true }));
       }
 
-      const esignRes = await lenderBorrowerEsign(offer?.loanRequestId);
+      const esignRes = await lenderBorrowerEsign(offer?.loanRequestId, aadharNumber);
+      const data = esignRes?.data;
+      if (data && (data.redirect_url || data.redirectUrl)) {
+        const url = data.redirect_url || data.redirectUrl;
+        window.open(url, "_self");
+        return;
+      }
+
       if (esignRes?.status === 200 || esignRes?.request?.status === 200) {
         await Swal.fire({
           icon: "success",
@@ -703,11 +746,11 @@ const OfferGivenList = () => {
                                     Disburse Loan
                                   </button>
                                 )}
-                                {isLoanAcceptedStatus && (
+                                {isLoanAcceptedStatus &&  (
                                   <button
                                     className="btn btn-sm text-white"
                                     title="eSign Agreement"
-                                    disabled={Boolean(esignLoadingById[rowId])}
+                                    disabled={Boolean(esignLoadingById[rowId]) || offer.lenderEsigned}
                                     style={{
                                       background: "#fd7e14",
                                       borderRadius: 6,
@@ -723,7 +766,7 @@ const OfferGivenList = () => {
                                       </>
                                     ) : (
                                       <>
-                                        <i className="fa fa-signature me-1" /> eSign
+                                        <i className="fa fa-signature me-1" /> { offer.lenderEsigned? 'eSign Completed' : 'eSign'}
                                       </>
                                     )}
                                   </button>
