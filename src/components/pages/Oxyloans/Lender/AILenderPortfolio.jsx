@@ -556,7 +556,12 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
             Custom
           </button>
         </div>
-        {loading && <span style={{ fontSize: 12, color: "#1890ff", marginLeft: 8 }}>Updating…</span>}
+        {loading && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: "#1890ff", background: "#e6f4ff", border: "1px solid #91caff", borderRadius: 20, padding: "2px 10px", marginLeft: 8 }}>
+            <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+            Fetching data…
+          </span>
+        )}
       </div>
 
       {fyFilter.mode === "custom" && (
@@ -1934,7 +1939,12 @@ const LenderPortfolioDashboard = () => {
                 <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                   <div className="card-header" style={{ background: "#fafafa", borderBottom: "1px solid #f0f0f0", borderRadius: "14px 14px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <h6 style={{ margin: 0, fontWeight: 700, color: "#262626" }}>{earningsData.fyLabel || "Current FY"} Earnings Summary</h6>
-                    {earningsLoading && <span style={{ fontSize: 12, color: "#1890ff" }}>Updating…</span>}
+                    {earningsLoading && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: "#1890ff", background: "#e6f4ff", border: "1px solid #91caff", borderRadius: 20, padding: "2px 10px" }}>
+                        <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+                        Fetching data…
+                      </span>
+                    )}
                   </div>
                   <div className="card-body">
                     <div className="row g-3 mb-3">
