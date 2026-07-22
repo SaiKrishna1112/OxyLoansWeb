@@ -44,7 +44,6 @@ import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
-import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
@@ -155,7 +154,6 @@ import BorrowerMarketplaceConsent from "./components/pages/Oxyloans/Borrower/Bor
 import LenderMarketplaceConsent from "./components/pages/Oxyloans/Lender/LenderMarketplaceConsent";
 import EscalationDashboard from "./components/pages/Oxyloans/Lender/EscalationDashboard";
 import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings";
-import MyOffers from "./components/pages/Oxyloans/Lender/MyOffers";
 import NearbyBorrowers from "./components/pages/Oxyloans/Lender/NearbyBorrowers";
 import LenderEmiDashboard from "./components/pages/Oxyloans/Lender/LenderEmiDashboard";
 import BorrowerEmiSchedule from "./components/pages/Oxyloans/Borrower/BorrowerEmiSchedule";
@@ -321,7 +319,6 @@ const AppRouter = () => {
         <Route path="/loanListings" element={<LoanListings />} />
         <Route path="/proximityLoans" element={<ProximityLoans />} />
         <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
-        <Route path="/offerGivenList" element={<OfferGivenList />} />
         <Route path="/disburseLoans" element={<DisburseLoans />} />
         <Route path="/WalletToWallet" element={<WalletToWallet />} />
         <Route
@@ -568,7 +565,6 @@ const AppRouter = () => {
         <Route path="/lender-consent/:loanRequestId" element={<PrivateRoute element={<LenderMarketplaceConsent />} />} />
         <Route path="/escalation-dashboard" element={<PrivateRoute element={<EscalationDashboard />} />} />
         <Route path="/my-marketplace-loans" element={<PrivateRoute element={<BorrowerMarketplaceListings />} />} />
-        <Route path="/my-offers" element={<PrivateRoute element={<MyOffers />} />} />
         <Route path="/nearby-borrowers" element={<PrivateRoute element={<NearbyBorrowers />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
