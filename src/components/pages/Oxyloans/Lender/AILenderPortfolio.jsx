@@ -5,7 +5,8 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
-import { getToken, getUserId, summaryFinancialEarnings, getFinancialReportDownload } from "../../../HttpRequest/afterlogin";
+import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
+import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
@@ -597,8 +598,8 @@ const scrollTo = (id) => {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter }) => {
-  const [dlLoading, setDlLoading] = useState({ pdf: false, excel: false, monthly: false });
+const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId }) => {
+  const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false });
 
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
@@ -617,36 +618,52 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
   });
 
-  const openDownloadUrl = (url) => {
-    if (!url || typeof url !== "string" || url.length < 10) return false;
-    window.open(url, "_blank");
-    return true;
+  const toCsv = (rows) => {
+    const csv = rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    return new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
   };
 
-  const downloadPdf = async () => {
-    if (!dateRange) return;
-    setDlLoading(s => ({ ...s, pdf: true }));
+  const downloadDealWise = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, excel: true }));
     try {
-      const res = await summaryFinancialEarnings({ startDate: dateRange.startDate, endDate: dateRange.endDate, inputType: "DOWNLOAD", status: "dealsum" });
-      console.log("[AI-Dashboard] PDF response:", res);
-      const url = typeof res?.data === "string" ? res.data
-                : (res?.data?.url || res?.data?.pdfUrl || res?.data?.lenderProfit);
-      if (!openDownloadUrl(url)) alert("PDF not available for this period. Please try from My Deals → Financial Reports.");
-    } catch (e) { console.error("PDF download error", e); alert("PDF download failed. Please try again."); }
-    finally { setDlLoading(s => ({ ...s, pdf: false })); }
+      const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
+      const data = res?.data;
+      if (!data?.deals?.length) { alert("No data for this period."); return; }
+      const rows = [
+        ["Deal ID", "Deal Name", "Status", "Closed Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
+        ...data.deals.map(d => [
+          d.dealId, d.dealName,
+          d.dealStatus === "NOTYETCLOSED" ? "Active" : "Closed",
+          d.closedDate || "",
+          Math.round(d.interestEarned), Math.round(d.principalReturned), Math.round(d.totalReceived)
+        ]),
+        [],
+        ["", "", "", "TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal)]
+      ];
+      saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_DealWise.csv`);
+    } catch (e) { console.error("Deal-wise download error", e); alert("Download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, excel: false })); }
   };
 
-  const downloadExcel = async (status) => {
-    if (!dateRange) return;
-    const key = status === "dealsumMonthly" ? "monthly" : "excel";
-    setDlLoading(s => ({ ...s, [key]: true }));
+  const downloadMonthWise = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, monthly: true }));
     try {
-      const res = await getFinancialReportDownload(dateRange.startDate, dateRange.endDate, "DOWNLOAD", status);
-      console.log("[AI-Dashboard] Excel response:", res, "status:", status);
-      const url = res?.data?.lenderProfit || (typeof res?.data === "string" ? res.data : null);
-      if (!openDownloadUrl(url)) alert("Report not available for this period. Please try from My Deals → Financial Reports.");
-    } catch (e) { console.error("Excel download error", e); alert("Download failed. Please try again."); }
-    finally { setDlLoading(s => ({ ...s, [key]: false })); }
+      const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
+      const data = res?.data;
+      if (!data?.monthly?.length) { alert("No data for this period."); return; }
+      const rows = [
+        ["Month", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)", "Deals"],
+        ...data.monthly.map(m => [
+          m.monthLabel, Math.round(m.interestAmount), Math.round(m.principalReturned), Math.round(m.totalReceived), m.dealCount
+        ]),
+        [],
+        ["TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal), ""]
+      ];
+      saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_MonthWise.csv`);
+    } catch (e) { console.error("MonthWise download error", e); alert("Download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, monthly: false })); }
   };
 
   return (
@@ -663,13 +680,10 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         </div>
         {showDownloads && dateRange && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button onClick={downloadPdf} disabled={dlLoading.pdf} style={dlBtnStyle("#1890ff", dlLoading.pdf)}>
-              {dlLoading.pdf ? "…" : "⬇ PDF"}
+            <button onClick={downloadDealWise} disabled={dlLoading.excel} style={dlBtnStyle("#52c41a", dlLoading.excel)}>
+              {dlLoading.excel ? "…" : "⬇ Deal-wise"}
             </button>
-            <button onClick={() => downloadExcel("dealsum")} disabled={dlLoading.excel} style={dlBtnStyle("#52c41a", dlLoading.excel)}>
-              {dlLoading.excel ? "…" : "⬇ Excel"}
-            </button>
-            <button onClick={() => downloadExcel("dealsumMonthly")} disabled={dlLoading.monthly} style={dlBtnStyle("#faad14", dlLoading.monthly)}>
+            <button onClick={downloadMonthWise} disabled={dlLoading.monthly} style={dlBtnStyle("#faad14", dlLoading.monthly)}>
               {dlLoading.monthly ? "…" : "⬇ MonthWise"}
             </button>
           </div>
@@ -1991,7 +2005,7 @@ const LenderPortfolioDashboard = () => {
                       defaultOpen={true}
                       summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
                     >
-                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} />
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} lenderId={resolvedLenderId} />
                     </SectionCard>
                   )}
 
