@@ -630,12 +630,13 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
       const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
       const data = res?.data;
       if (!data?.deals?.length) { alert("No data for this period."); return; }
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn (Lender Exit)" : s === "CLOSED" ? "Closed" : "Active";
       const rows = [
-        ["Deal ID", "Deal Name", "Participated Amt (Rs)", "Status", "Closed Date", "First Int Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
+        ["Deal ID", "Deal Name", "Participated Amt (Rs)", "Status", "Closed/Exit Date", "First Int Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
         ...data.deals.map(d => [
           d.dealId, d.dealName,
           Math.round(d.participatedAmount),
-          d.dealStatus === "NOTYETCLOSED" ? "Active" : "Closed",
+          statusLabel(d.dealStatus),
           d.closedDate || "",
           d.loanActiveDate || "",
           Math.round(d.interestEarned), Math.round(d.principalReturned), Math.round(d.totalReceived)
