@@ -3297,6 +3297,15 @@ export const getLenderFyReport = async (lenderId, fromDate, toDate) => {
   return response;
 };
 
+export const getLenderFyReportPdf = async (lenderId, fromDate, toDate) => {
+  const token = getToken();
+  const response = await axios.get(
+    `${AI_BASE_URL}lender/${lenderId}/fy-report/pdf?from=${fromDate}&to=${toDate}`,
+    { headers: { accessToken: token } }
+  );
+  return response;
+};
+
 export const getAdminAIPlatformStats = async (fy) => {
   let url = `${AI_BASE_URL}admin/platform-stats`;
   if (fy) url += `?fy=${fy}`;

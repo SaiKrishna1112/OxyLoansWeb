@@ -5,7 +5,7 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
-import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
+import { getToken, getUserId, getLenderFyReport, getLenderFyReportPdf } from "../../../HttpRequest/afterlogin";
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
@@ -599,7 +599,7 @@ const scrollTo = (id) => {
 };
 
 const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId }) => {
-  const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false });
+  const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false, pdf: false });
 
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
@@ -631,15 +631,17 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
       const data = res?.data;
       if (!data?.deals?.length) { alert("No data for this period."); return; }
       const rows = [
-        ["Deal ID", "Deal Name", "Status", "Closed Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
+        ["Deal ID", "Deal Name", "Participated Amt (Rs)", "Status", "Closed Date", "First Int Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
         ...data.deals.map(d => [
           d.dealId, d.dealName,
+          Math.round(d.participatedAmount),
           d.dealStatus === "NOTYETCLOSED" ? "Active" : "Closed",
           d.closedDate || "",
+          d.loanActiveDate || "",
           Math.round(d.interestEarned), Math.round(d.principalReturned), Math.round(d.totalReceived)
         ]),
         [],
-        ["", "", "", "TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal)]
+        ["", "", "", "", "TOTAL", "", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal)]
       ];
       saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_DealWise.csv`);
     } catch (e) { console.error("Deal-wise download error", e); alert("Download failed. Please try again."); }
@@ -666,6 +668,23 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     finally { setDlLoading(s => ({ ...s, monthly: false })); }
   };
 
+  const downloadPdf = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, pdf: true }));
+    try {
+      const res = await getLenderFyReportPdf(lenderId, dateRange.startDate, dateRange.endDate);
+      const url = res?.data?.url;
+      if (!url) { alert("PDF generation failed. Please try again."); return; }
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("target", "_blank");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) { console.error("PDF download error", e); alert("PDF download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, pdf: false })); }
+  };
+
   return (
     <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative" }}>
       {loading && (
@@ -685,6 +704,9 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
             </button>
             <button onClick={downloadMonthWise} disabled={dlLoading.monthly} style={dlBtnStyle("#faad14", dlLoading.monthly)}>
               {dlLoading.monthly ? "…" : "⬇ MonthWise"}
+            </button>
+            <button onClick={downloadPdf} disabled={dlLoading.pdf} style={dlBtnStyle("#f5222d", dlLoading.pdf)}>
+              {dlLoading.pdf ? "…" : "⬇ PDF"}
             </button>
           </div>
         )}
