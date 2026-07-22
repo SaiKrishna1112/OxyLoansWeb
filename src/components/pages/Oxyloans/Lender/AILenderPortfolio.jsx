@@ -800,7 +800,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
       };
 
       // ── DEAL-WISE TABLE ────────────────────────────────────────────────────
-      sectionBanner(">> Deal-wise Breakdown", BLUE, 118);
+      sectionBanner("Deal-wise Breakdown", BLUE, 118);
 
       autoTable(doc, {
         startY: 134,
@@ -816,7 +816,15 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
           d.closedDate   || "-",
           d.loanActiveDate || "-",
         ]),
-        foot: [["", "TOTAL", "", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), "", "", ""]],
+        foot: [[
+          { content: "", styles: { halign: "center" } },
+          { content: "TOTAL", styles: { halign: "left" } },
+          { content: "", styles: {} },
+          { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
+          { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
+          { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "", styles: {} }, { content: "", styles: {} }, { content: "", styles: {} },
+        ]],
         showFoot: "lastPage",
         styles: { fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 }, valign: "middle" },
         headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, halign: "center" },
@@ -845,7 +853,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 
       // ── MONTHLY TABLE ──────────────────────────────────────────────────────
       const afterDeals = doc.lastAutoTable.finalY + 14;
-      sectionBanner(">> Month-wise Summary", TEAL, afterDeals);
+      sectionBanner("Month-wise Summary", TEAL, afterDeals);
 
       autoTable(doc, {
         startY: afterDeals + 16,
@@ -855,7 +863,13 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         body: data.monthly.map(m => [
           m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
         ]),
-        foot: [["TOTAL", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), ""]],
+        foot: [[
+          { content: "TOTAL",                   styles: { halign: "left" } },
+          { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
+          { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
+          { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "",                        styles: { halign: "center" } },
+        ]],
         showFoot: "lastPage",
         styles: { fontSize: 8, cellPadding: 3.5, valign: "middle" },
         headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", halign: "center" },
