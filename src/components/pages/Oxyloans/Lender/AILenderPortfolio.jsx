@@ -598,8 +598,24 @@ const scrollTo = (id) => {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
+const FY_LOAD_MSGS = [
+  "📊 Fetching your earnings for this period…",
+  "🔍 Scanning deals one by one…",
+  "💰 Tallying interest across your portfolio…",
+  "📅 Building month-wise timeline…",
+  "🔄 Cross-checking principal returns…",
+  "✅ Almost there — crunching final totals…",
+];
+
 const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId, lenderName }) => {
   const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false, pdf: false });
+  const [loadMsgIdx, setLoadMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (!loading) { setLoadMsgIdx(0); return; }
+    const t = setInterval(() => setLoadMsgIdx(i => (i + 1) % FY_LOAD_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [loading]);
 
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
@@ -789,32 +805,46 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
   };
 
   return (
-    <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative" }}>
+    <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative", overflow: "hidden" }}>
+
+      {/* Thin animated progress bar — stays at very top, never overlaps content */}
       {loading && (
-        <div style={{ position: "absolute", top: 12, right: 16, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#1890ff" }}>
-          <div className="spinner-border spinner-border-sm" role="status" style={{ width: 14, height: 14, borderWidth: 2 }} />
-          Refreshing
+        <div className="progress" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, borderRadius: 0, background: "transparent", margin: 0 }}>
+          <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" style={{ width: "100%" }} />
         </div>
       )}
+
+      {/* Header: title left, download buttons right — clean separation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e" }}>
           {label} Earnings Summary
         </div>
         {showDownloads && dateRange && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button onClick={downloadDealWise} disabled={dlLoading.excel} style={dlBtnStyle("#52c41a", dlLoading.excel)}>
-              {dlLoading.excel ? "…" : "⬇ Deal-wise"}
+            <button onClick={downloadDealWise} disabled={dlLoading.excel || loading} style={dlBtnStyle("#52c41a", dlLoading.excel || loading)}>
+              {dlLoading.excel ? "Preparing…" : "⬇ Deal-wise"}
             </button>
-            <button onClick={downloadMonthWise} disabled={dlLoading.monthly} style={dlBtnStyle("#faad14", dlLoading.monthly)}>
-              {dlLoading.monthly ? "…" : "⬇ MonthWise"}
+            <button onClick={downloadMonthWise} disabled={dlLoading.monthly || loading} style={dlBtnStyle("#faad14", dlLoading.monthly || loading)}>
+              {dlLoading.monthly ? "Preparing…" : "⬇ MonthWise"}
             </button>
-            <button onClick={downloadPdf} disabled={dlLoading.pdf} style={dlBtnStyle("#f5222d", dlLoading.pdf)}>
-              {dlLoading.pdf ? "…" : "⬇ PDF"}
+            <button onClick={downloadPdf} disabled={dlLoading.pdf || loading} style={dlBtnStyle("#f5222d", dlLoading.pdf || loading)}>
+              {dlLoading.pdf ? "Generating…" : "⬇ PDF"}
             </button>
           </div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
+
+      {/* Engaging loading message — own row, zero overlap */}
+      {loading ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "9px 14px", background: "rgba(24,144,255,0.07)", borderRadius: 8, border: "1px dashed rgba(24,144,255,0.3)" }}>
+          <div className="spinner-border spinner-border-sm" role="status" style={{ width: 15, height: 15, borderWidth: 2, color: "#1890ff", flexShrink: 0 }} />
+          <span style={{ fontSize: 12.5, color: "#1890ff", fontWeight: 500, fontStyle: "italic" }}>
+            {FY_LOAD_MSGS[loadMsgIdx]}
+          </span>
+        </div>
+      ) : (
+        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
+      )}
       <div className="row g-3 mb-3">
         {[
           { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed" },
