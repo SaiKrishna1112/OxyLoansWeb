@@ -5,7 +5,7 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
-import { getToken, getUserId, getLenderFyReport, getLenderFyReportPdf } from "../../../HttpRequest/afterlogin";
+import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
@@ -598,7 +598,7 @@ const scrollTo = (id) => {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId }) => {
+const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId, lenderName }) => {
   const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false, pdf: false });
 
   if (!earningsData) return null;
@@ -673,16 +673,118 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     if (!dateRange || !lenderId) return;
     setDlLoading(s => ({ ...s, pdf: true }));
     try {
-      const res = await getLenderFyReportPdf(lenderId, dateRange.startDate, dateRange.endDate);
-      const url = res?.data?.url;
-      if (!url) { alert("PDF generation failed. Please try again."); return; }
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("target", "_blank");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (e) { console.error("PDF download error", e); alert("PDF download failed. Please try again."); }
+      const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
+      const data = res?.data;
+      if (!data?.deals?.length) { alert("No data for this period."); return; }
+
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const today = new Date().toISOString().slice(0, 10);
+
+      // Header
+      doc.setFontSize(13); doc.setFont("helvetica", "bold");
+      doc.text("SRS FINTECHLABS PVT. LTD", pageW / 2, 40, { align: "center" });
+      doc.setFontSize(11);
+      doc.text("LENDER FINANCIAL STATEMENT", pageW / 2, 56, { align: "center" });
+      doc.setFontSize(10); doc.setFont("helvetica", "normal");
+      doc.text(`Period: ${data.fyLabel}`, pageW / 2, 70, { align: "center" });
+      doc.text(`Generated on: ${today}`, pageW / 2, 83, { align: "center" });
+
+      // Lender info
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text(`Lender Name: `, 40, 103);
+      doc.setFont("helvetica", "normal");
+      doc.text(lenderName || String(lenderId), 112, 103);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Lender ID: `, 40, 115);
+      doc.setFont("helvetica", "normal");
+      doc.text(String(lenderId), 98, 115);
+
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn" : s === "CLOSED" ? "Closed" : "Active";
+      const fmt2 = v => Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Deal-wise table
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text("Deal-wise Breakdown", 40, 133);
+
+      autoTable(doc, {
+        startY: 140,
+        head: [["S.No", "Deal ID", "Deal Name", "Participated (₹)", "Interest (₹)", "Principal (₹)", "Total (₹)", "Status", "Closed/Exit Date", "First Int Date"]],
+        body: [
+          ...data.deals.map((d, i) => [
+            i + 1, d.dealId, d.dealName,
+            fmt2(d.participatedAmount),
+            fmt2(d.interestEarned),
+            fmt2(d.principalReturned),
+            fmt2(d.totalReceived),
+            statusLabel(d.dealStatus),
+            d.closedDate || "-",
+            d.loanActiveDate || "-",
+          ]),
+          ["", "", "TOTAL", "", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), "", "", ""],
+        ],
+        styles: { fontSize: 7.5, cellPadding: 3 },
+        headStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: "bold" },
+        columnStyles: {
+          0: { cellWidth: 28 }, 1: { cellWidth: 40 }, 2: { cellWidth: 140 },
+          3: { cellWidth: 70, halign: "right" }, 4: { cellWidth: 65, halign: "right" },
+          5: { cellWidth: 65, halign: "right" }, 6: { cellWidth: 65, halign: "right" },
+          7: { cellWidth: 58 }, 8: { cellWidth: 70 }, 9: { cellWidth: 70 },
+        },
+        didParseCell: (hookData) => {
+          if (hookData.row.index === data.deals.length) {
+            hookData.cell.styles.fontStyle = "bold";
+            hookData.cell.styles.fillColor = [245, 245, 245];
+          }
+        },
+      });
+
+      // Monthly table
+      const afterDeals = doc.lastAutoTable.finalY + 16;
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      doc.text("Monthly Breakdown", 40, afterDeals);
+
+      autoTable(doc, {
+        startY: afterDeals + 8,
+        head: [["Month", "Interest (₹)", "Principal (₹)", "Total (₹)", "Deals"]],
+        body: [
+          ...data.monthly.map(m => [
+            m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
+          ]),
+          ["TOTAL", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), ""],
+        ],
+        styles: { fontSize: 7.5, cellPadding: 3 },
+        headStyles: { fillColor: [220, 220, 220], textColor: 0, fontStyle: "bold" },
+        columnStyles: {
+          0: { cellWidth: 80 }, 1: { cellWidth: 80, halign: "right" },
+          2: { cellWidth: 80, halign: "right" }, 3: { cellWidth: 80, halign: "right" },
+          4: { cellWidth: 40, halign: "center" },
+        },
+        didParseCell: (hookData) => {
+          if (hookData.row.index === data.monthly.length) {
+            hookData.cell.styles.fontStyle = "bold";
+            hookData.cell.styles.fillColor = [245, 245, 245];
+          }
+        },
+      });
+
+      // Declaration + signature
+      const afterMonthly = doc.lastAutoTable.finalY + 14;
+      doc.setFontSize(8); doc.setFont("helvetica", "bold");
+      doc.text("Declaration:", 40, afterMonthly);
+      doc.setFont("helvetica", "normal");
+      doc.text("This statement is system generated and valid without signature.", 40, afterMonthly + 12);
+      doc.text("For any queries, contact support@oxyloans.com", 40, afterMonthly + 24);
+      doc.setFont("helvetica", "bold");
+      doc.text("Authorized Signatory", pageW - 40, afterMonthly + 24, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.text("(OxyLoans Platform)", pageW - 40, afterMonthly + 36, { align: "right" });
+
+      doc.save(`OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_Statement.pdf`);
+    } catch (e) { console.error("PDF download error", e); alert("PDF generation failed. Please try again."); }
     finally { setDlLoading(s => ({ ...s, pdf: false })); }
   };
 
@@ -2028,7 +2130,7 @@ const LenderPortfolioDashboard = () => {
                       defaultOpen={true}
                       summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
                     >
-                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} lenderId={resolvedLenderId} />
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} lenderId={resolvedLenderId} lenderName={data?.lenderName} />
                     </SectionCard>
                   )}
 
