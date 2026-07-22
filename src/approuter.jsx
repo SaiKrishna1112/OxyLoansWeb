@@ -8,8 +8,12 @@ import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSu
 import AITestAdmin from "./components/pages/Dashboard/AITestAdmin";
 import LenderUpgradePortal from "./components/pages/Dashboard/LenderUpgradePortal";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIFeaturePage from "./components/pages/Oxyloans/Admin/AdminAIFeaturePage";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
+import AdminAILenderAnalyticsLendersPage from "./components/pages/Oxyloans/Admin/AdminAILenderAnalyticsLendersPage";
+import AdminAIUserProfilePage from "./components/pages/Oxyloans/Admin/AdminAIUserProfilePage";
+import AdminAIReferralUsersPage from "./components/pages/Oxyloans/Admin/AdminAIReferralUsersPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
@@ -272,11 +276,15 @@ const AppRouter = () => {
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/adminAICampaignHistory" element={<AdminAILenderCampaignHistoryPage />} />
         <Route path="/adminAIDashboard/:featureId" element={<AdminAIFeaturePage />} />
         <Route path="/adminAiDashboard" element={<Navigate to="/adminAIDashboard" replace />} />
         <Route path="/adminAiDashboard/:featureId" element={<AdminAIFeatureRedirect />} />
         <Route path="/AdminAIDashboard" element={<Navigate to="/adminAIDashboard" replace />} />
         <Route path="/adminAICreatedDeals" element={<AdminAICreatedDealsPage />} />
+        <Route path="/adminAILenderAnalytics" element={<AdminAILenderAnalyticsLendersPage />} />
+        <Route path="/adminAIUserProfile" element={<AdminAIUserProfilePage />} />
+        <Route path="/adminAIReferralUsers" element={<AdminAIReferralUsersPage />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
 
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
@@ -400,6 +408,7 @@ const AppRouter = () => {
 
         {/* ===== PROTECTED ROUTES ===== */}
         <Route path="/dashboard" element={<PrivateRoute element={<AdminDashboard />} />} />
+        <Route path="/adminAICampaignHistory" element={<PrivateRoute element={<AdminAILenderCampaignHistoryPage />} />} />
         <Route path="/loadwaletThroughQr" element={<PrivateRoute element={<LoadwaletThroughQr />} />} />
         <Route path="/profile" element={<PrivateRoute element={<Profile />} />} />
         <Route path="/testdeals" element={<PrivateRoute element={<UserTestdeals />} />} />

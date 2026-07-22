@@ -45,6 +45,7 @@ import {
   getAdminAIActiveLenderReferrals,
   getAdminAIActiveLenderReferralDeals,
   getRegisteredUsersSummary,
+  getOldDashboardActiveLendersCount,
 } from "../../../HttpRequest/admin";
 import "./AdminAIDashboard.css";
 
@@ -1653,8 +1654,14 @@ const AdminAIDealsDashboard = () => {
 
   const loadSummary = async () => {
     try {
-      const data = responseData(await getRegisteredUsersSummary());
-      setTotalLenders(pickNumber(data.activeLendersCount, data.users?.activeLenders));
+      const [summaryResponse, oldDashboardActiveLendersCount] = await Promise.all([
+        getRegisteredUsersSummary(),
+        getOldDashboardActiveLendersCount(),
+      ]);
+      const data = responseData(summaryResponse);
+      setTotalLenders(
+        pickNumber(data.activeLendersCount, data.users?.activeLenders, oldDashboardActiveLendersCount)
+      );
     } catch (error) {
       setTotalLenders(0);
     }
