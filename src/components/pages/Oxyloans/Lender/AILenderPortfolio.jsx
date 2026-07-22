@@ -773,12 +773,12 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
       };
 
       // ── DEAL-WISE TABLE ────────────────────────────────────────────────────
-      sectionBanner("▸  Deal-wise Breakdown", BLUE, 118);
+      sectionBanner(">> Deal-wise Breakdown", BLUE, 118);
 
       autoTable(doc, {
         startY: 134,
         margin: { left: ML, right: MR },
-        head: [["Deal ID", "Deal Name", "Participated (₹)", "Interest (₹)", "Principal (₹)", "Total (₹)", "Status", "Closed / Exit Date", "First Int Date"]],
+        head: [["Deal ID", "Deal Name", "Participated (Rs)", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Status", "Closed / Exit Date", "First Int Date"]],
         body: data.deals.map(d => [
           d.dealId, d.dealName,
           fmt2(d.participatedAmount),
@@ -818,13 +818,13 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 
       // ── MONTHLY TABLE ──────────────────────────────────────────────────────
       const afterDeals = doc.lastAutoTable.finalY + 14;
-      sectionBanner("▸  Month-wise Summary", TEAL, afterDeals);
+      sectionBanner(">> Month-wise Summary", TEAL, afterDeals);
 
       autoTable(doc, {
         startY: afterDeals + 16,
         margin: { left: ML, right: MR },
         tableWidth: 545,
-        head: [["Month", "Interest (₹)", "Principal (₹)", "Total (₹)", "Deals"]],
+        head: [["Month", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Deals"]],
         body: data.monthly.map(m => [
           m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
         ]),
