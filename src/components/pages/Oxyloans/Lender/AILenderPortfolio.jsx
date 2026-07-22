@@ -1598,8 +1598,24 @@ const LenderPortfolioDashboard = () => {
     }
     // Only show spinner after 600ms — fast Redis hits never show a loading indicator
     const spinnerTimer = setTimeout(() => setEarningsLoading(true), 600);
-    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`, { headers: { accessToken: getToken() } })
-      .then((res) => { earningsCache.current[cacheKey] = res.data; setEarningsData(res.data); })
+    const url = `${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`;
+    axios.get(url, { headers: { accessToken: getToken() } })
+      .then((res) => {
+        earningsCache.current[cacheKey] = res.data;
+        setEarningsData(res.data);
+        // If narrative is empty (async generation in progress), re-fetch once after 5s
+        if (!res.data?.narrative) {
+          setTimeout(() => {
+            axios.get(url, { headers: { accessToken: getToken() } })
+              .then((res2) => {
+                if (res2.data?.narrative) {
+                  earningsCache.current[cacheKey] = res2.data;
+                  setEarningsData(res2.data);
+                }
+              }).catch(() => {});
+          }, 5000);
+        }
+      })
       .catch(() => {})
       .finally(() => { clearTimeout(spinnerTimer); setEarningsLoading(false); });
   }, [resolvedLenderId, fyFilter]);
