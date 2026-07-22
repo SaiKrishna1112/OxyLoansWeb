@@ -615,6 +615,10 @@ const FY_LOAD_MSGS = [
 const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId, lenderName }) => {
   const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false, pdf: false });
   const [loadMsgIdx, setLoadMsgIdx] = useState(0);
+  // Prefetch fy-report when filter changes — all downloads reuse this cache
+  const [fyCache, setFyCache] = useState(null);
+  const [fyCacheKey, setFyCacheKey] = useState(null);
+  const [fyPrefetching, setFyPrefetching] = useState(false);
 
   useEffect(() => {
     if (!loading) { setLoadMsgIdx(0); return; }
@@ -622,15 +626,27 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     return () => clearInterval(t);
   }, [loading]);
 
+  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom");
+  const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
+  const cacheKey = dateRange ? `${dateRange.startDate}_${dateRange.endDate}` : null;
+
+  // Prefetch as soon as FY filter settles and earnings have loaded
+  useEffect(() => {
+    if (!showDownloads || !dateRange || !lenderId || loading || fyPrefetching) return;
+    if (fyCacheKey === cacheKey && fyCache) return; // already cached
+    setFyPrefetching(true);
+    getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate)
+      .then(res => { setFyCache(res?.data); setFyCacheKey(cacheKey); })
+      .catch(() => {})
+      .finally(() => setFyPrefetching(false));
+  }, [cacheKey, loading]); // eslint-disable-line
+
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
   const principal = earningsData.fyPrincipalReturned || 0;
   const total     = earningsData.fyTotalReceived     || 0;
   const label     = earningsData.fyLabel             || "Period";
   const narrative = earningsData.narrative           || "";
-
-  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom");
-  const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
 
   const dlBtnStyle = (color, disabled) => ({
     padding: "5px 11px", borderRadius: 8, border: `1px solid ${color}`,
@@ -644,12 +660,20 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     return new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
   };
 
+  // Use cached data if available, otherwise fetch (fallback)
+  const getFyData = async () => {
+    if (fyCache && fyCacheKey === cacheKey) return fyCache;
+    const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
+    const d = res?.data;
+    setFyCache(d); setFyCacheKey(cacheKey);
+    return d;
+  };
+
   const downloadDealWise = async () => {
     if (!dateRange || !lenderId) return;
     setDlLoading(s => ({ ...s, excel: true }));
     try {
-      const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
-      const data = res?.data;
+      const data = await getFyData();
       if (!data?.deals?.length) { alert("No data for this period."); return; }
       const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn (Lender Exit)" : s === "CLOSED" ? "Closed" : "Active";
       const rows = [
@@ -674,8 +698,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     if (!dateRange || !lenderId) return;
     setDlLoading(s => ({ ...s, monthly: true }));
     try {
-      const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
-      const data = res?.data;
+      const data = await getFyData();
       if (!data?.monthly?.length) { alert("No data for this period."); return; }
       const rows = [
         ["Month", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)", "Deals"],
@@ -694,8 +717,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     if (!dateRange || !lenderId) return;
     setDlLoading(s => ({ ...s, pdf: true }));
     try {
-      const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
-      const data = res?.data;
+      const data = await getFyData();
       if (!data?.deals?.length) { alert("No data for this period."); return; }
 
       const { jsPDF } = await import("jspdf");
@@ -895,14 +917,20 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
           {label} Earnings Summary
         </div>
         {showDownloads && dateRange && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button onClick={downloadDealWise} disabled={dlLoading.excel || loading} style={dlBtnStyle("#52c41a", dlLoading.excel || loading)}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            {fyPrefetching && (
+              <span style={{ fontSize: 11, color: "#8c8c8c", display: "flex", alignItems: "center", gap: 4 }}>
+                <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5, color: "#8c8c8c" }} />
+                Preparing downloads…
+              </span>
+            )}
+            <button onClick={downloadDealWise} disabled={dlLoading.excel || loading || fyPrefetching} style={dlBtnStyle("#52c41a", dlLoading.excel || loading || fyPrefetching)}>
               {dlLoading.excel ? "Preparing…" : "⬇ Deal-wise"}
             </button>
-            <button onClick={downloadMonthWise} disabled={dlLoading.monthly || loading} style={dlBtnStyle("#faad14", dlLoading.monthly || loading)}>
+            <button onClick={downloadMonthWise} disabled={dlLoading.monthly || loading || fyPrefetching} style={dlBtnStyle("#faad14", dlLoading.monthly || loading || fyPrefetching)}>
               {dlLoading.monthly ? "Preparing…" : "⬇ MonthWise"}
             </button>
-            <button onClick={downloadPdf} disabled={dlLoading.pdf || loading} style={dlBtnStyle("#f5222d", dlLoading.pdf || loading)}>
+            <button onClick={downloadPdf} disabled={dlLoading.pdf || loading || fyPrefetching} style={dlBtnStyle("#f5222d", dlLoading.pdf || loading || fyPrefetching)}>
               {dlLoading.pdf ? "Generating…" : "⬇ PDF"}
             </button>
           </div>
