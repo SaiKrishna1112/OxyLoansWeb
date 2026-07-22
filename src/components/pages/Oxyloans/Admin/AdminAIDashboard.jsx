@@ -2636,9 +2636,6 @@ const AdminAIDashboard = () => {
                     <p>Referral lenders by year (2021 → current). Click to open year boxes and lists.</p>
                   </div>
                   <span className="admin-ai-yearwise-header-meta">
-                    <span className="admin-ai-yearwise-header-count">
-                      {referralYearsLoading ? "…" : fmtNum(referralYearGrandTotal)}
-                    </span>
                     <span className="admin-ai-yearwise-header-open">Open →</span>
                   </span>
                 </button>
@@ -3019,11 +3016,11 @@ const AdminAIDashboard = () => {
                   <p>Each year shows Lent and Registered counts. Click a status box to list those users.</p>
                 </div>
                 <div className="admin-ai-panel-actions">
-                  <span className="admin-ai-count-pill">
-                    {referralYear && referralYearStatus
-                      ? `${fmtNum(referralTotal)} ${referralYearStatus} in ${referralYear}`
-                      : `${fmtNum(referralYearGrandTotal)} total`}
-                  </span>
+                  {referralYear && referralYearStatus ? (
+                    <span className="admin-ai-count-pill">
+                      {`${fmtNum(referralTotal)} ${referralYearStatus} in ${referralYear}`}
+                    </span>
+                  ) : null}
                   <button className="admin-ai-reset-btn" type="button" onClick={loadReferralYearCards} disabled={referralYearsLoading || topReferrersLoading}>
                     {referralYearsLoading || topReferrersLoading ? "Refreshing..." : "Refresh"}
                   </button>
@@ -3041,9 +3038,6 @@ const AdminAIDashboard = () => {
                         : "Lent and Registered shown separately — click a box to open users"}
                     </span>
                   </div>
-                  <span className="admin-ai-referral-year-head-total">
-                    {referralYearsLoading ? "…" : `${fmtNum(referralYearGrandTotal)} lenders`}
-                  </span>
                 </div>
                 <div className="admin-ai-referral-year-grid">
                   {referralYearCards.map((item) => {
