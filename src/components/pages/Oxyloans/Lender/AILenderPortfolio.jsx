@@ -1606,10 +1606,16 @@ const LenderPortfolioDashboard = () => {
   }, [resolvedLenderId, fyFilter]);
 
   // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
+  // Uses the same earningsCache so a cached all-time result avoids a DB hit
   useEffect(() => {
     if (!resolvedLenderId) return;
+    const allTimeCacheKey = `${resolvedLenderId}:`;
+    if (earningsCache.current[allTimeCacheKey]) {
+      setMomData(earningsCache.current[allTimeCacheKey]);
+      return;
+    }
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings`, { headers: { accessToken: getToken() } })
-      .then((res) => setMomData(res.data))
+      .then((res) => { earningsCache.current[allTimeCacheKey] = res.data; setMomData(res.data); })
       .catch(() => {});
   }, [resolvedLenderId]);
 
