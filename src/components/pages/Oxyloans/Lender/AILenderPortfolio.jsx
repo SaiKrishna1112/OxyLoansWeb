@@ -698,163 +698,176 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 
       // Landscape A4 — fits all 9 columns comfortably
       const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-      const pageW = doc.internal.pageSize.getWidth(); // 842pt
-      const ML = 36; // left margin
-      const MR = 36; // right margin
-      const usableW = pageW - ML - MR;             // 770pt
-      const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      const pageW  = doc.internal.pageSize.getWidth();  // 842pt
+      const pageH  = doc.internal.pageSize.getHeight(); // 595pt
+      const ML     = 36;
+      const MR     = 36;
+      const usableW = pageW - ML - MR;                  // 770pt
+      const today  = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
-      // ── LOGO ──────────────────────────────────────────────────────────────
+      // Brand colours
+      const NAVY   = [26,  35,  126];
+      const INDIGO = [57,  73,  171];
+      const BLUE   = [21, 101,  192];
+      const TEAL   = [0,  105,   92];
+      const LGTEAL = [224, 242, 241];
+      const LBLUE  = [227, 242, 253];
+      const LGOLD  = [255, 248, 225];
+      const WHITE  = [255, 255, 255];
+
+      // ── HEADER BAND ───────────────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, pageW, 52, "F");
+
+      // Try loading logo into header
       try {
         const logoUrl = "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/CHEQUELEAF_JPG.jpg";
         const imgData = await fetch(logoUrl).then(r => r.blob()).then(b => new Promise(res => {
           const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b);
         }));
-        doc.addImage(imgData, "JPEG", ML, 24, 80, 28);
-      } catch (_) { /* logo fetch failed — skip gracefully */ }
+        doc.addImage(imgData, "JPEG", ML, 8, 72, 36);
+      } catch (_) { /* logo unavailable — skip */ }
 
-      // ── COMPANY HEADER ───────────────────────────────────────────────────
-      doc.setFont("helvetica", "bold"); doc.setFontSize(13);
-      doc.text("SRS FINTECHLABS PVT. LTD", pageW / 2, 34, { align: "center" });
-      doc.setFontSize(9); doc.setFont("helvetica", "normal");
-      doc.text("RBI Registered P2P Lending Platform  |  support@oxyloans.com", pageW / 2, 46, { align: "center" });
+      doc.setTextColor(...WHITE);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+      doc.text("SRS FINTECHLABS PVT. LTD", pageW / 2, 24, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+      doc.text("RBI Registered P2P Lending Platform  |  www.oxyloans.com  |  support@oxyloans.com", pageW / 2, 38, { align: "center" });
 
-      // Horizontal rule
-      doc.setDrawColor(180, 180, 200); doc.setLineWidth(0.5);
-      doc.line(ML, 54, pageW - MR, 54);
-
-      // Statement title + period
+      // ── TITLE BAND ─────────────────────────────────────────────────────────
+      doc.setFillColor(...INDIGO);
+      doc.rect(0, 52, pageW, 26, "F");
+      doc.setTextColor(...WHITE);
       doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-      doc.text("LENDER FINANCIAL STATEMENT", pageW / 2, 68, { align: "center" });
-      doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-      doc.text(`Period: ${data.fyLabel}`, pageW / 2, 80, { align: "center" });
+      doc.text("LENDER FINANCIAL STATEMENT", pageW / 2, 64, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+      doc.text(`Period: ${data.fyLabel}`, pageW / 2, 73, { align: "center" });
 
-      doc.line(ML, 87, pageW - MR, 87);
-
-      // ── LENDER INFO BLOCK (two-column) ────────────────────────────────────
-      const infoY = 100;
+      // ── LENDER INFO BAND ──────────────────────────────────────────────────
+      doc.setFillColor(...LBLUE);
+      doc.rect(0, 78, pageW, 34, "F");
+      doc.setTextColor(30, 30, 100);
       doc.setFontSize(8.5);
-      const col2 = pageW / 2 + 10;
-      const labelW = 68;
-
-      const infoRow = (label, val, x, y) => {
-        doc.setFont("helvetica", "bold"); doc.text(label, x, y);
-        doc.setFont("helvetica", "normal"); doc.text(String(val), x + labelW, y);
+      const col2 = pageW / 2 + 20;
+      const lw   = 72;
+      const infoRow = (lbl, val, x, y) => {
+        doc.setFont("helvetica", "bold");  doc.text(lbl, x, y);
+        doc.setFont("helvetica", "normal"); doc.text(String(val), x + lw, y);
       };
-      infoRow("Lender Name :",  lenderName || "-",  ML,    infoY);
-      infoRow("Lender ID :",    `LR ${lenderId}`,   col2,  infoY);
-      infoRow("Generated On :", today,               ML,    infoY + 13);
-      infoRow("State / UT :",   "Telangana (36)",   col2,  infoY + 13);
+      infoRow("Lender Name :",  lenderName || "-",   ML,    92);
+      infoRow("Lender ID :",    `LR ${lenderId}`,    col2,  92);
+      infoRow("Generated On :", today,                ML,    105);
+      infoRow("State / UT :",   "Telangana (36)",    col2,  105);
 
-      doc.line(ML, infoY + 22, pageW - MR, infoY + 22);
+      // ── HELPERS ───────────────────────────────────────────────────────────
+      const fmt2 = v => Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn" : s === "CLOSED" ? "Closed" : "Active";
 
-      // ── DEAL-WISE TABLE ───────────────────────────────────────────────────
-      const sectionLabel = (txt, y) => {
-        doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
-        doc.setFillColor(240, 240, 248);
-        doc.rect(ML, y - 10, usableW, 14, "F");
-        doc.setTextColor(30, 30, 100);
-        doc.text(txt, ML + 4, y);
+      const sectionBanner = (txt, color, y) => {
+        doc.setFillColor(...color);
+        doc.rect(ML, y, usableW, 15, "F");
+        doc.setTextColor(...WHITE);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+        doc.text(txt, ML + 6, y + 10);
         doc.setTextColor(0, 0, 0);
       };
 
-      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn" : s === "CLOSED" ? "Closed" : "Active";
-      const fmt2 = v => Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      // ── DEAL-WISE TABLE ────────────────────────────────────────────────────
+      sectionBanner("▸  Deal-wise Breakdown", BLUE, 118);
 
-      sectionLabel("Deal-wise Breakdown", infoY + 38);
-
-      // Portrait A4 usable width = 523pt for 9 columns (dropped S.No — row position is implicit)
       autoTable(doc, {
-        startY: infoY + 46,
+        startY: 134,
         margin: { left: ML, right: MR },
-        head: [["Deal ID", "Deal Name", "Participated\n(₹)", "Interest\n(₹)", "Principal\n(₹)", "Total\n(₹)", "Status", "Closed/\nExit Date", "First Int\nDate"]],
-        body: [
-          ...data.deals.map(d => [
-            d.dealId,
-            d.dealName,
-            fmt2(d.participatedAmount),
-            fmt2(d.interestEarned),
-            fmt2(d.principalReturned),
-            fmt2(d.totalReceived),
-            statusLabel(d.dealStatus),
-            d.closedDate || "-",
-            d.loanActiveDate || "-",
-          ]),
-          ["", "TOTAL", "", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), "", "", ""],
-        ],
-        styles: { fontSize: 7, cellPadding: { top: 3, bottom: 3, left: 3, right: 2 }, valign: "middle" },
-        headStyles: { fillColor: [30, 30, 100], textColor: 255, fontStyle: "bold", fontSize: 7, halign: "center" },
-        alternateRowStyles: { fillColor: [250, 250, 255] },
+        head: [["Deal ID", "Deal Name", "Participated (₹)", "Interest (₹)", "Principal (₹)", "Total (₹)", "Status", "Closed / Exit Date", "First Int Date"]],
+        body: data.deals.map(d => [
+          d.dealId, d.dealName,
+          fmt2(d.participatedAmount),
+          fmt2(d.interestEarned),
+          fmt2(d.principalReturned),
+          fmt2(d.totalReceived),
+          statusLabel(d.dealStatus),
+          d.closedDate   || "-",
+          d.loanActiveDate || "-",
+        ]),
+        foot: [["", "TOTAL", "", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), "", "", ""]],
+        showFoot: "lastPage",
+        styles: { fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 }, valign: "middle" },
+        headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, halign: "center" },
+        footStyles: { fillColor: [200, 225, 255], textColor: [0, 0, 80], fontStyle: "bold", fontSize: 7.5 },
+        alternateRowStyles: { fillColor: [240, 246, 255] },
         columnStyles: {
-          0: { cellWidth: 48, halign: "center" },   // Deal ID
-          1: { cellWidth: 200 },                     // Deal Name — plenty of space in landscape
-          2: { cellWidth: 80, halign: "right" },     // Participated
-          3: { cellWidth: 75, halign: "right" },     // Interest
-          4: { cellWidth: 75, halign: "right" },     // Principal
-          5: { cellWidth: 75, halign: "right" },     // Total
-          6: { cellWidth: 60, halign: "center" },    // Status
-          7: { cellWidth: 76, halign: "center" },    // Closed/Exit Date
-          8: { cellWidth: 75, halign: "center" },    // First Int Date
-        },  // total ≈ 764pt ≤ 770pt ✓
+          0: { cellWidth: 46,  halign: "center" },
+          1: { cellWidth: 200 },
+          2: { cellWidth: 82,  halign: "right" },
+          3: { cellWidth: 76,  halign: "right" },
+          4: { cellWidth: 76,  halign: "right" },
+          5: { cellWidth: 76,  halign: "right" },
+          6: { cellWidth: 58,  halign: "center" },
+          7: { cellWidth: 78,  halign: "center" },
+          8: { cellWidth: 76,  halign: "center" },
+        },
         didParseCell: (h) => {
-          if (h.row.index === data.deals.length) {
-            h.cell.styles.fontStyle = "bold";
-            h.cell.styles.fillColor = [235, 235, 245];
+          if (h.section === "body" && h.column.index === 6) {
+            const v = h.cell.raw;
+            if (v === "Closed")    { h.cell.styles.textColor = [27, 94, 32];   h.cell.styles.fillColor = [232, 245, 233]; }
+            if (v === "Active")    { h.cell.styles.textColor = [230, 81,  0];  h.cell.styles.fillColor = [255, 243, 224]; }
+            if (v === "Withdrawn") { h.cell.styles.textColor = [136, 14, 79];  h.cell.styles.fillColor = [252, 228, 236]; }
           }
         },
       });
 
-      // ── MONTHLY TABLE ─────────────────────────────────────────────────────
-      const afterDeals = doc.lastAutoTable.finalY + 16;
-      sectionLabel("Month-wise Summary", afterDeals + 10);
+      // ── MONTHLY TABLE ──────────────────────────────────────────────────────
+      const afterDeals = doc.lastAutoTable.finalY + 14;
+      sectionBanner("▸  Month-wise Summary", TEAL, afterDeals);
 
       autoTable(doc, {
-        startY: afterDeals + 18,
+        startY: afterDeals + 16,
         margin: { left: ML, right: MR },
+        tableWidth: 545,
         head: [["Month", "Interest (₹)", "Principal (₹)", "Total (₹)", "Deals"]],
-        body: [
-          ...data.monthly.map(m => [
-            m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
-          ]),
-          ["TOTAL", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), ""],
-        ],
-        styles: { fontSize: 7.5, cellPadding: 3, valign: "middle" },
-        headStyles: { fillColor: [30, 30, 100], textColor: 255, fontStyle: "bold", halign: "center" },
-        alternateRowStyles: { fillColor: [250, 250, 255] },
+        body: data.monthly.map(m => [
+          m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
+        ]),
+        foot: [["TOTAL", fmt2(data.totalInterest), fmt2(data.totalPrincipal), fmt2(data.grandTotal), ""]],
+        showFoot: "lastPage",
+        styles: { fontSize: 8, cellPadding: 3.5, valign: "middle" },
+        headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", halign: "center" },
+        footStyles: { fillColor: LGTEAL, textColor: [0, 60, 50], fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [240, 250, 249] },
         columnStyles: {
           0: { cellWidth: 100 },
-          1: { cellWidth: 130, halign: "right" },
-          2: { cellWidth: 130, halign: "right" },
-          3: { cellWidth: 130, halign: "right" },
-          4: { cellWidth: 55,  halign: "center" },
-        },
-        didParseCell: (h) => {
-          if (h.row.index === data.monthly.length) {
-            h.cell.styles.fontStyle = "bold";
-            h.cell.styles.fillColor = [235, 235, 245];
-          }
+          1: { cellWidth: 120, halign: "right" },
+          2: { cellWidth: 120, halign: "right" },
+          3: { cellWidth: 120, halign: "right" },
+          4: { cellWidth: 85,  halign: "center" },
         },
       });
 
-      // ── DECLARATION + SIGNATURE ───────────────────────────────────────────
-      const afterMonthly = doc.lastAutoTable.finalY + 18;
-      doc.setDrawColor(180, 180, 200); doc.line(ML, afterMonthly, pageW - MR, afterMonthly);
+      // ── DECLARATION + SIGNATURE ────────────────────────────────────────────
+      const afterMonthly = doc.lastAutoTable.finalY + 14;
+      doc.setFillColor(...LGOLD);
+      doc.rect(ML, afterMonthly, usableW, 46, "F");
+      doc.setDrawColor(200, 160, 0); doc.setLineWidth(0.5);
+      doc.rect(ML, afterMonthly, usableW, 46);
 
-      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(60, 60, 60);
-      doc.text("Declaration:", ML, afterMonthly + 12);
-      doc.setFont("helvetica", "normal");
-      doc.text("This statement is system generated and valid without signature. Interest and principal figures reflect", ML, afterMonthly + 22);
-      doc.text("amounts received in the selected period as per OxyLoans platform records.", ML, afterMonthly + 32);
-      doc.text("For queries: support@oxyloans.com", ML, afterMonthly + 42);
+      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(100, 70, 0);
+      doc.text("Declaration:", ML + 6, afterMonthly + 11);
+      doc.setFont("helvetica", "normal"); doc.setTextColor(60, 40, 0);
+      doc.text("This statement is system generated and valid without signature. Interest and principal figures reflect amounts", ML + 6, afterMonthly + 22);
+      doc.text("received in the selected period as per OxyLoans platform records.  For queries: support@oxyloans.com", ML + 6, afterMonthly + 32);
 
-      doc.setFont("helvetica", "bold"); doc.setTextColor(0, 0, 0);
-      doc.text("Authorized Signatory", pageW - MR, afterMonthly + 32, { align: "right" });
-      doc.setFont("helvetica", "normal"); doc.setFontSize(7);
-      doc.text("SRS Fintechlabs Pvt. Ltd. (OxyLoans)", pageW - MR, afterMonthly + 42, { align: "right" });
+      doc.setFont("helvetica", "bold"); doc.setTextColor(...NAVY);
+      doc.text("Authorized Signatory", pageW - MR - 6, afterMonthly + 22, { align: "right" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(80, 80, 80);
+      doc.text("SRS Fintechlabs Pvt. Ltd. (OxyLoans)", pageW - MR - 6, afterMonthly + 33, { align: "right" });
 
-      // Page number
-      doc.setFontSize(7); doc.setTextColor(150);
-      doc.text(`Page 1`, pageW / 2, doc.internal.pageSize.getHeight() - 18, { align: "center" });
+      // ── FOOTER BAR ─────────────────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, pageH - 18, pageW, 18, "F");
+      doc.setTextColor(...WHITE); doc.setFontSize(7); doc.setFont("helvetica", "normal");
+      doc.text("OxyLoans — Confidential Financial Statement", ML, pageH - 6);
+      doc.text("Page 1", pageW / 2, pageH - 6, { align: "center" });
+      doc.text(today, pageW - MR, pageH - 6, { align: "right" });
 
       doc.save(`OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_Statement.pdf`);
     } catch (e) { console.error("PDF download error", e); alert("PDF generation failed. Please try again."); }
