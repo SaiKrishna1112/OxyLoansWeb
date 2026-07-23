@@ -162,8 +162,8 @@ const OfferCard = ({
               </span>
             </div>
             )}
-             {mandateStatusValue !== "NOT_FOUND" ?
-           <div className="info-row">
+        {mandateStatusValue !== "NOT_FOUND" ?
+          <div className="info-row">
               <span className="info-label">Mandate Status</span>
               <span className="info-value">
                 {(() => {
@@ -249,7 +249,7 @@ const OfferCard = ({
               <i className="fa-solid fa-receipt me-1"></i> Repayment
             </Link>
           ) : */}
-          { showEnachBtn ? (
+          {borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement && offer.lenderEsigned && offer.borrowerEsigned && showEnachBtn ? (
             <Link 
               to={`/enach/${offer.loanRequestId}`}
               className="oxy-btn-primary flex-fill btn-info text-white text-center d-flex align-items-center justify-content-center"
@@ -263,6 +263,20 @@ const OfferCard = ({
               Processed
             </button>
           )}
+        {offer.mandateStatus === "SUCCESS" &&  
+        <div
+            style={{
+              backgroundColor: "#FFF3CD",
+              color: "#856404",
+              padding: "12px 16px",
+              border: "1px solid #FFE69C",
+              borderRadius: "8px",
+              fontWeight: "600",
+              textAlign: "center",
+            }}
+          >
+            🚀 Disbursal is in progress. Please wait while we process your loan amount.
+          </div> }
         </div>
       </div>
     </div>

@@ -48,7 +48,7 @@ axios.interceptors.response.use(
                   text: "Session regenerated successfully. Reloading...",
                   icon: "success",
                   showConfirmButton: false,
-                  timer: 2000
+                  timer: 5000
                 });
               } catch (err) {
                 console.error("Failed to regenerate session token", err);
@@ -60,7 +60,7 @@ axios.interceptors.response.use(
                   title: "Error",
                   text: "Failed to renew session. Redirecting to login...",
                   icon: "error",
-                  timer: 2000,
+                  timer: 5000,
                   showConfirmButton: false
                 }).then(() => {
                   window.location.href = "/";

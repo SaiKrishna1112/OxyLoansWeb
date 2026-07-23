@@ -1224,15 +1224,19 @@ const ProximityLoans = () => {
                             placeholder="e.g. 90"
                             value={offerData.tenure}
                             onChange={(e) => {
+                            const value = e.target.value;
+
+                            if (/^\d{0,2}$/.test(value)) {
                               setOfferData({
                                 ...offerData,
-                                tenure: e.target.value,
+                                tenure: value,
                               });
-                              setOfferErrors({ ...offerErrors, tenure: "" });
-                            }}
+                            }
+
+                            setOfferErrors({ ...offerErrors, tenure: "" });
+                          }}
                           />
                         )}
-
                         <select
                           className="form-select"
                           style={{ maxWidth: "110px" }}
@@ -1249,6 +1253,12 @@ const ProximityLoans = () => {
                           <option value="Months">Months</option>
                         </select>
                       </div>
+
+                      {durationType==="Days"&&(
+                        <div className="text-danger small mt-1" style={{ fontSize: "12px" }}>
+                          Daily interest is calculated
+                        </div>
+                      )}
 
                       {offerErrors.tenure && (
                         <div className="text-danger small mt-1" style={{ fontSize: "12px" }}>

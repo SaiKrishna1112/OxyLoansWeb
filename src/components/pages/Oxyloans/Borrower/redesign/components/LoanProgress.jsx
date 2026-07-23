@@ -75,27 +75,28 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
       latestRequest = [...loanRequestsList].sort((a, b) => b.id - a.id)[0];
     }
 
+    if (latestRequest) {
+      activeLoanRequestId = latestRequest.id;
+    } else if (loansList.length > 0 && loansList[0].loanRequestId) {
+      activeLoanRequestId = loansList[0].loanRequestId;
+    }
+
     if (currentStep === "") {
-      if (latestRequest && (latestRequest.loanRequestStatus === "REQUEST" || latestRequest.loanRequestStatus === "FULLYPROCESSING")) {
+      if (latestRequest || loansList.length > 0) {
         steps[2].status = "COMPLETED";
         steps[2].statusText = "Loan request raised";
-        activeLoanRequestId = latestRequest.id;
       } else {
         steps[2].status = "ACTIVE";
         steps[2].statusText = "Create new request";
         currentStep = "Loan Request";
         nextStep = "Loan Request";
       }
-    } else {
-      if (latestRequest) {
-        activeLoanRequestId = latestRequest.id;
-      }
     }
 
     // STEP 4: OFFERS
     const filteredOffers = activeLoanRequestId
       ? loansList.filter((loan) => loan.loanRequestId === activeLoanRequestId)
-      : [];
+      : loansList;
 
     const activeOffers = filteredOffers.filter((o) => {
       const lenderStatus = String(o.lenderStatus || "").toUpperCase().trim();
@@ -110,11 +111,13 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
       const lenderStatus = String(loan.lenderStatus || "").toUpperCase().trim();
 
       const isDisbursed = [
+        "ACTIVE",
         "DISBURSED",
         "FUNDS_TRANSFERRED",
         "TRANSFERRED",
         "LOAN_DISBURSED"
       ].includes(loanStatus) || [
+        "ACTIVE",
         "DISBURSED",
         "FUNDS_TRANSFERRED",
         "TRANSFERRED",
@@ -129,7 +132,8 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
         "ESIGN_DONE",
         "ENACH_INITIATED",
         "ENACH_APPROVED",
-        "DISBURSAL_PENDING"
+        "DISBURSAL_PENDING",
+        "ACTIVE"
       ].includes(loanStatus);
 
       if (isAccepted) return 3;
@@ -163,14 +167,15 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
         "DISBURSED",
         "FUNDS_TRANSFERRED",
         "TRANSFERRED",
-        "LOAN_DISBURSED"
+        "LOAN_DISBURSED",
+        "ACTIVE"
       ].includes(loanStatus);
 
       return (lenderStatus === "LOANACCEPTED" && borrowerStatus === "LOANACCEPTED") || isAcceptedStatus;
     });
 
     if (currentStep === "") {
-      if (acceptedLoanRecord) {
+      if (acceptedLoanRecord || (activeLoan && activeLoan.borrowerStatus === "LOANACCEPTED")) {
         steps[3].status = "COMPLETED";
         steps[3].statusText = "Offer accepted";
       } else if (activeOffers.length > 0) {
@@ -197,15 +202,32 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
         const loanStatus = String(activeLoan.loanStatus || "").toUpperCase().trim();
         const hasAgreement = activeLoan.borrowerAggrement !== null && activeLoan.borrowerAggrement !== undefined && String(activeLoan.borrowerAggrement).trim() !== "";
         
-        // eSign is completed if borrowerEsigned is true or status is any of the post-esign statuses
+        const mandateStatusRaw = String(
+          activeLoan.mandateStatus ||
+          activeLoan.MandateStatus ||
+          activeLoan.borrowerMandateStatus ||
+          activeLoan.enachStatus ||
+          ""
+        ).toUpperCase().trim();
+
+        const isMandateSuccess = [
+          "SUCCESS",
+          "APPROVED",
+          "ACTIVE",
+          "TRUE",
+          "BANK_APPROVAL_PENDING"
+        ].includes(mandateStatusRaw) || Boolean(activeLoan.mandateId);
+
         const isEsigned = activeLoan.borrowerEsigned === true || 
                           activeLoan.borrowerEsigned === "true" ||
-                          ["ESIGN_DONE", "AWAITING_ENACH", "ENACH_INITIATED", "ENACH_APPROVED", "DISBURSAL_PENDING", "DISBURSED"].includes(loanStatus);
+                          activeLoan.borrowerEsignStatus === true ||
+                          activeLoan.borrowerEsignStatus === "true" ||
+                          ["ESIGN_DONE", "AWAITING_ENACH", "ENACH_INITIATED", "ENACH_APPROVED", "DISBURSAL_PENDING", "DISBURSED", "ACTIVE"].includes(loanStatus);
 
-        // eNACH is completed if status is ENACH_APPROVED or later
-        const isEnachCompleted = ["ENACH_APPROVED", "DISBURSAL_PENDING", "DISBURSED"].includes(loanStatus) ||
+        const isEnachCompleted = isMandateSuccess ||
                                  activeLoan.enachStatus === true ||
-                                 activeLoan.enachStatus === "true";
+                                 activeLoan.enachStatus === "true" ||
+                                 ["ENACH_APPROVED", "DISBURSAL_PENDING", "DISBURSED", "ACTIVE"].includes(loanStatus);
 
         if (isEsigned && isEnachCompleted) {
           steps[4].status = "COMPLETED";
@@ -243,11 +265,13 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
         const loanStatus = String(activeLoan.loanStatus || "").toUpperCase().trim();
 
         const isDisbursed = [
+          "ACTIVE",
           "DISBURSED",
           "FUNDS_TRANSFERRED",
           "TRANSFERRED",
           "LOAN_DISBURSED"
         ].includes(loanStatus) || [
+          "ACTIVE",
           "DISBURSED",
           "FUNDS_TRANSFERRED",
           "TRANSFERRED",

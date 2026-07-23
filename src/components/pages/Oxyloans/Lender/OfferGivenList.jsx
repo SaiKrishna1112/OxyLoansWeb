@@ -672,10 +672,16 @@ const OfferGivenList = () => {
                                     </>
                                   )}
                                 </button>
-                              ) : (
+                              ) : offer.loanStatus === "REJECTED" ? (
                                 <small className="text-muted">
-                                  Pending wallet debit
+                                  { offer.lenderStatus === "LENDER_REJECTED"
+                                      ? "The lender has rejected this loan request."
+                                      : offer.borrowerStatus === "BORROWER_REJECTED"
+                                      ? "The borrower has rejected this loan offer."
+                                      : ""}
                                 </small>
+                              ):(
+                                <small className="text-muted">Pending</small>
                               )}
                             </td>
 

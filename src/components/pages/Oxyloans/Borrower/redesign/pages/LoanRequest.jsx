@@ -339,15 +339,13 @@ const LoanRequest = () => {
                     <div className="alert alert-danger py-2 px-3 small mb-4">{eligibleErrorMessage}</div>
                   )}
 
-                  
-
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                       <label className="form-label text-muted small uppercase text-uppercase">Required Amount (₹)</label>
                       <input 
                         type="number" 
                         className="form-control rounded-3 py-3" 
-                        min="5000"
+                        min="500"
                         max={maxLimit || undefined}
                         value={requestAmount} 
                         placeholder="e.g. 50000" 

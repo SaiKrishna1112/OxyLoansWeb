@@ -161,6 +161,16 @@ const BorrowerProfile = () => {
     return Math.round((filledFields.length / fields.length) * 100);
   }, [userProfile]);
   const [localityOptions, setLocalityOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+
+  const displayCityOptions = useMemo(() => {
+    return Array.from(
+      new Set([
+        ...(userProfile.city ? [userProfile.city] : []),
+        ...(cityOptions || []),
+      ])
+    ).filter(Boolean);
+  }, [userProfile.city, cityOptions]);
   const [isVerifyingPan, setIsVerifyingPan] = useState(false);
   const [isPanVerified, setIsPanVerified] = useState(false);
   const [panVerificationStatus, setPanVerificationStatus] = useState("");
@@ -1175,40 +1185,79 @@ const BorrowerProfile = () => {
 
 
   const handlePinCodeChange = async (name, value) => {
-  if (name === "pinCode" && value.length === 6) {
-    try {
-      const res = await axios.get(`${BASE_URL}/${value}/pincode`);
-      const blocks = res.data.pinresults
-        .map((item) => item.block)
-        .filter((block, index, self) => block && self.indexOf(block) === index); // Get unique non-null blocks
+    if (name === "pinCode" && value.length === 6) {
+      try {
+        const res = await axios.get(`${BASE_URL}/${value}/pincode`);
+        const resData = res.data || res;
 
-      setLocalityOptions(blocks);
+        const blocks = resData.pinresults
+          ? resData.pinresults
+              .map((item) => item.block)
+              .filter((block, index, self) => block && self.indexOf(block) === index)
+          : [];
 
-      // Set the first locality as default if blocks are available
-      setUserProfile((prev) => ({
-        ...prev,
-        locality: blocks.length > 0 ? blocks[0] : "", // Select first option or empty string
-        localityerror: blocks.length > 0 ? "" : "No localities found for this pin code",
-      }));
-    } catch (error) {
-      console.error("Failed to fetch pincode info", error);
+        setLocalityOptions(blocks);
+
+        let cities = [];
+        if (typeof resData.city === "string" && resData.city.trim()) {
+          cities = resData.city.split(/[,/]+/).map((c) => c.trim()).filter(Boolean);
+        } else if (Array.isArray(resData.city)) {
+          cities = resData.city.filter(Boolean);
+        }
+
+        if (resData.cities && Array.isArray(resData.cities)) {
+          const extraCities = resData.cities.map((c) => String(c).trim()).filter(Boolean);
+          cities = [...cities, ...extraCities];
+        }
+
+        if (resData.pinresults && Array.isArray(resData.pinresults)) {
+          const pinCities = resData.pinresults
+            .map((item) => item.city || item.district || item.districtName || item.taluk)
+            .filter(Boolean);
+          cities = [...cities, ...pinCities];
+        }
+
+        cities = Array.from(new Set(cities));
+
+        setCityOptions(cities);
+
+        const fetchedState =
+          resData.state ||
+          (resData.pinresults && resData.pinresults[0]?.state) ||
+          (resData.pinresults && resData.pinresults[0]?.statename) ||
+          "";
+
+        setUserProfile((prev) => ({
+          ...prev,
+          locality: blocks.length > 0 ? (blocks.includes(prev.locality) ? prev.locality : blocks[0]) : prev.locality,
+          localityerror: blocks.length > 0 ? "" : "No localities found for this pin code",
+          city: cities.length > 0 ? (cities.includes(prev.city) ? prev.city : cities[0]) : (resData.city || prev.city),
+          cityer: "",
+          state: fetchedState || prev.state,
+          stateerror: "",
+          pinCodeerror: "",
+        }));
+      } catch (error) {
+        console.error("Failed to fetch pincode info", error);
+        setLocalityOptions([]);
+        setCityOptions([]);
+        setUserProfile((prev) => ({
+          ...prev,
+          locality: "",
+          localityerror: "Failed to fetch pincode info",
+        }));
+      }
+    } else if (name === "pinCode" && value.length < 6) {
       setLocalityOptions([]);
+      setCityOptions([]);
       setUserProfile((prev) => ({
         ...prev,
         locality: "",
-        localityerror: "Failed to fetch localities",
+        localityerror: "",
+        cityer: "",
       }));
     }
-  } else if (name === "pinCode" && value.length < 6) {
-    // Clear locality options and reset locality if pin code is invalid
-    setLocalityOptions([]);
-    setUserProfile((prev) => ({
-      ...prev,
-      locality: "",
-      localityerror: "",
-    }));
-  }
-};
+  };
   const handlechange = async(event) => {
     let { name, value } = event.target;
     if (name === "panNumber" && value) {
@@ -1739,21 +1788,8 @@ const BorrowerProfile = () => {
   };
 
   useEffect(() => {
-    if (userProfile.pinCode.length == 6) {
-      const response = handlepincodeapicall(userProfile.pinCode);
-      response
-        .then((data) => {
-          if (data.request.status === 200 && data.data !== "") {
-            setUserProfile({
-              ...userProfile,
-              state: data.data.state,
-              city: data.data.city,
-            });
-          }
-        })
-        .catch((error) => {
-          // Handle error if necessary
-        });
+    if (userProfile.pinCode && String(userProfile.pinCode).length === 6) {
+      handlePinCodeChange("pinCode", String(userProfile.pinCode));
     }
   }, [userProfile.pinCode]);
   const openTheActiveTabs = (type) => {
@@ -3224,6 +3260,65 @@ console.log("data",data.status);
                                 )}
                               </div>
 
+                              {/* City Dropdown / Input */}
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  City <span className="login-danger">*</span>
+                                </label>
+                                {displayCityOptions && displayCityOptions.length > 0 ? (
+                                  <select
+                                    className="form-control"
+                                    name="city"
+                                    value={userProfile.city}
+                                    onChange={handlechange}
+                                  >
+                                    <option value="">Select City</option>
+                                    {displayCityOptions.map((c, index) => (
+                                      <option key={index} value={c}>
+                                        {c}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Enter City"
+                                    onKeyPress={handleKeyPress}
+                                    onChange={handlechange}
+                                    value={userProfile.city}
+                                    name="city"
+                                  />
+                                )}
+                                {userProfile.cityer && (
+                                  <div className="text-danger">
+                                    {userProfile.cityer}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* State */}
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  State
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Enter State"
+                                  onChange={handlechange}
+                                  onKeyPress={handleKeyPress}
+                                  value={userProfile.state}
+                                  name="state"
+                                />
+                                {userProfile.stateerror && (
+                                  <div className="text-danger">
+                                    {userProfile.stateerror}
+                                  </div>
+                                )}
+                              </div>
+
                               {/* Locality Dropdown */}
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
@@ -3246,45 +3341,6 @@ console.log("data",data.status);
                                 {userProfile.localityerror && (
                                   <div className="text-danger">
                                     {userProfile.localityerror}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>
-                                  City <span className="login-danger">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Enter City "
-                                  onKeyPress={handleKeyPress}
-                                  onChange={handlechange}
-                                  value={userProfile.city}
-                                  name="city"
-                                />
-                                {userProfile.cityer && (
-                                  <div className="text-danger">
-                                    {userProfile.cityer}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>
-                                  State
-                                  <span className="login-danger">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Enter State"
-                                  onChange={handlechange}
-                                  onKeyPress={handleKeyPress}
-                                  value={userProfile.state}
-                                  name="state"
-                                />
-                                {userProfile.stateerror && (
-                                  <div className="text-danger">
-                                    {userProfile.stateerror}
                                   </div>
                                 )}
                               </div>

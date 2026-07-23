@@ -4,7 +4,7 @@ import Swal from "sweetalert2";
 import BorrowerHeader from "../../../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../../../SideBar/BorrowerSidebar";
 import Footer from "../../../../../Footer/Footer";
-import { startCashfreeEsign, completeCashfreeEsign } from "../../../../../HttpRequest/afterlogin";
+import { startCashfreeEsign, completeCashfreeEsign,getListOfBorrowerLoansInitiated  } from "../../../../../HttpRequest/afterlogin";
 import "../redesign.css";
 
 const MarketplaceEsign = () => {
@@ -46,6 +46,31 @@ const MarketplaceEsign = () => {
     }
   };
 
+  const gettingStatus = async () => {
+  try {
+    const response = await getListOfBorrowerLoansInitiated();
+
+    console.log({ loanRequestId });
+
+    const loanData = response?.data?.find(
+      (item) => Number(item.loanRequestId) === Number(loanRequestId)
+    );
+
+    if (!loanData) {
+      console.log("Loan request not found");
+      return;
+    }
+
+    console.log({ loanData });
+
+    if (loanData.borrowerEsigned) {
+      navigate(`/enach/${loanRequestId}`);
+    }
+  } catch (error) {
+    console.error("Error fetching loan status:", error);
+  }
+};
+
   useEffect(() => {
     // Preserve authentication state when returning from external eSign redirect
     const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
@@ -58,7 +83,7 @@ const MarketplaceEsign = () => {
       sessionStorage.setItem("userId", userId);
       localStorage.setItem("userId", userId);
     }
-
+    gettingStatus()
     document.body.classList.add("oxy-redesign-active");
     if (verificationId) {
       handleVerifyCompletion();

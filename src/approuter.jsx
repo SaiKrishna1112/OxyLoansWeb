@@ -44,6 +44,7 @@ import LoadwaletThroughQr from "./components/pages/Oxyloans/Lender/LoadwaletThro
 import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/LoadwalletThroughVirtualAccount";
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
+import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import LenderEsign from "./components/pages/Oxyloans/Lender/LenderEsign";

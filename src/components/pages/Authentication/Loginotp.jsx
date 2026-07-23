@@ -34,7 +34,9 @@ const Loginotp = () => {
     errormessage: "",
   });
 
-  const [isloading, setLoading] = useState(false)
+  const [isloading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResending, setIsResending] = useState(false);
 
   let inputRef = useRef();
   const showIcon = () => (
@@ -121,6 +123,46 @@ const Loginotp = () => {
     autoLogin();
   }, []);
 
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
+
+  const handleResendOtp = async () => {
+    if (isResending || resendTimer > 0) return;
+    if (!userLogInInfo.email || userLogInInfo.email.length !== 10) {
+      setUserLoginInfo((prevState) => ({
+        ...prevState,
+        emailerror: "Please enter a 10 digit mobile number",
+      }));
+      return;
+    }
+    setIsResending(true);
+    try {
+      const response = await handlesenOtp(userLogInInfo.email);
+      if (isApiSuccess(response)) {
+        if (response.data?.id) {
+          sessionStorage.setItem("userId", response.data.id);
+        }
+        toastrSuccess("OTP resent successfully!");
+        setResendTimer(30);
+      } else {
+        const { title, message } = warnApiError(response, "Resend OTP failed", "Could not resend OTP");
+        toastrWarning(message);
+        WarningBackendApi(title, message);
+      }
+    } catch (e) {
+      WarningBackendApi("Resend OTP failed", e?.message || "Could not resend OTP");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const sendtheOtp = async () => {
     if (userLogInInfo.email === "") {
       setUserLoginInfo((prevState) => ({
@@ -148,6 +190,8 @@ const Loginotp = () => {
           sessionStorage.setItem("userId", response.data.id);
         }
         setUserLoginInfo({ ...userLogInInfo, sentotp: true, emailerror: "" });
+        toastrSuccess("OTP sent successfully!");
+        setResendTimer(30);
       } else {
         const { title, message } = warnApiError(response, "Send OTP failed", "Could not send OTP");
         WarningBackendApi(title, message);
@@ -244,7 +288,24 @@ const Loginotp = () => {
                           showIcon={showIcon}
                           hideIcon={hideIcon}
                         />
-                      </div>{" "}
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center mt-2 mb-3">
+                        <span className="text-muted small">Didn't receive OTP?</span>
+                        {resendTimer > 0 ? (
+                          <span className="text-muted small fw-bold">
+                            Resend in <span className="text-primary">{resendTimer}s</span>
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-link p-0 small fw-bold text-primary text-decoration-none"
+                            onClick={handleResendOtp}
+                            disabled={isResending}
+                          >
+                            {isResending ? "Resending..." : "Resend OTP"}
+                          </button>
+                        )}
+                      </div>
                     </>
                   )}
 
@@ -257,7 +318,7 @@ const Loginotp = () => {
                       </label> */}
                       <Link to="/login" >Login with mail?</Link>
                     </div>
-                    <Link to="/forgotpassword">Forgot Password?</Link>
+                    {/* <Link to="/forgotpassword">Forgot Password?</Link> */}
                   </div>
                   <div className="form-group">
                     {userLogInInfo.sentotp ? (

@@ -129,10 +129,10 @@ const FeeConfigInfo = () => {
                     </tbody>
                   </table>
                 )}
-                <div style={{ marginTop: 12, padding: "8px 12px", background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", color: "#1e40af", fontSize: 12 }}>
+                {/* <div style={{ marginTop: 12, padding: "8px 12px", background: "#eff6ff", borderRadius: 8, display: "flex", alignItems: "center", color: "#1e40af", fontSize: 12 }}>
                   <InfoIcon />
                   Eligible Amount = Requested Amount − Radius Fee
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -177,10 +177,10 @@ const FeeConfigInfo = () => {
                     </tbody>
                   </table>
                 )}
-                <div style={{ marginTop: 12, padding: "8px 12px", background: "#ecfdf5", borderRadius: 8, display: "flex", alignItems: "center", color: "#065f46", fontSize: 12 }}>
+                {/* <div style={{ marginTop: 12, padding: "8px 12px", background: "#ecfdf5", borderRadius: 8, display: "flex", alignItems: "center", color: "#065f46", fontSize: 12 }}>
                   <InfoIcon />
                   Eligible Amount = Requested Amount − Radius Fee − CIBIL Fee
-                </div>
+                </div> */}
               </div>
             </div>
 

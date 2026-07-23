@@ -19,7 +19,7 @@ import {
   sendwhatappotp,
   verifywhatappotp,
 } from "../../HttpRequest/beforelogin";
-import { toastrError } from "../Base UI Elements/Toast";
+import { toastrError, toastrSuccess } from "../Base UI Elements/Toast";
 import "./user.css";
 import Whatappuser from "./Whatappuser";
 import { BsWhatsapp } from "react-icons/bs";
@@ -41,6 +41,18 @@ const Whatapplog = () => {
   const [dataIpv6, setdataIpv6] = useState({});
   const [dataIpv4, setdataIpv4] = useState("");
   const [whatsapploginotp, setwhatsapploginotp] = useState([]);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
 
   const [whatappotp, setwhatappotp] = useState({
     successMessage: "",
@@ -87,6 +99,40 @@ const Whatapplog = () => {
     handleipv6();
     handleip4();
   }, []);
+
+  const handleResendWhatsappOtp = async () => {
+    if (isResending || resendTimer > 0) return;
+    if (value == "" || value == undefined) {
+      toastrError("Enter the WhatsApp Number");
+      return;
+    }
+    setIsResending(true);
+    try {
+      const response = await sendwhatappotp(value);
+      if (response.request?.status === 200 || response.status === 200) {
+        setwhatappotp({
+          ...whatappotp,
+          otpdata: response.data,
+          successMessage: "WhatsApp OTP resent successfully!",
+          errorMessage: "",
+        });
+        toastrSuccess("WhatsApp OTP resent successfully!");
+        setResendTimer(30);
+      } else {
+        const errMsg = response.response?.data?.errorMessage || "Failed to resend WhatsApp OTP";
+        setwhatappotp({
+          ...whatappotp,
+          errorMessage: errMsg,
+          successMessage: "",
+        });
+        toastrError(errMsg);
+      }
+    } catch (error) {
+      toastrError("Failed to resend WhatsApp OTP");
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const verifyotp = async () => {
     let whatsappotpvaluescallback =
@@ -141,18 +187,24 @@ const Whatapplog = () => {
     } else {
       const response = sendwhatappotp(value);
       response.then((data) => {
-        if (data.request.status === 200) {
+        if (data.request?.status === 200 || data.status === 200) {
           sethandlewhatapp(false);
           setwhatappotp({
             ...whatappotp,
             otpdata: data.data,
+            successMessage: "WhatsApp OTP sent successfully!",
+            errorMessage: "",
           });
+          toastrSuccess("WhatsApp OTP sent!");
+          setResendTimer(30);
         } else {
+          const errMsg = data.response?.data?.errorMessage || "Failed to send WhatsApp OTP";
           setwhatappotp({
             ...whatappotp,
-            errorMessage: data.response.data.errorMessage,
+            errorMessage: errMsg,
+            successMessage: "",
           });
-          toastrError(data.response.data.errorMessage);
+          toastrError(errMsg);
         }
       });
     }
@@ -221,7 +273,7 @@ const Whatapplog = () => {
                             />
                           </div>
                           <div className="forgotpass">
-                            <Link to="/forgotpassword">Forgot Password?</Link>
+                            {/* <Link to="/forgotpassword">Forgot Password?</Link> */}
                           </div>
                           <div className="form-group">
                             <button
@@ -277,18 +329,35 @@ const Whatapplog = () => {
                             />
                           </div>
                           {whatappotp.successMessage && (
-                            <div className="errorMessage">
+                            <div className="text-success small mt-2">
                               {whatappotp.successMessage}{" "}
                             </div>
                           )}
                           {whatappotp.errorMessage && (
-                            <div className="errorMessage">
+                            <div className="text-danger small mt-2">
                               {whatappotp.errorMessage}{" "}
                             </div>
                           )}
+                          <div className="d-flex justify-content-between align-items-center mt-3 mb-2">
+                            <span className="text-muted small">Didn't receive WhatsApp OTP?</span>
+                            {resendTimer > 0 ? (
+                              <span className="text-muted small fw-bold">
+                                Resend in <span className="text-primary">{resendTimer}s</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 small fw-bold text-primary text-decoration-none"
+                                onClick={handleResendWhatsappOtp}
+                                disabled={isResending}
+                              >
+                                {isResending ? "Resending..." : "Resend OTP"}
+                              </button>
+                            )}
+                          </div>
                           <div className="form-group">
                             <button
-                              className="btn btn-primary btn-block mt-4"
+                              className="btn btn-primary btn-block mt-3"
                               type="submit"
                               onClick={verifyotp}
                             >

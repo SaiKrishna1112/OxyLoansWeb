@@ -401,6 +401,80 @@ const Profile = () => {
     return Math.round((filledFields.length / fields.length) * 100);
   }, [profileData]);
 
+  const [localityOptions, setLocalityOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+
+  const displayCityOptions = useMemo(() => {
+    return Array.from(
+      new Set([
+        ...(profileData.city ? [profileData.city] : []),
+        ...(cityOptions || []),
+      ])
+    ).filter(Boolean);
+  }, [profileData.city, cityOptions]);
+
+  const handlePinCodeLookup = async (pincodeVal) => {
+    if (!pincodeVal || pincodeVal.length !== 6) return;
+    try {
+      const res = await axios.get(`${base_url}${pincodeVal}/pincode`);
+      const resData = res.data || res;
+
+      const blocks = resData.pinresults
+        ? resData.pinresults
+            .map((item) => item.block)
+            .filter((block, index, self) => block && self.indexOf(block) === index)
+        : [];
+
+      setLocalityOptions(blocks);
+
+        let cities = [];
+        if (typeof resData.city === "string" && resData.city.trim()) {
+          cities = resData.city.split(/[,/]+/).map((c) => c.trim()).filter(Boolean);
+        } else if (Array.isArray(resData.city)) {
+          cities = resData.city.filter(Boolean);
+        }
+
+        if (resData.cities && Array.isArray(resData.cities)) {
+          const extraCities = resData.cities.map((c) => String(c).trim()).filter(Boolean);
+          cities = [...cities, ...extraCities];
+        }
+
+        if (resData.pinresults && Array.isArray(resData.pinresults)) {
+          const pinCities = resData.pinresults
+            .map((item) => item.city || item.district || item.districtName || item.taluk)
+            .filter(Boolean);
+          cities = [...cities, ...pinCities];
+        }
+
+        cities = Array.from(new Set(cities));
+
+        setCityOptions(cities);
+
+        const fetchedState =
+          resData.state ||
+          (resData.pinresults && resData.pinresults[0]?.state) ||
+          (resData.pinresults && resData.pinresults[0]?.statename) ||
+          "";
+
+      setProfileData((prev) => ({
+        ...prev,
+        locality: blocks.length > 0 ? (blocks.includes(prev.locality) ? prev.locality : blocks[0]) : prev.locality,
+        city: cities.length > 0 ? (cities.includes(prev.city) ? prev.city : cities[0]) : (resData.city || prev.city),
+        state: fetchedState || prev.state,
+      }));
+    } catch (error) {
+      console.error("Failed to fetch pincode info", error);
+      setLocalityOptions([]);
+      setCityOptions([]);
+    }
+  };
+
+  useEffect(() => {
+    if (profileData.pinCode && String(profileData.pinCode).length === 6) {
+      handlePinCodeLookup(String(profileData.pinCode));
+    }
+  }, [profileData.pinCode]);
+
   // Geocoding Timer hook
   useEffect(() => {
     const address = (profileData.residenceAddress || "").trim();
@@ -489,12 +563,22 @@ const Profile = () => {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
     } else if (name === "pinCode") {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 6);
+      if (sanitizedValue.length === 6) {
+        handlePinCodeLookup(sanitizedValue);
+      } else if (sanitizedValue.length < 6) {
+        setLocalityOptions([]);
+        setCityOptions([]);
+      }
     } else if (name === "workExperience") {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 2);
     } else if (name === "panNumber") {
       sanitizedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
     } else if (name === "aadharNumber") {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 12);
+    } else if (name === "workExperience"){
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 2);
+    } else if (name === "salary"){
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
     }
 
     setProfileData((prev) => ({ ...prev, [name]: sanitizedValue }));
@@ -657,6 +741,8 @@ const Profile = () => {
         }
       }
 
+      
+
       const userProfilePayload = {
         firstName: updatedFirstName,
         lastName: profileData.lastName,
@@ -800,6 +886,9 @@ const Profile = () => {
       Swal.fire("Verification Required", "Please click 'Verify Bank Account' to validate your Account Number & IFSC first.", "warning");
       return;
     }
+    if(otpButtonText === "Resend OTP"){
+    setBankaccount((prev) => ({ ...prev, mobileOtp: "" }));
+  }
 
     const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
     if (bankaccount.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccount.nameAtBank, borrowerFullName)) {
@@ -1240,7 +1329,7 @@ const Profile = () => {
                             </span>
                           </div>
                           <div className="col-6">
-                            <span className="text-muted d-block small">Bureau OxyScore</span>
+                            <span className="text-muted d-block small">OxyScore</span>
                             <span className="fw-bold text-success" style={{ fontSize: "15px" }}>{profileData.profileScore || "—"}</span>
                           </div>
                         </div>
@@ -1338,17 +1427,51 @@ const Profile = () => {
               <input type="text" className="form-control rounded-3" name="residenceAddress" value={profileData.residenceAddress} onChange={handleprofileInput} />
             </div>
             <div className="col-md-4">
+              <label className="form-label text-muted small">Pincode <span className="text-danger">*</span></label>
+              <input type="text" className="form-control rounded-3" name="pinCode" value={profileData.pinCode} onChange={handleprofileInput} maxLength={6} />
+            </div>
+            <div className="col-md-4">
               <label className="form-label text-muted small">City <span className="text-danger">*</span></label>
-              <input type="text" className="form-control rounded-3" name="city" value={profileData.city} onChange={handleprofileInput} />
+              {displayCityOptions && displayCityOptions.length > 0 ? (
+                <select
+                  className="form-select rounded-3"
+                  name="city"
+                  value={profileData.city}
+                  onChange={handleprofileInput}
+                >
+                  <option value="">Select City</option>
+                  {displayCityOptions.map((c, index) => (
+                    <option key={index} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input type="text" className="form-control rounded-3" name="city" value={profileData.city} onChange={handleprofileInput} />
+              )}
             </div>
             <div className="col-md-4">
               <label className="form-label text-muted small">State <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="state" value={profileData.state} onChange={handleprofileInput} />
             </div>
-            <div className="col-md-4">
-              <label className="form-label text-muted small">Pincode <span className="text-danger">*</span></label>
-              <input type="text" className="form-control rounded-3" name="pinCode" value={profileData.pinCode} onChange={handleprofileInput} />
-            </div>
+            {localityOptions && localityOptions.length > 0 && (
+              <div className="col-md-4">
+                <label className="form-label text-muted small">Locality</label>
+                <select
+                  className="form-select rounded-3"
+                  name="locality"
+                  value={profileData.locality}
+                  onChange={handleprofileInput}
+                >
+                  <option value="">Select Locality</option>
+                  {localityOptions.map((loc, index) => (
+                    <option key={index} value={loc}>
+                      {loc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             
             <hr className="my-3 opacity-10" />
             <h6 className="fw-bold text-dark">Occupation & Category Details</h6>
@@ -1371,7 +1494,7 @@ const Profile = () => {
                   <input type="text" className="form-control rounded-3" name="companyName" value={profileData.companyName} onChange={handleprofileInput} />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Monthly Net Salary (₹)</label>
+                  <label className="form-label text-muted small">Monthly Net Salary (₹)<span className="text-danger">*</span></label>
                   <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} />
                 </div>
               </>

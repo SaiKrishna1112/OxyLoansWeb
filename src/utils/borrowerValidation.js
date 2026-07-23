@@ -2,6 +2,8 @@
  * Utility functions for Borrower Profile and Bank Account Validations
  */
 
+import { message } from "antd";
+
 // Check for 4 or more repeating identical characters (e.g., "aaaa", "1111")
 export const hasRepeatingPattern = (str) => {
   if (!str) return false;
@@ -178,7 +180,7 @@ export const validateCompanyName = (company, category) => {
 export const validateSalary = (salary, category) => {
   if (category === "STUDENT") return { valid: true };
   if (salary === undefined || salary === null || salary.toString().trim() === "") {
-    return { valid: true }; // optional
+    return { valid: false, message: "Please enter your salary amount." };
   }
   const salStr = salary.toString().trim().replace(/,/g, "");
   const num = Number(salStr);
@@ -225,7 +227,7 @@ export const validateIfscCode = (ifsc) => {
   }
   const cleaned = ifsc.toString().trim().toUpperCase();
   if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleaned)) {
-    return { valid: false, message: "Invalid IFSC Code format (e.g. CNRB0013480 or SBIN0001234)." };
+    return { valid: false, message: "Invalid IFSC Code format (e.g. CNRB0000010 or SBIN0001234)." };
   }
   return { valid: true, formatted: cleaned };
 };

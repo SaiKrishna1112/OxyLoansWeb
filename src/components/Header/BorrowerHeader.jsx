@@ -84,10 +84,10 @@ const BorrowerHeader = (profile) => {
       <div className="header">
         {/* Logo */}
         <div className="header-left">
-          <Link to="/dashboard" className="logo">
+          <Link to="/borrowerDashboard" className="logo">
             <img src={oxylogodashboard} alt="Logo" />
           </Link>
-          <Link to="/dashboard" className="logo logo-small">
+          <Link to="/borrowerDashboard" className="logo logo-small">
             <img src={oxylogomobile} alt="Logo" width={30} height={30} />
           </Link>
         </div>
