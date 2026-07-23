@@ -626,16 +626,18 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     return () => clearInterval(t);
   }, [loading]);
 
-  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom");
+  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom" || fyFilter.mode === "all");
   const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
-  const cacheKey = dateRange ? `${dateRange.startDate}_${dateRange.endDate}` : null;
+  const cacheKey = dateRange ? `${dateRange.startDate}_${dateRange.endDate}` : (fyFilter?.mode === "all" ? "alltime" : null);
 
   // Prefetch as soon as FY filter settles and earnings have loaded
   useEffect(() => {
-    if (!showDownloads || !dateRange || !lenderId || loading || fyPrefetching) return;
+    if (!showDownloads || !lenderId || loading || fyPrefetching) return;
     if (fyCacheKey === cacheKey && fyCache) return; // already cached
     setFyPrefetching(true);
-    getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate)
+    const start = dateRange?.startDate || "";
+    const end   = dateRange?.endDate   || "";
+    getLenderFyReport(lenderId, start, end)
       .then(res => { setFyCache(res?.data); setFyCacheKey(cacheKey); })
       .catch(() => {})
       .finally(() => setFyPrefetching(false));
@@ -663,7 +665,9 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
   // Use cached data if available, otherwise fetch (fallback)
   const getFyData = async () => {
     if (fyCache && fyCacheKey === cacheKey) return fyCache;
-    const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
+    const start = dateRange?.startDate || "";
+    const end   = dateRange?.endDate   || "";
+    const res = await getLenderFyReport(lenderId, start, end);
     const d = res?.data;
     setFyCache(d); setFyCacheKey(cacheKey);
     return d;
