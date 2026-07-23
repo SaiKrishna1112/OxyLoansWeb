@@ -705,12 +705,12 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
       const data = await getFyData();
       if (!data?.monthly?.length) { alert("No data for this period."); return; }
       const rows = [
-        ["Month", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)", "Deals"],
+        ["Month", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)", "Int. Deals", "Principal Deals"],
         ...data.monthly.map(m => [
-          m.monthLabel, Math.round(m.interestAmount), Math.round(m.principalReturned), Math.round(m.totalReceived), m.dealCount
+          m.monthLabel, Math.round(m.interestAmount), Math.round(m.principalReturned), Math.round(m.totalReceived), m.dealCount || 0, m.principalDealCount || 0
         ]),
         [],
-        ["TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal), ""]
+        ["TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal), "", ""]
       ];
       saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_MonthWise.csv`);
     } catch (e) { console.error("MonthWise download error", e); alert("Download failed. Please try again."); }
@@ -863,15 +863,16 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         startY: afterDeals + 16,
         margin: { left: ML, right: MR },
         tableWidth: 545,
-        head: [["Month", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Deals"]],
+        head: [["Month", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Int. Deals", "Princ. Deals"]],
         body: data.monthly.map(m => [
-          m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
+          m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount || 0, m.principalDealCount || 0,
         ]),
         foot: [[
           { content: "TOTAL",                   styles: { halign: "left" } },
           { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
           { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
           { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "",                        styles: { halign: "center" } },
           { content: "",                        styles: { halign: "center" } },
         ]],
         showFoot: "lastPage",
@@ -880,11 +881,12 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         footStyles: { fillColor: LGTEAL, textColor: [0, 60, 50], fontStyle: "bold", cellPadding: 3.5 },
         alternateRowStyles: { fillColor: [240, 250, 249] },
         columnStyles: {
-          0: { cellWidth: 100 },
-          1: { cellWidth: 120, halign: "right" },
-          2: { cellWidth: 120, halign: "right" },
-          3: { cellWidth: 120, halign: "right" },
-          4: { cellWidth: 85,  halign: "center" },
+          0: { cellWidth: 90 },
+          1: { cellWidth: 105, halign: "right" },
+          2: { cellWidth: 105, halign: "right" },
+          3: { cellWidth: 105, halign: "right" },
+          4: { cellWidth: 70,  halign: "center" },
+          5: { cellWidth: 70,  halign: "center" },
         },
       });
 
