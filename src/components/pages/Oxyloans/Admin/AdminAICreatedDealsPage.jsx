@@ -246,7 +246,7 @@ const AdminAICreatedDealsPage = () => {
             <div className="admin-ai-panel-head">
               <div>
                 <h5>{currentTab.label}</h5>
-                <p>Click a deal row to view lenders who participated from oxy_lenders_accepted_deals.</p>
+                <p>Click a deal row to view lenders. The Lenders column is total participants on that deal (all time), not today only.</p>
               </div>
               <span className="admin-ai-count-pill">{fmtNum(totalCount)} deals</span>
             </div>
@@ -301,7 +301,7 @@ const AdminAICreatedDealsPage = () => {
                       <th>Deal Amount</th>
                       <th>Payout Type</th>
                       <th>Status</th>
-                      <th className="admin-ai-participant-count-col">Lenders</th>
+                      <th className="admin-ai-participant-count-col" title="Total lenders on this deal (all time)">Total Lenders</th>
                       <th className="admin-ai-deal-achieved-col">Deal Achieved Amount</th>
                     </tr>
                   </thead>

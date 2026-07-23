@@ -964,28 +964,62 @@ const getFinancialYear = () => {
                             <strong> Subscription Validity:</strong>
                           </span>
                           {getreducerprofiledata?.length !== 0 &&
-                            (getreducerprofiledata?.groupName ===
-                            "NewLender" ? (
-                              <span>
-                                You are a new lender, pay the annual membership
-                                fee to participate in the multiple deals
-                                <span className="badge bg-info mx-2">
-                                  <Link to="/membership" className="text-white">
-                                    Get Membership
-                                  </Link>
+                            (() => {
+                              const validityDate =
+                                getdashboardData?.validityDate ||
+                                getreducerprofiledata?.validityDate;
+                              const lenderValidityStatus =
+                                getdashboardData?.lenderValidityStatus ??
+                                getreducerprofiledata?.lenderValidityStatus;
+                              const dateLabel = validityDate
+                                ? String(validityDate).slice(0, 10)
+                                : null;
+                              let membershipActive =
+                                lenderValidityStatus === false ||
+                                lenderValidityStatus === "false";
+                              if (
+                                !membershipActive &&
+                                lenderValidityStatus == null &&
+                                dateLabel
+                              ) {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const end = new Date(dateLabel);
+                                end.setHours(0, 0, 0, 0);
+                                membershipActive = end >= today;
+                              }
+                              const isNewLender =
+                                getreducerprofiledata?.groupName === "NewLender";
+                              if (isNewLender && !(membershipActive && dateLabel)) {
+                                return (
+                                  <span>
+                                    You are a new lender, pay the annual membership
+                                    fee to participate in the multiple deals
+                                    <span className="badge bg-info mx-2">
+                                      <Link to="/membership" className="text-white">
+                                        Get Membership
+                                      </Link>
+                                    </span>
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span>
+                                  {membershipActive && dateLabel
+                                    ? `Active until ${dateLabel}`
+                                    : dateLabel
+                                    ? `Expired on ${dateLabel}`
+                                    : "No active membership"}{" "}
+                                  {!membershipActive && (
+                                    <span className="badge bg-info mx-2">
+                                      <Link to="/membership" className="text-white">
+                                        Get Membership
+                                      </Link>
+                                    </span>
+                                  )}
                                 </span>
-                              </span>
-                            ) : (
-                              <span>
-                                {getdashboardData?.validityDate &&
-                                  `Active until ${getdashboardData?.validityDate}`}{" "}
-                                <span className="badge bg-info mx-2">
-                                  <Link to="/membership" className="text-white">
-                                    Get Membership
-                                  </Link>
-                                </span>
-                              </span>
-                            ))}
+                              );
+                            })()}
                         </span>
                       </div>
                     </div>

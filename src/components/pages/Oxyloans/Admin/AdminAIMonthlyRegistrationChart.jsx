@@ -49,9 +49,16 @@ const AdminAIMonthlyRegistrationChart = ({ monthlyRows = [], platformStats = {} 
   const chartBorrowerSignups = totals.borrowers;
   const chartRegistrationTotal = totals.total || chartLenderSignups + chartBorrowerSignups;
 
-  const allTimeLenders = pickNumber(platformStats?.allLenders);
+  const allTimeLenders = pickNumber(
+    platformStats?.rawLenders,
+    platformStats?.allLenders,
+    platformStats?.goodLenders
+  );
   const dealActiveLenders = pickNumber(platformStats?.allActiveLenders);
-  const allTimeBorrowers = pickNumber(platformStats?.allBorrowers);
+  const allTimeBorrowers = pickNumber(
+    platformStats?.allBorrowers,
+    platformStats?.borrowersCount
+  );
 
   const chart = useMemo(
     () => ({
@@ -96,16 +103,6 @@ const AdminAIMonthlyRegistrationChart = ({ monthlyRows = [], platformStats = {} 
 
   return (
     <section className="admin-ai-panel admin-ai-monthly-reg-panel admin-ai-monthly-reg-panel-magic">
-      <div className="admin-ai-panel-head">
-        <div>
-          <h4>Month-wise Lender &amp; Borrower Registrations</h4>
-          <p>
-            Chart shows <strong>new sign-ups per month</strong> (last 12 months). Side totals are sign-ups in that
-            period only — not all-time registered or deal-active lenders.
-          </p>
-        </div>
-      </div>
-
       <div className="admin-ai-monthly-reg-layout">
         <aside className="admin-ai-monthly-reg-side">
           <p className="admin-ai-monthly-reg-side-heading">Last 12 months (chart period)</p>

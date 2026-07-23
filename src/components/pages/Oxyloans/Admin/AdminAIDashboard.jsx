@@ -15,6 +15,13 @@ import {
   FaBriefcase,
   FaFileExcel,
   FaCalendarDay,
+  FaCheckCircle,
+  FaUserSlash,
+  FaFilter,
+  FaUserCheck,
+  FaUserPlus,
+  FaEnvelope,
+  FaWhatsapp,
 } from "react-icons/fa";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
@@ -26,30 +33,93 @@ import {
   getAdminAIActiveLenderProfile,
   getAdminAIActiveLenderBankDetails,
   getAdminAIActiveLenderWallet,
+  getAdminAIActiveLenderReferrals,
   getAdminAIActiveLenders,
   getAdminAIUsers,
+  defaultParticipationDate,
+  getAdminAIInactiveReactivatedLenders,
   getAdminAITopLenders,
   getAdminAIMonthlyTopLenders,
   getAdminAITopLendersMonthlyTrend,
   getAdminAIActiveLenderLegacyDetails,
   getAdminAIActiveLenderStates,
   getRegisteredUsersSummary,
+  getOldDashboardActiveLendersCount,
+  getAdminAIReferralRegistrationsSummary,
+  getAdminAIReferralRegistrationsYearlySummary,
+  getAdminAIReferralRegistrations,
+  getAdminAITopReferrers,
+  getAdminAILenderAnalyticsLenders,
   downloadAdminAIDashboardExcel,
   downloadAdminAIUsersExcel,
   parseAdminAIExportError,
   fetchAllAdminUsersForExport,
   fetchAllCreatedDealsForExport,
   fetchAllActiveLendersForExport,
+  fetchParticipationAmountsForBandCounts,
   downloadAdminAIActiveLendersExcel,
   getAdminAICreatedDeals,
 } from "../../../HttpRequest/admin";
+import { BASE_URL } from "../../../../config";
 import "./AdminAIDashboard.css";
 import AdminAIUserGeographyPanel from "./AdminAIUserGeographyPanel";
-import AdminAIMonthlyRegistrationChart from "./AdminAIMonthlyRegistrationChart";
 import AdminAILenderAnalyticsPanel from "./AdminAILenderAnalyticsPanel";
+import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
 
 const activeLendersPageSize = 20;
 const adminUserPageSize = 20;
+const PARTICIPATION_50_LAKH = 5000000;
+const PARTICIPATION_1_CRORE = 10000000;
+const PARTICIPATION_2_CRORE = 20000000;
+const PARTICIPATION_3_CRORE = 30000000;
+const activeLenderPanelCardKeys = [
+  "newParticipatedLenders",
+  "participation50LakhTo1Crore",
+  "participation1CroreTo2Crore",
+  "participation2CroreTo3Crore",
+  "participation3CrorePlus",
+];
+const participationRangeByCard = {
+  participation50LakhTo1Crore: { min: PARTICIPATION_50_LAKH, max: PARTICIPATION_1_CRORE },
+  participation1CroreTo2Crore: { min: PARTICIPATION_1_CRORE, max: PARTICIPATION_2_CRORE },
+  participation2CroreTo3Crore: { min: PARTICIPATION_2_CRORE, max: PARTICIPATION_3_CRORE },
+  participation3CrorePlus: { min: PARTICIPATION_3_CRORE, max: null },
+};
+const activeLenderPanelMeta = {
+  newParticipatedLenders: {
+    title: "New Participated Lenders",
+    description: "Lenders whose first-ever deal participation happened today. Open participation to view profile and deal history.",
+    exportSlug: "new-participated-lenders",
+  },
+  participation50LakhTo1Crore: {
+    title: "50 Lakhs to Below 1 Crore",
+    description: "Lenders with total participation (including updation) from Rs 50,00,000 up to below Rs 1,00,00,000.",
+    segment: "participation50LakhTo1Crore",
+    segmentLabel: "50 Lakhs to Below 1 Crore Lenders",
+    exportSlug: "participation-50-lakh-to-1-crore",
+  },
+  participation1CroreTo2Crore: {
+    title: "1 Crore to Below 2 Crores",
+    description: "Lenders with total participation (including updation) from Rs 1,00,00,000 up to below Rs 2,00,00,000.",
+    segment: "participation1CroreTo2Crore",
+    segmentLabel: "1 Crore to Below 2 Crores Lenders",
+    exportSlug: "participation-1-crore-to-2-crore",
+  },
+  participation2CroreTo3Crore: {
+    title: "2 Crores to Below 3 Crores",
+    description: "Lenders with total participation (including updation) from Rs 2,00,00,000 up to below Rs 3,00,00,000.",
+    segment: "participation2CroreTo3Crore",
+    segmentLabel: "2 Crores to Below 3 Crores Lenders",
+    exportSlug: "participation-2-crore-to-3-crore",
+  },
+  participation3CrorePlus: {
+    title: "3 Crores and Above",
+    description: "Lenders with total participation (including updation) of Rs 3,00,00,000 or more.",
+    segment: "participation3CrorePlus",
+    segmentLabel: "3 Crores and Above Lenders",
+    exportSlug: "participation-3-crore-plus",
+  },
+};
 const topLendersLimit = 10;
 
 const currentYearMonth = () => {
@@ -59,11 +129,36 @@ const currentYearMonth = () => {
 
 const fallbackStats = {
   allUsers: 0,
-  allLenders: 0,
+  rawLenders: 0,
+  goodLenders: 0,
+  goodLendersVerified: 0,
+  goodLendersUnverifiedEmail: 0,
+  notParticipatedRegistered1Month: 0,
+  notParticipatedRegistered3Months: 0,
+  notParticipatedRegistered6Months: 0,
+  notParticipatedRegistered1Year: 0,
+  eliminatedLenders: 0,
+  activeCleanLenders: 0,
+  lenderQualityFilterActive: false,
+  lenderQualityError: "",
+  lenderQualityBreakdown: {
+    testUsers: 0,
+    invalidMobile: 0,
+    invalidEmail: 0,
+    duplicateMobile: 0,
+    duplicateName: 0,
+  },
   allBorrowers: 0,
+  registeredBorrowersCampaignCount: 0,
+  allActiveLenders: 0,
+  participation50LakhTo1Crore: 0,
+  participation1CroreTo2Crore: 0,
+  participation2CroreTo3Crore: 0,
+  participation3CrorePlus: 0,
   todayRegisteredUsers: 0,
   todayParticipatedUsers: 0,
-  allActiveLenders: 0,
+  newParticipatedLenders: 0,
+  referralRegisteredUsers: 0,
   lastThreeMonthsActiveLenders: 0,
   allDeals: 0,
   activeDeals: 0,
@@ -75,7 +170,13 @@ const fallbackStats = {
 
 const userViewByCard = {
   allUsers: "registered",
-  allLenders: "lenders",
+  allLenders: "lendersRaw",
+  goodLenders: "lendersNotParticipated",
+  notParticipatedRegistered1Month: "lendersNotParticipatedRegistered1Month",
+  notParticipatedRegistered3Months: "lendersNotParticipatedRegistered3Months",
+  notParticipatedRegistered6Months: "lendersNotParticipatedRegistered6Months",
+  notParticipatedRegistered1Year: "lendersNotParticipatedRegistered1Year",
+  eliminatedLenders: "lendersExcluded",
   allBorrowers: "borrowers",
   lastThreeMonthsActiveLenders: "last3MonthsActive",
   todayRegisteredUsers: "todayRegistered",
@@ -84,13 +185,87 @@ const userViewByCard = {
 
 const userExportByCard = {
   allUsers: { type: "users", userView: "registered", label: "Registered Users", fileSlug: "registered-users" },
-  allLenders: { type: "users", userView: "lenders", label: "Registered Lenders", fileSlug: "registered-lenders" },
+  allLenders: { type: "users", userView: "lendersRaw", label: "Registered Lenders", fileSlug: "registered-lenders-raw" },
+  goodLenders: { type: "users", userView: "lendersNotParticipated", label: "Not Participated Lenders", fileSlug: "not-participated-lenders" },
+  notParticipatedRegistered1Month: { type: "users", userView: "lendersNotParticipatedRegistered1Month", label: "Last 1 Month Registered - Not Participated", fileSlug: "last-1-month-registered-not-participated-lenders" },
+  notParticipatedRegistered3Months: { type: "users", userView: "lendersNotParticipatedRegistered3Months", label: "Last 3 Months Registered - Not Participated", fileSlug: "last-3-months-registered-not-participated-lenders" },
+  notParticipatedRegistered6Months: { type: "users", userView: "lendersNotParticipatedRegistered6Months", label: "Last 6 Months Registered - Not Participated", fileSlug: "last-6-months-registered-not-participated-lenders" },
+  notParticipatedRegistered1Year: { type: "users", userView: "lendersNotParticipatedRegistered1Year", label: "Last 1 Year Registered - Not Participated", fileSlug: "last-1-year-registered-not-participated-lenders" },
+  eliminatedLenders: { type: "users", userView: "lendersExcluded", label: "Eliminated Lenders", fileSlug: "eliminated-lenders" },
   allBorrowers: { type: "users", userView: "borrowers", label: "Registered Borrowers", fileSlug: "registered-borrowers" },
-  allActiveLenders: { type: "activeLenders", label: "All Active Lenders", fileSlug: "active-lenders" },
+  allActiveLenders: { type: "activeLenders", label: "All Active Lenders", fileSlug: "all-active-lenders" },
+  newParticipatedLenders: {
+    type: "activeLenders",
+    label: "New Participated Lenders",
+    fileSlug: "new-participated-lenders",
+    lenderView: "newParticipated",
+  },
+  participation50LakhTo1Crore: {
+    type: "activeLenders",
+    label: "50 Lakhs to Below 1 Crore Lenders",
+    fileSlug: "participation-50-lakh-to-1-crore",
+    minParticipationAmount: PARTICIPATION_50_LAKH,
+    maxParticipationAmount: PARTICIPATION_1_CRORE,
+  },
+  participation1CroreTo2Crore: {
+    type: "activeLenders",
+    label: "1 Crore to Below 2 Crores Lenders",
+    fileSlug: "participation-1-crore-to-2-crore",
+    minParticipationAmount: PARTICIPATION_1_CRORE,
+    maxParticipationAmount: PARTICIPATION_2_CRORE,
+  },
+  participation2CroreTo3Crore: {
+    type: "activeLenders",
+    label: "2 Crores to Below 3 Crores Lenders",
+    fileSlug: "participation-2-crore-to-3-crore",
+    minParticipationAmount: PARTICIPATION_2_CRORE,
+    maxParticipationAmount: PARTICIPATION_3_CRORE,
+  },
+  participation3CrorePlus: {
+    type: "activeLenders",
+    label: "3 Crores and Above Lenders",
+    fileSlug: "participation-3-crore-plus",
+    minParticipationAmount: PARTICIPATION_3_CRORE,
+  },
   lastThreeMonthsActiveLenders: { type: "users", userView: "last3MonthsActive", label: "Last 3 Months Active", fileSlug: "last-3-months-active" },
   todayRegisteredUsers: { type: "users", userView: "todayRegistered", label: "Today Registered", fileSlug: "today-registered" },
   todayParticipatedUsers: { type: "users", userView: "todayParticipated", label: "Today Participated", fileSlug: "today-participated" },
 };
+
+const lenderQualityChipViews = {
+  testUsers: {
+    userView: "lendersExcludedTestUsers",
+    label: "Test Users Removed",
+    chipLabel: "Test users removed",
+    fileSlug: "eliminated-test-users",
+  },
+  invalidMobile: {
+    userView: "lendersExcludedInvalidMobile",
+    label: "Invalid / Fake Mobile",
+    chipLabel: "Invalid / fake mobile",
+    fileSlug: "eliminated-invalid-mobile",
+  },
+  invalidEmail: {
+    userView: "lendersExcludedInvalidEmail",
+    label: "Invalid Email",
+    chipLabel: "Invalid email",
+    fileSlug: "eliminated-invalid-email",
+  },
+  duplicateMobile: {
+    userView: "lendersExcludedDuplicateMobile",
+    label: "Duplicate Mobile",
+    chipLabel: "Duplicate mobile",
+    fileSlug: "eliminated-duplicate-mobile",
+  },
+  duplicateName: {
+    userView: "lendersExcludedDuplicateName",
+    label: "Duplicate First+Last Name",
+    chipLabel: "Duplicate first+last name",
+    fileSlug: "eliminated-duplicate-name",
+  },
+};
+
+const isEliminatedUserView = (userView) => String(userView || "").startsWith("lendersExcluded");
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
 const fmtMoney = (n) => `Rs ${fmtNum(n)}`;
@@ -102,9 +277,318 @@ const pickNumber = (...values) => {
   }
   return 0;
 };
+const pickPositiveNumber = (...values) => {
+  for (const value of values) {
+    if (value != null && value !== "" && !Number.isNaN(Number(value))) {
+      const parsed = Number(value);
+      if (parsed > 0) {
+        return parsed;
+      }
+    }
+  }
+  return 0;
+};
+const hasParticipationBandSummaryFields = (summaryData = {}) =>
+  Number(summaryData.participationBandsVersion) >= 2
+  || summaryData.participationBands != null
+  || summaryData.participation50LakhTo1CroreCount != null;
+const lenderParticipationAmount = (lender = {}) =>
+  Number(lender?.totalParticipationAmount) || 0;
+const matchesParticipationRange = (amount, range) => {
+  if (!range) {
+    return true;
+  }
+  if (amount < range.min) {
+    return false;
+  }
+  if (range.max && amount >= range.max) {
+    return false;
+  }
+  return true;
+};
+const mapLegacyActiveLenderRow = (row = {}) => ({
+  lenderId: row.lenderId,
+  name: row.lenderName || row.name || "",
+  email: row.email || "",
+  mobileNumber: row.mobileNumber || "",
+  city: row.city || "",
+  state: row.state || "",
+  pincode: row.pincode || "",
+  dealsCount: pickNumber(row.dealsCount),
+  totalParticipationAmount: lenderParticipationAmount(row),
+});
+let participationLenderRowsCache = null;
+const rememberParticipationLenderRows = (rows = []) => {
+  participationLenderRowsCache = rows.map((row) => (
+    row.lenderId != null ? row : mapLegacyActiveLenderRow(row)
+  ));
+  return participationLenderRowsCache;
+};
+const getParticipationLenderRows = async () => {
+  if (participationLenderRowsCache?.length) {
+    return participationLenderRowsCache;
+  }
+  await loadParticipationBandCountsFromDatabase();
+  return participationLenderRowsCache || [];
+};
+const filterParticipationBandLenders = (rows = [], participationRange, filters = {}) => {
+  const lenderId = String(filters.lenderId || "").trim();
+  const mobileNumber = String(filters.mobileNumber || "").trim();
+  return rows
+    .filter((row) => matchesParticipationRange(lenderParticipationAmount(row), participationRange))
+    .filter((row) => !lenderId || String(row.lenderId) === lenderId)
+    .filter((row) => !mobileNumber || String(row.mobileNumber || "").includes(mobileNumber))
+    .sort((left, right) => lenderParticipationAmount(right) - lenderParticipationAmount(left));
+};
+const paginateParticipationBandLenders = (rows = [], pageNo = 1, pageSize = activeLendersPageSize) => {
+  const offset = (pageNo - 1) * pageSize;
+  return {
+    activeLenders: rows.slice(offset, offset + pageSize),
+    totalCount: rows.length,
+    pageNo,
+  };
+};
+const looksLikeValidParticipationList = (data, participationRange) => {
+  const rows = data?.activeLenders || [];
+  if (!rows.length) {
+    return true;
+  }
+  return rows.every((row) => matchesParticipationRange(lenderParticipationAmount(row), participationRange));
+};
+const looksLikeValidBandCounts = (counts, activeLendersCount = 0) => {
+  const values = [
+    counts.participation50LakhTo1Crore,
+    counts.participation1CroreTo2Crore,
+    counts.participation2CroreTo3Crore,
+    counts.participation3CrorePlus,
+  ];
+  if (values.every((value) => value === 0)) {
+    return activeLendersCount <= 0;
+  }
+  const unique = new Set(values);
+  if (unique.size === 1 && values[0] === activeLendersCount && activeLendersCount > 0) {
+    return false;
+  }
+  const bandTotal = values.reduce((sum, value) => sum + value, 0);
+  return bandTotal > 0 && bandTotal <= activeLendersCount;
+};
+const bucketParticipationCountsFromLenders = (lenders = []) => {
+  const counts = {
+    participation50LakhTo1Crore: 0,
+    participation1CroreTo2Crore: 0,
+    participation2CroreTo3Crore: 0,
+    participation3CrorePlus: 0,
+  };
+  lenders.forEach((lender) => {
+    const amount = lenderParticipationAmount(lender);
+    if (amount >= PARTICIPATION_3_CRORE) {
+      counts.participation3CrorePlus += 1;
+    } else if (amount >= PARTICIPATION_2_CRORE) {
+      counts.participation2CroreTo3Crore += 1;
+    } else if (amount >= PARTICIPATION_1_CRORE) {
+      counts.participation1CroreTo2Crore += 1;
+    } else if (amount >= PARTICIPATION_50_LAKH) {
+      counts.participation50LakhTo1Crore += 1;
+    }
+  });
+  return counts;
+};
+const loadParticipationBandCountsFromDatabase = async () => {
+  try {
+    const { rows } = await fetchParticipationAmountsForBandCounts();
+    if (rows.length) {
+      rememberParticipationLenderRows(rows);
+      return bucketParticipationCountsFromLenders(rows);
+    }
+  } catch {
+    // Fall through to active-lender export below.
+  }
+  const { rows } = await fetchAllActiveLendersForExport();
+  rememberParticipationLenderRows(rows);
+  return bucketParticipationCountsFromLenders(rows);
+};
+const loadParticipationBandLendersFromDatabase = async (
+  pageNo = 1,
+  filters = {},
+  participationRange
+) => {
+  const allRows = await getParticipationLenderRows();
+  const filteredRows = filterParticipationBandLenders(allRows, participationRange, filters);
+  return paginateParticipationBandLenders(filteredRows, pageNo, activeLendersPageSize);
+};
+const derivedRawLendersCount = (summaryData = {}, registrationBreakdown = {}) =>
+  pickNumber(
+    summaryData.rawLendersCount,
+    summaryData.primaryTypeCounts?.LENDER,
+    pickNumber(summaryData.registeredUsersCount, registrationBreakdown.registeredUsers)
+      - pickNumber(summaryData.borrowersCount, registrationBreakdown.borrowers)
+  );
+const fetchAdminUserViewCount = async (userView) => {
+  const data = responseData(await getAdminAIUsers(1, 1, userView, {}));
+  return pickNumber(data.totalCount);
+};
+const enrichMissingSummaryFields = async (summaryData = {}, registrationBreakdown = {}) => {
+  const enriched = { ...summaryData };
+  if (!pickNumber(summaryData.rawLendersCount)) {
+    const derivedRawLenders = derivedRawLendersCount(summaryData, registrationBreakdown);
+    if (derivedRawLenders > 0) {
+      enriched.rawLendersCount = derivedRawLenders;
+    } else {
+      try {
+        enriched.rawLendersCount = await fetchAdminUserViewCount("lendersRaw");
+      } catch {
+        enriched.rawLendersCount = derivedRawLenders;
+      }
+    }
+  }
+  if (!pickNumber(summaryData.notParticipatedLendersTotal) && !pickNumber(summaryData.goodLendersCount)) {
+    try {
+      const notParticipatedCount = await fetchAdminUserViewCount("lendersNotParticipated");
+      if (notParticipatedCount > 0) {
+        enriched.notParticipatedLendersTotal = notParticipatedCount;
+        enriched.goodLendersCount = notParticipatedCount;
+      }
+    } catch {
+      // Keep summary defaults.
+    }
+  }
+  if (!pickNumber(summaryData.lendersExcludedCount)) {
+    try {
+      const excludedCount = await fetchAdminUserViewCount("lendersExcluded");
+      if (excludedCount > 0) {
+        enriched.lendersExcludedCount = excludedCount;
+      }
+    } catch {
+      // Keep summary defaults.
+    }
+  }
+  return enriched;
+};
+const resolveParticipationBandStats = async (summaryData = {}) => {
+  const activeLendersCount = pickNumber(summaryData.activeLendersCount, summaryData.users?.activeLenders);
+  const fromSummary = {
+    participation50LakhTo1Crore: pickNumber(
+      summaryData.participation50LakhTo1CroreCount,
+      summaryData.participationBands?.participation50LakhTo1Crore
+    ),
+    participation1CroreTo2Crore: pickNumber(
+      summaryData.participation1CroreTo2CroreCount,
+      summaryData.participationBands?.participation1CroreTo2Crore
+    ),
+    participation2CroreTo3Crore: pickNumber(
+      summaryData.participation2CroreTo3CroreCount,
+      summaryData.participationBands?.participation2CroreTo3Crore
+    ),
+    participation3CrorePlus: pickNumber(
+      summaryData.participation3CrorePlusCount,
+      summaryData.participationBands?.participation3CrorePlus
+    ),
+  };
+  if (
+    hasParticipationBandSummaryFields(summaryData)
+    && looksLikeValidBandCounts(fromSummary, activeLendersCount)
+  ) {
+    return fromSummary;
+  }
+  if (activeLendersCount <= 0) {
+    return fromSummary;
+  }
+  try {
+    return await loadParticipationBandCountsFromDatabase();
+  } catch {
+    return fromSummary;
+  }
+};
 const responseData = (payload) => (payload && payload.data ? payload.data : payload);
 const valueOrDash = (value) => (value == null || value === "" ? "-" : value);
+const dashboardLoadErrorMessage = (error) => {
+  if (!error?.response) {
+    if (error?.code === "ECONNABORTED" || /timeout/i.test(error?.message || "")) {
+      return `Dashboard request timed out at ${BASE_URL}. Backend is usually still warming up or the query is slow. Wait a few seconds, then click Retry.`;
+    }
+    return `Dashboard request could not get a response from ${BASE_URL}. Confirm /oxyloans/healthCheck is OK, then click Retry.`;
+  }
+  const status = error.response.status;
+  const backendMessage = error.response.data?.errorMessage || error.response.data?.message;
+  if (status === 401 || status === 403) {
+    return "Admin session expired or not authorized. Log out and log in again, then click Retry.";
+  }
+  return backendMessage
+    ? `Failed to load dashboard data: ${backendMessage}`
+    : `Failed to load dashboard data from backend (HTTP ${status}).`;
+};
 const formatDate = (value) => String(value || "").slice(0, 10) || "-";
+const emptyAdminUserSearch = (userView = "") => ({
+  userId: "",
+  mobileNumber: "",
+  email: "",
+  ...(userView === "todayParticipated" ? { participationDate: defaultParticipationDate() } : {}),
+});
+const isTodayParticipationDate = (date) =>
+  String(date || "").slice(0, 10) === defaultParticipationDate();
+const participationGapDays = (previousDate, selectedDate) => {
+  const prev = new Date(`${String(previousDate).slice(0, 10)}T00:00:00`);
+  const sel = new Date(`${String(selectedDate).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(prev.getTime()) || Number.isNaN(sel.getTime())) {
+    return 0;
+  }
+  return Math.floor((sel - prev) / 86400000);
+};
+const isInactiveReactivatedUser = (user, participationDate, minGapDays = 366) => {
+  const previous = String(user?.lastParticipationOn || user?.previousLastActivityOn || "").slice(0, 10);
+  const selected = String(participationDate || "").slice(0, 10);
+  if (!previous || previous === "-" || !selected || selected === "-") {
+    return false;
+  }
+  return participationGapDays(previous, selected) >= minGapDays;
+};
+const mapUserToInactiveReactivated = (user) => ({
+  lenderId: user.lenderId || user.userId,
+  userCode: user.userCode || (user.userId ? `LR${user.userId}` : ""),
+  name: user.name,
+  mobileNumber: user.mobileNumber,
+  dealId: user.dealId || user.todayDealId,
+  dealName: user.dealName || user.todayDealName,
+  participationAmount: user.participationAmount ?? user.todayParticipationAmount,
+  previousDealId: user.previousDealId || user.lastDealId,
+  previousDealName: user.previousDealName || user.lastDealName,
+  previousDealAmount: user.previousDealAmount ?? user.lastDealParticipationAmount,
+  previousLastActivityOn: user.previousLastActivityOn || user.lastParticipationOn,
+  participationOn: user.participationOn || user.todayParticipationOn,
+});
+const lenderToProfileUser = (lender) => ({
+  userId: lender?.lenderId,
+  lenderId: lender?.lenderId,
+  userCode: lender?.userCode || (lender?.lenderId ? `LR${lender.lenderId}` : ""),
+  name: lender?.name,
+  email: lender?.email,
+  mobileNumber: lender?.mobileNumber,
+  primaryType: "LENDER",
+});
+const deriveInactiveReactivatedUsers = (users = [], participationDate) =>
+  (users || [])
+    .filter((user) => isInactiveReactivatedUser(user, participationDate))
+    .map(mapUserToInactiveReactivated);
+const fetchParticipatedUsersForDate = async (participationDate) => {
+  const rows = [];
+  let pageNo = 1;
+  let totalCount = 0;
+  while (pageNo <= 50) {
+    const data = responseData(
+      await getAdminAIUsers(pageNo, 100, "todayParticipated", { participationDate })
+    );
+    const batch = Array.isArray(data?.users) ? data.users : [];
+    if (pageNo === 1) {
+      totalCount = Number(data?.totalCount) || 0;
+    }
+    if (!batch.length) break;
+    rows.push(...batch);
+    if (totalCount > 0 && rows.length >= totalCount) break;
+    if (batch.length < 100) break;
+    pageNo += 1;
+  }
+  return rows;
+};
 const escapeXml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -150,12 +634,16 @@ const saveSpreadsheetXml = (xml, fileName) => {
 
 const buildOverviewSummaryRows = (stats) => [
   ["Registered Users", stats.allUsers, "All platform users"],
-  ["Registered Lenders", stats.allLenders, "LENDER accounts"],
+  ["Registered Lenders (Raw)", stats.rawLenders, "All LENDER accounts before quality filter"],
+  ["Not Participated Lenders", stats.goodLenders, "Clean lenders not yet in deals (verified + unverified email)"],
+  ["Eliminated Lenders", stats.eliminatedLenders, "Test, invalid/duplicate mobile, duplicate name, bad email"],
   ["Registered Borrowers", stats.allBorrowers, "BORROWER accounts"],
   ["All Active Lenders", stats.allActiveLenders, "Participated in deals"],
   ["Last 3 Months Active", stats.lastThreeMonthsActiveLenders, "Recent participation"],
   ["Today Registered", stats.todayRegisteredUsers, "New sign-ups today"],
-  ["Today Participated", stats.todayParticipatedUsers, "Deal activity today"],
+  ["Today Participated", stats.todayParticipatedUsers, "Eligible lenders active today across all deals"],
+  ["New Participated Lenders", stats.newParticipatedLenders, "First-ever participation today"],
+  ["Referral Registered Users", stats.referralRegisteredUsers, "Registered via referral link (today by default)"],
 ];
 
 const buildDealsSummaryRows = (stats) => [
@@ -167,41 +655,82 @@ const buildDealsSummaryRows = (stats) => [
   ["Test Deals", stats.testDeals, "Test records only"],
 ];
 
-const ACTIVE_LENDER_EXPORT_HEADERS = [
-  "Lender ID", "User Code", "Name", "Mobile Number", "Email", "City", "State",
-  "Deals Count", "Total Participation Amount", "Last Participation",
+const USER_EXPORT_HEADERS = [
+  "User ID", "User Code", "Name", "Mobile Number", "Email", "User Type", "Registered Date",
+  "City", "State", "Pincode", "UTM Source", "Deals Count", "Total Participation Amount",
 ];
 
-const buildActiveLenderExportRows = (lenders) =>
-  (lenders || []).map((lender) => [
-    pickNumber(lender.lenderId),
-    lender.userCode || `LR${pickNumber(lender.lenderId)}`,
-    valueOrDash(lender.name),
-    valueOrDash(lender.mobileNumber),
-    valueOrDash(lender.email),
-    valueOrDash(lender.city),
-    valueOrDash(lender.state),
-    pickNumber(lender.dealsCount),
-    Math.round(pickNumber(lender.totalParticipationAmount)),
-    formatDate(lender.lastParticipationOn),
-  ]);
+const TODAY_PARTICIPATED_EXPORT_HEADERS = [
+  ...USER_EXPORT_HEADERS,
+  "Today Participation Amount", "Today Accepted Amount", "Today Updation Amount",
+  "Today Deal ID", "Today Deal Name", "Today Participation Date",
+  "Previous Deal ID", "Previous Deal Name", "Previous Participation Date",
+];
 
-const buildUserExportRows = (users) =>
-  (users || []).map((user) => [
-    pickNumber(user.userId),
-    user.userCode || `U${pickNumber(user.userId)}`,
-    valueOrDash(user.name),
-    valueOrDash(user.mobileNumber),
-    valueOrDash(user.email),
-    valueOrDash(user.primaryType || user.lenderType),
-    formatDate(user.registeredOn),
-    valueOrDash(user.city),
-    valueOrDash(user.state),
-    valueOrDash(user.pincode),
-    valueOrDash(user.utm),
-    pickNumber(user.dealsCount),
-    Math.round(pickNumber(user.totalParticipationAmount)),
-  ]);
+const LAST_3_MONTHS_ACTIVE_EXPORT_HEADERS = [
+  ...USER_EXPORT_HEADERS,
+  "Last Deal ID", "Last Deal Name", "Last Participation Date",
+];
+
+const EXCLUDED_LENDERS_EXPORT_HEADERS = [
+  ...USER_EXPORT_HEADERS,
+  "First Name", "Last Name", "Exclusion Reasons",
+];
+
+const GOOD_LENDERS_EXPORT_HEADERS = USER_EXPORT_HEADERS;
+
+const userExportHeadersForView = (userView) => {
+  if (userView === "todayParticipated") return TODAY_PARTICIPATED_EXPORT_HEADERS;
+  if (userView === "last3MonthsActive") return LAST_3_MONTHS_ACTIVE_EXPORT_HEADERS;
+  if (isEliminatedUserView(userView)) return EXCLUDED_LENDERS_EXPORT_HEADERS;
+  if (userView === "lenders" || userView === "lendersRaw") return GOOD_LENDERS_EXPORT_HEADERS;
+  return USER_EXPORT_HEADERS;
+};
+
+const buildUserExportRows = (users, userView = "") =>
+  (users || []).map((user) => {
+    const row = [
+      pickNumber(user.userId),
+      user.userCode || `U${pickNumber(user.userId)}`,
+      valueOrDash(user.name),
+      valueOrDash(user.mobileNumber),
+      valueOrDash(user.email),
+      valueOrDash(user.primaryType || user.lenderType),
+      formatDate(user.registeredOn),
+      valueOrDash(user.city),
+      valueOrDash(user.state),
+      valueOrDash(user.pincode),
+      valueOrDash(user.utm),
+      pickNumber(user.dealsCount),
+      Math.round(pickNumber(user.totalParticipationAmount)),
+    ];
+    if (userView === "todayParticipated") {
+      row.push(
+        Math.round(pickNumber(user.todayParticipationAmount)),
+        Math.round(pickNumber(user.todayAcceptedAmount)),
+        Math.round(pickNumber(user.todayUpdationAmount)),
+        pickNumber(user.todayDealId),
+        valueOrDash(user.todayDealName),
+        formatDate(user.todayParticipationOn),
+        pickNumber(user.lastDealId),
+        valueOrDash(user.lastDealName),
+        formatDate(user.lastParticipationOn),
+      );
+    } else if (userView === "last3MonthsActive") {
+      row.push(
+        pickNumber(user.lastDealId),
+        valueOrDash(user.lastDealName),
+        formatDate(user.lastParticipationOn),
+      );
+    } else if (isEliminatedUserView(userView)) {
+      row.push(
+        valueOrDash(user.firstName),
+        valueOrDash(user.lastName),
+        valueOrDash(user.exclusionReasons),
+      );
+    }
+    return row;
+  });
 
 const buildDealExportRows = (deals) =>
   (deals || []).map((deal) => [
@@ -217,11 +746,6 @@ const buildDealExportRows = (deals) =>
     valueOrDash(deal.tenure),
     valueOrDash(deal.payoutTypeLabel || deal.payoutType),
   ]);
-
-const USER_EXPORT_HEADERS = [
-  "User ID", "User Code", "Name", "Mobile Number", "Email", "User Type", "Registered Date",
-  "City", "State", "Pincode", "UTM Source", "Deals Count", "Total Participation Amount",
-];
 
 const DEAL_EXPORT_HEADERS = [
   "Deal ID", "Deal Name", "Deal Amount", "Status", "Deal Type", "Created On", "Closed Date",
@@ -248,7 +772,8 @@ const downloadOverviewExcelFallback = async (stats) => {
 };
 
 const userViewSheetLabel = (userView) => {
-  if (userView === "lenders") return "Registered Lenders";
+  if (userView === "lenders") return "Not Participated - Verified Email";
+  if (userView === "lendersNotParticipated") return "Not Participated Lenders";
   if (userView === "borrowers") return "Registered Borrowers";
   if (userView === "todayRegistered") return "Today Registered";
   if (userView === "todayParticipated") return "Today Participated";
@@ -409,6 +934,7 @@ const AdminAIDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedQualityChipKey, setSelectedQualityChipKey] = useState("");
 
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminUsersPage, setAdminUsersPage] = useState(1);
@@ -416,13 +942,17 @@ const AdminAIDashboard = () => {
   const [adminUsersView, setAdminUsersView] = useState("registered");
   const [adminUsersLoading, setAdminUsersLoading] = useState(false);
   const [adminUsersError, setAdminUsersError] = useState("");
-  const [adminUserSearch, setAdminUserSearch] = useState({ userId: "", mobileNumber: "", email: "" });
+  const [adminUserSearch, setAdminUserSearch] = useState(() => emptyAdminUserSearch());
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [selectedProfileLoading, setSelectedProfileLoading] = useState(false);
   const [selectedProfileError, setSelectedProfileError] = useState("");
   const [adminUserDeals, setAdminUserDeals] = useState(null);
   const [adminUserDealsTab, setAdminUserDealsTab] = useState("active");
   const [adminUserDealsLoading, setAdminUserDealsLoading] = useState(false);
+  const [inactiveReactivatedLenders, setInactiveReactivatedLenders] = useState([]);
+  const [inactiveReactivatedCount, setInactiveReactivatedCount] = useState(0);
+  const [inactiveReactivatedLoading, setInactiveReactivatedLoading] = useState(false);
+  const [inactiveReactivatedError, setInactiveReactivatedError] = useState("");
 
   const [activeLenders, setActiveLenders] = useState([]);
   const [activeLendersPage, setActiveLendersPage] = useState(1);
@@ -431,6 +961,20 @@ const AdminAIDashboard = () => {
   const [activeLendersError, setActiveLendersError] = useState("");
   const [activeLenderSearch, setActiveLenderSearch] = useState({ lenderId: "", mobileNumber: "" });
   const [activeLenderSearchStatus, setActiveLenderSearchStatus] = useState("");
+  const [activeLenderParticipationRange, setActiveLenderParticipationRange] = useState(null);
+  const [activeLenderView, setActiveLenderView] = useState(null);
+  const [newParticipationDate, setNewParticipationDate] = useState(() => defaultParticipationDate());
+  const [newParticipatedDateCount, setNewParticipatedDateCount] = useState(null);
+  const [newParticipatedDateLoading, setNewParticipatedDateLoading] = useState(false);
+  const [newParticipatedDateError, setNewParticipatedDateError] = useState("");
+  const [participatedDate, setParticipatedDate] = useState(() => defaultParticipationDate());
+  const [participatedDateCount, setParticipatedDateCount] = useState(null);
+  const [participatedDateLoading, setParticipatedDateLoading] = useState(false);
+  const [participatedDateError, setParticipatedDateError] = useState("");
+  const [registeredDate, setRegisteredDate] = useState(() => defaultParticipationDate());
+  const [registeredDateCount, setRegisteredDateCount] = useState(null);
+  const [registeredDateLoading, setRegisteredDateLoading] = useState(false);
+  const [registeredDateError, setRegisteredDateError] = useState("");
 
   const [lenderDeals, setLenderDeals] = useState(null);
   const [lenderDealsTab, setLenderDealsTab] = useState("active");
@@ -453,20 +997,61 @@ const AdminAIDashboard = () => {
   const [exportingDeals, setExportingDeals] = useState(false);
   const [exportingCardKey, setExportingCardKey] = useState("");
   const [exportMessage, setExportMessage] = useState("");
+  const [campaignModalState, setCampaignModalState] = useState(null);
+  const [showReferralRegistrations, setShowReferralRegistrations] = useState(false);
+  const [showYearWiseReferrals, setShowYearWiseReferrals] = useState(false);
+  const [referralDate, setReferralDate] = useState(() => defaultParticipationDate());
+  const [referralYear, setReferralYear] = useState(null);
+  const [referralYearStatus, setReferralYearStatus] = useState(null);
+  const [referralYearCards, setReferralYearCards] = useState([]);
+  const [referralYearGrandTotal, setReferralYearGrandTotal] = useState(0);
+  const [topReferrers, setTopReferrers] = useState([]);
+  const [selectedTopReferrerLimit, setSelectedTopReferrerLimit] = useState(null);
+  const [topReferrersLoading, setTopReferrersLoading] = useState(false);
+  const [topReferrerStatusesLoading, setTopReferrerStatusesLoading] = useState(false);
+  const [selectedTopReferrer, setSelectedTopReferrer] = useState(null);
+  const [selectedTopReferrerDetail, setSelectedTopReferrerDetail] = useState(null);
+  const [selectedTopReferrerLoading, setSelectedTopReferrerLoading] = useState(false);
+  const [selectedTopReferrerError, setSelectedTopReferrerError] = useState("");
+  const [referralRows, setReferralRows] = useState([]);
+  const [referralPage, setReferralPage] = useState(1);
+  const [referralTotal, setReferralTotal] = useState(0);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralError, setReferralError] = useState("");
+  const [referralYearsLoading, setReferralYearsLoading] = useState(false);
 
-  const showActiveLenders = selectedCard?.key === "lastThreeMonthsActiveLenders";
+  const showReferralPanel = showReferralRegistrations || showYearWiseReferrals;
+  const showActiveLenders = activeLenderPanelCardKeys.includes(selectedCard?.key) && !showReferralPanel;
   const showAdminUsers = Boolean(
-    selectedCard && userViewByCard[selectedCard.key] && selectedCard.key !== "lastThreeMonthsActiveLenders"
+    !showReferralPanel
+    && ((selectedCard && userViewByCard[selectedCard.key] && !activeLenderPanelCardKeys.includes(selectedCard.key)
+      && selectedCard.key !== "allActiveLenders")
+    || selectedQualityChipKey)
   );
 
   const loadStats = async () => {
     setLoading(true);
     setLoadError("");
+    participationLenderRowsCache = null;
     try {
-      const registeredUsersData = responseData(await getRegisteredUsersSummary());
+      const registeredUsersSummary = await getRegisteredUsersSummary();
+      const [oldDashboardActiveLendersCount, referralSummaryPayload, referralYearlyPayload] = await Promise.all([
+        getOldDashboardActiveLendersCount(),
+        getAdminAIReferralRegistrationsSummary(defaultParticipationDate()).catch(() => null),
+        getAdminAIReferralRegistrationsYearlySummary(2021).catch(() => null),
+      ]);
+      let registeredUsersData = responseData(registeredUsersSummary);
+      const registrationBreakdown = registeredUsersData.registrationBreakdown || {};
+      registeredUsersData = await enrichMissingSummaryFields(registeredUsersData, registrationBreakdown);
       const users = registeredUsersData.users || {};
       const today = registeredUsersData.today || {};
-      const registrationBreakdown = registeredUsersData.registrationBreakdown || {};
+      const referralSummary = responseData(referralSummaryPayload);
+      const referralYearly = responseData(referralYearlyPayload);
+      const yearlyRows = Array.isArray(referralYearly?.years) ? referralYearly.years : [];
+      if (yearlyRows.length) {
+        setReferralYearCards(yearlyRows);
+        setReferralYearGrandTotal(pickNumber(referralYearly?.grandTotal));
+      }
 
       let activeLenderLocationByState = registeredUsersData.activeLenderLocationByState || [];
       if (!activeLenderLocationByState.length) {
@@ -478,24 +1063,52 @@ const AdminAIDashboard = () => {
         }
       }
 
+      let goodLendersVerified = pickNumber(registeredUsersData.goodLendersCount);
+      let goodLendersUnverifiedEmail = pickNumber(
+        registeredUsersData.goodLendersUnverifiedEmailCount,
+        registeredUsersData.lenderQualityBreakdown?.unverifiedEmail
+      );
+      let goodLenders = pickNumber(
+        registeredUsersData.notParticipatedLendersTotal,
+        goodLendersVerified + goodLendersUnverifiedEmail
+      );
+
+      const participationBandStats = await resolveParticipationBandStats(registeredUsersData);
+
       setStats({
         allUsers: pickNumber(
           registeredUsersData.registeredUsersCount,
           registrationBreakdown.registeredUsers,
           users.totalUsers
         ),
-        allLenders: pickNumber(
-          registeredUsersData.lendersCount,
-          registrationBreakdown.lenders,
-          registeredUsersData.primaryTypeCounts?.LENDER,
-          users.totalLenders
-        ),
+        rawLenders: derivedRawLendersCount(registeredUsersData, registrationBreakdown),
+        goodLenders,
+        goodLendersVerified,
+        goodLendersUnverifiedEmail,
+        notParticipatedRegistered1Month: pickNumber(registeredUsersData.notParticipatedRegisteredLast1MonthCount),
+        notParticipatedRegistered3Months: pickNumber(registeredUsersData.notParticipatedRegisteredLast3MonthsCount),
+        notParticipatedRegistered6Months: pickNumber(registeredUsersData.notParticipatedRegisteredLast6MonthsCount),
+        notParticipatedRegistered1Year: pickNumber(registeredUsersData.notParticipatedRegisteredLast1YearCount),
+        eliminatedLenders: pickNumber(registeredUsersData.lendersExcludedCount),
+        activeCleanLenders: pickNumber(registeredUsersData.activeCleanLendersCount),
+        lenderQualityFilterActive: registeredUsersData.lenderQualityFilterActive === true,
+        lenderQualityError: registeredUsersData.lenderQualityError || "",
+        lenderQualityBreakdown: registeredUsersData.lenderQualityBreakdown || fallbackStats.lenderQualityBreakdown,
         allBorrowers: pickNumber(
           registeredUsersData.borrowersCount,
           registrationBreakdown.borrowers,
           registeredUsersData.primaryTypeCounts?.BORROWER,
           users.totalBorrowers
         ),
+        registeredBorrowersCampaignCount: pickNumber(
+          registeredUsersData.registeredBorrowersCampaignCount
+        ),
+        allActiveLenders: pickNumber(
+          registeredUsersData.activeLendersCount,
+          users.activeLenders,
+          oldDashboardActiveLendersCount
+        ),
+        ...participationBandStats,
         todayRegisteredUsers: pickNumber(
           registeredUsersData.todayRegisteredUsersCount,
           today.registeredUsers,
@@ -505,7 +1118,11 @@ const AdminAIDashboard = () => {
           registeredUsersData.todayParticipatedUsersCount,
           today.participatedUsers
         ),
-        allActiveLenders: pickNumber(registeredUsersData.activeLendersCount, users.activeLenders),
+        newParticipatedLenders: pickNumber(
+          registeredUsersData.newParticipatedLendersCount,
+          today.newParticipatedLenders
+        ),
+        referralRegisteredUsers: pickNumber(referralSummary?.totalCount),
         lastThreeMonthsActiveLenders: pickNumber(
           registeredUsersData.lastThreeMonthsActiveLenders,
           users.lastThreeMonthsActiveLenders,
@@ -541,9 +1158,70 @@ const AdminAIDashboard = () => {
         userLocationByDistrict: [],
         monthlyRegistrationByType: [],
       });
-      setLoadError("Failed to load UserRepo data from backend.");
+      setLoadError(dashboardLoadErrorMessage(error));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInactiveReactivatedLenders = async (
+    participationDate,
+    inactiveInterval = "1 year",
+    usersFallback = []
+  ) => {
+    setInactiveReactivatedLoading(true);
+    setInactiveReactivatedError("");
+    try {
+      try {
+        const data = responseData(
+          await getAdminAIInactiveReactivatedLenders(participationDate, inactiveInterval)
+        );
+        if (!data.backendError && Array.isArray(data.lenders)) {
+          setInactiveReactivatedLenders(data.lenders);
+          setInactiveReactivatedCount(pickNumber(data.totalCount, data.lenders.length));
+          return;
+        }
+        if (data.backendError) {
+          throw new Error(data.backendError);
+        }
+      } catch (apiError) {
+        try {
+          const sourceUsers = usersFallback.length
+            ? usersFallback
+            : await fetchParticipatedUsersForDate(participationDate);
+          const derived = deriveInactiveReactivatedUsers(sourceUsers, participationDate);
+          setInactiveReactivatedLenders(derived);
+          setInactiveReactivatedCount(derived.length);
+          setInactiveReactivatedError("");
+          return;
+        } catch {
+          throw apiError;
+        }
+      }
+      setInactiveReactivatedLenders([]);
+      setInactiveReactivatedCount(0);
+    } catch (error) {
+      const derived = deriveInactiveReactivatedUsers(usersFallback, participationDate);
+      if (usersFallback.length) {
+        setInactiveReactivatedLenders(derived);
+        setInactiveReactivatedCount(derived.length);
+        setInactiveReactivatedError("");
+        return;
+      }
+      setInactiveReactivatedLenders([]);
+      setInactiveReactivatedCount(0);
+      const message =
+        error?.response?.data?.backendError ||
+        error?.response?.data?.errorMessage ||
+        error?.message ||
+        "Failed to load inactive 1+ year reactivated lenders for this date.";
+      setInactiveReactivatedError(
+        /network error/i.test(message)
+          ? `Cannot reach backend at ${BASE_URL}. Start oxyloans-rest on port 8181, then refresh.`
+          : message
+      );
+    } finally {
+      setInactiveReactivatedLoading(false);
     }
   };
 
@@ -552,10 +1230,26 @@ const AdminAIDashboard = () => {
     setAdminUsersError("");
     try {
       const data = responseData(await getAdminAIUsers(pageNo, adminUserPageSize, userView, filters));
-      setAdminUsers(data.users || []);
+      const users = data.users || [];
+      setAdminUsers(users);
       setAdminUsersPage(pickNumber(data.pageNo, pageNo) || 1);
       setAdminUsersTotal(pickNumber(data.totalCount));
-      setAdminUsersView(data.userView || userView);
+      const resolvedView = data.userView || userView;
+      setAdminUsersView(resolvedView);
+      if (resolvedView === "todayParticipated" && data.participationDate) {
+        const returnedDate = String(data.participationDate).slice(0, 10);
+        const requestedDate = filters.participationDate || defaultParticipationDate();
+        setAdminUserSearch((search) => ({
+          ...search,
+          participationDate: returnedDate,
+        }));
+        loadInactiveReactivatedLenders(returnedDate, "1 year", users);
+        if (returnedDate !== requestedDate) {
+          setAdminUsersError(
+            `Date filter mismatch: requested ${requestedDate}, backend returned ${returnedDate}. Restart backend and try again.`
+          );
+        }
+      }
       if (data.backendError) {
         setAdminUsersError(`Failed to load registered user records: ${data.backendError}`);
       }
@@ -571,17 +1265,98 @@ const AdminAIDashboard = () => {
     }
   };
 
-  const loadActiveLenders = async (pageNo = 1, filters = activeLenderSearch) => {
+  const loadActiveLenders = async (
+    pageNo = 1,
+    filters = activeLenderSearch,
+    participationRange = activeLenderParticipationRange,
+    lenderView = activeLenderView
+  ) => {
     setActiveLendersLoading(true);
     setActiveLendersError("");
     try {
-      const data = responseData(await getAdminAIActiveLenders(pageNo, activeLendersPageSize, filters));
+      const hasFilters =
+        Boolean(filters?.lenderId) || Boolean(String(filters?.mobileNumber || "").trim());
+      const minParticipation = participationRange?.min || null;
+      const maxParticipation = participationRange?.max || null;
+      let data = null;
+
+      if (lenderView === "newParticipated") {
+        data = responseData(await getAdminAIActiveLenders(pageNo, activeLendersPageSize, {
+          ...filters,
+          lenderView: "newParticipated",
+          participationDate: filters?.participationDate || newParticipationDate,
+        }));
+        setActiveLenders(data?.activeLenders || []);
+        setActiveLendersPage(pickNumber(data?.pageNo, pageNo) || 1);
+        setActiveLendersTotal(
+          hasFilters ? pickNumber(data?.totalCount) : pickNumber(data?.totalCount, stats.newParticipatedLenders)
+        );
+        return;
+      }
+
+      if (participationRange) {
+        try {
+          const apiData = responseData(await getAdminAIActiveLenders(pageNo, activeLendersPageSize, {
+            ...filters,
+            minParticipationAmount: minParticipation || undefined,
+            maxParticipationAmount: maxParticipation || undefined,
+          }));
+          if (!apiData?.backendError && looksLikeValidParticipationList(apiData, participationRange)) {
+            data = apiData;
+          }
+        } catch {
+          data = null;
+        }
+
+        if (!data) {
+          const segment = activeLenderPanelMeta[selectedCard?.key]?.segment;
+          if (segment) {
+            try {
+              const segmentData = responseData(
+                await getAdminAILenderAnalyticsLenders(segment, pageNo, activeLendersPageSize, filters.lenderId)
+              );
+              if (!segmentData?.backendError && looksLikeValidParticipationList(segmentData, participationRange)) {
+                data = {
+                  ...segmentData,
+                  activeLenders: segmentData.activeLenders || [],
+                  totalCount: pickNumber(segmentData.totalCount, segmentData.segmentTotalCount),
+                };
+              }
+            } catch {
+              data = null;
+            }
+          }
+        }
+
+        if (!data) {
+          data = await loadParticipationBandLendersFromDatabase(pageNo, filters, participationRange);
+        }
+      } else {
+        data = responseData(await getAdminAIActiveLenders(pageNo, activeLendersPageSize, {
+          ...filters,
+          minParticipationAmount: minParticipation || undefined,
+          maxParticipationAmount: maxParticipation || undefined,
+        }));
+      }
+
       setActiveLenders(data.activeLenders || []);
       setActiveLendersPage(pickNumber(data.pageNo, pageNo) || 1);
-      setActiveLendersTotal(pickNumber(data.totalCount));
+      let totalCount = pickNumber(data.totalCount);
+      if (!hasFilters && !participationRange) {
+        const legacyCount = await getOldDashboardActiveLendersCount();
+        totalCount = pickNumber(legacyCount, stats.allActiveLenders, data.totalCount);
+      } else if (!hasFilters && participationRange) {
+        totalCount = pickNumber(data.totalCount, stats[selectedCard?.key]);
+      }
+      setActiveLendersTotal(totalCount);
     } catch (error) {
       setActiveLenders([]);
-      setActiveLendersError("Failed to load active lender profiles from backend.");
+      setActiveLendersError(
+        error?.response?.data?.errorMessage
+          || error?.response?.data?.backendError
+          || error?.message
+          || "Failed to load active lender profiles from backend."
+      );
     } finally {
       setActiveLendersLoading(false);
     }
@@ -682,6 +1457,213 @@ const AdminAIDashboard = () => {
     setAdminUserDeals(null);
     setAdminUserDealsTab("active");
     setAdminUserDealsLoading(false);
+    setInactiveReactivatedLenders([]);
+    setInactiveReactivatedCount(0);
+    setInactiveReactivatedLoading(false);
+    setInactiveReactivatedError("");
+    setShowReferralRegistrations(false);
+    setShowYearWiseReferrals(false);
+    setReferralRows([]);
+    setReferralPage(1);
+    setReferralTotal(0);
+    setReferralLoading(false);
+    setReferralError("");
+    setReferralYear(null);
+    setReferralYearStatus(null);
+    setReferralYearsLoading(false);
+  };
+
+  const buildDefaultReferralYearCards = () => {
+    const currentYear = Number(String(defaultParticipationDate()).slice(0, 4)) || new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= 2021; year -= 1) {
+      years.push({ year, registeredCount: 0, lentCount: 0, totalCount: 0 });
+    }
+    return years;
+  };
+
+  const loadReferralYearCards = async () => {
+    const fallback = buildDefaultReferralYearCards();
+    setReferralYearCards((prev) => (prev.length ? prev : fallback));
+    setReferralYearsLoading(true);
+    try {
+      const data = responseData(await getAdminAIReferralRegistrationsYearlySummary(2021));
+      const years = Array.isArray(data?.years) ? data.years : [];
+      setReferralYearCards(years.length ? years : fallback);
+      setReferralYearGrandTotal(pickNumber(data?.grandTotal, years.reduce((sum, row) => sum + pickNumber(row.totalCount), 0)));
+    } catch {
+      setReferralYearCards((prev) => (prev.length ? prev : fallback));
+    } finally {
+      setReferralYearsLoading(false);
+    }
+  };
+
+  const loadTopReferrers = async () => {
+    setTopReferrersLoading(true);
+    try {
+      const data = responseData(await getAdminAITopReferrers(50));
+      setTopReferrers(Array.isArray(data?.referrers) ? data.referrers : []);
+    } catch {
+      setTopReferrers([]);
+    } finally {
+      setTopReferrersLoading(false);
+    }
+  };
+
+  const loadReferralRegistrations = async (
+    page = 1,
+    { dateValue = referralDate, yearValue = referralYear, statusValue = referralYearStatus } = {}
+  ) => {
+    const safeDate = dateValue || defaultParticipationDate();
+    const safeYear = yearValue ? Number(yearValue) : null;
+    const safeStatus = safeYear && statusValue ? statusValue : null;
+    setReferralLoading(true);
+    setReferralError("");
+    try {
+      const data = responseData(
+        await getAdminAIReferralRegistrations(
+          page,
+          20,
+          safeYear ? { year: safeYear, status: safeStatus } : { date: safeDate }
+        )
+      );
+      setReferralRows(Array.isArray(data?.referees) ? data.referees : []);
+      setReferralPage(pickNumber(data?.pageNo, page) || 1);
+      setReferralTotal(pickNumber(data?.totalCount));
+      if (safeYear) {
+        setReferralYear(safeYear);
+        setReferralYearStatus(safeStatus);
+      } else {
+        setReferralYear(null);
+        setReferralYearStatus(null);
+        setReferralDate(data?.date || safeDate);
+        if (safeDate === defaultParticipationDate()) {
+          setStats((prev) => ({
+            ...prev,
+            referralRegisteredUsers: pickNumber(data?.totalCount, prev.referralRegisteredUsers),
+          }));
+        }
+      }
+    } catch (error) {
+      setReferralRows([]);
+      setReferralTotal(0);
+      setReferralError(error?.response?.data?.message || error?.message || "Failed to load referral registrations.");
+    } finally {
+      setReferralLoading(false);
+    }
+  };
+
+  const openReferralRegistrations = (card) => {
+    const today = defaultParticipationDate();
+    setSelectedQualityChipKey("");
+    resetPanels();
+    setSelectedCard(card);
+    setShowReferralRegistrations(true);
+    setShowYearWiseReferrals(false);
+    setReferralDate(today);
+    setReferralYear(null);
+    setReferralYearStatus(null);
+    loadReferralRegistrations(1, { dateValue: today, yearValue: null, statusValue: null });
+  };
+
+  const openYearWiseReferrals = () => {
+    setSelectedQualityChipKey("");
+    resetPanels();
+    setSelectedCard({ key: "yearWiseReferrals", label: "YearWise referrals" });
+    setShowYearWiseReferrals(true);
+    setShowReferralRegistrations(false);
+    setReferralYear(null);
+    setReferralYearStatus(null);
+    setReferralRows([]);
+    setReferralTotal(0);
+    setSelectedTopReferrerLimit(null);
+    setSelectedTopReferrer(null);
+    setSelectedTopReferrerDetail(null);
+    setSelectedTopReferrerError("");
+    setReferralYearCards((prev) => (prev.length ? prev : buildDefaultReferralYearCards()));
+    loadReferralYearCards();
+    loadTopReferrers();
+  };
+
+  useEffect(() => {
+    const requestedPanel = new URLSearchParams(window.location.search).get("panel");
+    if (requestedPanel === "yearWiseReferrals") {
+      openYearWiseReferrals();
+      navigate("/adminAIDashboard", { replace: true });
+    }
+  }, []);
+
+  const openReferralYearStatus = (year, status) => {
+    const safeYear = Number(year);
+    if (!safeYear || (status !== "Lent" && status !== "Registered")) {
+      return;
+    }
+    if (status === "Registered") {
+      navigate(`/adminAIReferralUsers?year=${safeYear}&status=Registered`);
+      return;
+    }
+    setReferralYear(safeYear);
+    setReferralYearStatus(status);
+    loadReferralRegistrations(1, { yearValue: safeYear, statusValue: status });
+  };
+
+  const openReferralCampaign = (segment, segmentLabel, recipientCount, channel) => {
+    setCampaignModalState({
+      segment,
+      segmentLabel,
+      recipientCount: pickNumber(recipientCount),
+      channel: channel || "email",
+      campaignSetCount: 3,
+    });
+  };
+
+  const openTopReferrerDetail = async (referrer) => {
+    const lenderId = pickNumber(referrer?.referrerId);
+    if (!lenderId) return;
+    setSelectedTopReferrer(referrer);
+    setSelectedTopReferrerDetail(null);
+    setSelectedTopReferrerError("");
+    setSelectedTopReferrerLoading(true);
+    try {
+      const data = responseData(await getAdminAIActiveLenderReferrals(lenderId, 1, 10));
+      setSelectedTopReferrerDetail(data || {});
+    } catch (error) {
+      setSelectedTopReferrerError(error?.response?.data?.message || error?.message || "Failed to load referral earnings.");
+    } finally {
+      setSelectedTopReferrerLoading(false);
+    }
+  };
+
+  const showTopReferrers = async (limit) => {
+    setSelectedTopReferrerLimit(limit);
+    const visibleRows = topReferrers.slice(0, limit);
+    if (!visibleRows.length) return;
+    setTopReferrerStatusesLoading(true);
+    try {
+      const updates = [];
+      for (let start = 0; start < visibleRows.length; start += 5) {
+        const batch = visibleRows.slice(start, start + 5);
+        const batchUpdates = await Promise.all(batch.map(async (row) => {
+          try {
+            const data = responseData(await getAdminAIActiveLenderReferrals(row.referrerId, 1, 1));
+            const summary = data?.referralSummary || {};
+            return {
+              referrerId: row.referrerId,
+              registeredCount: pickNumber(summary.registered),
+              lentCount: pickNumber(summary.lent) + pickNumber(summary.disbursed),
+              invitedCount: pickNumber(summary.invited),
+            };
+          } catch {
+            return null;
+          }
+        }));
+        updates.push(...batchUpdates.filter(Boolean));
+      }
+      const byId = new Map(updates.map((row) => [pickNumber(row.referrerId), row]));
+      setTopReferrers((rows) => rows.map((row) => ({ ...row, ...(byId.get(pickNumber(row.referrerId)) || {}) })));
+    } finally {
+      setTopReferrerStatusesLoading(false);
+    }
   };
 
   const loadBankDetailsForProfile = async (userId) => {
@@ -704,45 +1686,34 @@ const AdminAIDashboard = () => {
     return null;
   };
 
-  const openAdminUserProfile = async (user) => {
-    setSelectedProfile(normalizeUserToProfile(user));
-    setSelectedProfileLoading(true);
-    setSelectedProfileError("");
-    setAdminUserDeals(null);
-    setAdminUserDealsTab("active");
+  const openAdminUserProfile = (user) => {
     const userId = pickNumber(user?.userId);
-    const isLender = String(user?.primaryType || "").toUpperCase() === "LENDER";
-    if (!userId || !isLender) {
-      setSelectedProfileLoading(false);
+    if (!userId) {
       return;
     }
-    try {
-      const [profileData, bankProfile, walletData, dealsData] = await Promise.all([
-        getAdminAIActiveLenderProfile(userId).catch(() => null),
-        loadBankDetailsForProfile(userId),
-        getAdminAIActiveLenderWallet(userId).catch(() => null),
-        getAdminAIActiveLenderDeals(userId).catch(() => null),
-      ]);
-      const apiProfile = responseData(profileData)?.profile || null;
-      const wallet = responseData(walletData) || {};
-      const deals = responseData(dealsData) || {};
-      const enriched = mergeProfiles(user, normalizeUserToProfile(user), apiProfile, bankProfile, {
-        walletAmount: pickNumber(wallet.walletAmount),
-        referrals: apiProfile?.referrals,
-        referralSummary: apiProfile?.referralSummary,
-        personalReferences: apiProfile?.personalReferences,
-        referredBy: apiProfile?.referredBy,
-      });
-      setSelectedProfile(enriched);
-      setAdminUserDeals(deals);
-      if (!deals.activeDeals?.length && deals.closedDeals?.length) {
-        setAdminUserDealsTab("closed");
-      }
-    } catch {
-      setSelectedProfileError("Failed to load full lender profile details.");
-    } finally {
-      setSelectedProfileLoading(false);
+    const params = new URLSearchParams({
+      userId: String(userId),
+      view: adminUsersView,
+      label: adminUsersTitle,
+    });
+    navigate(`/adminAIUserProfile?${params.toString()}`);
+  };
+
+  const openReferralUserProfile = (userId, userCode, roleLabel = "Referral User") => {
+    let id = pickNumber(userId);
+    if (!id && userCode) {
+      const digits = String(userCode).replace(/^(LR|BR|PR)\s*/i, "").replace(/\D/g, "");
+      id = pickNumber(digits);
     }
+    if (!id) {
+      return;
+    }
+    const params = new URLSearchParams({
+      userId: String(id),
+      view: "referralRegistered",
+      label: roleLabel,
+    });
+    navigate(`/adminAIUserProfile?${params.toString()}`);
   };
 
   const closeAdminUserProfile = () => {
@@ -753,23 +1724,111 @@ const AdminAIDashboard = () => {
   };
 
   const openActiveLenders = (card) => {
+    const participationRange = participationRangeByCard[card.key] || null;
+    const lenderView = card.key === "newParticipatedLenders" ? "newParticipated" : null;
     setSelectedCard(card);
     resetPanels();
-    setActiveLenderSearch({ lenderId: "", mobileNumber: "" });
-    loadActiveLenders(1, { lenderId: "", mobileNumber: "" });
+    setActiveLenderParticipationRange(participationRange);
+    setActiveLenderView(lenderView);
+    const nextSearch = {
+      lenderId: "",
+      mobileNumber: "",
+      ...(lenderView === "newParticipated" ? { participationDate: newParticipationDate } : {}),
+    };
+    setActiveLenderSearch(nextSearch);
+    loadActiveLenders(1, nextSearch, participationRange, lenderView);
+  };
+
+  const searchNewParticipatedByDate = async () => {
+    const participationDate = String(newParticipationDate || "").slice(0, 10);
+    if (!participationDate) {
+      setNewParticipatedDateError("Please select a date.");
+      return;
+    }
+    setNewParticipatedDateLoading(true);
+    setNewParticipatedDateError("");
+    try {
+      const data = responseData(await getAdminAIActiveLenders(1, 1, {
+        lenderView: "newParticipated",
+        participationDate,
+        includeBankDetails: false,
+      }));
+      setNewParticipatedDateCount(pickNumber(data?.totalCount));
+    } catch (error) {
+      setNewParticipatedDateCount(null);
+      setNewParticipatedDateError(error?.response?.data?.errorMessage || error?.message || "Failed to load this date.");
+    } finally {
+      setNewParticipatedDateLoading(false);
+    }
   };
 
   const openAdminUsers = (card) => {
-    if (card.key === "lastThreeMonthsActiveLenders") {
-      openActiveLenders(card);
-      return;
-    }
     const nextView = userViewByCard[card.key] || "registered";
+    const nextSearch = emptyAdminUserSearch(nextView);
+    if (nextView === "todayParticipated") {
+      nextSearch.participationDate = participatedDate;
+    }
+    if (nextView === "todayRegistered") {
+      nextSearch.participationDate = registeredDate;
+    }
+    setSelectedQualityChipKey("");
     setSelectedCard(card);
     resetPanels();
-    setAdminUserSearch({ userId: "", mobileNumber: "", email: "" });
+    setAdminUserSearch(nextSearch);
     setAdminUsersView(nextView);
-    loadAdminUsers(1, nextView, { userId: "", mobileNumber: "", email: "" });
+    loadAdminUsers(1, nextView, nextSearch);
+  };
+
+  const searchParticipatedByDate = async () => {
+    const participationDate = String(participatedDate || "").slice(0, 10);
+    if (!participationDate) {
+      setParticipatedDateError("Please select a date.");
+      return;
+    }
+    setParticipatedDateLoading(true);
+    setParticipatedDateError("");
+    try {
+      const data = responseData(await getAdminAIUsers(1, 1, "todayParticipated", { participationDate }));
+      setParticipatedDateCount(pickNumber(data?.totalCount));
+    } catch (error) {
+      setParticipatedDateCount(null);
+      setParticipatedDateError(error?.response?.data?.errorMessage || error?.message || "Failed to load this date.");
+    } finally {
+      setParticipatedDateLoading(false);
+    }
+  };
+
+  const searchRegisteredByDate = async () => {
+    const selectedDate = String(registeredDate || "").slice(0, 10);
+    if (!selectedDate) {
+      setRegisteredDateError("Please select a date.");
+      return;
+    }
+    setRegisteredDateLoading(true);
+    setRegisteredDateError("");
+    try {
+      const data = responseData(await getAdminAIUsers(1, 1, "todayRegistered", { participationDate: selectedDate }));
+      setRegisteredDateCount(pickNumber(data?.totalCount));
+    } catch (error) {
+      setRegisteredDateCount(null);
+      setRegisteredDateError(error?.response?.data?.errorMessage || error?.message || "Failed to load registrations for this date.");
+    } finally {
+      setRegisteredDateLoading(false);
+    }
+  };
+
+  const openLenderQualityChip = (chipKey) => {
+    const chip = lenderQualityChipViews[chipKey];
+    if (!chip) {
+      return;
+    }
+    const nextSearch = emptyAdminUserSearch(chip.userView);
+    setSelectedCard(null);
+    setSelectedQualityChipKey(chipKey);
+    resetPanels();
+    setAdminUserSearch(nextSearch);
+    setAdminUsersView(chip.userView);
+    loadAdminUsers(1, chip.userView, nextSearch);
   };
 
   const handleCardClick = (card) => {
@@ -777,15 +1836,74 @@ const AdminAIDashboard = () => {
       navigate("/adminAIDeals");
       return;
     }
-    if (card.key === "lastThreeMonthsActiveLenders") {
+    if (card.key === "referralRegisteredUsers") {
+      openReferralRegistrations(card);
+      return;
+    }
+    if (activeLenderPanelCardKeys.includes(card.key)) {
       openActiveLenders(card);
       return;
     }
     openAdminUsers(card);
   };
 
+  const openParticipationTierCampaign = (cardKey, channel) => {
+    const meta = activeLenderPanelMeta[cardKey];
+    if (!meta) {
+      return;
+    }
+    const recipientCount = pickNumber(stats[cardKey]);
+    setCampaignModalState({
+      segment: meta.segment,
+      segmentLabel: meta.segmentLabel,
+      recipientCount,
+      channel: channel || "email",
+      campaignSetCount: 3,
+    });
+  };
+
+  const openGoodLendersCampaign = (channel) => {
+    setCampaignModalState({
+      segment: "goodLenders",
+      segmentLabel: "Not Participated Lenders",
+      recipientCount: pickNumber(stats.goodLendersVerified),
+      channel: channel || "email",
+      campaignSetCount: 3,
+    });
+  };
+
+  const openRegisteredNotParticipatedCampaign = (card, channel) => {
+    const segmentByCard = {
+      notParticipatedRegistered1Month: "notParticipatedRegistered1Month",
+      notParticipatedRegistered3Months: "notParticipatedRegistered3Months",
+      notParticipatedRegistered6Months: "notParticipatedRegistered6Months",
+      notParticipatedRegistered1Year: "notParticipatedRegistered1Year",
+    };
+    setCampaignModalState({
+      segment: segmentByCard[card.key],
+      segmentLabel: card.label,
+      recipientCount: pickNumber(card.value),
+      channel: channel || "email",
+      campaignSetCount: 3,
+    });
+  };
+
+  const openRegisteredBorrowersCampaign = (channel) => {
+    setCampaignModalState({
+      segment: "registeredBorrowers",
+      segmentLabel: "Registered Borrowers",
+      recipientCount: pickPositiveNumber(stats.allBorrowers, stats.registeredBorrowersCampaignCount),
+      channel: channel || "email",
+      campaignSetCount: 10,
+      audienceType: "borrowers",
+    });
+  };
+
   const backToDashboard = () => {
     setSelectedCard(null);
+    setSelectedQualityChipKey("");
+    setActiveLenderParticipationRange(null);
+    setActiveLenderView(null);
     resetPanels();
   };
 
@@ -797,7 +1915,7 @@ const AdminAIDashboard = () => {
   const searchActiveLenders = (event) => {
     event.preventDefault();
     setLenderDeals(null);
-    loadActiveLenders(1, activeLenderSearch);
+    loadActiveLenders(1, activeLenderSearch, activeLenderParticipationRange, activeLenderView);
   };
 
   const openLenderDeals = async (profile) => {
@@ -862,12 +1980,16 @@ const AdminAIDashboard = () => {
     }
   };
 
-  const downloadUsersExcel = async (userView = "registered", label = "", fileSlug = "") => {
+  const downloadUsersExcel = async (userView = "registered", label = "", fileSlug = "", filters = {}) => {
     const exportLabel = label || userViewSheetLabel(userView);
     const fileName = cardExportFileName(fileSlug || userView);
+    const participationDate =
+      userView === "todayParticipated"
+        ? filters.participationDate || defaultParticipationDate()
+        : undefined;
     setExportMessage(`Preparing ${exportLabel} export...`);
     try {
-      const response = await downloadAdminAIUsersExcel(userView);
+      const response = await downloadAdminAIUsersExcel(userView, participationDate);
       const blob = response?.data;
       if (!blob || blob.size === 0) {
         throw new Error("Export returned no data.");
@@ -881,52 +2003,89 @@ const AdminAIDashboard = () => {
       setExportMessage(`Downloaded ${exportLabel} Excel with user details.`);
     } catch (error) {
       setExportMessage(`Fetching all ${exportLabel} records page by page...`);
-      const { rows, totalCount } = await fetchAllAdminUsersForExport(userView, (pageNo, fetched) => {
+      const { rows, totalCount } = await fetchAllAdminUsersForExport(
+        userView,
+        (pageNo, fetched) => {
         setExportMessage(`Fetching ${exportLabel}... page ${pageNo} (${fetched} loaded)`);
-      });
+        },
+        filters
+      );
       if (!rows.length) {
         throw new Error((await parseAdminAIExportError(error)) || "No users found to export.");
       }
+      const exportHeaders = userExportHeadersForView(userView);
+      const numericColumns = exportHeaders
+        .map((header, index) => ({ header, index }))
+        .filter(({ header }) => /ID|Count|Amount/i.test(header))
+        .map(({ index }) => index);
       const usersXml = buildSpreadsheetXml(
         userViewSheetLabel(userView),
-        USER_EXPORT_HEADERS,
-        buildUserExportRows(rows),
-        [0, 11, 12]
+        exportHeaders,
+        buildUserExportRows(rows, userView),
+        numericColumns
       );
       saveSpreadsheetXml(usersXml, fileName.replace(/\.xlsx$/, ".xls"));
       setExportMessage(`Downloaded ${rows.length} of ${totalCount || rows.length} ${exportLabel} records as Excel.`);
     }
   };
 
-  const downloadActiveLendersExcel = async (label = "All Active Lenders", fileSlug = "active-lenders") => {
+  const downloadActiveLendersExcel = async (
+    label = "All Active Lenders",
+    fileSlug = "all-active-lenders",
+    minParticipationAmount = null,
+    maxParticipationAmount = null,
+    lenderView = null,
+    participationDate = null
+  ) => {
     const fileName = cardExportFileName(fileSlug);
-    setExportMessage("");
+    setExportMessage(`Preparing ${label} export...`);
     try {
-      const response = await downloadAdminAIActiveLendersExcel();
-      const blob = response?.data;
-      if (!blob || blob.size === 0) {
-        throw new Error("Export returned no data.");
+      if (!minParticipationAmount && !lenderView) {
+        const response = await downloadAdminAIActiveLendersExcel();
+        const blob = response?.data;
+        if (!blob || blob.size === 0) {
+          throw new Error("Export returned no data.");
+        }
+        if (blob.type && blob.type.includes("json")) {
+          const text = await blob.text();
+          const payload = JSON.parse(text);
+          throw new Error(payload?.errorMessage || payload?.message || "Export failed.");
+        }
+        saveAs(blob, fileName);
+        setExportMessage(`Downloaded ${label} Excel.`);
+        return;
       }
-      if (blob.type && blob.type.includes("json")) {
-        const text = await blob.text();
-        const payload = JSON.parse(text);
-        throw new Error(payload?.errorMessage || "Export failed.");
-      }
-      saveAs(blob, fileName);
-      setExportMessage(`Downloaded ${label} Excel with lender details.`);
+      throw new Error("fallback");
     } catch (error) {
-      const { rows } = await fetchAllActiveLendersForExport();
+      if (error?.message !== "fallback") {
+        // continue to page-by-page export below for filtered tiers or legacy failure
+      }
+      setExportMessage(`Fetching all ${label} records page by page...`);
+      const { rows, totalCount } = await fetchAllActiveLendersForExport((pageNo, fetched) => {
+        setExportMessage(`Fetching ${label}... page ${pageNo} (${fetched} loaded)`);
+      }, { minParticipationAmount, maxParticipationAmount, lenderView, participationDate });
       if (!rows.length) {
         throw new Error((await parseAdminAIExportError(error)) || "No active lenders found to export.");
       }
-      const lendersXml = buildSpreadsheetXml(
-        "Active Lenders",
-        ACTIVE_LENDER_EXPORT_HEADERS,
-        buildActiveLenderExportRows(rows),
-        [0, 7, 8]
-      );
-      saveSpreadsheetXml(lendersXml, fileName.replace(/\.xlsx$/, ".xls"));
-      setExportMessage(`Downloaded ${rows.length} ${label} records as Excel.`);
+      const headers = [
+        "Lender ID", "Name", "Email", "Mobile", "City", "State", "Pincode",
+        "Deals Count", "Total Participation", "Last Participation",
+      ];
+      const exportRows = rows.map((row) => [
+        row.lenderId ?? "",
+        row.name ?? "",
+        row.email ?? "",
+        row.mobileNumber ?? "",
+        row.city ?? "",
+        row.state ?? "",
+        row.pincode ?? "",
+        row.dealsCount ?? "",
+        row.totalParticipationAmount ?? "",
+        String(row.lastParticipationOn || row.lastActivityOn || "").slice(0, 10),
+      ]);
+      const xml = buildSpreadsheetXml(label, headers, exportRows, [0, 7, 8]);
+      saveSpreadsheetXml(xml, fileName.replace(/\.xlsx$/, ".xls"));
+      setExportMessage(`Downloaded ${rows.length} of ${totalCount || rows.length} ${label} records as Excel.`);
     }
   };
 
@@ -939,7 +2098,13 @@ const AdminAIDashboard = () => {
     setExportMessage("");
     try {
       if (config.type === "activeLenders") {
-        await downloadActiveLendersExcel(config.label, config.fileSlug);
+        await downloadActiveLendersExcel(
+          config.label,
+          config.fileSlug,
+          config.minParticipationAmount,
+          config.maxParticipationAmount,
+          config.lenderView
+        );
       } else {
         await downloadUsersExcel(config.userView, config.label, config.fileSlug);
       }
@@ -953,15 +2118,114 @@ const AdminAIDashboard = () => {
   const userCards = useMemo(
     () => [
       { key: "allUsers", label: "Registered Users", value: stats.allUsers, icon: <FaUsers />, meta: "All platform users", accent: "blue", clickable: true },
-      { key: "allLenders", label: "Registered Lenders", value: stats.allLenders, icon: <FaUserFriends />, meta: "LENDER accounts", accent: "indigo", clickable: true },
-      { key: "allBorrowers", label: "Registered Borrowers", value: stats.allBorrowers, icon: <FaHandshake />, meta: "BORROWER accounts", accent: "violet", clickable: true },
-      { key: "allActiveLenders", label: "All Active Lenders", value: stats.allActiveLenders, icon: <FaUsers />, meta: "Participated in deals", accent: "teal", clickable: true },
+      { key: "allLenders", label: "Registered Lenders", value: stats.rawLenders, icon: <FaUserFriends />, meta: "All LENDER sign-ups (incl. eliminated)", accent: "indigo", clickable: true },
+      { key: "allBorrowers", label: "Registered Borrowers", value: stats.allBorrowers, icon: <FaHandshake />, meta: "BORROWER accounts · 10 email sets", accent: "violet", clickable: true },
+      { key: "allActiveLenders", label: "All Active Lenders", value: stats.allActiveLenders, icon: <FaUserCheck />, meta: "Participated in deals", accent: "teal", clickable: true },
       { key: "lastThreeMonthsActiveLenders", label: "Last 3 Months Active", value: stats.lastThreeMonthsActiveLenders, icon: <FaChartLine />, meta: "Recent participation", accent: "cyan", clickable: true },
-      { key: "todayRegisteredUsers", label: "Today Registered", value: stats.todayRegisteredUsers, icon: <FaUserFriends />, meta: "New sign-ups today", accent: "amber", clickable: true },
-      { key: "todayParticipatedUsers", label: "Today Participated", value: stats.todayParticipatedUsers, icon: <FaUserClock />, meta: "Deal activity today", accent: "orange", clickable: true },
+      {
+        key: "todayRegisteredUsers",
+        label: "Registered Users by Date",
+        value: registeredDateCount ?? stats.todayRegisteredUsers,
+        icon: <FaUserFriends />,
+        meta: `New sign-ups on ${registeredDate}`,
+        accent: "amber",
+        clickable: true,
+      },
+      {
+        key: "todayParticipatedUsers",
+        label: "Participated Lenders",
+        value: participatedDateCount ?? stats.todayParticipatedUsers,
+        icon: <FaUserClock />,
+        meta: `Lenders active on ${participatedDate} (all deals)`,
+        accent: "orange",
+        clickable: true,
+      },
+      {
+        key: "newParticipatedLenders",
+        label: "New Participated Lenders",
+        value: newParticipatedDateCount ?? stats.newParticipatedLenders,
+        icon: <FaUserPlus />,
+        meta: `First-ever participation on ${newParticipationDate}`,
+        accent: "emerald",
+        clickable: true,
+      },
+      { key: "referralRegisteredUsers", label: "Referral Registered Users", value: stats.referralRegisteredUsers, icon: <FaUserPlus />, meta: "Via referral link · default today", accent: "rose", clickable: true },
+    ],
+    [stats, newParticipatedDateCount, newParticipationDate, participatedDateCount, participatedDate, registeredDateCount, registeredDate]
+  );
+
+  const highParticipationCards = useMemo(
+    () => [
+      {
+        key: "participation50LakhTo1Crore",
+        label: "50 Lakhs to Below 1 Crore",
+        value: stats.participation50LakhTo1Crore,
+        icon: <FaMedal />,
+        meta: "Rs 50,00,000 to below Rs 1,00,00,000",
+        accent: "amber",
+        clickable: true,
+      },
+      {
+        key: "participation1CroreTo2Crore",
+        label: "1 Crore to Below 2 Crores",
+        value: stats.participation1CroreTo2Crore,
+        icon: <FaTrophy />,
+        meta: "Rs 1,00,00,000 to below Rs 2,00,00,000",
+        accent: "rose",
+        clickable: true,
+      },
+      {
+        key: "participation2CroreTo3Crore",
+        label: "2 Crores to Below 3 Crores",
+        value: stats.participation2CroreTo3Crore,
+        icon: <FaChartLine />,
+        meta: "Rs 2,00,00,000 to below Rs 3,00,00,000",
+        accent: "violet",
+        clickable: true,
+      },
+      {
+        key: "participation3CrorePlus",
+        label: "3 Crores and Above",
+        value: stats.participation3CrorePlus,
+        icon: <FaTrophy />,
+        meta: "Rs 3,00,00,000 or more",
+        accent: "indigo",
+        clickable: true,
+      },
     ],
     [stats]
   );
+
+  const lenderQualityCards = useMemo(
+    () => [
+      {
+        key: "goodLenders",
+        label: "Not Participated Lenders",
+        value: stats.goodLenders,
+        icon: <FaCheckCircle />,
+        meta: `${fmtNum(stats.goodLendersVerified)} verified email · ${fmtNum(stats.goodLendersUnverifiedEmail)} unverified email`,
+        accent: "green",
+        clickable: true,
+      },
+      {
+        key: "eliminatedLenders",
+        label: "Eliminated",
+        value: stats.eliminatedLenders,
+        icon: <FaUserSlash />,
+        meta: `Test ${fmtNum(stats.lenderQualityBreakdown?.testUsers)} · bad mobile ${fmtNum(stats.lenderQualityBreakdown?.invalidMobile)} · bad email ${fmtNum(stats.lenderQualityBreakdown?.invalidEmail)} · dup mobile ${fmtNum(stats.lenderQualityBreakdown?.duplicateMobile)} · dup name ${fmtNum(stats.lenderQualityBreakdown?.duplicateName)}`,
+        accent: "rose",
+        clickable: true,
+      },
+    ],
+    [stats]
+  );
+
+  const registeredNotParticipatedCards = useMemo(() => [
+    { key: "notParticipatedRegistered1Month", label: "Last 1 Month Registered - Not Participated", value: stats.notParticipatedRegistered1Month, icon: <FaUserClock />, meta: "Lenders registered in the last month with no participation", accent: "cyan", clickable: true },
+    { key: "notParticipatedRegistered3Months", label: "Last 3 Months Registered - Not Participated", value: stats.notParticipatedRegistered3Months, icon: <FaUserClock />, meta: "Lenders registered in the last 3 months with no participation", accent: "teal", clickable: true },
+    { key: "notParticipatedRegistered6Months", label: "Last 6 Months Registered - Not Participated", value: stats.notParticipatedRegistered6Months, icon: <FaUserClock />, meta: "Lenders registered in the last 6 months with no participation", accent: "amber", clickable: true },
+    { key: "notParticipatedRegistered1Year", label: "Last 1 Year Registered - Not Participated", value: stats.notParticipatedRegistered1Year, icon: <FaUserClock />, meta: "Lenders registered in the last year with no participation", accent: "rose", clickable: true },
+  ], [stats]);
 
   const dealCards = useMemo(
     () => [
@@ -1025,7 +2289,7 @@ const AdminAIDashboard = () => {
   const registrationDonut = useMemo(() => {
     const breakdown = charts.registrationBreakdown || {};
     const usersCount = pickNumber(breakdown.registeredUsers, stats.allUsers);
-    const lendersCount = pickNumber(breakdown.lenders, stats.allLenders);
+    const lendersCount = pickNumber(breakdown.lenders, stats.goodLenders);
     const borrowersCount = pickNumber(breakdown.borrowers, stats.allBorrowers);
     return {
       usersCount,
@@ -1150,13 +2414,43 @@ const AdminAIDashboard = () => {
     return options;
   }, [monthlyTrend]);
 
-  const adminUsersTitle = {
-    registered: "All Registered Users",
-    lenders: "All Registered Lenders",
-    borrowers: "All Registered Borrowers",
-    todayRegistered: "Today Registered Users",
-    todayParticipated: "Today Participated Users",
-  }[adminUsersView] || "Registered User Records";
+  const adminUsersTitle = useMemo(() => {
+    if (selectedQualityChipKey && lenderQualityChipViews[selectedQualityChipKey]) {
+      return lenderQualityChipViews[selectedQualityChipKey].label;
+    }
+    if (adminUsersView === "todayParticipated") {
+      const date = adminUserSearch.participationDate || defaultParticipationDate();
+      return isTodayParticipationDate(date)
+        ? "Today Participated Users"
+        : `Participated Users — ${formatDate(date)}`;
+    }
+    return {
+      registered: "All Registered Users",
+      lenders: "Not Participated Lenders",
+      lendersNotParticipated: "Not Participated Lenders",
+      lendersNotParticipatedRegistered1Month: "Last 1 Month Registered - Not Participated Lenders",
+      lendersNotParticipatedRegistered3Months: "Last 3 Months Registered - Not Participated Lenders",
+      lendersNotParticipatedRegistered6Months: "Last 6 Months Registered - Not Participated Lenders",
+      lendersNotParticipatedRegistered1Year: "Last 1 Year Registered - Not Participated Lenders",
+      lendersRaw: "All Registered Lenders",
+      lendersExcluded: "Eliminated Lenders",
+      lendersExcludedTestUsers: "Test Users Removed",
+      lendersExcludedInvalidMobile: "Invalid / Fake Mobile",
+      lendersExcludedInvalidEmail: "Invalid Email",
+      lendersExcludedDuplicateMobile: "Duplicate Mobile",
+      lendersExcludedDuplicateName: "Duplicate First+Last Name",
+      borrowers: "All Registered Borrowers",
+      todayRegistered: "Today Registered Users",
+      last3MonthsActive: "Last 3 Months Active",
+    }[adminUsersView] || "Registered User Records";
+  }, [adminUsersView, adminUserSearch.participationDate, selectedQualityChipKey]);
+
+  const handleParticipationDateChange = (participationDate) => {
+    const nextSearch = { ...adminUserSearch, participationDate };
+    setAdminUserSearch(nextSearch);
+    closeAdminUserProfile();
+    loadAdminUsers(1, adminUsersView, nextSearch);
+  };
 
   return (
     <div className="main-wrapper">
@@ -1164,6 +2458,30 @@ const AdminAIDashboard = () => {
       <OxyloansAdminSidebar />
       <div className="page-wrapper">
         <div className="content container-fluid admin-ai-page admin-ai-pro">
+          <section className="admin-ai-brand-strip" aria-label="OxyLoans brand">
+            <div className="admin-ai-brand-strip-accent" aria-hidden="true" />
+            <div className="admin-ai-brand-strip-content">
+              <div className="admin-ai-brand-anniversary" aria-hidden="true">
+                <strong>10</strong>
+                <span>Years</span>
+              </div>
+              <img
+                src="https://oxyloans.com/wp-content/themes/oxyloan/oxyloan/_ui/images/logo4.png"
+                alt="OxyLoans"
+                className="admin-ai-brand-strip-logo"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = `${process.env.PUBLIC_URL || ""}/assets/img/oxyloans-campaign-logo.png`;
+                }}
+              />
+              <div className="admin-ai-brand-strip-text">
+                <span className="admin-ai-brand-strip-rbi">RBI Approved P2P NBFC</span>
+                <span className="admin-ai-brand-strip-tagline">Lend · Borrow · Invest</span>
+              </div>
+            </div>
+            <span className="admin-ai-brand-strip-badge">Trusted since 2016</span>
+          </section>
+
           <header className="admin-ai-pro-header">
             <div>
               <p className="admin-ai-pro-eyebrow">Admin · Live Platform Data</p>
@@ -1184,7 +2502,7 @@ const AdminAIDashboard = () => {
 
           {loading && <div className="admin-ai-empty-state">Loading Admin AI dashboard...</div>}
 
-          {!loading && !showActiveLenders && !showAdminUsers && (
+          {!loading && !showActiveLenders && !showAdminUsers && !showReferralPanel && (
             <>
               <section className="admin-ai-pro-section admin-ai-pro-section--users">
                 <div className="admin-ai-pro-section-head">
@@ -1210,8 +2528,222 @@ const AdminAIDashboard = () => {
                       {...card}
                       active={selectedCard?.key === card.key}
                       onClick={card.clickable ? () => handleCardClick(card) : undefined}
+                      onExport={
+                        card.key === "todayRegisteredUsers"
+                          ? () => downloadUsersExcel(
+                              "todayRegistered",
+                              `Registered Users - ${registeredDate}`,
+                              `registered-users-${registeredDate}`,
+                              { participationDate: registeredDate }
+                            )
+                        : card.key === "newParticipatedLenders"
+                          ? () => downloadActiveLendersExcel(
+                              "New Participated Lenders",
+                              `new-participated-lenders-${newParticipationDate}`,
+                              null,
+                              null,
+                              "newParticipated",
+                              newParticipationDate
+                            )
+                          : card.key === "todayParticipatedUsers"
+                            ? () => downloadUsersExcel(
+                                "todayParticipated",
+                                `Participated Lenders - ${participatedDate}`,
+                                `participated-lenders-${participatedDate}`,
+                                { participationDate: participatedDate }
+                              )
+                          : userExportByCard[card.key]
+                            ? () => downloadOverviewCardExcel(card.key)
+                            : undefined
+                      }
+                      exporting={exportingCardKey === card.key}
+                      dateFilter={
+                        card.key === "todayRegisteredUsers"
+                          ? registeredDate
+                        : card.key === "newParticipatedLenders"
+                          ? newParticipationDate
+                          : card.key === "todayParticipatedUsers"
+                            ? participatedDate
+                            : undefined
+                      }
+                      dateFilterLoading={
+                        card.key === "todayRegisteredUsers"
+                          ? registeredDateLoading
+                        : card.key === "newParticipatedLenders"
+                          ? newParticipatedDateLoading
+                          : card.key === "todayParticipatedUsers"
+                            ? participatedDateLoading
+                            : false
+                      }
+                      dateFilterError={
+                        card.key === "todayRegisteredUsers"
+                          ? registeredDateError
+                        : card.key === "newParticipatedLenders"
+                          ? newParticipatedDateError
+                          : card.key === "todayParticipatedUsers"
+                            ? participatedDateError
+                            : ""
+                      }
+                      onDateFilterChange={
+                        card.key === "todayRegisteredUsers"
+                          ? (date) => {
+                              setRegisteredDate(date);
+                              setRegisteredDateCount(null);
+                              setRegisteredDateError("");
+                            }
+                        : card.key === "newParticipatedLenders"
+                          ? (date) => {
+                              setNewParticipationDate(date);
+                              setNewParticipatedDateCount(null);
+                              setNewParticipatedDateError("");
+                            }
+                          : card.key === "todayParticipatedUsers"
+                            ? (date) => {
+                                setParticipatedDate(date);
+                                setParticipatedDateCount(null);
+                                setParticipatedDateError("");
+                              }
+                            : undefined
+                      }
+                      onDateSearch={
+                        card.key === "todayRegisteredUsers"
+                          ? searchRegisteredByDate
+                        : card.key === "newParticipatedLenders"
+                          ? searchNewParticipatedByDate
+                          : card.key === "todayParticipatedUsers"
+                            ? searchParticipatedByDate
+                            : undefined
+                      }
+                      onCampaign={
+                        card.key === "allBorrowers"
+                          ? openRegisteredBorrowersCampaign
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-ai-pro-section admin-ai-pro-section--yearwise">
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header"
+                  onClick={openYearWiseReferrals}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaChartLine />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>YearWise referrals</h2>
+                    <p>Referral lenders by year (2021 → current). Click to open year boxes and lists.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+              </section>
+
+              <section className="admin-ai-pro-section admin-ai-pro-section--high-participation">
+                <div className="admin-ai-pro-section-head">
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--users"><FaTrophy /></div>
+                  <div>
+                    <h2>High Participation Lenders</h2>
+                    <p>Lenders grouped by total participation ranges (participation + updation): 50L to below 1Cr, 1Cr to below 2Cr, 2Cr to below 3Cr, and 3Cr+.</p>
+                  </div>
+                </div>
+                <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
+                  {highParticipationCards.map((card) => (
+                    <StatCard
+                      key={card.key}
+                      {...card}
+                      active={selectedCard?.key === card.key}
+                      onClick={card.clickable ? () => handleCardClick(card) : undefined}
                       onExport={userExportByCard[card.key] ? () => downloadOverviewCardExcel(card.key) : undefined}
                       exporting={exportingCardKey === card.key}
+                      onCampaign={(channel) => openParticipationTierCampaign(card.key, channel)}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-ai-pro-section admin-ai-pro-section--lender-quality">
+                <div className="admin-ai-pro-section-head">
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--filter"><FaFilter /></div>
+                  <div>
+                    <h2>Lender Quality Filter</h2>
+                    <p>
+                      From {fmtNum(stats.rawLenders)} registered lenders: {fmtNum(stats.goodLenders)} not participated ({fmtNum(stats.goodLendersVerified)} verified, {fmtNum(stats.goodLendersUnverifiedEmail)} unverified email),{" "}
+                      {fmtNum(stats.activeCleanLenders)} active clean, and {fmtNum(stats.eliminatedLenders)} eliminated.
+                      {!stats.lenderQualityFilterActive ? (
+                        <>
+                          {" "}
+                          <strong>Quality filter is not active — restart the backend to load the latest code.</strong>
+                          {stats.lenderQualityError ? ` (${stats.lenderQualityError})` : ""}
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                </div>
+                <div className="admin-ai-lender-filter-rules">
+                  {Object.entries(lenderQualityChipViews).map(([chipKey, chip]) => {
+                    const countKey = chip.countKey
+                      || (chipKey === "testUsers"
+                      ? "testUsers"
+                      : chipKey === "invalidMobile"
+                        ? "invalidMobile"
+                        : chipKey === "invalidEmail"
+                          ? "invalidEmail"
+                          : chipKey === "duplicateMobile"
+                            ? "duplicateMobile"
+                            : "duplicateName");
+                    return (
+                      <button
+                        key={chipKey}
+                        type="button"
+                        className={`admin-ai-lender-filter-chip admin-ai-lender-filter-chip--clickable${
+                          selectedQualityChipKey === chipKey ? " admin-ai-lender-filter-chip--active" : ""
+                        }`}
+                        onClick={() => openLenderQualityChip(chipKey)}
+                        title={`View ${chip.label} list`}
+                      >
+                        {chip.chipLabel} · {fmtNum(stats.lenderQualityBreakdown?.[countKey])}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="admin-ai-pro-grid admin-ai-pro-grid-lender-quality">
+                  {lenderQualityCards.map((card) => (
+                    <StatCard
+                      key={card.key}
+                      {...card}
+                      active={selectedCard?.key === card.key}
+                      onClick={card.clickable ? () => handleCardClick(card) : undefined}
+                      onExport={userExportByCard[card.key] ? () => downloadOverviewCardExcel(card.key) : undefined}
+                      exporting={exportingCardKey === card.key}
+                      onCampaign={card.key === "goodLenders" ? openGoodLendersCampaign : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-ai-pro-section admin-ai-pro-section--lender-quality">
+                <div className="admin-ai-pro-section-head">
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--users"><FaUserClock /></div>
+                  <div>
+                    <h2>Registered Lenders - Not Participated</h2>
+                    <p>Lender-only registration windows. Each list includes registration date, email, mobile, and WhatsApp details for campaigns.</p>
+                  </div>
+                </div>
+                <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
+                  {registeredNotParticipatedCards.map((card) => (
+                    <StatCard
+                      key={card.key}
+                      {...card}
+                      active={selectedCard?.key === card.key}
+                      onClick={() => handleCardClick(card)}
+                      onExport={() => downloadOverviewCardExcel(card.key)}
+                      exporting={exportingCardKey === card.key}
+                      onCampaign={(channel) => openRegisteredNotParticipatedCampaign(card, channel)}
                     />
                   ))}
                 </div>
@@ -1407,11 +2939,6 @@ const AdminAIDashboard = () => {
                 stateRows={charts.activeLenderLocationByState}
                 platformStats={stats}
               />
-
-              <AdminAIMonthlyRegistrationChart
-                monthlyRows={charts.monthlyRegistrationByType}
-                platformStats={stats}
-              />
             </>
           )}
 
@@ -1447,7 +2974,7 @@ const AdminAIDashboard = () => {
               onSearchChange={setAdminUserSearch}
               onSearch={searchAdminUsers}
               onResetSearch={() => {
-                const empty = { userId: "", mobileNumber: "", email: "" };
+                const empty = emptyAdminUserSearch(adminUsersView);
                 setAdminUserSearch(empty);
                 closeAdminUserProfile();
                 loadAdminUsers(1, adminUsersView, empty);
@@ -1460,34 +2987,443 @@ const AdminAIDashboard = () => {
               onCloseProfile={closeAdminUserProfile}
               onPrevious={() => loadAdminUsers(adminUsersPage - 1, adminUsersView, adminUserSearch)}
               onNext={() => loadAdminUsers(adminUsersPage + 1, adminUsersView, adminUserSearch)}
+              onParticipationDateChange={handleParticipationDateChange}
+              inactiveReactivatedLenders={inactiveReactivatedLenders}
+              inactiveReactivatedCount={inactiveReactivatedCount}
+              inactiveReactivatedLoading={inactiveReactivatedLoading}
+              inactiveReactivatedError={inactiveReactivatedError}
               onBack={backToDashboard}
               onExport={() => {
                 const config = userExportByCard[selectedCard?.key];
-                if (config?.type === "activeLenders") {
-                  downloadOverviewCardExcel("allActiveLenders");
-                } else if (config) {
+                const chipConfig = selectedQualityChipKey
+                  ? lenderQualityChipViews[selectedQualityChipKey]
+                  : null;
+                if (config) {
                   downloadOverviewCardExcel(selectedCard.key);
+                } else if (chipConfig) {
+                  downloadUsersExcel(chipConfig.userView, chipConfig.label, chipConfig.fileSlug, adminUserSearch);
                 } else {
-                  downloadUsersExcel(adminUsersView, adminUsersTitle, adminUsersView);
+                  downloadUsersExcel(adminUsersView, adminUsersTitle, adminUsersView, adminUserSearch);
                 }
               }}
               exporting={Boolean(exportingCardKey)}
             />
           )}
 
+          {showYearWiseReferrals && (
+            <section className="admin-ai-panel" id="admin-ai-yearwise-referrals">
+              <div className="admin-ai-panel-head">
+                <div>
+                  <h5>YearWise referrals</h5>
+                  <p>Each year shows Lent and Registered counts. Click a status box to list those users.</p>
+                </div>
+                <div className="admin-ai-panel-actions">
+                  {referralYear && referralYearStatus ? (
+                    <span className="admin-ai-count-pill">
+                      {`${fmtNum(referralTotal)} ${referralYearStatus} in ${referralYear}`}
+                    </span>
+                  ) : null}
+                  <button className="admin-ai-reset-btn" type="button" onClick={loadReferralYearCards} disabled={referralYearsLoading || topReferrersLoading}>
+                    {referralYearsLoading || topReferrersLoading ? "Refreshing..." : "Refresh"}
+                  </button>
+                  <button className="admin-ai-close-btn" type="button" onClick={backToDashboard}>Close</button>
+                </div>
+              </div>
+
+              <div className="admin-ai-referral-year-head">
+                <div className="admin-ai-referral-year-head-top">
+                  <div className="admin-ai-referral-year-head-copy">
+                    <strong>Yearly referral lenders</strong>
+                    <span>
+                      {referralYearsLoading
+                        ? "Loading yearly totals..."
+                        : "Lent and Registered shown separately — click a box to open users"}
+                    </span>
+                  </div>
+                </div>
+                <div className="admin-ai-referral-year-grid">
+                  {referralYearCards.map((item) => {
+                    const year = pickNumber(item.year);
+                    const registeredCount = pickNumber(item.registeredCount);
+                    const registeredLenderCount = pickNumber(item.registeredLenderCount);
+                    const registeredBorrowerCount = pickNumber(item.registeredBorrowerCount);
+                    const lentCount = pickNumber(item.lentCount);
+                    const yearActive = Number(referralYear) === year;
+                    const lentActive = yearActive && referralYearStatus === "Lent";
+                    const registeredActive = yearActive && referralYearStatus === "Registered";
+                    return (
+                      <div
+                        key={year}
+                        className={`admin-ai-referral-year-card${yearActive ? " is-active" : ""}`}
+                      >
+                        <small>YEAR</small>
+                        <strong className="admin-ai-referral-year-number">{year}</strong>
+                        <div className="admin-ai-referral-year-status-row">
+                          <button
+                            type="button"
+                            className={`admin-ai-referral-year-status-box${lentActive ? " is-active" : ""}`}
+                            onClick={() => openReferralYearStatus(year, "Lent")}
+                          >
+                            <small>Lent</small>
+                            <strong>{fmtNum(lentCount)}</strong>
+                            <span>lenders</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`admin-ai-referral-year-status-box${registeredActive ? " is-active" : ""}`}
+                            onClick={() => openReferralYearStatus(year, "Registered")}
+                          >
+                            <small>Registered</small>
+                            <strong>{fmtNum(registeredCount)}</strong>
+                            <span>users</span>
+                            <span>{fmtNum(registeredLenderCount)} L · {fmtNum(registeredBorrowerCount)} B</span>
+                          </button>
+                        </div>
+                        <div className="admin-ai-referral-campaign-grid">
+                          <div className="admin-ai-referral-campaign-group admin-ai-referral-campaign-group--lent">
+                            <span>Lent Campaign ({fmtNum(lentCount)})</span>
+                            <div>
+                              <button type="button" title={`Email ${year} Lent referral lenders`} onClick={() => openReferralCampaign(`referralLentYear${year}`, `${year} Lent Referral Lenders`, lentCount, "email")}><FaEnvelope /> Email</button>
+                              <button type="button" title={`WhatsApp ${year} Lent referral lenders`} onClick={() => openReferralCampaign(`referralLentYear${year}`, `${year} Lent Referral Lenders`, lentCount, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                            </div>
+                          </div>
+                          <div className="admin-ai-referral-campaign-group admin-ai-referral-campaign-group--registered">
+                            <span>Registered Campaign ({fmtNum(registeredCount)})</span>
+                            <div>
+                              <button type="button" title={`Email ${year} Registered referral users`} onClick={() => openReferralCampaign(`referralRegisteredYear${year}`, `${year} Registered Referral Users`, registeredCount, "email")}><FaEnvelope /> Email</button>
+                              <button type="button" title={`WhatsApp ${year} Registered referral users`} onClick={() => openReferralCampaign(`referralRegisteredYear${year}`, `${year} Registered Referral Users`, registeredCount, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="admin-ai-top-referrer-section">
+                <div className="admin-ai-top-referrer-heading">
+                  <div><strong>Top Referrers</strong><span>Ranked by distinct users referred</span></div>
+                  <div className="admin-ai-top-referrer-heading-actions">
+                    {topReferrersLoading ? <span>Loading...</span> : null}
+                    <button type="button" onClick={loadReferralYearCards} disabled={topReferrersLoading}>
+                      {topReferrersLoading ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedTopReferrerLimit) {
+                          setSelectedTopReferrerLimit(null);
+                          setSelectedTopReferrer(null);
+                          setSelectedTopReferrerDetail(null);
+                        } else {
+                          backToDashboard();
+                        }
+                      }}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+                <div className="admin-ai-top-referrer-boxes">
+                  {[10, 50].map((limit) => {
+                    const available = Math.min(limit, topReferrers.length);
+                    return (
+                      <div key={limit} className={`admin-ai-top-referrer-box${selectedTopReferrerLimit === limit ? " is-active" : ""}`}>
+                        <small>RANKED AUDIENCE</small>
+                        <strong>Top {limit} Referrers</strong>
+                        <span>{fmtNum(available)} available referrers</span>
+                        <button type="button" className="admin-ai-top-referrer-view" disabled={topReferrerStatusesLoading} onClick={() => showTopReferrers(limit)}>
+                          {topReferrerStatusesLoading && selectedTopReferrerLimit === limit ? "Loading status..." : "View"}
+                        </button>
+                        <div className="admin-ai-top-referrer-actions">
+                          <button type="button" onClick={() => openReferralCampaign(`top${limit}Referrers`, `Top ${limit} Referrers`, available, "email")}><FaEnvelope /> Email</button>
+                          <button type="button" onClick={() => openReferralCampaign(`top${limit}Referrers`, `Top ${limit} Referrers`, available, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {selectedTopReferrerLimit ? (
+                  <>
+                    <div className="admin-ai-top-referrer-table-wrap">
+                      <div className="admin-ai-top-referrer-table-head">
+                        <span>Rank</span><span>Referrer</span><span>Total</span><span>Registered</span><span>Lent</span><span>Invited</span><span>Mobile</span><span>Email</span><span>Details</span>
+                      </div>
+                      <div className="admin-ai-top-referrer-list">
+                        {topReferrers.slice(0, selectedTopReferrerLimit).map((row) => (
+                          <button
+                            type="button"
+                            key={row.referrerId}
+                            className={selectedTopReferrer?.referrerId === row.referrerId ? "is-active" : ""}
+                            onClick={() => openTopReferrerDetail(row)}
+                          >
+                            <strong>#{row.rank}</strong>
+                            <strong>{valueOrDash(row.referrerCode)} · {valueOrDash(row.name)}</strong>
+                            <span>{fmtNum(row.referralCount)}</span>
+                            <span className="registered-count">{fmtNum(row.registeredCount)}</span>
+                            <span className="lent-count">{fmtNum(row.lentCount)}</span>
+                            <span className="invited-count">{fmtNum(row.invitedCount)}</span>
+                            <span>{valueOrDash(row.mobileNumber)}</span>
+                            <span>{valueOrDash(row.email)}</span>
+                            <span className="admin-ai-top-referrer-open">View →</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedTopReferrer ? (
+                      <div className="admin-ai-top-referrer-detail">
+                        <div className="admin-ai-top-referrer-detail-head">
+                          <div>
+                            <small>SELECTED REFERRER</small>
+                            <strong>{selectedTopReferrer.referrerCode} · {selectedTopReferrer.name}</strong>
+                          </div>
+                          <button type="button" onClick={() => { setSelectedTopReferrer(null); setSelectedTopReferrerDetail(null); }}>Close</button>
+                        </div>
+                        {selectedTopReferrerLoading ? <div className="admin-ai-empty-state">Loading earnings...</div> : null}
+                        {selectedTopReferrerError ? <div className="alert alert-danger">{selectedTopReferrerError}</div> : null}
+                        {!selectedTopReferrerLoading && selectedTopReferrerDetail ? (() => {
+                          const earnings = selectedTopReferrerDetail.earningsSummary || selectedTopReferrerDetail.referralSummary || {};
+                          const referralSummary = selectedTopReferrerDetail.referralSummary || {};
+                          return (
+                            <>
+                              <div className="admin-ai-top-referrer-status-grid">
+                                <div className="registered"><small>REGISTERED</small><strong>{fmtNum(referralSummary.registered)}</strong></div>
+                                <div className="lent"><small>LENT</small><strong>{fmtNum(pickNumber(referralSummary.lent) + pickNumber(referralSummary.disbursed))}</strong><span>Includes disbursed</span></div>
+                                <div className="invited"><small>INVITED</small><strong>{fmtNum(referralSummary.invited)}</strong></div>
+                              </div>
+                              <div className="admin-ai-top-referrer-amount-grid">
+                                <div className="earned"><small>TOTAL EARNED</small><strong>{fmtMoney(earnings.totalEarned ?? earnings.refEarnings)}</strong></div>
+                                <div className="paid"><small>PAID AMOUNT</small><strong>{fmtMoney(earnings.amountPaid ?? earnings.refPaid)}</strong></div>
+                                <div className="unpaid"><small>UNPAID AMOUNT</small><strong>{fmtMoney(earnings.amountNotPaid ?? earnings.refUnpaid)}</strong></div>
+                                <div className="investment"><small>REFERRED INVESTMENT</small><strong>{fmtMoney(earnings.totalInvestment ?? earnings.refAmt)}</strong></div>
+                                <div className="count"><small>REFERRAL USERS</small><strong>{fmtNum(earnings.refCount ?? selectedTopReferrerDetail.totalCount)}</strong></div>
+                              </div>
+                            </>
+                          );
+                        })() : null}
+                      </div>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+
+              {referralYear && referralYearStatus ? (
+                <p className="admin-ai-referral-filter-hint">
+                  Showing: Year {referralYear} · {referralYearStatus} lenders
+                </p>
+              ) : (
+                <p className="admin-ai-referral-filter-hint">Select Lent or Registered in a year card to list users.</p>
+              )}
+
+              {referralError ? <div className="alert alert-danger">{referralError}</div> : null}
+              {referralLoading ? <div className="admin-ai-empty-state">Loading referral registrations...</div> : null}
+
+              {!referralLoading && referralYear && referralYearStatus && (
+                <div className="admin-ai-lender-list">
+                  {referralRows.length === 0 ? (
+                    <div className="admin-ai-empty-state">
+                      No {referralYearStatus} referral lenders for year {referralYear}.
+                    </div>
+                  ) : (
+                    referralRows.map((row) => (
+                      <div className="admin-ai-lender-row" key={row.id || `${row.refereeId}-${row.referrerId}`}>
+                        <div>
+                          <small>REFEREE</small>
+                          <strong>
+                            {pickNumber(row.refereeId) || row.refereeCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn"
+                                title="Open referee full profile"
+                                onClick={() => openReferralUserProfile(row.refereeId, row.refereeCode, "Referee Profile")}
+                              >
+                                {valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}
+                              </button>
+                            ) : (
+                              <>{valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}</>
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>MOBILE</small><strong>{valueOrDash(row.refereeMobileNumber)}</strong></div>
+                        <div><small>EMAIL</small><strong>{valueOrDash(row.refereeEmail)}</strong></div>
+                        <div><small>TYPE</small><strong>{valueOrDash(row.primaryType)}</strong></div>
+                        <div><small>STATUS</small><strong>{valueOrDash(row.status)}</strong></div>
+                        <div className="admin-ai-referral-referrer-cell">
+                          <small>REFERRER</small>
+                          <strong>
+                            {pickNumber(row.referrerId) || row.referrerCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn admin-ai-referral-referrer-btn"
+                                title="Open referrer full details (same as active lender profile)"
+                                onClick={() => openReferralUserProfile(row.referrerId, row.referrerCode, "Referrer Profile")}
+                              >
+                                {valueOrDash(row.referrerCode)}
+                              </button>
+                            ) : (
+                              valueOrDash(row.referrerCode)
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>REFERRED ON</small><strong>{String(row.referredOn || "").slice(0, 19)}</strong></div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {referralYear && referralYearStatus ? (
+                <Pager
+                  page={referralPage}
+                  pageSize={20}
+                  total={referralTotal}
+                  loading={referralLoading}
+                  onPrevious={() => loadReferralRegistrations(referralPage - 1, {
+                    yearValue: referralYear,
+                    statusValue: referralYearStatus,
+                  })}
+                  onNext={() => loadReferralRegistrations(referralPage + 1, {
+                    yearValue: referralYear,
+                    statusValue: referralYearStatus,
+                  })}
+                />
+              ) : null}
+            </section>
+          )}
+
+          {showReferralRegistrations && (
+            <section className="admin-ai-panel" id="admin-ai-referral-registrations">
+              <div className="admin-ai-panel-head">
+                <div>
+                  <h5>Referral Registered Users</h5>
+                  <p>
+                    Users who registered through referral links (`lender_reference_details`, source = ReferralLink).
+                    Default date is today (IST). Pick another date to filter.
+                  </p>
+                </div>
+                <div className="admin-ai-panel-actions">
+                  <span className="admin-ai-count-pill">{fmtNum(referralTotal)} referees</span>
+                  <button className="admin-ai-close-btn" type="button" onClick={backToDashboard}>Back to Dashboard</button>
+                </div>
+              </div>
+
+              <form
+                className="admin-ai-search-grid"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setReferralYear(null);
+                  loadReferralRegistrations(1, { dateValue: referralDate, yearValue: null });
+                }}
+              >
+                <label>
+                  Referral date
+                  <input
+                    type="date"
+                    value={referralDate}
+                    onChange={(event) => setReferralDate(event.target.value)}
+                  />
+                </label>
+                <button className="admin-ai-search-btn" type="submit">Apply date</button>
+                <button
+                  className="admin-ai-reset-btn"
+                  type="button"
+                  onClick={() => {
+                    const today = defaultParticipationDate();
+                    setReferralDate(today);
+                    setReferralYear(null);
+                    loadReferralRegistrations(1, { dateValue: today, yearValue: null });
+                  }}
+                >
+                  Today
+                </button>
+              </form>
+
+              <p className="admin-ai-referral-filter-hint">Showing: Date {referralDate}</p>
+
+              {referralError ? <div className="alert alert-danger">{referralError}</div> : null}
+              {referralLoading ? <div className="admin-ai-empty-state">Loading referral registrations...</div> : null}
+
+              {!referralLoading && (
+                <div className="admin-ai-lender-list">
+                  {referralRows.length === 0 ? (
+                    <div className="admin-ai-empty-state">
+                      No referral registrations for {referralDate}.
+                    </div>
+                  ) : (
+                    referralRows.map((row) => (
+                      <div className="admin-ai-lender-row" key={row.id || `${row.refereeId}-${row.referrerId}`}>
+                        <div>
+                          <small>REFEREE</small>
+                          <strong>
+                            {pickNumber(row.refereeId) || row.refereeCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn"
+                                title="Open referee full profile"
+                                onClick={() => openReferralUserProfile(row.refereeId, row.refereeCode, "Referee Profile")}
+                              >
+                                {valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}
+                              </button>
+                            ) : (
+                              <>{valueOrDash(row.refereeCode)} {valueOrDash(row.refereeName)}</>
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>MOBILE</small><strong>{valueOrDash(row.refereeMobileNumber)}</strong></div>
+                        <div><small>EMAIL</small><strong>{valueOrDash(row.refereeEmail)}</strong></div>
+                        <div><small>TYPE</small><strong>{valueOrDash(row.primaryType)}</strong></div>
+                        <div><small>STATUS</small><strong>{valueOrDash(row.status)}</strong></div>
+                        <div className="admin-ai-referral-referrer-cell">
+                          <small>REFERRER</small>
+                          <strong>
+                            {pickNumber(row.referrerId) || row.referrerCode ? (
+                              <button
+                                type="button"
+                                className="admin-ai-link-btn admin-ai-referral-referrer-btn"
+                                title="Open referrer full details (same as active lender profile)"
+                                onClick={() => openReferralUserProfile(row.referrerId, row.referrerCode, "Referrer Profile")}
+                              >
+                                {valueOrDash(row.referrerCode)}
+                              </button>
+                            ) : (
+                              valueOrDash(row.referrerCode)
+                            )}
+                          </strong>
+                        </div>
+                        <div><small>REFERRED ON</small><strong>{String(row.referredOn || "").slice(0, 19)}</strong></div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              <Pager
+                page={referralPage}
+                pageSize={20}
+                total={referralTotal}
+                loading={referralLoading}
+                onPrevious={() => loadReferralRegistrations(referralPage - 1, {
+                  dateValue: referralDate,
+                  yearValue: null,
+                })}
+                onNext={() => loadReferralRegistrations(referralPage + 1, {
+                  dateValue: referralDate,
+                  yearValue: null,
+                })}
+              />
+            </section>
+          )}
+
           {showActiveLenders && (
             <section className="admin-ai-panel admin-ai-active-lenders-panel" id="admin-ai-active-lender-profiles">
               <div className="admin-ai-panel-head">
                 <div>
-                  <h5>
-                    {selectedCard?.key === "lastThreeMonthsActiveLenders"
-                      ? "Last 3 Months Active Lenders"
-                      : "Active Lender Profiles"}
-                  </h5>
+                  <h5>{activeLenderPanelMeta[selectedCard?.key]?.title || "Active Lenders"}</h5>
                   <p>
-                    {selectedCard?.key === "lastThreeMonthsActiveLenders"
-                      ? "Active lenders who participated in deals during the last 3 months."
-                      : "Search across all active lenders by lender ID or mobile number."}
+                    {activeLenderPanelMeta[selectedCard?.key]?.description
+                      || "Search across all active lenders by lender ID or mobile number. Open participation to view deal history."}
                   </p>
                 </div>
                 <div className="admin-ai-panel-actions">
@@ -1509,7 +3445,7 @@ const AdminAIDashboard = () => {
                 <button className="admin-ai-reset-btn" type="button" onClick={() => {
                   const empty = { lenderId: "", mobileNumber: "" };
                   setActiveLenderSearch(empty);
-                  loadActiveLenders(1, empty);
+                  loadActiveLenders(1, empty, activeLenderParticipationRange, activeLenderView);
                 }}>Reset</button>
               </form>
 
@@ -1537,8 +3473,18 @@ const AdminAIDashboard = () => {
                 pageSize={activeLendersPageSize}
                 total={activeLendersTotal}
                 loading={activeLendersLoading}
-                onPrevious={() => loadActiveLenders(activeLendersPage - 1, activeLenderSearch)}
-                onNext={() => loadActiveLenders(activeLendersPage + 1, activeLenderSearch)}
+                onPrevious={() => loadActiveLenders(
+                  activeLendersPage - 1,
+                  activeLenderSearch,
+                  activeLenderParticipationRange,
+                  activeLenderView
+                )}
+                onNext={() => loadActiveLenders(
+                  activeLendersPage + 1,
+                  activeLenderSearch,
+                  activeLenderParticipationRange,
+                  activeLenderView
+                )}
               />
 
               {lenderDealsLoading && <div className="admin-ai-empty-state">Loading lender deal participation...</div>}
@@ -1566,6 +3512,21 @@ const AdminAIDashboard = () => {
             </section>
           )}
         </div>
+        <AdminAILenderCampaignModal
+          open={Boolean(campaignModalState)}
+          onClose={() => setCampaignModalState(null)}
+          segment={campaignModalState?.segment}
+          segmentLabel={campaignModalState?.segmentLabel}
+          recipientCount={campaignModalState?.recipientCount}
+          initialChannel={campaignModalState?.channel}
+          campaignSetCount={campaignModalState?.campaignSetCount || 3}
+          audienceType={campaignModalState?.audienceType || "lenders"}
+          onSent={(result) => {
+            if (result?.status === "SCHEDULED" && result?.message) {
+              setExportMessage(result.message);
+            }
+          }}
+        />
         <Footer />
       </div>
     </div>
@@ -1658,7 +3619,7 @@ const TopLenderDetailPanel = ({ lender, detail, loading, error, dealsTab, onDeal
   );
 };
 
-const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false }) => (
+const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false, onCampaign, dateFilter, dateFilterLoading, dateFilterError, onDateFilterChange, onDateSearch }) => (
   <div
     className={`admin-ai-pro-kpi admin-ai-pro-kpi--${accent} ${clickable || onClick ? "is-clickable" : ""} ${active ? "is-active" : ""}`}
     onClick={onClick}
@@ -1675,6 +3636,51 @@ const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable
       <strong className="admin-ai-pro-kpi-value">{fmtNum(value)}</strong>
       {meta ? <small className="admin-ai-pro-kpi-meta">{meta}</small> : null}
     </div>
+    {onDateSearch ? (
+      <div
+        className="admin-ai-pro-kpi-date-search"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        <input
+          type="date"
+          value={dateFilter || ""}
+          max={defaultParticipationDate()}
+          aria-label={`${label} date`}
+          onChange={(event) => onDateFilterChange?.(event.target.value)}
+        />
+        <button type="button" disabled={dateFilterLoading || !dateFilter} onClick={onDateSearch}>
+          {dateFilterLoading ? "Searching..." : "Search"}
+        </button>
+        {dateFilterError ? <small className="admin-ai-pro-kpi-date-error">{dateFilterError}</small> : null}
+      </div>
+    ) : null}
+    {onCampaign ? (
+      <div className="admin-ai-pro-kpi-stat-campaign-actions">
+        <button
+          type="button"
+          className="admin-ai-pro-kpi-campaign-btn"
+          title="Email campaign"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCampaign("email");
+          }}
+        >
+          <FaEnvelope /> Email
+        </button>
+        <button
+          type="button"
+          className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn--whatsapp"
+          title="WhatsApp campaign"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCampaign("whatsapp");
+          }}
+        >
+          <FaWhatsapp /> WhatsApp
+        </button>
+      </div>
+    ) : null}
     {onExport ? (
       <button
         type="button"
@@ -1734,16 +3740,58 @@ const AdminUsersPanel = ({
   onNext,
   onBack,
   onExport,
+  onParticipationDateChange,
+  inactiveReactivatedLenders = [],
+  inactiveReactivatedCount = 0,
+  inactiveReactivatedLoading = false,
+  inactiveReactivatedError = "",
   exporting = false,
 }) => {
-  const isLenderView = userView === "lenders" || userView === "last3MonthsActive";
+  const [showInactiveReactivatedList, setShowInactiveReactivatedList] = useState(false);
+  const isLenderView = userView === "lenders" || userView === "lendersRaw"
+    || userView === "lendersNotParticipated" || userView.startsWith("lendersNotParticipatedRegistered");
+  const isGoodLendersView = userView === "lenders" || userView === "lendersNotParticipated";
+  const isEliminatedLendersView = isEliminatedUserView(userView);
+  const isParticipationDetailView = userView === "todayParticipated" || userView === "last3MonthsActive";
+  const isTodayParticipatedView = userView === "todayParticipated";
+  const selectedParticipationDate = search.participationDate || defaultParticipationDate();
+  const viewingTodayParticipation = isTodayParticipationDate(selectedParticipationDate);
+  const participationDayLabel = viewingTodayParticipation ? "Today" : formatDate(selectedParticipationDate);
+  const dealValue = (id, name) => ({
+    idText: id ? `#${id}` : "-",
+    nameText: valueOrDash(name),
+  });
+  const moneyValue = (amount) => fmtMoney(amount);
+  const dateValue = (value) => formatDate(value);
+
+  useEffect(() => {
+    setShowInactiveReactivatedList(false);
+  }, [selectedParticipationDate]);
 
   return (
   <section className="admin-ai-panel">
     <div className="admin-ai-panel-head">
       <div>
         <h5>{title}</h5>
-        <p>Search across this full admin user dataset by user ID, mobile number, or email.</p>
+        <p>
+          {isTodayParticipatedView
+            ? viewingTodayParticipation
+              ? "Eligible lenders who participated today, with today's amount and deal, plus the deal they participated in before today."
+              : `Eligible lenders who participated on ${formatDate(selectedParticipationDate)}, with that day's amount and deal, plus the deal they participated in before that date.`
+            : isParticipationDetailView
+              ? "Lenders active in the last 3 months with last deal and participation date."
+              : isGoodLendersView
+                ? userView === "lenders"
+                  ? "Clean lenders (valid mobile, email, unique name) with verified email who have not participated in any deal yet."
+                  : "Clean lenders who have not participated in any deal yet (includes verified and unverified email)."
+                : isEliminatedLendersView
+                  ? userView === "lendersExcluded"
+                    ? "Lenders eliminated from GOOD and active lists: test users, invalid email, invalid or duplicate mobile, or duplicate first+last name (with reason per row)."
+                    : "Eliminated lenders matching this quality-filter category (excludes foreign and participated users)."
+                  : userView === "lendersRaw"
+                  ? "Registered lenders who pass quality checks. Eliminated accounts are listed separately."
+                  : "Search across this full admin user dataset by user ID, mobile number, or email."}
+        </p>
       </div>
       <div className="admin-ai-panel-actions">
         <span className="admin-ai-count-pill">{fmtNum(total)} records</span>
@@ -1800,12 +3848,236 @@ const AdminUsersPanel = ({
           <button className="admin-ai-clear-field" type="button" onClick={() => onClearSearchField("email")}>Clear</button>
         ) : null}
       </label>
+      {isTodayParticipatedView ? (
+        <label>
+          Participation Date
+          <input
+            type="date"
+            value={selectedParticipationDate}
+            max={defaultParticipationDate()}
+            onChange={(e) => onParticipationDateChange?.(e.target.value)}
+          />
+        </label>
+      ) : null}
       <button className="admin-ai-search-btn" type="submit">Search</button>
     </form>
     <button className="admin-ai-reset-btn mb-3" type="button" onClick={onResetSearch}>Reset</button>
 
+    {isTodayParticipatedView ? (
+      <div className="admin-ai-inactive-reactivated-box">
+        <div className="admin-ai-inactive-reactivated-head">
+          <h6>Inactive 1+ Year — Participated on {formatDate(selectedParticipationDate)}</h6>
+          <button
+            type="button"
+            className={`admin-ai-count-pill admin-ai-count-pill-btn${showInactiveReactivatedList ? " is-open" : ""}`}
+            onClick={() => setShowInactiveReactivatedList((open) => !open)}
+            title="Click to view lender profiles"
+          >
+            {inactiveReactivatedLoading ? "..." : fmtNum(inactiveReactivatedCount)} lenders
+          </button>
+        </div>
+        <p className="admin-ai-analytics-hint">
+          Lenders who participated on {formatDate(selectedParticipationDate)} and whose previous deal was more than 366 days earlier (based on last accept/update date from database).
+          {inactiveReactivatedCount > 0 ? " Click the count to open profiles." : ""}
+        </p>
+        {inactiveReactivatedError ? (
+          <div className="alert alert-warning mb-2">{inactiveReactivatedError}</div>
+        ) : null}
+        {inactiveReactivatedLoading ? (
+          <div className="admin-ai-empty-state">Loading inactive reactivated lenders...</div>
+        ) : !showInactiveReactivatedList ? (
+          <div className="admin-ai-empty-state admin-ai-inactive-reactivated-collapsed">
+            {inactiveReactivatedCount > 0
+              ? `${fmtNum(inactiveReactivatedCount)} lender(s) reactivated after 1+ year. Click the count above to view profiles.`
+              : "No inactive 1+ year lenders participated on this date."}
+          </div>
+        ) : inactiveReactivatedCount === 0 ? (
+          <div className="admin-ai-empty-state">No inactive 1+ year lenders participated on this date.</div>
+        ) : (
+          <div className="admin-ai-advanced-table-wrap">
+            <table className="admin-ai-advanced-table admin-ai-inactive-reactivated-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Mobile</th>
+                  <th>Deal (Selected Day)</th>
+                  <th>Amount</th>
+                  <th>Previous Deal</th>
+                  <th>Previous Last Active</th>
+                  <th>Gap (Days)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inactiveReactivatedLenders.map((lender) => (
+                  <tr key={`${lender.lenderId}-${lender.dealId}`}>
+                    <td>
+                      <button
+                        type="button"
+                        className="admin-ai-link-btn admin-ai-lender-name-btn"
+                        onClick={() => onSelectProfile(lenderToProfileUser(lender))}
+                      >
+                        <strong>{valueOrDash(lender.userCode || (lender.lenderId ? `LR${lender.lenderId}` : "-"))}</strong>
+                      </button>
+                      <div className="admin-ai-top-lender-name">{valueOrDash(lender.name)}</div>
+                    </td>
+                    <td>{valueOrDash(lender.mobileNumber)}</td>
+                    <td>
+                      <strong>{lender.dealId ? `#${lender.dealId}` : "-"}</strong>
+                      <div className="admin-ai-top-lender-name">{valueOrDash(lender.dealName)}</div>
+                    </td>
+                    <td><strong>{fmtMoney(lender.participationAmount)}</strong></td>
+                    <td>
+                      <strong>{lender.previousDealId ? `#${lender.previousDealId}` : "-"}</strong>
+                      <div className="admin-ai-top-lender-name">{valueOrDash(lender.previousDealName)}</div>
+                      {lender.previousDealAmount ? (
+                        <div className="admin-ai-top-lender-name"><small>{fmtMoney(lender.previousDealAmount)}</small></div>
+                      ) : null}
+                    </td>
+                    <td>{formatDate(lender.previousLastActivityOn)}</td>
+                    <td>{participationGapDays(lender.previousLastActivityOn, selectedParticipationDate) || "-"}</td>
+                    <td>
+                      <button
+                        className="admin-ai-link-btn"
+                        type="button"
+                        onClick={() => onSelectProfile(lenderToProfileUser(lender))}
+                      >
+                        View Profile
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    ) : null}
+
     {error && <div className="alert alert-danger">{error}</div>}
-    {loading && <div className="admin-ai-empty-state">Loading registered user records...</div>}
+
+    {loading && (
+      <div className="admin-ai-empty-state">
+        {isParticipationDetailView ? `Loading ${participationDayLabel.toLowerCase()} participated lenders...` : "Loading registered user records..."}
+      </div>
+    )}
+
+    {!loading && isParticipationDetailView && (
+      <div className="admin-ai-advanced-table-wrap">
+        <table className="admin-ai-advanced-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Mobile</th>
+              <th>WhatsApp</th>
+              <th>Email</th>
+              {isTodayParticipatedView ? <th>{participationDayLabel} Amount</th> : null}
+              {isTodayParticipatedView ? <th>{participationDayLabel} Deal</th> : null}
+              <th>{isTodayParticipatedView ? "Previous Deal" : "Last Deal"}</th>
+              <th>{isTodayParticipatedView ? "Previous Deal Amount" : "Last Deal Amount"}</th>
+              <th>{isTodayParticipatedView ? "Previous Participation" : "Last Participation"}</th>
+              <th>Lifetime</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={isTodayParticipatedView ? 10 : 8} className="admin-ai-empty-cell">
+                  No lender participation records found.
+                </td>
+              </tr>
+            )}
+            {users.map((user) => (
+              <tr key={user.userId} className={selectedProfile?.userId === user.userId ? "active" : ""}>
+                <td>
+                  <strong>{valueOrDash(user.userCode)}</strong>
+                  <div className="admin-ai-top-lender-name">{valueOrDash(user.name)}</div>
+                </td>
+                <td>{valueOrDash(user.mobileNumber)}</td>
+                <td>{valueOrDash(user.email)}</td>
+                {isTodayParticipatedView ? (
+                  <td>
+                    <strong>{moneyValue(user.todayParticipationAmount)}</strong>
+                    <div className="admin-ai-top-lender-name">
+                      <small>Accept: {fmtMoney(user.todayAcceptedAmount)} | Update: {fmtMoney(user.todayUpdationAmount)}</small>
+                    </div>
+                  </td>
+                ) : null}
+                {isTodayParticipatedView ? (
+                  <td>
+                    <strong>{dealValue(user.todayDealId, user.todayDealName).idText}</strong>
+                    <div className="admin-ai-top-lender-name">{dealValue(user.todayDealId, user.todayDealName).nameText}</div>
+                    {user.todayParticipationOn ? (
+                      <div className="admin-ai-top-lender-name"><small>{formatDate(user.todayParticipationOn)}</small></div>
+                    ) : null}
+                  </td>
+                ) : null}
+                <td>
+                  <strong>{dealValue(user.lastDealId, user.lastDealName).idText}</strong>
+                  <div className="admin-ai-top-lender-name">{dealValue(user.lastDealId, user.lastDealName).nameText}</div>
+                  {isTodayParticipatedView && user.lastParticipationOn ? (
+                    <div className="admin-ai-top-lender-name"><small>{formatDate(user.lastParticipationOn)}</small></div>
+                  ) : null}
+                </td>
+                <td><strong>{moneyValue(user.lastDealParticipationAmount)}</strong></td>
+                <td>{dateValue(user.lastParticipationOn)}</td>
+                <td>
+                  <strong>{fmtMoney(user.totalParticipationAmount)}</strong>
+                  <div><small>{fmtNum(user.dealsCount)} deals</small></div>
+                </td>
+                <td>
+                  <button className="admin-ai-link-btn" type="button" onClick={() => onSelectProfile(user)}>View Profile</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    {!loading && isEliminatedLendersView && (
+      <div className="admin-ai-advanced-table-wrap">
+        <table className="admin-ai-advanced-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Mobile</th>
+              <th>Email</th>
+              <th>Elimination Reason</th>
+              <th>Registered</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={8} className="admin-ai-empty-cell">No eliminated lender records found.</td>
+              </tr>
+            )}
+            {users.map((user) => (
+              <tr key={user.userId} className={selectedProfile?.userId === user.userId ? "active" : ""}>
+                <td>
+                  <strong>{valueOrDash(user.userCode)}</strong>
+                  <div className="admin-ai-top-lender-name">{valueOrDash(user.name)}</div>
+                </td>
+                <td>{valueOrDash(user.firstName)}</td>
+                <td>{valueOrDash(user.lastName)}</td>
+                <td>{valueOrDash(user.mobileNumber)}</td>
+                <td>{valueOrDash(user.email)}</td>
+                <td><span className="admin-ai-exclusion-reasons">{valueOrDash(user.exclusionReasons)}</span></td>
+                <td>{formatDate(user.registeredOn)}</td>
+                <td>
+                  <button className="admin-ai-link-btn" type="button" onClick={() => onSelectProfile(user)}>View Profile</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
 
     {!loading && isLenderView && (
       <div className="admin-ai-advanced-table-wrap">
@@ -1824,7 +4096,7 @@ const AdminUsersPanel = ({
           <tbody>
             {users.length === 0 && (
               <tr>
-                <td colSpan={7} className="admin-ai-empty-cell">No registered lender records found.</td>
+                <td colSpan={8} className="admin-ai-empty-cell">No registered lender records found.</td>
               </tr>
             )}
             {users.map((user) => (
@@ -1834,6 +4106,7 @@ const AdminUsersPanel = ({
                   <div className="admin-ai-top-lender-name">{valueOrDash(user.name)}</div>
                 </td>
                 <td>{valueOrDash(user.mobileNumber)}</td>
+                <td>{valueOrDash(user.whatsappNumber || user.mobileNumber)}</td>
                 <td>{valueOrDash(user.email)}</td>
                 <td>{formatDate(user.registeredOn)}</td>
                 <td><BankDetailsCell lender={user} /></td>
@@ -1848,38 +4121,50 @@ const AdminUsersPanel = ({
       </div>
     )}
 
-    {!loading && !isLenderView && (
-      <div className="admin-ai-user-list">
-        {users.length === 0 && <div className="admin-ai-empty-state">No registered user records found.</div>}
-        {users.map((user) => (
-          <button
-            type="button"
-            className={`admin-ai-user-row admin-ai-user-row-btn ${selectedProfile?.userId === user.userId ? "active" : ""}`}
-            key={user.userId}
-            onClick={() => onSelectProfile(user)}
-          >
-            <div><small>USER</small><strong>{valueOrDash(user.userCode)} {valueOrDash(user.name)}</strong></div>
-            <div><small>TYPE</small><strong>{valueOrDash(user.primaryType)}</strong></div>
-            <div><small>MOBILE</small><strong>{valueOrDash(user.mobileNumber)}</strong></div>
-            <div><small>EMAIL</small><strong>{valueOrDash(user.email)}</strong></div>
-            <div><small>REGISTERED</small><strong>{formatDate(user.registeredOn)}</strong></div>
-            <div><small>PARTICIPATION</small><strong>{fmtMoney(user.totalParticipationAmount)} ({fmtNum(user.dealsCount)} deals)</strong></div>
-          </button>
-        ))}
+    {!loading && !isLenderView && !isEliminatedLendersView && !isParticipationDetailView && (
+      <div className="admin-ai-advanced-table-wrap">
+        <table className="admin-ai-advanced-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Type</th>
+              <th>Mobile</th>
+              <th>Email</th>
+              <th>Registered</th>
+              <th>Participation</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={7} className="admin-ai-empty-cell">No registered user records found.</td>
+              </tr>
+            )}
+            {users.map((user) => (
+              <tr key={user.userId}>
+                <td>
+                  <strong>{valueOrDash(user.userCode)}</strong>
+                  <div className="admin-ai-top-lender-name">{valueOrDash(user.name)}</div>
+                </td>
+                <td>{valueOrDash(user.primaryType)}</td>
+                <td>{valueOrDash(user.mobileNumber)}</td>
+                <td>{valueOrDash(user.email)}</td>
+                <td>{formatDate(user.registeredOn)}</td>
+                <td>
+                  <strong>{fmtMoney(user.totalParticipationAmount)}</strong>
+                  <div><small>{fmtNum(user.dealsCount)} deals</small></div>
+                </td>
+                <td>
+                  <button className="admin-ai-link-btn" type="button" onClick={() => onSelectProfile(user)}>
+                    View Profile
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    )}
-
-    {selectedProfile && (
-      <RegisteredLenderProfilePanel
-        profile={selectedProfile}
-        loading={profileLoading}
-        error={profileError}
-        deals={profileDeals}
-        dealsTab={profileDealsTab}
-        onDealsTabChange={onProfileDealsTabChange}
-        onClose={onCloseProfile}
-        isLender={String(selectedProfile.primaryType || "").toUpperCase() === "LENDER"}
-      />
     )}
 
     <Pager

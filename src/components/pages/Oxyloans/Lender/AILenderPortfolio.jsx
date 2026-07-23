@@ -5,7 +5,8 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
-import { getToken, getUserId, summaryFinancialEarnings, getFinancialReportDownload } from "../../../HttpRequest/afterlogin";
+import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
+import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
@@ -555,7 +556,12 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
             Custom
           </button>
         </div>
-        {loading && <span style={{ fontSize: 12, color: "#1890ff", marginLeft: 8 }}>Updating…</span>}
+        {loading && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: "#1890ff", background: "#e6f4ff", border: "1px solid #91caff", borderRadius: 20, padding: "2px 10px", marginLeft: 8 }}>
+            <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+            Fetching data…
+          </span>
+        )}
       </div>
 
       {fyFilter.mode === "custom" && (
@@ -597,8 +603,43 @@ const scrollTo = (id) => {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter }) => {
-  const [dlLoading, setDlLoading] = useState({ pdf: false, excel: false, monthly: false });
+const FY_LOAD_MSGS = [
+  "📊 Fetching your earnings for this period…",
+  "🔍 Scanning deals one by one…",
+  "💰 Tallying interest across your portfolio…",
+  "📅 Building month-wise timeline…",
+  "🔄 Cross-checking principal returns…",
+  "✅ Almost there — crunching final totals…",
+];
+
+const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId, lenderName }) => {
+  const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false, pdf: false });
+  const [loadMsgIdx, setLoadMsgIdx] = useState(0);
+  // Prefetch fy-report when filter changes — all downloads reuse this cache
+  const [fyCache, setFyCache] = useState(null);
+  const [fyCacheKey, setFyCacheKey] = useState(null);
+  const [fyPrefetching, setFyPrefetching] = useState(false);
+
+  useEffect(() => {
+    if (!loading) { setLoadMsgIdx(0); return; }
+    const t = setInterval(() => setLoadMsgIdx(i => (i + 1) % FY_LOAD_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [loading]);
+
+  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom");
+  const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
+  const cacheKey = dateRange ? `${dateRange.startDate}_${dateRange.endDate}` : null;
+
+  // Prefetch as soon as FY filter settles and earnings have loaded
+  useEffect(() => {
+    if (!showDownloads || !dateRange || !lenderId || loading || fyPrefetching) return;
+    if (fyCacheKey === cacheKey && fyCache) return; // already cached
+    setFyPrefetching(true);
+    getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate)
+      .then(res => { setFyCache(res?.data); setFyCacheKey(cacheKey); })
+      .catch(() => {})
+      .finally(() => setFyPrefetching(false));
+  }, [cacheKey, loading]); // eslint-disable-line
 
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
@@ -607,9 +648,6 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
   const label     = earningsData.fyLabel             || "Period";
   const narrative = earningsData.narrative           || "";
 
-  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom");
-  const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
-
   const dlBtnStyle = (color, disabled) => ({
     padding: "5px 11px", borderRadius: 8, border: `1px solid ${color}`,
     background: disabled ? "#f5f5f5" : "#fff", color: disabled ? "#aaa" : color,
@@ -617,65 +655,313 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
     display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
   });
 
-  const openDownloadUrl = (url) => {
-    if (!url || typeof url !== "string" || url.length < 10) return false;
-    window.open(url, "_blank");
-    return true;
+  const toCsv = (rows) => {
+    const csv = rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    return new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  };
+
+  // Use cached data if available, otherwise fetch (fallback)
+  const getFyData = async () => {
+    if (fyCache && fyCacheKey === cacheKey) return fyCache;
+    const res = await getLenderFyReport(lenderId, dateRange.startDate, dateRange.endDate);
+    const d = res?.data;
+    setFyCache(d); setFyCacheKey(cacheKey);
+    return d;
+  };
+
+  const downloadDealWise = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, excel: true }));
+    try {
+      const data = await getFyData();
+      if (!data?.deals?.length) { alert("No data for this period."); return; }
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn (Lender Exit)" : s === "CLOSED" ? "Closed" : "Active";
+      const rows = [
+        ["Deal ID", "Deal Name", "Participated Amt (Rs)", "Status", "Closed/Exit Date", "First Int Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
+        ...data.deals.map(d => [
+          d.dealId, d.dealName,
+          Math.round(d.participatedAmount),
+          statusLabel(d.dealStatus),
+          d.closedDate || "",
+          d.loanActiveDate || "",
+          Math.round(d.interestEarned), Math.round(d.principalReturned), Math.round(d.totalReceived)
+        ]),
+        [],
+        ["", "", "", "", "TOTAL", "", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal)]
+      ];
+      saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_DealWise.csv`);
+    } catch (e) { console.error("Deal-wise download error", e); alert("Download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, excel: false })); }
+  };
+
+  const downloadMonthWise = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, monthly: true }));
+    try {
+      const data = await getFyData();
+      if (!data?.monthly?.length) { alert("No data for this period."); return; }
+      const rows = [
+        ["Month", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)", "Deals"],
+        ...data.monthly.map(m => [
+          m.monthLabel, Math.round(m.interestAmount), Math.round(m.principalReturned), Math.round(m.totalReceived), m.dealCount
+        ]),
+        [],
+        ["TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal), ""]
+      ];
+      saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_MonthWise.csv`);
+    } catch (e) { console.error("MonthWise download error", e); alert("Download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, monthly: false })); }
   };
 
   const downloadPdf = async () => {
-    if (!dateRange) return;
+    if (!dateRange || !lenderId) return;
     setDlLoading(s => ({ ...s, pdf: true }));
     try {
-      const res = await summaryFinancialEarnings({ startDate: dateRange.startDate, endDate: dateRange.endDate, inputType: "DOWNLOAD", status: "dealsum" });
-      console.log("[AI-Dashboard] PDF response:", res);
-      const url = typeof res?.data === "string" ? res.data
-                : (res?.data?.url || res?.data?.pdfUrl || res?.data?.lenderProfit);
-      if (!openDownloadUrl(url)) alert("PDF not available for this period. Please try from My Deals → Financial Reports.");
-    } catch (e) { console.error("PDF download error", e); alert("PDF download failed. Please try again."); }
+      const data = await getFyData();
+      if (!data?.deals?.length) { alert("No data for this period."); return; }
+
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      // Landscape A4 — fits all 9 columns comfortably
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      const pageW  = doc.internal.pageSize.getWidth();  // 842pt
+      const pageH  = doc.internal.pageSize.getHeight(); // 595pt
+      const ML     = 36;
+      const MR     = 36;
+      const usableW = pageW - ML - MR;                  // 770pt
+      const today  = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+      // Brand colours
+      const NAVY   = [26,  35,  126];
+      const INDIGO = [57,  73,  171];
+      const BLUE   = [21, 101,  192];
+      const TEAL   = [0,  105,   92];
+      const LGTEAL = [224, 242, 241];
+      const LBLUE  = [227, 242, 253];
+      const LGOLD  = [255, 248, 225];
+      const WHITE  = [255, 255, 255];
+
+      // ── HEADER BAND ───────────────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, pageW, 52, "F");
+
+      // Try loading logo into header
+      try {
+        const logoUrl = "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/CHEQUELEAF_JPG.jpg";
+        const imgData = await fetch(logoUrl).then(r => r.blob()).then(b => new Promise(res => {
+          const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b);
+        }));
+        doc.addImage(imgData, "JPEG", ML, 8, 72, 36);
+      } catch (_) { /* logo unavailable — skip */ }
+
+      doc.setTextColor(...WHITE);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+      doc.text("SRS FINTECHLABS PVT. LTD", pageW / 2, 24, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+      doc.text("RBI Registered P2P Lending Platform  |  www.oxyloans.com  |  support@oxyloans.com", pageW / 2, 38, { align: "center" });
+
+      // ── TITLE BAND ─────────────────────────────────────────────────────────
+      doc.setFillColor(...INDIGO);
+      doc.rect(0, 52, pageW, 26, "F");
+      doc.setTextColor(...WHITE);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+      doc.text("LENDER FINANCIAL STATEMENT", pageW / 2, 64, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+      doc.text(`Period: ${data.fyLabel}`, pageW / 2, 73, { align: "center" });
+
+      // ── LENDER INFO BAND ──────────────────────────────────────────────────
+      doc.setFillColor(...LBLUE);
+      doc.rect(0, 78, pageW, 34, "F");
+      doc.setTextColor(30, 30, 100);
+      doc.setFontSize(8.5);
+      const col2 = pageW / 2 + 20;
+      const lw   = 72;
+      const infoRow = (lbl, val, x, y) => {
+        doc.setFont("helvetica", "bold");  doc.text(lbl, x, y);
+        doc.setFont("helvetica", "normal"); doc.text(String(val), x + lw, y);
+      };
+      infoRow("Lender Name :",  lenderName || "-",   ML,    92);
+      infoRow("Lender ID :",    `LR ${lenderId}`,    col2,  92);
+      infoRow("Generated On :", today,                ML,    105);
+      infoRow("State / UT :",   "Telangana (36)",    col2,  105);
+
+      // ── HELPERS ───────────────────────────────────────────────────────────
+      const fmt2 = v => Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn" : s === "CLOSED" ? "Closed" : "Active";
+
+      const sectionBanner = (txt, color, y) => {
+        doc.setFillColor(...color);
+        doc.rect(ML, y, usableW, 15, "F");
+        doc.setTextColor(...WHITE);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+        doc.text(txt, ML + 6, y + 10);
+        doc.setTextColor(0, 0, 0);
+      };
+
+      // ── DEAL-WISE TABLE ────────────────────────────────────────────────────
+      sectionBanner("Deal-wise Breakdown", BLUE, 118);
+
+      autoTable(doc, {
+        startY: 134,
+        margin: { left: ML, right: MR },
+        head: [["Deal ID", "Deal Name", "Participated (Rs)", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Status", "Closed / Exit Date", "First Int Date"]],
+        body: data.deals.map(d => [
+          d.dealId, d.dealName,
+          fmt2(d.participatedAmount),
+          fmt2(d.interestEarned),
+          fmt2(d.principalReturned),
+          fmt2(d.totalReceived),
+          statusLabel(d.dealStatus),
+          d.closedDate   || "-",
+          d.loanActiveDate || "-",
+        ]),
+        foot: [[
+          { content: "", styles: { halign: "center" } },
+          { content: "TOTAL", styles: { halign: "left" } },
+          { content: "", styles: {} },
+          { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
+          { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
+          { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "", styles: {} }, { content: "", styles: {} }, { content: "", styles: {} },
+        ]],
+        showFoot: "lastPage",
+        styles: { fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 }, valign: "middle" },
+        headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, halign: "center" },
+        footStyles: { fillColor: [200, 225, 255], textColor: [0, 0, 80], fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 } },
+        alternateRowStyles: { fillColor: [240, 246, 255] },
+        columnStyles: {
+          0: { cellWidth: 46,  halign: "center" },
+          1: { cellWidth: 200 },
+          2: { cellWidth: 82,  halign: "right" },
+          3: { cellWidth: 76,  halign: "right" },
+          4: { cellWidth: 76,  halign: "right" },
+          5: { cellWidth: 76,  halign: "right" },
+          6: { cellWidth: 58,  halign: "center" },
+          7: { cellWidth: 78,  halign: "center" },
+          8: { cellWidth: 76,  halign: "center" },
+        },
+        didParseCell: (h) => {
+          if (h.section === "body" && h.column.index === 6) {
+            const v = h.cell.raw;
+            if (v === "Closed")    { h.cell.styles.textColor = [27, 94, 32];   h.cell.styles.fillColor = [232, 245, 233]; }
+            if (v === "Active")    { h.cell.styles.textColor = [230, 81,  0];  h.cell.styles.fillColor = [255, 243, 224]; }
+            if (v === "Withdrawn") { h.cell.styles.textColor = [136, 14, 79];  h.cell.styles.fillColor = [252, 228, 236]; }
+          }
+        },
+      });
+
+      // ── MONTHLY TABLE ──────────────────────────────────────────────────────
+      const afterDeals = doc.lastAutoTable.finalY + 14;
+      sectionBanner("Month-wise Summary", TEAL, afterDeals);
+
+      autoTable(doc, {
+        startY: afterDeals + 16,
+        margin: { left: ML, right: MR },
+        tableWidth: 545,
+        head: [["Month", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Deals"]],
+        body: data.monthly.map(m => [
+          m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount,
+        ]),
+        foot: [[
+          { content: "TOTAL",                   styles: { halign: "left" } },
+          { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
+          { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
+          { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "",                        styles: { halign: "center" } },
+        ]],
+        showFoot: "lastPage",
+        styles: { fontSize: 8, cellPadding: 3.5, valign: "middle" },
+        headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", halign: "center" },
+        footStyles: { fillColor: LGTEAL, textColor: [0, 60, 50], fontStyle: "bold", cellPadding: 3.5 },
+        alternateRowStyles: { fillColor: [240, 250, 249] },
+        columnStyles: {
+          0: { cellWidth: 100 },
+          1: { cellWidth: 120, halign: "right" },
+          2: { cellWidth: 120, halign: "right" },
+          3: { cellWidth: 120, halign: "right" },
+          4: { cellWidth: 85,  halign: "center" },
+        },
+      });
+
+      // ── DECLARATION + SIGNATURE ────────────────────────────────────────────
+      const afterMonthly = doc.lastAutoTable.finalY + 14;
+      doc.setFillColor(...LGOLD);
+      doc.rect(ML, afterMonthly, usableW, 46, "F");
+      doc.setDrawColor(200, 160, 0); doc.setLineWidth(0.5);
+      doc.rect(ML, afterMonthly, usableW, 46);
+
+      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(100, 70, 0);
+      doc.text("Declaration:", ML + 6, afterMonthly + 11);
+      doc.setFont("helvetica", "normal"); doc.setTextColor(60, 40, 0);
+      doc.text("This statement is system generated and valid without signature. Interest and principal figures reflect amounts", ML + 6, afterMonthly + 22);
+      doc.text("received in the selected period as per OxyLoans platform records.  For queries: support@oxyloans.com", ML + 6, afterMonthly + 32);
+
+      doc.setFont("helvetica", "bold"); doc.setTextColor(...NAVY);
+      doc.text("Authorized Signatory", pageW - MR - 6, afterMonthly + 22, { align: "right" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(80, 80, 80);
+      doc.text("SRS Fintechlabs Pvt. Ltd. (OxyLoans)", pageW - MR - 6, afterMonthly + 33, { align: "right" });
+
+      // ── FOOTER BAR ─────────────────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, pageH - 18, pageW, 18, "F");
+      doc.setTextColor(...WHITE); doc.setFontSize(7); doc.setFont("helvetica", "normal");
+      doc.text("OxyLoans — Confidential Financial Statement", ML, pageH - 6);
+      doc.text("Page 1", pageW / 2, pageH - 6, { align: "center" });
+      doc.text(today, pageW - MR, pageH - 6, { align: "right" });
+
+      doc.save(`OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_Statement.pdf`);
+    } catch (e) { console.error("PDF download error", e); alert("PDF generation failed. Please try again."); }
     finally { setDlLoading(s => ({ ...s, pdf: false })); }
   };
 
-  const downloadExcel = async (status) => {
-    if (!dateRange) return;
-    const key = status === "dealsumMonthly" ? "monthly" : "excel";
-    setDlLoading(s => ({ ...s, [key]: true }));
-    try {
-      const res = await getFinancialReportDownload(dateRange.startDate, dateRange.endDate, "DOWNLOAD", status);
-      console.log("[AI-Dashboard] Excel response:", res, "status:", status);
-      const url = res?.data?.lenderProfit || (typeof res?.data === "string" ? res.data : null);
-      if (!openDownloadUrl(url)) alert("Report not available for this period. Please try from My Deals → Financial Reports.");
-    } catch (e) { console.error("Excel download error", e); alert("Download failed. Please try again."); }
-    finally { setDlLoading(s => ({ ...s, [key]: false })); }
-  };
-
   return (
-    <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative" }}>
+    <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative", overflow: "hidden" }}>
+
+      {/* Thin animated progress bar — stays at very top, never overlaps content */}
       {loading && (
-        <div style={{ position: "absolute", top: 12, right: 16, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#1890ff" }}>
-          <div className="spinner-border spinner-border-sm" role="status" style={{ width: 14, height: 14, borderWidth: 2 }} />
-          Refreshing
+        <div className="progress" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, borderRadius: 0, background: "transparent", margin: 0 }}>
+          <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" style={{ width: "100%" }} />
         </div>
       )}
+
+      {/* Header: title left, download buttons right — clean separation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e" }}>
           {label} Earnings Summary
         </div>
         {showDownloads && dateRange && (
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            <button onClick={downloadPdf} disabled={dlLoading.pdf} style={dlBtnStyle("#1890ff", dlLoading.pdf)}>
-              {dlLoading.pdf ? "…" : "⬇ PDF"}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            {fyPrefetching && (
+              <span style={{ fontSize: 11, color: "#8c8c8c", display: "flex", alignItems: "center", gap: 4 }}>
+                <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5, color: "#8c8c8c" }} />
+                Preparing downloads…
+              </span>
+            )}
+            <button onClick={downloadDealWise} disabled={dlLoading.excel || loading || fyPrefetching} style={dlBtnStyle("#52c41a", dlLoading.excel || loading || fyPrefetching)}>
+              {dlLoading.excel ? "Preparing…" : "⬇ Deal-wise"}
             </button>
-            <button onClick={() => downloadExcel("dealsum")} disabled={dlLoading.excel} style={dlBtnStyle("#52c41a", dlLoading.excel)}>
-              {dlLoading.excel ? "…" : "⬇ Excel"}
+            <button onClick={downloadMonthWise} disabled={dlLoading.monthly || loading || fyPrefetching} style={dlBtnStyle("#faad14", dlLoading.monthly || loading || fyPrefetching)}>
+              {dlLoading.monthly ? "Preparing…" : "⬇ MonthWise"}
             </button>
-            <button onClick={() => downloadExcel("dealsumMonthly")} disabled={dlLoading.monthly} style={dlBtnStyle("#faad14", dlLoading.monthly)}>
-              {dlLoading.monthly ? "…" : "⬇ MonthWise"}
+            <button onClick={downloadPdf} disabled={dlLoading.pdf || loading || fyPrefetching} style={dlBtnStyle("#f5222d", dlLoading.pdf || loading || fyPrefetching)}>
+              {dlLoading.pdf ? "Generating…" : "⬇ PDF"}
             </button>
           </div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
+
+      {/* Engaging loading message — own row, zero overlap */}
+      {loading ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "9px 14px", background: "rgba(24,144,255,0.07)", borderRadius: 8, border: "1px dashed rgba(24,144,255,0.3)" }}>
+          <div className="spinner-border spinner-border-sm" role="status" style={{ width: 15, height: 15, borderWidth: 2, color: "#1890ff", flexShrink: 0 }} />
+          <span style={{ fontSize: 12.5, color: "#1890ff", fontWeight: 500, fontStyle: "italic" }}>
+            {FY_LOAD_MSGS[loadMsgIdx]}
+          </span>
+        </div>
+      ) : (
+        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
+      )}
       <div className="row g-3 mb-3">
         {[
           { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed" },
@@ -1326,17 +1612,24 @@ const LenderPortfolioDashboard = () => {
     }
     // Only show spinner after 600ms — fast Redis hits never show a loading indicator
     const spinnerTimer = setTimeout(() => setEarningsLoading(true), 600);
-    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`, { headers: { accessToken: getToken() } })
+    const url = `${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`;
+    axios.get(url, { headers: { accessToken: getToken() } })
       .then((res) => { earningsCache.current[cacheKey] = res.data; setEarningsData(res.data); })
       .catch(() => {})
       .finally(() => { clearTimeout(spinnerTimer); setEarningsLoading(false); });
   }, [resolvedLenderId, fyFilter]);
 
   // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
+  // Uses the same earningsCache so a cached all-time result avoids a DB hit
   useEffect(() => {
     if (!resolvedLenderId) return;
+    const allTimeCacheKey = `${resolvedLenderId}:`;
+    if (earningsCache.current[allTimeCacheKey]) {
+      setMomData(earningsCache.current[allTimeCacheKey]);
+      return;
+    }
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings`, { headers: { accessToken: getToken() } })
-      .then((res) => setMomData(res.data))
+      .then((res) => { earningsCache.current[allTimeCacheKey] = res.data; setMomData(res.data); })
       .catch(() => {});
   }, [resolvedLenderId]);
 
@@ -1695,7 +1988,12 @@ const LenderPortfolioDashboard = () => {
                 <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                   <div className="card-header" style={{ background: "#fafafa", borderBottom: "1px solid #f0f0f0", borderRadius: "14px 14px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <h6 style={{ margin: 0, fontWeight: 700, color: "#262626" }}>{earningsData.fyLabel || "Current FY"} Earnings Summary</h6>
-                    {earningsLoading && <span style={{ fontSize: 12, color: "#1890ff" }}>Updating…</span>}
+                    {earningsLoading && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: "#1890ff", background: "#e6f4ff", border: "1px solid #91caff", borderRadius: 20, padding: "2px 10px" }}>
+                        <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+                        Fetching data…
+                      </span>
+                    )}
                   </div>
                   <div className="card-body">
                     <div className="row g-3 mb-3">
@@ -1991,7 +2289,7 @@ const LenderPortfolioDashboard = () => {
                       defaultOpen={true}
                       summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
                     >
-                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} />
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} lenderId={resolvedLenderId} lenderName={data?.lenderName} />
                     </SectionCard>
                   )}
 

@@ -9,12 +9,12 @@ const userisIn = "local"; //local or production
 const AI_BASE_URL = `${BASE_URL}/v1/ai/`;
 
 const getToken = () => {
-  return sessionStorage.getItem("accessToken");
+  return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
 };
 
 export const base_url=API_BASE_URL;
 export const getUserId = () => {
-  return sessionStorage.getItem("userId");
+  return sessionStorage.getItem("userId") || localStorage.getItem("userId");
 };
 
 export const getEmail = () => {
@@ -275,6 +275,71 @@ export const fetchActiveLendersData = async () => {
     console.error("Error fetching Active lenders count:", error);
     throw error;
   }
+};
+
+/** Legacy admin dashboard active-lender total (totalCoutOfactiveLenders). */
+export const getOldDashboardActiveLendersCount = async () => {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}activLendersParicipationAmountAndCount`,
+      { pageNo: 1, pageSize: 10 },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...adminRegisteredUsersHeaders(),
+        },
+        timeout: 120000,
+      }
+    );
+    const totalCount = response?.data?.totalCount;
+    if (totalCount == null || totalCount === "" || Number.isNaN(Number(totalCount))) {
+      return null;
+    }
+    return Number(totalCount);
+  } catch {
+    return null;
+  }
+};
+
+/** Paginate legacy active-lender participation rows for client-side band counts. */
+export const fetchParticipationAmountsForBandCounts = async () => {
+  const requestPageSize = 100;
+  const rows = [];
+  let pageNo = 1;
+  let totalCount = 0;
+
+  while (pageNo <= 50) {
+    const response = await axios.post(
+      `${API_BASE_URL}activLendersParicipationAmountAndCount`,
+      { pageNo, pageSize: requestPageSize },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...adminRegisteredUsersHeaders(),
+        },
+        timeout: 180000,
+      }
+    );
+    const batch = Array.isArray(response?.data?.activeLendersResponse)
+      ? response.data.activeLendersResponse
+      : [];
+    if (pageNo === 1) {
+      totalCount = Number(response?.data?.totalCount) || 0;
+    }
+    if (!batch.length) {
+      break;
+    }
+    rows.push(...batch);
+    if (totalCount > 0 && rows.length >= totalCount) {
+      break;
+    }
+    if (batch.length < requestPageSize) {
+      break;
+    }
+    pageNo += 1;
+  }
+
+  return { rows, totalCount: totalCount || rows.length };
 };
 
 // export const handleGetCICReports = async (value) => {
@@ -1215,6 +1280,10 @@ export const getAdminAIActiveLenders = async (pageNo = 1, pageSize = 10, filters
       lenderId: filters.lenderId || undefined,
       mobileNumber: filters.mobileNumber || undefined,
       includeBankDetails: filters.includeBankDetails === false ? false : undefined,
+      minParticipationAmount: filters.minParticipationAmount || undefined,
+      maxParticipationAmount: filters.maxParticipationAmount || undefined,
+      lenderView: filters.lenderView || undefined,
+      participationDate: filters.participationDate || undefined,
     },
     timeout: 180000,
   });
@@ -1237,10 +1306,60 @@ export const getAdminAILenderAnalyticsSummary = async () => {
   return response.data;
 };
 
-export const getAdminAILenderAnalyticsLenders = async (segment, pageNo = 1, pageSize = 20) => {
+export const getAdminAIInactiveReactivatedLenders = async (
+  participationDate,
+  inactiveInterval = "1 year"
+) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/lender-analytics/inactive-reactivated`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      participationDate: participationDate || defaultParticipationDate(),
+      inactiveInterval,
+    },
+    timeout: 120000,
+    validateStatus: (status) => status < 500,
+  });
+  return response.data;
+};
+
+export const INACTIVE_REACTIVATION_REPORT_START = "2026-06-30";
+
+export const getAdminAIInactiveReactivatedWeekSummary = async (
+  endDate,
+  startDate = INACTIVE_REACTIVATION_REPORT_START,
+  inactiveInterval = "1 year"
+) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/inactive-reactivated/week-summary`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        endDate: endDate || defaultParticipationDate(),
+        startDate: startDate || INACTIVE_REACTIVATION_REPORT_START,
+        inactiveInterval,
+      },
+      timeout: 180000,
+      validateStatus: (status) => status < 600,
+    }
+  );
+  return response.data;
+};
+
+export const parseAdminLenderIdSearch = (value) => {
+  const text = String(value || "").trim().toUpperCase().replace(/^LR\s*/i, "");
+  const id = Number(text.replace(/[^0-9]/g, ""));
+  return Number.isNaN(id) || id <= 0 ? "" : id;
+};
+
+export const getAdminAILenderAnalyticsLenders = async (segment, pageNo = 1, pageSize = 20, lenderId = "") => {
+  const params = { segment, pageNo, pageSize };
+  const parsedLenderId = parseAdminLenderIdSearch(lenderId);
+  if (parsedLenderId) {
+    params.lenderId = parsedLenderId;
+  }
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/lender-analytics/lenders`, {
     headers: adminRegisteredUsersHeaders(),
-    params: { segment, pageNo, pageSize },
+    params,
     timeout: 120000,
   });
   return response.data;
@@ -1266,10 +1385,15 @@ export const downloadAdminAIDashboardExcel = async (section = "overview") => {
   return response;
 };
 
-export const downloadAdminAIUsersExcel = async (userView = "registered") => {
+export const downloadAdminAIUsersExcel = async (userView = "registered", participationDate) => {
+  const resolvedParticipationDate =
+    userView === "todayParticipated" ? participationDate || defaultParticipationDate() : undefined;
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/users/export`, {
     headers: adminRegisteredUsersHeaders(),
-    params: { userView },
+    params: {
+      userView,
+      participationDate: resolvedParticipationDate,
+    },
     responseType: "blob",
     timeout: 600000,
   });
@@ -1290,7 +1414,7 @@ export const parseAdminAIExportError = async (error) => {
   return error?.response?.data?.errorMessage || error?.message || "Export failed.";
 };
 
-export const fetchAllAdminUsersForExport = async (userView = "registered", onProgress) => {
+export const fetchAllAdminUsersForExport = async (userView = "registered", onProgress, filters = {}) => {
   const requestPageSize = 100;
   const rows = [];
   let pageNo = 1;
@@ -1301,7 +1425,7 @@ export const fetchAllAdminUsersForExport = async (userView = "registered", onPro
     if (typeof onProgress === "function") {
       onProgress(pageNo, totalCount || rows.length);
     }
-    const data = await getAdminAIUsers(pageNo, requestPageSize, userView, {});
+    const data = await getAdminAIUsers(pageNo, requestPageSize, userView, filters);
     effectivePageSize = Number(data?.pageSize) || effectivePageSize;
     const batch = Array.isArray(data?.users) ? data.users : [];
     if (pageNo === 1) {
@@ -1369,12 +1493,13 @@ export const generateAdminAILenderCampaignMessage = async (payload) => {
 };
 
 export const sendAdminAILenderSegmentCampaign = async (payload) => {
+  const isScheduleOnly = Boolean(payload?.scheduleSend);
   const response = await axios.post(
     `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/send`,
     payload,
     {
       headers: adminRegisteredUsersHeaders(),
-      timeout: payload?.channel === "whatsapp" ? 3600000 : 600000,
+      timeout: isScheduleOnly ? 180000 : (payload?.channel === "whatsapp" ? 3600000 : 600000),
     }
   );
   return response.data;
@@ -1400,6 +1525,148 @@ export const uploadAdminAILenderCampaignImage = async (file) => {
     throw new Error(payload?.message || "Image upload did not return a URL.");
   }
   return url;
+};
+
+export const getAdminAILenderCampaignHistory = async (segment, { channel, date, testMode, pageNo = 1, pageSize = 10 } = {}) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      segment: segment || undefined,
+      channel: channel || undefined,
+      date: date || undefined,
+      testMode,
+      pageNo,
+      pageSize,
+    },
+    timeout: 120000,
+    validateStatus: (status) => status < 500,
+  });
+  return response.data;
+};
+
+export const getAdminAILenderCampaignBatchDeliveries = async (batchId, { pageNo = 1, pageSize = 20, status } = {}) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history/deliveries`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        batchId,
+        pageNo,
+        pageSize,
+        status: status || undefined,
+      },
+      timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAILenderCampaignBatchEngagement = async (batchId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history/engagement`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { batchId },
+      timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
+export const syncAdminAILenderWhatsAppCampaignHistory = async (batchId) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history/whatsapp-sync`,
+    null,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { batchId },
+      timeout: 300000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
+export const sendAdminAILenderCampaignAdminReport = async ({ batchId, target } = {}) => {
+  const safeTarget = String(target || "").trim().toLowerCase();
+  if (safeTarget !== "personal" && safeTarget !== "group") {
+    throw new Error("Choose personal or group before sending the WhatsApp report.");
+  }
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/admin-report/send`,
+    {
+      batchId: batchId || "",
+      target: safeTarget,
+    },
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
+export const isCampaignDeliverySuccess = (status) => {
+  const value = String(status ?? "").trim().toUpperCase();
+  return value === "SUCCESS" || value === "SENT" || value === "DELIVERY";
+};
+
+export const isCampaignDeliveryFailed = (row) => !isCampaignDeliverySuccess(row?.status);
+
+/** Fetch page 1 to read totalCount, then load every page until all rows are retrieved. */
+export const fetchAllCampaignBatchDeliveries = async (batchId, { status, pageSize = 100 } = {}) => {
+  if (!batchId) return [];
+
+  const probe = await getAdminAILenderCampaignBatchDeliveries(batchId, {
+    pageNo: 1,
+    pageSize: 1,
+    status: status || undefined,
+  });
+  if (probe?.status === "FAILED") {
+    return [];
+  }
+
+  const total = Number(probe?.totalCount) || Number(probe?.batchFailedTotal) || Number(probe?.batchTotal) || 0;
+  if (total <= 0) {
+    return [];
+  }
+
+  const requestPageSize = Math.min(Math.max(pageSize, 1), 5000);
+  const rows = [];
+  const totalPages = Math.max(1, Math.ceil(total / requestPageSize));
+  for (let page = 1; page <= totalPages && page <= 500; page += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const data = await getAdminAILenderCampaignBatchDeliveries(batchId, {
+      pageNo: page,
+      pageSize: requestPageSize,
+      status: status || undefined,
+    });
+    if (data?.status === "FAILED") {
+      break;
+    }
+    const batch = Array.isArray(data?.deliveries) ? data.deliveries : [];
+    rows.push(...batch);
+    if (rows.length >= total) {
+      break;
+    }
+    if (batch.length < requestPageSize) {
+      break;
+    }
+  }
+  return rows;
+};
+
+export const fetchAllCampaignFailedDeliveries = async (batchId) => {
+  const failedFromApi = await fetchAllCampaignBatchDeliveries(batchId, { status: "failed", pageSize: 200 });
+  const verifiedFailed = failedFromApi.filter(isCampaignDeliveryFailed);
+  if (verifiedFailed.length > 0) {
+    return verifiedFailed;
+  }
+  const allRows = await fetchAllCampaignBatchDeliveries(batchId, { pageSize: 200 });
+  return allRows.filter(isCampaignDeliveryFailed);
 };
 
 export const fetchAllLenderAnalyticsForExport = async (segment, onProgress) => {
@@ -1437,7 +1704,7 @@ export const fetchAllLenderAnalyticsForExport = async (segment, onProgress) => {
   return { rows, totalCount };
 };
 
-export const fetchAllActiveLendersForExport = async (onProgress) => {
+export const fetchAllActiveLendersForExport = async (onProgress, filters = {}) => {
   const requestPageSize = 100;
   const rows = [];
   let pageNo = 1;
@@ -1453,6 +1720,13 @@ export const fetchAllActiveLendersForExport = async (onProgress) => {
       lenderId: "",
       mobileNumber: "",
       includeBankDetails: false,
+      minParticipationAmount: filters.minParticipationAmount,
+      maxParticipationAmount: filters.maxParticipationAmount,
+      lenderView: filters.lenderView,
+      participationDate:
+        filters.lenderView === "newParticipated"
+          ? (filters.participationDate || defaultParticipationDate())
+          : undefined,
     });
 
     effectivePageSize = Number(data?.pageSize) || effectivePageSize;
@@ -1488,25 +1762,132 @@ export const downloadAdminAIActiveLendersExcel = async () => {
   return response;
 };
 
-export const getAdminAIUsers = async (pageNo = 1, pageSize = 20, userView = "registered", filters = {}) => {
-  const response = await axios.get(`${API_BASE_URL}admin/registered-users/users`, {
+export const parseAdminUserIdSearch = (value) => {
+  const text = String(value || "").trim().toUpperCase().replace(/^(LR|BR)\s*/i, "");
+  const id = Number(text.replace(/[^0-9]/g, ""));
+  return Number.isNaN(id) || id <= 0 ? undefined : id;
+};
+
+export const defaultParticipationDate = () =>
+  new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+
+export const getAdminAIReferralRegistrationsSummary = async (date) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations/summary`, {
     headers: adminRegisteredUsersHeaders(),
     params: {
-      pageNo,
-      pageSize,
-      userView,
-      userId: filters.userId || undefined,
-      mobileNumber: filters.mobileNumber || undefined,
-      email: filters.email || undefined,
-      state: filters.state || undefined,
+      date: date || defaultParticipationDate(),
+    },
+    timeout: 60000,
+  });
+  return response.data;
+};
+
+export const getAdminAIReferralRegistrationsYearlySummary = async (fromYear = 2021) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations/yearly-summary`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      fromYear,
     },
     timeout: 120000,
   });
   return response.data;
 };
 
+export const getAdminAITopReferrers = async (limit = 10) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations/top-referrers`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: { limit },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
+export const getAdminAIReferralRegistrations = async (pageNo = 1, pageSize = 20, { date, year, status, userType } = {}) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/referral-registrations`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      pageNo,
+      pageSize,
+      date: year ? undefined : (date || defaultParticipationDate()),
+      year: year || undefined,
+      status: year && status ? status : undefined,
+      userType: userType || undefined,
+    },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
+export const getAdminAIUsers = async (
+  pageNo = 1,
+  pageSize = 20,
+  userView = "registered",
+  filters = {},
+  options = {}
+) => {
+  const parsedUserId = parseAdminUserIdSearch(filters.userId);
+  const participationDate =
+    userView === "todayParticipated" || userView === "todayRegistered"
+      ? filters.participationDate || defaultParticipationDate()
+      : undefined;
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/users`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      pageNo,
+      pageSize,
+      userView,
+      userId: parsedUserId || undefined,
+      mobileNumber: filters.mobileNumber || undefined,
+      email: filters.email || undefined,
+      state: filters.state || undefined,
+      participationDate,
+      includeParticipation: options.includeParticipation === true ? true : undefined,
+    },
+    timeout: options.timeout || 120000,
+  });
+  return response.data;
+};
+
+export const getAdminAIUserParticipationDetails = async (
+  userIds = [],
+  userView = "todayParticipated",
+  participationDate
+) => {
+  const ids = (userIds || []).filter((id) => Number(id) > 0);
+  if (!ids.length) {
+    return { details: [], userView };
+  }
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/users/participation-details`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      userIds: ids.join(","),
+      userView,
+      participationDate:
+        userView === "todayParticipated"
+          ? participationDate || defaultParticipationDate()
+          : undefined,
+    },
+    timeout: 60000,
+  });
+  return response.data;
+};
+
 export const getAdminAIActiveLenderDeals = async (lenderId) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/active-lenders/${lenderId}/deals`, {
+    headers: adminRegisteredUsersHeaders(),
+  });
+  return response.data;
+};
+
+export const getAdminAIBorrowerProfile = async (borrowerId) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/borrowers/${borrowerId}/profile`, {
+    headers: adminRegisteredUsersHeaders(),
+  });
+  return response.data;
+};
+
+export const getAdminAIBorrowerDeals = async (borrowerId) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/borrowers/${borrowerId}/deals`, {
     headers: adminRegisteredUsersHeaders(),
   });
   return response.data;
