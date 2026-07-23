@@ -934,7 +934,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
         <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e" }}>
           {label} Earnings Summary
         </div>
-        {showDownloads && dateRange && (
+        {showDownloads && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
             {fyPrefetching && (
               <span style={{ fontSize: 11, color: "#8c8c8c", display: "flex", alignItems: "center", gap: 4 }}>
