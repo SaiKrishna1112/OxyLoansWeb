@@ -1254,7 +1254,7 @@ const ProximityLoans = () => {
                         </select>
                       </div>
 
-                      {durationType==="Days"&&(
+                      {offerData.durationType === "Days" && (
                         <div className="text-danger small mt-1" style={{ fontSize: "12px" }}>
                           Daily interest is calculated
                         </div>

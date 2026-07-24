@@ -1759,9 +1759,9 @@ const Profile = () => {
         </Modal.Body>
         <Modal.Footer>
           <button className="oxy-btn-secondary" onClick={() => setEditSection(null)}>Cancel</button>
-          <button className="oxy-btn-primary" onClick={saveSecureDetails} disabled={submitting}>
+          {/* <button className="oxy-btn-primary" onClick={saveSecureDetails} disabled={submitting}>
             {submitting ? "Saving..." : "Save Credentials"}
-          </button>
+          </button> */}
         </Modal.Footer>
       </Modal>
 
