@@ -11,9 +11,9 @@
   padding: 1.35rem 1.5rem;
   border-radius: 18px;
   background:
-    radial-gradient(circle at top right, rgba(34, 211, 238, 0.28), transparent 42%),
-    linear-gradient(135deg, #0f766e 0%, #0d9488 42%, #0891b2 100%);
-  box-shadow: 0 16px 36px rgba(13, 148, 136, 0.22);
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.35), transparent 42%),
+    linear-gradient(135deg, #1e40af 0%, #2563eb 42%, #3b82f6 100%);
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.28);
   color: #fff;
 }
 
@@ -141,13 +141,13 @@
 .my-offers-soft-note {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 48%, #115e59 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 48%, #1d4ed8 100%);
   border: none;
   border-radius: 16px;
   padding: 1.15rem 1.35rem;
   margin-bottom: 1.25rem;
   box-shadow:
-    0 12px 28px rgba(13, 148, 136, 0.28),
+    0 12px 28px rgba(37, 99, 235, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
@@ -364,13 +364,13 @@
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  background: linear-gradient(135deg, #06b6d4 0%, #0d9488 45%, #059669 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 45%, #2563eb 100%);
   color: #fff !important;
   border: none;
   border-radius: 10px;
   font-weight: 600;
   padding: 0.55rem 1rem;
-  box-shadow: 0 8px 18px rgba(13, 148, 136, 0.32);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.32);
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
 
@@ -381,19 +381,19 @@
 }
 
 .my-offer-cta:hover {
-  background: linear-gradient(135deg, #22d3ee 0%, #14b8a6 45%, #10b981 100%);
+  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 45%, #3b82f6 100%);
   color: #fff !important;
-  box-shadow: 0 10px 22px rgba(13, 148, 136, 0.4);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
   filter: brightness(1.03);
   transform: translateY(-1px);
 }
 
 .my-offer-card.is-deal-free .my-offer-cta {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
-  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.32);
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #2563eb 100%);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.32);
 }
 
 .my-offer-card.is-deal-free .my-offer-cta:hover {
-  background: linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%);
-  box-shadow: 0 10px 22px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #93c5fd 0%, #60a5fa 50%, #3b82f6 100%);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
 }
