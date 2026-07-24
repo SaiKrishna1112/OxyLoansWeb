@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
-import { Bar, Doughnut } from "react-chartjs-2";
 import offerAdminApi from "../../../../../HttpRequest/offerAdminApi";
 import OfferLoadingSpinner from "../components/OfferLoadingSpinner";
 import OfferErrorAlert from "../components/OfferErrorAlert";
 import OfferPageHeader from "../components/OfferPageHeader";
-import { OFFER_SEGMENTS, getSegmentLabel, getDefaultOfferType, getOfferTypeLabel } from "../utils/offerConstants";
-
-ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+import {
+  OFFER_SEGMENTS,
+  getSegmentLabel,
+  getDefaultOfferType,
+  getOfferTypeLabel,
+} from "../utils/offerConstants";
 
 const StatCard = ({ title, value, subtitle, color = "primary" }) => (
   <div className="col-sm-6 col-xl-4 col-xxl-2">
@@ -21,6 +22,78 @@ const StatCard = ({ title, value, subtitle, color = "primary" }) => (
   </div>
 );
 
+const SEGMENT_COLORS = {
+  NEW_LENDER: "#0d6efd",
+  INACTIVE_LENDER: "#fd7e14",
+  REGULAR_PARTICIPANT: "#198754",
+};
+
+const SegmentBars = ({ rows }) => {
+  const max = Math.max(1, ...rows.map((r) => Number(r.lenderCount) || 0));
+  return (
+    <div className="offer-segment-bars">
+      {rows.map((row) => {
+        const count = Number(row.lenderCount) || 0;
+        const pct = Math.round((count / max) * 100);
+        const color = SEGMENT_COLORS[row.segment] || "#0d6efd";
+        return (
+          <div key={row.segment} className="offer-segment-bar-row mb-3">
+            <div className="d-flex justify-content-between mb-1">
+              <span className="fw-semibold">{getSegmentLabel(row.segment)}</span>
+              <span className="text-muted">{count.toLocaleString("en-IN")}</span>
+            </div>
+            <div className="offer-segment-bar-track">
+              <div
+                className="offer-segment-bar-fill"
+                style={{ width: `${pct}%`, background: color }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const RatioPills = ({ counts }) => {
+  const total = Math.max(1, counts.approved + counts.rejected + counts.pending);
+  const items = [
+    { label: "Approved", value: counts.approved, color: "#198754" },
+    { label: "Rejected", value: counts.rejected, color: "#dc3545" },
+    { label: "Pending", value: counts.pending, color: "#ffc107" },
+  ];
+  return (
+    <div>
+      <div className="offer-ratio-stack mb-3">
+        {items.map((item) => (
+          <div
+            key={item.label}
+            title={`${item.label}: ${item.value}`}
+            style={{
+              width: `${(item.value / total) * 100}%`,
+              background: item.color,
+              minWidth: item.value > 0 ? 8 : 0,
+            }}
+          />
+        ))}
+      </div>
+      <div className="d-flex flex-wrap gap-3">
+        {items.map((item) => (
+          <div key={item.label} className="d-flex align-items-center gap-2">
+            <span
+              className="offer-ratio-dot"
+              style={{ background: item.color }}
+            />
+            <span className="small">
+              {item.label}: <strong>{item.value}</strong>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const OfferDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +106,6 @@ const OfferDashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        // Load independently so one slow/failing call does not zero the whole dashboard
         const [summaryResult, countsResult] = await Promise.allSettled([
           offerAdminApi.getSegmentSummary(false),
           offerAdminApi.getOfferCounts(),
@@ -81,27 +153,6 @@ const OfferDashboard = () => {
     return found || { segment: meta.value, lenderCount: 0 };
   });
 
-  const segmentChart = {
-    labels: orderedStats.map((s) => getSegmentLabel(s.segment)),
-    datasets: [
-      {
-        label: "Lenders",
-        data: orderedStats.map((s) => s.lenderCount || 0),
-        backgroundColor: ["#0d6efd", "#fd7e14", "#198754"],
-      },
-    ],
-  };
-
-  const ratioChart = {
-    labels: ["Approved", "Rejected", "Pending"],
-    datasets: [
-      {
-        data: [counts.approved, counts.rejected, counts.pending],
-        backgroundColor: ["#198754", "#dc3545", "#ffc107"],
-      },
-    ],
-  };
-
   if (loading && stats.length === 0 && counts.total === 0) {
     return <OfferLoadingSpinner fullPage message="Loading dashboard..." />;
   }
@@ -142,12 +193,9 @@ const OfferDashboard = () => {
         <div className="col-lg-7">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white fw-semibold">Lender Segments</div>
-            <div className="card-body" style={{ height: 320 }}>
+            <div className="card-body" style={{ minHeight: 280 }}>
               {stats.length ? (
-                <Bar
-                  data={segmentChart}
-                  options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }}
-                />
+                <SegmentBars rows={orderedStats} />
               ) : (
                 <p className="text-muted text-center py-5">No segment data</p>
               )}
@@ -157,10 +205,8 @@ const OfferDashboard = () => {
         <div className="col-lg-5">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white fw-semibold">Approved vs Rejected vs Pending</div>
-            <div className="card-body d-flex justify-content-center" style={{ height: 320 }}>
-              <div style={{ maxWidth: 280 }}>
-                <Doughnut data={ratioChart} />
-              </div>
+            <div className="card-body" style={{ minHeight: 280 }}>
+              <RatioPills counts={counts} />
             </div>
           </div>
         </div>

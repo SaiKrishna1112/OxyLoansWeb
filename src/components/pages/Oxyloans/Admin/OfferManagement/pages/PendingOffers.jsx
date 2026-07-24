@@ -86,8 +86,8 @@ const PendingOffers = () => {
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
           <div className="row g-3 align-items-end">
-            <div className="col-md-6">
-              <label className="form-label fw-semibold">Segment</label>
+            <div className="col-md-7 col-lg-6">
+              <label className="form-label fw-semibold mb-1">Segment</label>
               <select
                 className="form-select"
                 value={segment}
@@ -97,19 +97,19 @@ const PendingOffers = () => {
                   <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
-              <div className="form-text">{getSegmentDescription(segment)}</div>
-              <div className="small mt-1">
-                Expected offer:{" "}
-                <span className="badge bg-light text-dark border">
-                  {getOfferTypeLabel(getDefaultOfferType(segment))}
-                </span>
-              </div>
             </div>
-            <div className="col-md-6 d-flex align-items-center">
-              <span className="badge bg-warning text-dark fs-6">
+            <div className="col-md-5 col-lg-6 d-flex align-items-end">
+              <span className="badge bg-warning text-dark fs-6 py-2 px-3">
                 {offers.length} pending in {getSegmentLabel(segment)}
               </span>
             </div>
+          </div>
+          <div className="form-text mt-2 mb-0">{getSegmentDescription(segment)}</div>
+          <div className="small mt-1">
+            Expected offer:{" "}
+            <span className="badge bg-light text-dark border">
+              {getOfferTypeLabel(getDefaultOfferType(segment))}
+            </span>
           </div>
         </div>
       </div>

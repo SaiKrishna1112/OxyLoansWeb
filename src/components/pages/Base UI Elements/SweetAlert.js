@@ -22,7 +22,6 @@ import {
 } from "../../HttpRequest/afterlogin";
 import { toastrSuccess } from "./Toast";
 
-
 export const OFFER_MIN_PARTICIPATION = 10000;
 export const OFFER_STATUS_ACTIVE = "ACTIVE";
 export const OFFER_STATUS_DEACTIVATED = "DEACTIVATED";
@@ -63,9 +62,6 @@ export const hasActiveReactivationOffer = (apidata) => {
   return false;
 };
 
-export const isOfferDeactivated = (apidata) =>
-  apidata?.offerStatus === OFFER_STATUS_DEACTIVATED;
-
 export const isMandatoryFeeDeal = (apidata) =>
   apidata?.feeStatusToParticipate === "MANDATORY" || apidata?.mandatoryDeal === true;
 
@@ -74,18 +70,15 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
   if (!apidata) return false;
   if (apidata.feeStatusToParticipate === "OPTIONAL") return true;
 
-  // Paid or offer-granted membership → no fee for ANY amount (same as normal membership flow)
   if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
     return true;
   }
   if (apidata.lenderValidityStatus === false || apidata.lenderValidityStatus === "false") {
-    // Valid membership on file — same as historical zero-fee participate path
     if (apidata.groupName !== "NewLender") {
       return true;
     }
   }
 
-  // Backend said no payment required — only treat as waived when membership OR offer eligible for this amount
   if (apidata.paymentRequired === false || apidata.paymentRequired === "false") {
     if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
       return true;
@@ -95,7 +88,6 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
         return true;
       }
     }
-    // Offer-driven paymentRequired=false: only if amount meets minimum for FIRST_DEAL_FREE
     if (hasActiveReactivationOffer(apidata) || apidata.offerEligible === true || apidata.offerEligible === "true") {
       return Number(participationAmount) >= OFFER_MIN_PARTICIPATION;
     }
@@ -106,14 +98,8 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
     return false;
   }
 
-  // Active FIRST_DEAL_FREE offer → waive FEE only when amount meets minimum
   if (hasActiveReactivationOffer(apidata)) {
-    const amount = Number(participationAmount) || 0;
-    if (amount >= OFFER_MIN_PARTICIPATION) {
-      return true;
-    }
-    // Amount below minimum: normal fee applies; offer stays ACTIVE until eligible participate
-    return false;
+    return Number(participationAmount) >= OFFER_MIN_PARTICIPATION;
   }
 
   if (
@@ -132,7 +118,6 @@ export const calculatePerDealProcessingFee = (participatedAmount) => {
   return (onePercent * 118) / 100;
 };
 
-/** Participate with PENDING per-deal fee, then deduct fee from wallet automatically. */
 export const participateWithPerDealFee = (deal) => {
   const feeAmount = calculatePerDealProcessingFee(deal.participatedAmount);
   const response = newlenderdealparticipation(deal);
@@ -167,55 +152,98 @@ const showPerDealFeeParticipationSuccess = (deal, feeAmount) => {
   });
 };
 
-const showPerDealFeeParticipationError = (data) => {
-  const participateErr = data?.response?.data || data?.participate?.response?.data;
-  const feeErr = data?.fee?.response?.data;
-  const errPayload = participateErr || feeErr || data?.response?.data;
-  if (errPayload?.errorCode == "123") {
-    const paymentErrormessage = String(errPayload.errorMessage || "").match(/\d+(\.\d+)?/g);
+/** Pending processing-fee errors (test/live): OK must call pay-pending API. */
+const isPendingProcessingFeeError = (errPayload) => {
+  if (!errPayload) return false;
+  if (errPayload.errorCode == "123") return true;
+  const msg = String(errPayload.errorMessage || "");
+  return /processing fee/i.test(msg) && /pending/i.test(msg);
+};
+
+/**
+ * Shows participation/fee errors. For pending processing fee (errorCode 123),
+ * OK triggers paypendingprocessingAmount — same as test server.
+ */
+const showPendingFeeOrErrorAlert = (errPayload, fallbackMessage) => {
+  const message =
+    errPayload?.errorMessage ||
+    fallbackMessage ||
+    "Participation or fee payment failed.";
+
+  if (isPendingProcessingFeeError(errPayload)) {
+    const paymentErrormessage = String(message).match(/\d+(\.\d+)?/g);
     Swal.fire({
-      title: "Fee Alert",
-      text: `${errPayload.errorMessage}`,
-      icon: "info",
+      title: "Error!",
+      text: message,
+      icon: "error",
       showCancelButton: true,
-      cancelButtonText: "cancel",
+      cancelButtonText: "Cancel",
       showConfirmButton: true,
-      confirmButtonText: "Wallet",
-    }).then(async (result) => {
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "OK",
+    }).then((result) => {
       if (result.isConfirmed && paymentErrormessage?.length >= 2) {
-        paypendingprocessingAmount(paymentErrormessage[1], parseInt(paymentErrormessage[0], 10));
+        paypendingprocessingAmount(
+          paymentErrormessage[1],
+          parseFloat(paymentErrormessage[0])
+        );
       }
     });
     return;
   }
+
   Swal.fire({
     title: "Error!",
-    text: `${errPayload?.errorMessage || "Participation or fee payment failed."}`,
+    text: message,
     icon: "error",
     showCancelButton: true,
-    cancelButtonText: "cancel",
+    cancelButtonText: "Cancel",
     showConfirmButton: true,
-    confirmButtonText: "ok",
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "OK",
   });
 };
 
+const showPerDealFeeParticipationError = (data) => {
+  const participateErr = data?.response?.data || data?.participate?.response?.data;
+  const feeErr = data?.fee?.response?.data;
+  const errPayload = participateErr || feeErr || data?.response?.data;
+  showPendingFeeOrErrorAlert(errPayload);
+};
+
+const showParticipationSuccessPopup = (deal) =>
+  Swal.fire({
+    title: "Participation Successful!",
+    text: `Congratulations! We have successfully reserved INR ${deal.participatedAmount} for ${deal.apidata.dealName}.`,
+    icon: "success",
+    confirmButtonColor: "#3085d6",
+    confirmButtonText: "OK",
+    showCancelButton: false,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.reload();
+    }
+  });
+
 const participateWithoutFee = (deal) => {
-  // Same API as normal valid-membership participate (updatingLenderDeal with fee COMPLETED).
-  // Offer only waives the participation FEE — lending amount must still reduce the wallet.
   const response = dealparticipationValidityUser(deal);
   response.then((data) => {
     const httpStatus = data?.status ?? data?.request?.status;
     if (httpStatus === 200) {
       const resp = data.data || {};
       const offerWasConsumed =
+        resp.offerClaimed === true ||
+        resp.offerClaimed === "true" ||
         resp.offerConsumed === true ||
         resp.offerConsumed === "true" ||
+        resp.claimStatus === "CLAIMED" ||
         resp.offerStatus === OFFER_STATUS_DEACTIVATED;
       const subscriptionGranted =
         resp.subscriptionGrantedThroughOffer === true ||
         resp.subscriptionGrantedThroughOffer === "true";
 
-      // Normal users (no offer claim) — keep classic congratulations popup
       if (!offerWasConsumed && !subscriptionGranted) {
         Swal.fire({
           title: "Congratulations!",
@@ -233,18 +261,17 @@ const participateWithoutFee = (deal) => {
         return;
       }
 
-      // Offer claimed — short, clear success message (wallet already debited like normal flow)
       const months =
         resp.freeSubscriptionMonths ||
         deal.apidata?.freeSubscriptionMonths ||
         1;
-      const offerPopupTitle = "Offer Claimed Successfully!";
       const offerPopupText = subscriptionGranted
-        ? `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. Participation fee waived. Free ${months}-month membership is now active.`
-        : `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. Participation fee waived. This offer is now claimed.`;
+        ? `Participation fee waived. Free ${months}-month membership is now active.`
+        : `Participation fee waived. This offer is now claimed.`;
 
+      // 1) Offer claimed popup, then 2) participation success popup
       Swal.fire({
-        title: offerPopupTitle,
+        title: "Offer Claimed Successfully!",
         text: offerPopupText,
         icon: "success",
         confirmButtonColor: "#198754",
@@ -252,24 +279,16 @@ const participateWithoutFee = (deal) => {
         showCancelButton: false,
       }).then((result) => {
         if (result.isConfirmed) {
-          window.location.reload();
+          showParticipationSuccessPopup(deal);
         }
       });
     } else {
-      const errMsg =
-        data?.response?.data?.errorMessage ||
-        data?.data?.errorMessage ||
-        data?.message ||
-        "Participation failed. Your wallet was not charged.";
-      Swal.fire({
-        title: "Error!",
-        text: `${errMsg}`,
-        icon: "error",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "OK",
-      });
+      const errPayload =
+        data?.response?.data || data?.data || { errorMessage: data?.message };
+      showPendingFeeOrErrorAlert(
+        errPayload,
+        "Participation failed. Your wallet was not charged."
+      );
     }
   });
 };
@@ -566,62 +585,88 @@ export const participatedapi = async (deal) => {
     confirmButtonText: "Ok!",
   }).then((result) => {
     if (result.isConfirmed) {
-      // Fee waived only when membership is active OR FIRST_DEAL_FREE amount >= ₹10,000.
-      // Below minimum: normal fee path (1% + GST).
+      // Fee waived when membership is active OR FIRST_DEAL_FREE amount >= ₹10,000.
       if (isParticipationFeeWaived(deal.apidata, deal.participatedAmount)) {
         participateWithoutFee(deal);
         return;
       }
 
       if (deal.apidata.groupName == "NewLender") {
-          participateWithPerDealFee(deal)
-            .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
-            .catch((err) => showPerDealFeeParticipationError(err));
-        } else if (
-          deal.apidata.lenderValidityStatus == true &&
-          deal.apidata.groupName != "NewLender" &&
-          isMandatoryFeeDeal(deal.apidata) &&
-          hasActiveReactivationOffer(deal.apidata) &&
-          Number(deal.participatedAmount) < OFFER_MIN_PARTICIPATION
-        ) {
-          participateWithPerDealFee(deal)
-            .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
-            .catch((err) => showPerDealFeeParticipationError(err));
-        } else if (
-          deal.apidata.lenderValidityStatus == true &&
-          deal.apidata.groupName != "NewLender"
-        ) {
-          membership(deal.urldealId, deal, deal.participatedAmount);
-        } else if (
-          deal.apidata.lenderValidityStatus == false &&
-          deal.apidata.groupName != "NewLender"
-        ) {
-          const response = dealparticipationValidityUser(deal);
-          response.then((data) => {
-            if (data.request.status === 200) {
+        participateWithPerDealFee(deal)
+          .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
+          .catch((err) => showPerDealFeeParticipationError(err));
+      } else if (
+        deal.apidata.lenderValidityStatus == true &&
+        deal.apidata.groupName != "NewLender" &&
+        isMandatoryFeeDeal(deal.apidata) &&
+        hasActiveReactivationOffer(deal.apidata) &&
+        Number(deal.participatedAmount) < OFFER_MIN_PARTICIPATION
+      ) {
+        participateWithPerDealFee(deal)
+          .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
+          .catch((err) => showPerDealFeeParticipationError(err));
+      } else if (
+        deal.apidata.lenderValidityStatus == true &&
+        deal.apidata.groupName != "NewLender"
+      ) {
+        membership(deal.urldealId, deal, deal.participatedAmount);
+      } else if (
+        deal.apidata.lenderValidityStatus == false &&
+        deal.apidata.groupName != "NewLender"
+      ) {
+        const response = dealparticipationValidityUser(deal);
+        response.then((data) => {
+          if (data.request.status === 200) {
+            const resp = data.data || {};
+            const offerWasConsumed =
+              resp.offerClaimed === true ||
+              resp.offerClaimed === "true" ||
+              resp.offerConsumed === true ||
+              resp.offerConsumed === "true" ||
+              resp.claimStatus === "CLAIMED";
+            const subscriptionGranted =
+              resp.subscriptionGrantedThroughOffer === true ||
+              resp.subscriptionGrantedThroughOffer === "true";
+
+            if (offerWasConsumed || subscriptionGranted) {
+              const months =
+                resp.freeSubscriptionMonths ||
+                deal.apidata?.freeSubscriptionMonths ||
+                1;
+              const offerPopupText = subscriptionGranted
+                ? `Participation fee waived. Free ${months}-month membership is now active.`
+                : `Participation fee waived. This offer is now claimed.`;
+
               Swal.fire({
-                title: "Congratulations!",
-                text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}.`,
+                title: "Offer Claimed Successfully!",
+                text: offerPopupText,
                 icon: "success",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
+                confirmButtonColor: "#198754",
                 confirmButtonText: "OK",
+                showCancelButton: false,
+              }).then((r) => {
+                if (r.isConfirmed) {
+                  showParticipationSuccessPopup(deal);
+                }
               });
-            } else {
-              console.log(data.response);
-              Swal.fire({
-                title: "Error!",
-                text: `${data.response.data.errorMessage}`,
-                icon: "error",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "ok",
-              });
+              return;
             }
-          });
-        }
+
+            Swal.fire({
+              title: "Congratulations!",
+              text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}.`,
+              icon: "success",
+              showCancelButton: true,
+              cancelButtonText: "cancel",
+              showConfirmButton: true,
+              confirmButtonText: "OK",
+            });
+          } else {
+            console.log(data.response);
+            showPendingFeeOrErrorAlert(data?.response?.data);
+          }
+        });
+      }
     }
   });
 };
@@ -683,9 +728,73 @@ export const membership = async (dealId, dealInfo, participatedAmount) => {
       calculate = (amount * 118) / 100;
     }
 if(choosenPayoutMethod == "PerDeal"){
-  participateWithPerDealFee(dealInfo)
-    .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(dealInfo, feeAmount))
-    .catch((err) => showPerDealFeeParticipationError(err));
+  const response = newlenderdealparticipation(dealInfo);
+  var newLenderFeePercentage =
+    (parseInt(dealInfo.participatedAmount) * 1) / 100;
+  var newLenderGstAndFeeCalculation =
+    (newLenderFeePercentage * 118) / 100;
+  response.then((data) => {
+    if (data.request.status === 200) {
+      Swal.fire({
+        title: "Congratulations!",
+        text: `We are reserving ${dealInfo.participatedAmount} for ${dealInfo.apidata.dealName} .please pay the INR ${newLenderGstAndFeeCalculation}
+         for the deal processing fee. `,
+        icon: "success",
+        showCancelButton: true,
+        cancelButtonText: "cancel",
+        showConfirmButton: true,
+        confirmButtonText: "Pay Fee",
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          const res = feeapicallforonedeal(
+            newLenderGstAndFeeCalculation,
+            dealInfo.urldealId
+          );
+          res.then((data) => {
+            if (data.request.status === 200) {
+              Swal.fire({
+                title: "Congratulations!",
+                text: `You have successfully paid the fee`,
+                icon: "success",
+                showCancelButton: true,
+                cancelButtonText: "cancel",
+                showConfirmButton: true,
+                confirmButtonText: "ok",
+              });
+            } else {
+              showPendingFeeOrErrorAlert(data?.response?.data);
+            }
+          });
+        }
+      });
+    } else {
+      console.log(data.response);
+
+      if (data.response.data.errorCode == "123") {
+        let paymentErrormessage =
+          data.response.data.errorMessage.match(/\d+(\.\d+)?/g);
+
+        Swal.fire({
+          title: "Fee Alert",
+          text: `${data.response.data.errorMessage}`, // Displaying the error message
+          icon: "info",
+          showCancelButton: true,
+          cancelButtonText: "cancel",
+          showConfirmButton: true,
+          confirmButtonText: "Wallet",
+        }).then(async (result) => {
+          if (result.isConfirmed) {
+            paypendingprocessingAmount(
+              paymentErrormessage[1],
+              parseInt(paymentErrormessage[0])
+            );
+          }
+        });
+      } else {
+        showPendingFeeOrErrorAlert(data.response.data);
+      }
+    }
+  });
 }else{
     Swal.fire({
       html: `You selected: ${choosenPayoutMethod}  membership tenure and you have to pay the ${calculate} to participate the deal `,
@@ -719,27 +828,11 @@ if(choosenPayoutMethod == "PerDeal"){
                   confirmButtonText: "ok",
                 });
               } else {
-                Swal.fire({
-                  title: "Error!",
-                  text: `${data.response.data.errorMessage}`, // Displaying the error message
-                  icon: "error",
-                  showCancelButton: true,
-                  cancelButtonText: "cancel",
-                  showConfirmButton: true,
-                  confirmButtonText: "ok",
-                });
+                showPendingFeeOrErrorAlert(data?.response?.data);
               }
             });
           } else {
-            Swal.fire({
-              title: "Error!",
-              text: `${data.response.data.errorMessage}`, // Displaying the error message
-              icon: "error",
-              showCancelButton: true,
-              cancelButtonText: "cancel",
-              showConfirmButton: true,
-              confirmButtonText: "ok",
-            });
+            showPendingFeeOrErrorAlert(response?.response?.data);
           }
         });
       }

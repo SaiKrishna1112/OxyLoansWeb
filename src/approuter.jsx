@@ -44,8 +44,6 @@ import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
-import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
-import ReactivationMyOffers from "./components/pages/Oxyloans/Lender/ReactivationMyOffers";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
@@ -156,7 +154,6 @@ import BorrowerMarketplaceConsent from "./components/pages/Oxyloans/Borrower/Bor
 import LenderMarketplaceConsent from "./components/pages/Oxyloans/Lender/LenderMarketplaceConsent";
 import EscalationDashboard from "./components/pages/Oxyloans/Lender/EscalationDashboard";
 import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings";
-import MyOffers from "./components/pages/Oxyloans/Lender/MyOffers";
 import NearbyBorrowers from "./components/pages/Oxyloans/Lender/NearbyBorrowers";
 import LenderEmiDashboard from "./components/pages/Oxyloans/Lender/LenderEmiDashboard";
 import BorrowerEmiSchedule from "./components/pages/Oxyloans/Borrower/BorrowerEmiSchedule";
@@ -200,6 +197,7 @@ import LenderPortfolioDashboard from "./components/pages/Oxyloans/Lender/AILende
 import BorrowerInsightsDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
 import BorrowerCharges from "./components/pages/Oxyloans/Admin/BorrowerFees/BorrowerCharges.jsx";
 import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/ProcessingFees.jsx";
+import ReactivationMyOffers from "./components/pages/Oxyloans/Lender/ReactivationMyOffers";
 import OfferManagementLayout from "./components/pages/Oxyloans/Admin/OfferManagement/OfferManagementLayout";
 import OfferDashboard from "./components/pages/Oxyloans/Admin/OfferManagement/pages/OfferDashboard";
 import GenerateOffers from "./components/pages/Oxyloans/Admin/OfferManagement/pages/GenerateOffers";
@@ -341,7 +339,6 @@ const AppRouter = () => {
         <Route path="/loanListings" element={<LoanListings />} />
         <Route path="/proximityLoans" element={<ProximityLoans />} />
         <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
-        <Route path="/offerGivenList" element={<OfferGivenList />} />
         <Route path="/disburseLoans" element={<DisburseLoans />} />
         <Route path="/WalletToWallet" element={<WalletToWallet />} />
         <Route
@@ -588,8 +585,6 @@ const AppRouter = () => {
         <Route path="/lender-consent/:loanRequestId" element={<PrivateRoute element={<LenderMarketplaceConsent />} />} />
         <Route path="/escalation-dashboard" element={<PrivateRoute element={<EscalationDashboard />} />} />
         <Route path="/my-marketplace-loans" element={<PrivateRoute element={<BorrowerMarketplaceListings />} />} />
-        <Route path="/my-offers" element={<PrivateRoute element={<MyOffers />} />} />
-        <Route path="/my-reactivation-offers" element={<PrivateRoute element={<ReactivationMyOffers />} />} />
         <Route path="/nearby-borrowers" element={<PrivateRoute element={<NearbyBorrowers />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
@@ -625,8 +620,7 @@ const AppRouter = () => {
         <Route path="/ai/subscription-success" element={<PrivateRoute element={<AISubscriptionSuccess />} />} />
         <Route path="/ai/test-admin" element={<PrivateRoute element={<AITestAdmin />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
-
-        {/* OFFER MANAGEMENT (Admin) */}
+        <Route path="/my-reactivation-offers" element={<PrivateRoute element={<ReactivationMyOffers />} />} />
         <Route
           path="/admin/offers"
           element={<AdminPrivateRoute element={<OfferManagementLayout />} />}
@@ -641,7 +635,6 @@ const AppRouter = () => {
           <Route path="rejected" element={<RejectedOffers />} />
           <Route path="history" element={<OfferHistory />} />
         </Route>
-
         <Route path="*" element={<CatchAll />} />
       </Routes>
     </BrowserRouter>
