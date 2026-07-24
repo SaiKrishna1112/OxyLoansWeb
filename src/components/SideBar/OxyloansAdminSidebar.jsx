@@ -9,19 +9,6 @@ const OxyloansAdminSidebar = () => {
   const [openSubmenus, setOpenSubmenus] = useState({});
   const { pathname } = useLocation();
 
-  useEffect(() => {
-    menuItems.forEach((item) => {
-      if (item.children) {
-        const hasActiveChild = item.children.some((child) => child.link === pathname);
-        if (hasActiveChild) {
-          setOpenSubmenus((prev) => ({
-            ...prev,
-            [item.key]: true,
-          }));
-        }
-      }
-    });
-  }, [pathname]);
   const primaryType=localStorage.getItem("primaryType")
   const userId=sessionStorage.getItem("userId")
 
@@ -122,6 +109,22 @@ const OxyloansAdminSidebar = () => {
       link: "/activeLendersParticipation",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
+    {
+      key: "offerManagement",
+      label: "Offer Management",
+      icon: "fa-solid fa-gift",
+      type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
+      children: [
+        { key: "offerDashboard", label: "Dashboard", link: "/admin/offers/dashboard" },
+        { key: "offerCreate", label: "Generate Offers", link: "/admin/offers/create" },
+        { key: "offerSegments", label: "Eligible Lenders", link: "/admin/offers/segments" },
+        { key: "offerTemplates", label: "Templates", link: "/admin/offers/create" },
+        { key: "offerApprovals", label: "Pending Approval", link: "/admin/offers/approvals" },
+        { key: "offerApproved", label: "Approved", link: "/admin/offers/approved" },
+        { key: "offerRejected", label: "Rejected", link: "/admin/offers/rejected" },
+        { key: "offerHistory", label: "History", link: "/admin/offers/history" },
+      ],
+    },
     {
       key: "participationamountinfo",
       label: " Participation Amount Info",
@@ -282,6 +285,22 @@ const OxyloansAdminSidebar = () => {
     },
 
   ];
+
+  useEffect(() => {
+    menuItems.forEach((item) => {
+      if (item.children) {
+        const hasActiveChild = item.children.some(
+          (child) => child.link === pathname || (child.link && pathname.startsWith(child.link))
+        );
+        if (hasActiveChild || (item.key === "offerManagement" && pathname.startsWith("/admin/offers"))) {
+          setOpenSubmenus((prev) => ({
+            ...prev,
+            [item.key]: true,
+          }));
+        }
+      }
+    });
+  }, [pathname]);
   
 
 
@@ -333,7 +352,13 @@ const OxyloansAdminSidebar = () => {
 <ul>
   {menuItems.map((item) => {
     const isSubmenuOpen = openSubmenus[item.key];
-    const isActive = pathname === item.link;
+    const hasActiveChild = item.children?.some(
+      (child) => child.link === pathname || (child.link && pathname.startsWith(`${child.link}`))
+    );
+    const isActive =
+      pathname === item.link ||
+      Boolean(hasActiveChild) ||
+      (item.key === "offerManagement" && pathname.startsWith("/admin/offers"));
     const itemLabel =
       item.key === "adminAIDashboard"
         ? "Admin AI Dashboard"
@@ -342,10 +367,9 @@ const OxyloansAdminSidebar = () => {
         : item.label;
 
     return (
-      <>
+      <React.Fragment key={item.key}>
         {item.type.includes(primaryType) ? (
           <li
-            key={item.key}
             className={`${item.children ? "submenu" : ""} ${
               isSubmenuOpen || isActive ? "active" : ""
             }`}
@@ -357,9 +381,9 @@ const OxyloansAdminSidebar = () => {
                   e.preventDefault();
                   toggleSubmenu(item.key);
                 }}
-                className="d-flex justify-between items-center"
+                className="d-flex align-items-center justify-content-between"
               >
-                <div>
+                <div className="d-flex align-items-center">
                   <i className={item.icon}></i>
                   <span style={{ marginLeft: "16px" }}> {itemLabel} </span>
                 </div>
@@ -380,7 +404,10 @@ const OxyloansAdminSidebar = () => {
             {item.children && isSubmenuOpen && (
               <ul className="sub-menu" style={{ display: "block" }}>
                 {item.children.map((child) => (
-                  <li key={child.key}>
+                  <li
+                    key={child.key}
+                    className={pathname === child.link ? "active" : ""}
+                  >
                     <Link to={child.link}>{child.label}</Link>
                   </li>
                 ))}
@@ -388,7 +415,7 @@ const OxyloansAdminSidebar = () => {
             )}
           </li>
         ) : null}
-      </>
+      </React.Fragment>
     );
   })}
 

@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import "./InvoiceGrid.css";
-import { handledetail, withdrawriaseapipay } from "../../../HttpRequest/afterlogin";
+import "./ParticipateOfferBanners.css";
+import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi } from "../../Base UI Elements/SweetAlert";
+import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -46,47 +47,301 @@ const Participatedeal = () => {
     currentUserWallet: 0,
   });
 
+  const [loadError, setLoadError] = useState("");
+  const dealLoadStartedRef = useRef(false);
+
+  const FEE_WAIVER_OFFER_TYPES = new Set(["FIRST_DEAL_FREE"]);
+
+  const normalizeOfferType = (offerType) => {
+    if (!offerType) return "";
+    if (typeof offerType === "string") return offerType.toUpperCase();
+    if (typeof offerType === "object" && offerType.name) return String(offerType.name).toUpperCase();
+    return String(offerType).toUpperCase();
+  };
+
+  const shouldShowPaymentSection =
+    deal.apidata &&
+    !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
+
+  const participationAmount = Number(deal.participatedAmount) || 0;
+  const hasActiveSubscription =
+    deal.apidata?.subscriptionActive === true ||
+    deal.apidata?.subscriptionActive === "true" ||
+    deal.apidata?.lenderValidityStatus === false ||
+    deal.apidata?.lenderValidityStatus === "false";
+  const hasActiveOffer =
+    deal.apidata &&
+    !hasActiveSubscription &&
+    isMandatoryFeeDeal(deal.apidata) &&
+    hasActiveReactivationOffer(deal.apidata);
+  // First claim: offer applies only when amount meets minimum (₹10,000+)
+  const offerAppliesNow =
+    hasActiveOffer && participationAmount >= OFFER_MIN_PARTICIPATION;
+  // Offer active but amount too low — pay normal fee, offer stays ACTIVE
+  const offerAmountTooLow =
+    hasActiveOffer &&
+    participationAmount > 0 &&
+    participationAmount < OFFER_MIN_PARTICIPATION;
+  // Offer already claimed (FIRST_DEAL_FREE only — not SUBSCRIPTION_DISCOUNT)
+  const offerIsClaimed =
+    deal.apidata?.offerClaimed === true ||
+    (deal.apidata?.claimStatus === "CLAIMED" &&
+      (!deal.apidata?.activeOfferType ||
+        normalizeOfferType(deal.apidata.activeOfferType) === "FIRST_DEAL_FREE")) ||
+    (deal.apidata?.offerStatus === "DEACTIVATED" &&
+      (deal.apidata?.offerClaimed === true ||
+        deal.apidata?.grantsFreeSubscription === true ||
+        normalizeOfferType(deal.apidata?.activeOfferType) === "FIRST_DEAL_FREE"));
+  // Membership from claim (or paid) — primary post-claim banner
+  const showClaimedOfferMembershipBanner =
+    offerIsClaimed && (hasActiveSubscription || !!deal.apidata?.subscriptionValidityDate);
+  // Offer used but membership not active → fee applies again
+  const offerAlreadyUsed =
+    offerIsClaimed &&
+    !hasActiveSubscription &&
+    !deal.apidata?.subscriptionValidityDate &&
+    !isParticipationFeeWaived(deal.apidata, participationAmount);
+  // Hide "validity expired" when offer or subscription covers the fee
+  const showValidityExpiredNote =
+    deal.apidata?.lenderValidityStatus == true &&
+    !hasActiveSubscription &&
+    !hasActiveOffer &&
+    !offerIsClaimed &&
+    deal.apidata.paymentRequired !== false &&
+    !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
+
+  const formatOfferDay = (value) => {
+    if (!value) return null;
+    try {
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value).slice(0, 10);
+      return d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return String(value).slice(0, 10);
+    }
+  };
+
+  const mergeActiveOffersIntoDealData = (dealData, offers) => {
+    const list = offers || [];
+    const activeOffers = list.filter(
+      (offer) =>
+        offer &&
+        (offer.status === "ACTIVE" || offer.claimStatus === "ACTIVE") &&
+        !offer.redeemed &&
+        offer.claimStatus !== "CLAIMED" &&
+        FEE_WAIVER_OFFER_TYPES.has(normalizeOfferType(offer.offerType))
+    );
+    const claimedOffers = list.filter(
+      (offer) =>
+        offer &&
+        FEE_WAIVER_OFFER_TYPES.has(normalizeOfferType(offer.offerType)) &&
+        (offer.redeemed === true ||
+          offer.status === "CLAIMED" ||
+          offer.claimStatus === "CLAIMED")
+    );
+
+    let merged = { ...dealData };
+
+    // Claimed fee-waiver offer → tell lender claim day + 1-month membership validity
+    if (claimedOffers.length > 0) {
+      const claimed = claimedOffers[0];
+      const validity =
+        claimed.subscriptionValidityDate ||
+        merged.validityDate ||
+        null;
+      merged.offerClaimed = true;
+      merged.offerStatus = "DEACTIVATED";
+      merged.offerActive = false;
+      merged.claimStatus = "CLAIMED";
+      merged.claimedAt = claimed.claimedAt || null;
+      merged.subscriptionValidityDate = validity;
+      if (validity) {
+        merged.validityDate = String(validity).slice(0, 10);
+      }
+      merged.freeSubscriptionMonths =
+        claimed.freeSubscriptionMonths || merged.freeSubscriptionMonths || 1;
+      merged.offerMessage =
+        `Your offer was claimed` +
+        (claimed.claimedAt ? ` on ${formatOfferDay(claimed.claimedAt)}` : "") +
+        `. Your free 1-month membership` +
+        (validity ? ` is valid until ${formatOfferDay(validity)}` : " was granted with this claim") +
+        `.`;
+      const membershipStillActive =
+        merged.subscriptionActive === true ||
+        merged.subscriptionActive === "true" ||
+        (() => {
+          if (!validity) return false;
+          try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const end = new Date(String(validity).slice(0, 10));
+            end.setHours(0, 0, 0, 0);
+            return end >= today;
+          } catch {
+            return false;
+          }
+        })();
+      if (membershipStillActive) {
+        merged.lenderValidityStatus = false;
+        merged.validityStatus = false;
+        merged.paymentRequired = false;
+        merged.feeAmount = 0;
+        merged.subscriptionActive = true;
+      }
+      return merged;
+    }
+
+    // Offer-granted or paid membership → treat like old valid subscription (no fee, any amount)
+    if (merged.subscriptionActive === true || merged.subscriptionActive === "true") {
+      merged.lenderValidityStatus = false;
+      merged.validityStatus = false;
+      merged.paymentRequired = false;
+      merged.feeAmount = 0;
+      return merged;
+    }
+
+    if (activeOffers.length === 0) {
+      return merged;
+    }
+
+    const primaryOffer = activeOffers[0];
+    const freeMonths = primaryOffer.freeSubscriptionMonths || 1;
+    const minInvest =
+      Number(primaryOffer.minimumInvestment) > 0
+        ? Number(primaryOffer.minimumInvestment)
+        : OFFER_MIN_PARTICIPATION;
+    return {
+      ...merged,
+      offerActive: true,
+      offerStatus: OFFER_STATUS_ACTIVE,
+      offerClaimed: false,
+      claimStatus: "ACTIVE",
+      activeOfferId: primaryOffer.offerId,
+      activeOfferType: primaryOffer.offerType,
+      activeOfferTitle: primaryOffer.title,
+      grantsFreeSubscription: true,
+      freeSubscriptionMonths: freeMonths,
+      minimumInvestment: minInvest,
+      activeOffers,
+      // Do NOT force paymentRequired=false here — fee waiver only after eligible amount on participate
+      offerMessage:
+        `Special offer ready: participate with at least ₹${minInvest.toLocaleString("en-IN")} — ` +
+        `no participation fee that one time. ` +
+        `After an eligible participation, a free ${freeMonths}-month membership starts (same as normal MONTHLY membership). ` +
+        `Amount below ₹${minInvest.toLocaleString("en-IN")} pays normal fee and keeps the offer ACTIVE.`,
+    };
+  };
 
   useEffect(() => {
+    if (dealLoadStartedRef.current) {
+      return;
+    }
+    dealLoadStartedRef.current = true;
+
     const handledealinfo = async () => {
+      setDeal((prev) => ({ ...prev, spining: true }));
+      setLoadError("");
       const urlparam = new URLSearchParams(window.location.search);
       const dealId = urlparam.get("dealId");
-      const response = await handledetail(dealId);
-
-      const newObj = { ...response.data };
-      if (newObj.monthlyInterest != 0) {
-        newObj.rateOfInterest = newObj.monthlyInterest + " % PM";
-        newObj["payout"] = "MONTHLY";
-        localStorage.setItem("choosenPayOutOption", "MONTHLY");
-      } else if (newObj.quartlyInterest != 0) {
-        newObj.rateOfInterest = newObj.quartlyInterest * 3 + " % PA ";
-        newObj["payout"] = "QUARTERLY";
-        localStorage.setItem("choosenPayOutOption", "QUARTELY");
-      } else if (newObj.halfInterest != 0) {
-        newObj.rateOfInterest = newObj.halfInterest * 6 + " % PA ";
-        newObj["payout"] = "HALFYEARLY";
-        localStorage.setItem("choosenPayOutOption", "HALFLY");
-      } else if (newObj.yearlyInterest != 0) {
-        newObj.rateOfInterest = newObj.yearlyInterest * 12 + " %  PA ";
-        newObj["payout"] = "YEARLY";
-        localStorage.setItem("choosenPayOutOption", "YEARLY");
-      } else if (newObj.endofthedealInterest != 0) {
-        newObj.rateOfInterest = newObj.endofthedealInterest * 12 + " %  PA ";
-        newObj["payout"] = "ENDOFTHEDEAL";
-        localStorage.setItem("choosenPayOutOption", "ENDOFTHEDEAL");
-      } else if (newObj.perDayInterestRoi != 0 || newObj.perDayInterestAmount != null) {
-        newObj.rateOfInterest = newObj.perDayInterestRoi ==0.0 ? newObj.perDayInterestAmount + " PD " : newObj.perDayInterestRoi + " % PD ";
-        newObj["payout"] = "PERDAY";
-        localStorage.setItem("choosenPayOutOption", "PERDAY");
+      if (!dealId) {
+        const message = "Deal ID is missing from the URL.";
+        setLoadError(message);
+        toastrError(message);
+        setDeal((prev) => ({ ...prev, spining: false }));
+        return;
       }
-      if (response.request.status == 500) {
-        setDeal({
-          ...deal,
-          spining: true,
-        });
-      } else {
-        setDeal({
-          ...deal,
+
+      try {
+        const response = await handledetail(dealId);
+        const status = response?.status ?? response?.response?.status;
+        const apiData = response?.data ?? response?.response?.data;
+
+        if (!apiData || (status && status >= 400)) {
+          const serverMessage =
+            apiData?.errorMessage ||
+            apiData?.message ||
+            response?.response?.data?.errorMessage;
+          const message =
+            status === 401
+              ? serverMessage || "Your session expired. Please login again."
+              : serverMessage || "Unable to load deal information. Please try again.";
+          setLoadError(message);
+          toastrError(message);
+          setDeal((prev) => ({ ...prev, spining: false }));
+          return;
+        }
+
+        if (!apiData.dealName) {
+          const message = "Deal details are not available for this deal.";
+          setLoadError(message);
+          toastrError(message);
+          setDeal((prev) => ({ ...prev, spining: false }));
+          return;
+        }
+
+        let newObj = { ...apiData };
+        // Normalize membership flags first (offer-granted uses same renewal rows as paid sub)
+        if (newObj.subscriptionActive === true || newObj.subscriptionActive === "true") {
+          newObj.lenderValidityStatus = false;
+          newObj.validityStatus = false;
+          newObj.paymentRequired = false;
+          newObj.feeAmount = 0;
+        }
+        try {
+          const offers = await getUserReactivationOffers();
+          newObj = mergeActiveOffersIntoDealData(newObj, offers);
+        } catch (error) {
+          /* single-deal API still carries offer flags when backend is updated */
+        }
+        // Membership (paid or offer-granted) → no fee. Active unclaimed offer alone does NOT waive fee
+        // until participate amount meets minimum (see isParticipationFeeWaived).
+        if (
+          newObj.subscriptionActive === true ||
+          newObj.subscriptionActive === "true" ||
+          newObj.lenderValidityStatus === false ||
+          newObj.lenderValidityStatus === "false"
+        ) {
+          newObj.paymentRequired = false;
+          newObj.feeAmount = 0;
+        } else if (
+          (newObj.offerEligible === true || newObj.offerEligible === "true") &&
+          !(newObj.offerStatus === OFFER_STATUS_ACTIVE || newObj.offerActive === true)
+        ) {
+          newObj.paymentRequired = false;
+          newObj.feeAmount = 0;
+        }
+        if (newObj.monthlyInterest != 0) {
+          newObj.rateOfInterest = newObj.monthlyInterest + " % PM";
+          newObj["payout"] = "MONTHLY";
+          localStorage.setItem("choosenPayOutOption", "MONTHLY");
+        } else if (newObj.quartlyInterest != 0) {
+          newObj.rateOfInterest = newObj.quartlyInterest * 3 + " % PA ";
+          newObj["payout"] = "QUARTELY";
+          localStorage.setItem("choosenPayOutOption", "QUARTELY");
+        } else if (newObj.halfInterest != 0) {
+          newObj.rateOfInterest = newObj.halfInterest * 6 + " % PA ";
+          newObj["payout"] = "HALFLY";
+          localStorage.setItem("choosenPayOutOption", "HALFLY");
+        } else if (newObj.yearlyInterest != 0) {
+          newObj.rateOfInterest = newObj.yearlyInterest * 12 + " %  PA ";
+          newObj["payout"] = "YEARLY";
+          localStorage.setItem("choosenPayOutOption", "YEARLY");
+        } else if (newObj.endofthedealInterest != 0) {
+          newObj.rateOfInterest = newObj.endofthedealInterest * 12 + " %  PA ";
+          newObj["payout"] = "ENDOFTHEDEAL";
+          localStorage.setItem("choosenPayOutOption", "ENDOFTHEDEAL");
+        } else if (newObj.perDayInterestRoi != 0 || newObj.perDayInterestAmount != null) {
+          newObj.rateOfInterest = newObj.perDayInterestRoi ==0.0 ? newObj.perDayInterestAmount + " PD " : newObj.perDayInterestRoi + " % PD ";
+          newObj["payout"] = "PERDAY";
+          localStorage.setItem("choosenPayOutOption", "PERDAY");
+        }
+
+        setDeal((prev) => ({
+          ...prev,
           apidata: newObj,
           urldealId: dealId,
           lenderRemainingPanLimit: newObj.lenderRemainingPanLimit,
@@ -101,7 +356,14 @@ const Participatedeal = () => {
           dealfeestatus: newObj.feeStatusToParticipate,
           uservalidity: newObj.lenderValidityStatus,
           groupName: newObj.groupName,
-        });
+          spining: false,
+        }));
+        setLoadError("");
+      } catch (error) {
+        const message = "Unable to load deal information. Please try again.";
+        setLoadError(message);
+        toastrError(message);
+        setDeal((prev) => ({ ...prev, spining: false }));
       }
     };
 
@@ -116,41 +378,47 @@ const Participatedeal = () => {
   });
 
   useEffect(() => {
-    const urlparam = new URLSearchParams(window.location.search);
-    const amount = urlparam.get("amount");
-
     const withdrawriase = async () => {
-      const response = await withdrawriaseapipay(withdrawriaseapi.status);
-
-      if (response.status === 200) {
-        setWithdrawriaseapi({
-          message: response.data.status,
-          amount: response.data.amount,
-          status: withdrawriaseapi.status // keep the current status
-        });
-      } else {
-        setWithdrawriaseapi({
-          message: null,
-          amount: "",
-          status: withdrawriaseapi.status // keep the current status
-        });
+      try {
+        const response = await withdrawriaseapipay(null);
+        if (response?.status === 200 && response.data) {
+          const walletAmount = response.data.amount;
+          setWithdrawriaseapi({
+            message: response.data.status,
+            amount:
+              walletAmount === null || walletAmount === undefined
+                ? ""
+                : String(walletAmount),
+            status: null,
+          });
+        }
+      } catch (error) {
+        /* wallet balance is optional for deal page */
       }
     };
 
     withdrawriase();
-  }, [withdrawriaseapi.status]);
+  }, []);
 
   useEffect(() => {
+    const walletAmount = withdrawriaseapi.amount;
+    if (walletAmount === "" || walletAmount === null || walletAmount === undefined) {
+      return;
+    }
+    const walletNum = Number(walletAmount);
+    if (!Number.isFinite(walletNum)) {
+      return;
+    }
+
     const urlparam = new URLSearchParams(window.location.search);
     const amountFromURL = urlparam.get("amount");
-
-    if (parseInt(amountFromURL) !== parseInt(withdrawriaseapi.amount)) {
-      urlparam.set("amount", withdrawriaseapi.amount);
-      window.history.replaceState({}, '', `${window.location.pathname}?${urlparam.toString()}`);
-
-
-
+    const urlNum = Number(amountFromURL);
+    if (Number.isFinite(urlNum) && urlNum === walletNum) {
+      return;
     }
+
+    urlparam.set("amount", String(walletNum));
+    window.history.replaceState({}, "", `${window.location.pathname}?${urlparam.toString()}`);
   }, [withdrawriaseapi.amount]);
 
 
@@ -363,7 +631,10 @@ const Participatedeal = () => {
 
 
   const dataSource = [];
-  const rateOfInterest = parseFloat(deal.apidata.rateOfInterest);
+  const rateOfInterest =
+    deal.apidata && deal.apidata !== ""
+      ? parseFloat(deal.apidata.rateOfInterest)
+      : NaN;
   deal.apidata && deal.apidata != ""
     ? dataSource.push({
       key: Math.random(),
@@ -422,6 +693,20 @@ const Participatedeal = () => {
                 {" "}
                 <Spining />
               </>
+            ) : loadError ? (
+              <div className="alert alert-danger text-center m-5" role="alert">
+                <h5 className="mb-2">Could not load deal</h5>
+                <p className="mb-3">{loadError}</p>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    dealLoadStartedRef.current = false;
+                    window.location.reload();
+                  }}
+                >
+                  Retry
+                </Button>
+              </div>
             ) : (
               <>
                 <p>Welcome to {deal.apidata && deal.apidata.dealName}</p>
@@ -479,27 +764,111 @@ const Participatedeal = () => {
                   </div>
                 </div>
 
-                {deal.apidata.lenderValidityStatus == true && (
+                {showValidityExpiredNote && (
                   <div className="row notepoint text-center m-5 align-self-center">
-                    {deal.apidata.feeStatusToParticipate == "OPTIONAL" &&
-                      deal.apidata.lenderValidityStatus == true ? (
+                    {deal.apidata.feeStatusToParticipate == "OPTIONAL" ? (
                       <h4 className="text-bold font-monospace">
                         <code>Note :</code> Processing Fee is waived for this
                         deal.
                       </h4>
-                    ) : deal.apidata.lenderValidityStatus == true &&
-                      deal.apidata.groupName != "NewLender" ? (
+                    ) : deal.apidata.groupName != "NewLender" ? (
                       <h4 className="text-bold fs-4 fw-light textquery">
                         <code>Note :</code> Your validity has expired. Please
                         pay to continue your participation.
                       </h4>
-                    ) : deal.apidata.lenderValidityStatus == true &&
-                      deal.apidata.groupName == "NewLender" ? (
+                    ) : (
                       <h4 className="text-bold fs-4 fw-light">
                         <code>Note :</code> You are requested to pay a 1%
                         processing fee on your investment.
                       </h4>
-                    ) : null}
+                    )}
+                  </div>
+                )}
+
+                {/* 1st time — offer active, amount not entered yet */}
+                {hasActiveOffer && participationAmount === 0 && !offerIsClaimed && (
+                  <div className="participate-offer-banner is-info" role="status">
+                    <h5>Special Offer — Use Once</h5>
+                    <p>
+                      {deal.apidata?.offerMessage ||
+                        `Enter at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                          "en-IN"
+                        )}. Your participation fee is free one time, and a free 1-month membership starts after that eligible participation. Amount below ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                          "en-IN"
+                        )} pays normal fee and keeps the offer ACTIVE.`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Offer active but amount below minimum — normal 1% + GST fee applies */}
+                {offerAmountTooLow && !offerIsClaimed && (
+                  <div className="participate-offer-banner is-warning" role="status">
+                    <h5>Amount below offer minimum</h5>
+                    <p>
+                      Amount below ₹{OFFER_MIN_PARTICIPATION.toLocaleString("en-IN")} pays normal
+                      fee and keeps the offer ACTIVE.
+                    </p>
+                  </div>
+                )}
+
+                {/* Eligible amount — fee waived; claim happens after successful participate */}
+                {offerAppliesNow && !offerIsClaimed && (
+                  <div className="participate-offer-banner is-success" role="status">
+                    <h5>Ready to claim your offer</h5>
+                    <p>
+                      For ₹{participationAmount.toLocaleString("en-IN")}: no participation fee.
+                      After you click Participate, this offer becomes CLAIMED and a free{" "}
+                      {deal.apidata?.freeSubscriptionMonths || 1}-month membership is activated.
+                    </p>
+                  </div>
+                )}
+
+                {/* Claimed offer — show claim day + 1-month subscription validity (not "active offer") */}
+                {showClaimedOfferMembershipBanner && (
+                  <div className="participate-offer-banner is-success" role="status">
+                    <h5>Your offer is claimed</h5>
+                    <p>
+                      {deal.apidata?.claimedAt
+                        ? `You claimed this offer on ${formatOfferDay(deal.apidata.claimedAt)}.`
+                        : "You have already claimed this one-time offer."}
+                    </p>
+                    <p className="fw-semibold">
+                      {deal.apidata?.subscriptionValidityDate || deal.apidata?.validityDate
+                        ? `Your free 1-month membership is valid until ${formatOfferDay(
+                            deal.apidata.subscriptionValidityDate || deal.apidata.validityDate
+                          )}.`
+                        : "Your free 1-month membership is active."}{" "}
+                      You can participate in deals without paying a participation fee during this period.
+                    </p>
+                  </div>
+                )}
+
+                {/* Active paid / offer membership without claim metadata */}
+                {hasActiveSubscription && !offerIsClaimed && (
+                  <div className="participate-offer-banner is-success" role="status">
+                    <h5>Membership active — no deal fee</h5>
+                    <p>
+                      Your MONTHLY membership is active
+                      {deal.apidata?.validityDate || deal.apidata?.subscriptionValidityDate
+                        ? ` until ${formatOfferDay(
+                            deal.apidata.subscriptionValidityDate || deal.apidata.validityDate
+                          )}`
+                        : ""}
+                      . You can participate in deals without paying a participation fee.
+                    </p>
+                  </div>
+                )}
+
+                {/* Offer used but membership not active */}
+                {offerAlreadyUsed && (
+                  <div className="participate-offer-banner is-muted" role="status">
+                    <h5>Offer already claimed</h5>
+                    <p>
+                      {deal.apidata?.claimedAt
+                        ? `You claimed this offer on ${formatOfferDay(deal.apidata.claimedAt)}. `
+                        : ""}
+                      Your free membership period has ended. Normal participation fee / membership payment applies for this deal.
+                    </p>
                   </div>
                 )}
 
@@ -518,7 +887,22 @@ const Participatedeal = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  {deal.participatedAmount!==0 && deal.participatedAmount !== "" && deal.participatedAmount !== null && deal.dealfeestatus !== "OPTIONAL" && deal.uservalidity === true && <div className="error">This deal has a fee(1% + 18% GST) of ₹ {Math.round((deal.participatedAmount * 0.01) * 1.18)}. </div>}
+                  {deal.participatedAmount !== 0 &&
+                    deal.participatedAmount !== "" &&
+                    deal.participatedAmount !== null &&
+                    shouldShowPaymentSection && (
+                      <div className="error">
+                        {offerAmountTooLow
+                          ? "Normal participation fee applies (1% + 18% GST) of ₹ "
+                          : "This deal has a fee (1% + 18% GST) of ₹ "}
+                        {Math.round(deal.participatedAmount * 0.01 * 1.18)}.
+                        {offerAmountTooLow
+                          ? ` Offer fee waiver needs at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                              "en-IN"
+                            )}.`
+                          : ""}
+                      </div>
+                    )}
                   {console.log(typeof (withdrawriaseapi.amount), withdrawriaseapi.amount)}
                   {withdrawriaseapi.amount !== "" && withdrawriaseapi.amount !== null ? (
                     <div className="error">Actual wallet amount after withdrawal request: ₹ {withdrawriaseapi.amount}.</div>
