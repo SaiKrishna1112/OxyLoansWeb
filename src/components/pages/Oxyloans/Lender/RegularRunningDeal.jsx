@@ -9,7 +9,6 @@ import { withdrawriaseapi11 } from "../../Base UI Elements/SweetAlert";
 import Swal from "sweetalert2";
 import { error } from "jquery";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
-import ActiveOfferPopup from "./ActiveOfferPopup";
 
 const RegularRunningDeal = () => {
   const [regular_runningDeal, setRegularRunningDeal] = useState({
@@ -588,7 +587,6 @@ const RegularRunningDeal = () => {
         </div>
         {/* /Page Wrapper */}
       </div>
-      <ActiveOfferPopup />
       {/* /Main Wrapper */}
     </>
   );
