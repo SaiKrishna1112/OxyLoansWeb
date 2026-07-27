@@ -202,27 +202,33 @@ export const sendwhatappotp = async (value1) => {
   );
   return response;
 };
-export const referrerdata = (referrerId, refParam) => {
-  const numericPart = referrerId.match(/\d+$/);
+export const referrerdata = async (referrerId, refParam) => {
+  try {
+    const rawId =
+      referrerId !== undefined && referrerId !== null && String(referrerId).trim() !== "" && String(referrerId).trim() !== "0"
+        ? String(referrerId).trim()
+        : refParam !== undefined && refParam !== null && String(refParam).trim() !== "" && String(refParam).trim() !== "0"
+        ? String(refParam).trim()
+        : "";
 
-  if (referrerId !== "") {
-    const response = handleApiRequestBeforeLogin(
+    if (!rawId) {
+      return null;
+    }
+
+    const match = rawId.match(/\d+/);
+    const numericPart = match ? match[0] : rawId;
+
+    const response = await handleApiRequestBeforeLogin(
       "GET",
       API_BASE_URL,
-
       `${numericPart}/user-uniquenumber`
     );
     return response;
-  } else {
-    const response = handleApiRequestBeforeLogin(
-      "GET",
-      API_BASE_URL,
-
-      `${refParam}/user-uniquenumber`
-    );
-    return response;
+  } catch (error) {
+    return error;
   }
 };
+
 
 export const handlesenOtp = async (moblie) => {
   var data = {

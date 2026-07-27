@@ -457,7 +457,7 @@ const BorrowerLoansInitiated = () => {
             ) : null}
             {borrowerStatus === "LOANACCEPTED" && !record.borrowerEsigned && record.borrowerAggrement ? (
               <Link
-                to={`/esign/${record.id}`}
+                to={`/esign/${record.loanRequestId || record.id}?assignmentId=${record.id}`}
                 className="btn btn-sm btn-warning fw-semibold"
               >
                 <i className="fa-solid fa-signature me-1"></i> eSign Agreement

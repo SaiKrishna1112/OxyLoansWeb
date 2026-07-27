@@ -51,6 +51,9 @@ import {
   validateIfscCode,
   isBankNameMatching,
   validateMobileNumber,
+  validatePincode,
+  validateName,
+  validatePanNumber,
 } from "../../../../../../utils/borrowerValidation";
 
 const Profile = () => {
@@ -203,6 +206,23 @@ const Profile = () => {
   const [whatsappVal, setWhatsappVal] = useState("");
   const [whatsappOtp, setWhatsappOtp] = useState("");
   const [whatsappSubmitted, setWhatsappSubmitted] = useState(false);
+
+  const documentNames = {
+  pan: "PAN Card",
+  creditReport: "Credit Bureau Report",
+  CHEQUELEAF: "Cancelled Cheque Leaf",
+  BANKSTATEMENT: "6-Month Bank Statement",
+  AADHAR: "Aadhaar Card",
+  DRIVINGLICENCE: "Driving Licence",
+  VOTERID: "Voter ID Card",
+  PASSPORT: "Passport",
+  PAYSLIPS: "Latest 6-Month Payslips",
+  INTERMEDIATE: "Intermediate Marksheet",
+  TENTH: "10th Grade Marksheet",
+  GRADUATION: "Graduation Marksheet",
+  OFFERLETTER: "Offer Letter",
+  FEERECEIPT: "Fee Receipt",
+};
 
   useEffect(() => {
     document.body.classList.add("oxy-redesign-active");
@@ -515,8 +535,21 @@ const Profile = () => {
   }, [profileData.residenceAddress, profileData.pinCode, profileData.city, profileData.state]);
 
   const handleVerifyPan = async () => {
-    if (!profileData.panNumber || profileData.panNumber.length !== 10) {
-      Swal.fire("Validation Error", "Valid 10-character PAN required", "warning");
+    const panCheck = validatePanNumber(profileData.panNumber);
+    if (!panCheck.valid) {
+      Swal.fire({
+        title: "Invalid PAN Format",
+        html: `${panCheck.message}<br/><br/>Would you like to edit your PAN number now?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Edit PAN Number",
+        cancelButtonText: "Cancel",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setIsPanVerified(false);
+          setEditSection("personal");
+        }
+      });
       return;
     }
     if (!profileData.firstName) {
@@ -543,11 +576,36 @@ const Profile = () => {
       } else {
         setIsPanVerified(false);
         setPanVerificationStatus("PAN record verification failed.");
-        Swal.fire("Failed", "PAN verification failed.", "error");
+        Swal.fire({
+          title: "PAN Verification Failed",
+          html: `The entered PAN number <strong>${profileData.panNumber}</strong> could not be verified against tax records.<br/><br/>Please edit your PAN number and try again.`,
+          icon: "error",
+          showCancelButton: true,
+          confirmButtonText: "Edit PAN Number",
+          cancelButtonText: "Close",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            setIsPanVerified(false);
+            setEditSection("personal");
+          }
+        });
       }
     } catch (err) {
+      setIsPanVerified(false);
       setPanVerificationStatus("Verification failure.");
-      Swal.fire("Failed", "PAN verification failed.", "error");
+      Swal.fire({
+        title: "PAN Verification Failed",
+        html: "Unable to verify PAN card at this time.<br/><br/>Would you like to edit your PAN number?",
+        icon: "error",
+        showCancelButton: true,
+        confirmButtonText: "Edit PAN Number",
+        cancelButtonText: "Close",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setIsPanVerified(false);
+          setEditSection("personal");
+        }
+      });
     } finally {
       setIsVerifyingPan(false);
     }
@@ -558,14 +616,20 @@ const Profile = () => {
     let sanitizedValue = value;
 
     if (name === "firstName" || name === "lastName" || name === "fatherName" || name === "city" || name === "state") {
-      sanitizedValue = value.replace(/[^a-zA-Z\s.-]/g, "");
+      sanitizedValue = value.replace(/[^a-zA-Z\s.-]/g, "").slice(0, 50);
     } else if (name === "whatsAppNumber") {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
     } else if (name === "pinCode") {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 6);
       if (sanitizedValue.length === 6) {
-        handlePinCodeLookup(sanitizedValue);
-      } else if (sanitizedValue.length < 6) {
+        const pinCheck = validatePincode(sanitizedValue);
+        if (pinCheck.valid) {
+          handlePinCodeLookup(sanitizedValue);
+        } else {
+          setLocalityOptions([]);
+          setCityOptions([]);
+        }
+      } else {
         setLocalityOptions([]);
         setCityOptions([]);
       }
@@ -629,7 +693,12 @@ const Profile = () => {
     try {
       const res = await uploadkyc(e);
       if (res?.request?.status === 200) {
-        Swal.fire("Uploaded Successfully", `${e.target.name} has been processed.`, "success");
+        // Swal.fire("Uploaded Successfully", `${e.target.name} has been processed.`, "success");
+        Swal.fire(
+          "Upload Successful",
+          `${documentNames[e.target.name] || "Document"} has been uploaded and processed successfully.`,
+          "success"
+        );
         await fetchKycFiles();
       } else {
         Swal.fire("Upload Failed", res?.data?.errorMessage || "File cannot be uploaded.", "error");
@@ -643,7 +712,7 @@ const Profile = () => {
 
   // Send Whatsapp OTP
   const handleSendWhatsappOtp = async () => {
-    if (!whatsappVal || whatsappVal.length < 15) {
+    if (!whatsappVal) {
       Swal.fire("Invalid Number", "Enter a valid number.", "warning");
       return;
     }
@@ -728,12 +797,35 @@ const Profile = () => {
             }
           } else {
             setIsPanVerified(false);
-            Swal.fire("PAN Verification Failed", "Check PAN number and Name. Must match registered tax record.", "error");
+            Swal.fire({
+              title: "PAN Verification Failed",
+              text: "Check PAN number and Name. Must match registered tax record. Please edit your PAN number.",
+              icon: "error",
+              showCancelButton: true,
+              confirmButtonText: "Edit PAN Number",
+              cancelButtonText: "Cancel",
+            }).then((result) => {
+              if (result.isConfirmed) {
+                setEditSection("personal");
+              }
+            });
             setSubmitting(false);
             return;
           }
         } catch (err) {
-          Swal.fire("PAN Verification Failed", "Unable to verify PAN card at this time.", "error");
+          setIsPanVerified(false);
+          Swal.fire({
+            title: "PAN Verification Failed",
+            text: "Unable to verify PAN card at this time. Please edit your PAN number.",
+            icon: "error",
+            showCancelButton: true,
+            confirmButtonText: "Edit PAN Number",
+            cancelButtonText: "Cancel",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              setEditSection("personal");
+            }
+          });
           setSubmitting(false);
           return;
         } finally {
@@ -1059,7 +1151,7 @@ const Profile = () => {
           ) : (
             <>
               {/* TOP HEADER BANNER CARD */}
-              <div className="profile-banner">
+              <div className="profile-banner mb-4">
                 <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                   <div className="d-flex align-items-center gap-3">
                     <div className="profile-avatar-circle">
@@ -1069,11 +1161,10 @@ const Profile = () => {
                       <h4 className="fw-bold mb-1 text-white text-capitalize">
                         {profileData.firstName ? `${profileData.firstName} ${profileData.lastName}` : "—"}
                       </h4>
-                      <p className="text-white-50 mb-2 small">BR{profileData.userId}</p>
+                      <p className="text-white-50 mb-2 small">Borrower ID: BR{profileData.userId}</p>
                       
                       <div className="d-flex gap-2 flex-wrap">
                         {/* PAN Pending warning badge */}
-                        
                         {!isPanVerified ? (
                           <span className="badge px-3 py-1.5 rounded text-dark font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#ffd60a", fontSize: "12px" }}>
                             <i className="fa-solid fa-triangle-exclamation"></i> PAN Pending
@@ -1098,6 +1189,17 @@ const Profile = () => {
                             <i className="fa-solid fa-circle-check"></i> Bank Linked
                           </span>
                         )}
+
+                        {/* KYC Verification badge */}
+                        {profileData.kycStatus === true ? (
+                          <span className="badge px-3 py-1.5 rounded text-white font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#38b000", fontSize: "12px" }}>
+                            <i className="fa-solid fa-user-shield"></i> KYC Verified
+                          </span>
+                        ) : (
+                          <span className="badge px-3 py-1.5 rounded text-white font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#0284c7", fontSize: "12px" }}>
+                            <i className="fa-solid fa-clock-rotate-left"></i> KYC Pending
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1108,6 +1210,64 @@ const Profile = () => {
                   >
                     <i className="fa-regular fa-edit me-2"></i> Edit Profile
                   </button>
+                </div>
+              </div>
+
+              {/* PROFILE COMPLETION PROGRESS & CHECKLIST CARD */}
+              <div className="card border-0 shadow-sm rounded-4 mb-4 bg-white p-4">
+                <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                  <div>
+                    <h6 className="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                      <i className="fa-solid fa-sliders text-primary"></i> Profile Completeness
+                    </h6>
+                    <span className="text-muted small">Complete all profile sections to speed up loan approvals and matching.</span>
+                  </div>
+                  <span className={`badge px-3 py-2 rounded-pill fw-bold fs-6 ${profileCompletionPct >= 75 ? "bg-success-subtle text-success" : "bg-warning-subtle text-dark"}`}>
+                    {profileCompletionPct}% Completed
+                  </span>
+                </div>
+
+                <div className="progress mb-3" style={{ height: "10px", borderRadius: "10px" }}>
+                  <div 
+                    className={`progress-bar rounded-pill ${profileCompletionPct >= 75 ? "bg-success" : "bg-primary"}`} 
+                    role="progressbar" 
+                    style={{ width: `${profileCompletionPct}%`, transition: "width 0.4s ease" }}
+                  />
+                </div>
+
+                {/* Checklist Chips */}
+                <div className="d-flex flex-wrap gap-2 pt-2 border-top">
+                  <span 
+                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.firstName && profileData.pinCode ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
+                    onClick={() => setEditSection("personal")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <i className={`fa-solid ${profileData.firstName && profileData.pinCode ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> Personal & Address
+                  </span>
+
+                  <span 
+                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${isPanVerified ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
+                    onClick={() => setEditSection("personal")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <i className={`fa-solid ${isPanVerified ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> PAN Verified
+                  </span>
+
+                  <span 
+                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.bankDetailsInfo && isBankVerified ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
+                    onClick={() => setEditSection("bank")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <i className={`fa-solid ${profileData.bankDetailsInfo && isBankVerified ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> Bank Account Linked
+                  </span>
+
+                  <span 
+                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.kycStatus === true ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
+                    onClick={() => setEditSection("kyc")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <i className={`fa-solid ${profileData.kycStatus === true ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> KYC Documents
+                  </span>
                 </div>
               </div>
 
@@ -1131,7 +1291,7 @@ const Profile = () => {
                     <div className="card-body px-4 pb-4">
                       <div className="space-y-1">
                         <div className="personal-info-row">
-                          <span className="personal-info-label">Full Name</span>
+                          <span className="personal-info-label">Full Name as for PAN</span>
                           <span className="personal-info-value text-capitalize">{profileData.firstName} {profileData.lastName}</span>
                         </div>
                         <div className="personal-info-row">
@@ -1154,7 +1314,20 @@ const Profile = () => {
                         </div>
                         <div className="personal-info-row">
                           <span className="personal-info-label">Pincode</span>
-                          <span className="personal-info-value">{profileData.pinCode || "—"}</span>
+                          <span className="personal-info-value d-flex align-items-center gap-1">
+                            {profileData.pinCode || "—"}
+                            {profileData.pinCode && validatePincode(profileData.pinCode).valid ? (
+                              <span className="text-success small ms-1" title="Valid Pincode"><i className="fa-solid fa-circle-check"></i></span>
+                            ) : profileData.pinCode ? (
+                              <span className="badge bg-danger text-white ms-1">Invalid</span>
+                            ) : null}
+                          </span>
+                        </div>
+                        <div className="personal-info-row">
+                          <span className="personal-info-label">City / State</span>
+                          <span className="personal-info-value">
+                            {profileData.city && profileData.state ? `${profileData.city}, ${profileData.state}` : (profileData.city || profileData.state || "—")}
+                          </span>
                         </div>
                         <div className="personal-info-row">
                           <span className="personal-info-label">Occupation Category</span>
@@ -1278,15 +1451,16 @@ const Profile = () => {
                             </div>
                             <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>PAN CARD</h6>
                           </div>
-                          {!isPanVerified && (
-                            <button 
-                              className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
-                              onClick={() => setEditSection("personal")}
-                              style={{ fontSize: "14px" }}
-                            >
-                              Verify
-                            </button>
-                          )}
+                          <button 
+                            className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
+                            onClick={() => {
+                              setIsPanVerified(false);
+                              setEditSection("personal");
+                            }}
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i> {isPanVerified ? "Edit / Re-verify" : "Verify / Edit"}
+                          </button>
                         </div>
                         {isPanVerified ? (
                           <div className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
@@ -1297,7 +1471,32 @@ const Profile = () => {
                             <span className="text-success small fw-semibold"><i className="fa-solid fa-circle-check"></i> Verified</span>
                           </div>
                         ) : (
-                          <p className="text-muted mb-0 small">PAN not verified. Verify to unlock full features.</p>
+                          <div>
+                            <div className="p-3 bg-danger bg-opacity-10 rounded-3 border border-danger border-opacity-25 mb-2 d-flex justify-content-between align-items-center">
+                              <div>
+                                <span className="text-muted d-block small">PAN Number</span>
+                                <span className="fw-bold text-danger">{profileData.panNumber || "Not Provided"}</span>
+                              </div>
+                              <span className="badge bg-danger text-white">Unverified / Invalid</span>
+                            </div>
+                            {(!profileData.panNumber || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(profileData.panNumber)) && (
+                              <p className="text-danger small mb-2">
+                                <i className="fa-solid fa-circle-exclamation me-1"></i>
+                                {!profileData.panNumber
+                                  ? "PAN number is missing. Please edit your profile to add a valid 10-character PAN."
+                                  : "Invalid PAN format (must be 10 characters: e.g. ABCDE1234F). Please edit your PAN."}
+                              </p>
+                            )}
+                            <button
+                              className="btn btn-sm btn-outline-primary mt-1 d-inline-flex align-items-center gap-1"
+                              onClick={() => {
+                                setIsPanVerified(false);
+                                setEditSection("personal");
+                              }}
+                            >
+                              <i className="fa-solid fa-pen-to-square"></i> Edit PAN Number
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1391,17 +1590,17 @@ const Profile = () => {
         <Modal.Body className="p-4">
           <div className="row g-3">
             <div className="col-md-4">
-              <label className="form-label text-muted small">First Name <span className="text-danger">*</span></label>
+              <label className="form-label text-muted small">Name As PAN Card <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="firstName" value={profileData.firstName} onChange={handleprofileInput} />
             </div>
-            <div className="col-md-4">
+            {/* <div className="col-md-4">
               <label className="form-label text-muted small">Middle Name</label>
               <input type="text" className="form-control rounded-3" name="middleName" value={profileData.middleName} onChange={handleprofileInput} />
             </div>
             <div className="col-md-4">
               <label className="form-label text-muted small">Last Name</label>
               <input type="text" className="form-control rounded-3" name="lastName" value={profileData.lastName} onChange={handleprofileInput} />
-            </div>
+            </div> */}
             <div className="col-md-6">
               <label className="form-label text-muted small">Father's Name <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="fatherName" value={profileData.fatherName} onChange={handleprofileInput} />
@@ -1411,8 +1610,38 @@ const Profile = () => {
               <input type="text" className="form-control rounded-3" name="dob" value={profileData.dob} onChange={handleprofileInput} placeholder="YYYY-MM-DD" />
             </div>
             <div className="col-md-6">
-              <label className="form-label text-muted small">PAN Card Number <span className="text-danger">*</span></label>
-              <input type="text" className="form-control rounded-3" name="panNumber" value={profileData.panNumber} onChange={handleprofileInput} maxLength={10} disabled={isPanVerified} />
+              <div className="d-flex justify-content-between align-items-center mb-1">
+                <label className="form-label text-muted small mb-0">PAN Card Number <span className="text-danger">*</span></label>
+                {isPanVerified && (
+                  <button
+                    type="button"
+                    className="btn btn-link btn-sm p-0 text-primary text-decoration-none small"
+                    onClick={() => setIsPanVerified(false)}
+                  >
+                    <i className="fa-solid fa-pen-to-square me-1"></i>Unlock to Edit
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                className={`form-control rounded-3 ${profileData.panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(profileData.panNumber) ? "is-invalid" : ""}`}
+                name="panNumber"
+                value={profileData.panNumber}
+                onChange={handleprofileInput}
+                maxLength={10}
+                placeholder="ABCDE1234F"
+                disabled={isPanVerified}
+              />
+              {profileData.panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(profileData.panNumber) ? (
+                <div className="invalid-feedback d-block small mt-1">
+                  <i className="fa-solid fa-circle-exclamation me-1"></i>
+                  Invalid PAN format (must be 10 characters: 5 letters, 4 digits, 1 letter, e.g. ABCDE1234F).
+                </div>
+              ) : isPanVerified ? (
+                <div className="text-success small mt-1">
+                  <i className="fa-solid fa-circle-check me-1"></i>Verified PAN Card
+                </div>
+              ) : null}
             </div>
             <div className="col-md-6">
               <label className="form-label text-muted small">Aadhaar Number</label>
@@ -1428,13 +1657,31 @@ const Profile = () => {
             </div>
             <div className="col-md-4">
               <label className="form-label text-muted small">Pincode <span className="text-danger">*</span></label>
-              <input type="text" className="form-control rounded-3" name="pinCode" value={profileData.pinCode} onChange={handleprofileInput} maxLength={6} />
+              <input
+                type="text"
+                className={`form-control rounded-3 ${profileData.pinCode && !validatePincode(profileData.pinCode).valid ? "is-invalid" : ""}`}
+                name="pinCode"
+                value={profileData.pinCode}
+                onChange={handleprofileInput}
+                maxLength={6}
+                placeholder="e.g. 500072"
+              />
+              {profileData.pinCode && !validatePincode(profileData.pinCode).valid ? (
+                <div className="invalid-feedback d-block small mt-1">
+                  <i className="fa-solid fa-triangle-exclamation me-1"></i>
+                  {validatePincode(profileData.pinCode).message}
+                </div>
+              ) : profileData.pinCode && profileData.pinCode.length === 6 && validatePincode(profileData.pinCode).valid ? (
+                <div className="text-success small mt-1">
+                  <i className="fa-solid fa-circle-check me-1"></i>Valid Pincode
+                </div>
+              ) : null}
             </div>
             <div className="col-md-4">
               <label className="form-label text-muted small">City <span className="text-danger">*</span></label>
               {displayCityOptions && displayCityOptions.length > 0 ? (
                 <select
-                  className="form-select rounded-3"
+                  className={`form-select rounded-3 ${profileData.city && !validateName(profileData.city, "City").valid ? "is-invalid" : ""}`}
                   name="city"
                   value={profileData.city}
                   onChange={handleprofileInput}
@@ -1447,12 +1694,38 @@ const Profile = () => {
                   ))}
                 </select>
               ) : (
-                <input type="text" className="form-control rounded-3" name="city" value={profileData.city} onChange={handleprofileInput} />
+                <input
+                  type="text"
+                  className={`form-control rounded-3 ${profileData.city && !validateName(profileData.city, "City").valid ? "is-invalid" : ""}`}
+                  name="city"
+                  value={profileData.city}
+                  onChange={handleprofileInput}
+                  placeholder="e.g. Hyderabad"
+                />
+              )}
+              {profileData.city && !validateName(profileData.city, "City").valid && (
+                <div className="invalid-feedback d-block small mt-1">
+                  <i className="fa-solid fa-triangle-exclamation me-1"></i>
+                  {validateName(profileData.city, "City").message}
+                </div>
               )}
             </div>
             <div className="col-md-4">
               <label className="form-label text-muted small">State <span className="text-danger">*</span></label>
-              <input type="text" className="form-control rounded-3" name="state" value={profileData.state} onChange={handleprofileInput} />
+              <input
+                type="text"
+                className={`form-control rounded-3 ${profileData.state && !validateName(profileData.state, "State").valid ? "is-invalid" : ""}`}
+                name="state"
+                value={profileData.state}
+                onChange={handleprofileInput}
+                placeholder="e.g. Telangana"
+              />
+              {profileData.state && !validateName(profileData.state, "State").valid && (
+                <div className="invalid-feedback d-block small mt-1">
+                  <i className="fa-solid fa-triangle-exclamation me-1"></i>
+                  {validateName(profileData.state, "State").message}
+                </div>
+              )}
             </div>
             {localityOptions && localityOptions.length > 0 && (
               <div className="col-md-4">
@@ -1699,22 +1972,22 @@ const Profile = () => {
       {/* 5. KYC & PASSWORDS EDIT MODAL */}
       <Modal show={editSection === "kyc"} onHide={() => setEditSection(null)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="fw-bold text-dark h5">KYC Documents & PDF Passwords</Modal.Title>
+          <Modal.Title className="fw-bold text-dark h5">KYC Documents</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
           <div className="row g-4">
           {[
-              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, passwordField: "panPassword" },
-              { label: "Credit Bureau Report", name: "creditReport", value: kycDocs.creditReport, passwordField: "cibilPassword" },
+              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, },
+              { label: "Credit Bureau Report", name: "creditReport", value: kycDocs.creditReport, },
               { label: "Cancelled Cheque Leaf", name: "CHEQUELEAF", value: kycDocs.CHEQUELEAF },
-              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, passwordField: "bankStatementPassword" },
-              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar, passwordField: "aadharPassword" },
+              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, },
+              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar,},
               { label: "Driving Licence Scan", name: "DRIVINGLICENCE", value: kycDocs.DRIVINGLICENCE },
               { label: "Voter Identity Card", name: "VOTERID", value: kycDocs.VOTERID },
               { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport },
-              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword" },
+              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, },
 
-              ...(category
+              ...(category === "STUDENT"
                 ? [
                     { label: "Intermediate", name: "INTERMEDIATE", value: kycDocs.intermediate },
                     { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth },
@@ -1775,7 +2048,7 @@ const Profile = () => {
             className="phoneinputfiled form-control"
             value={whatsappVal}
             onChange={setWhatsappVal}
-            defaultCountry="IN"
+            // defaultCountry="IN"
             maxLength={15}
           />
           {!whatsappSubmitted && (

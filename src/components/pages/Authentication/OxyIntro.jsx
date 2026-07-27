@@ -13,7 +13,6 @@ function OxyIntro() {
   const [errors, setErrors] = useState({});
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const navigate = useNavigate();
-
   useEffect(() => {
     const savedData = localStorage.getItem('userData');
     if (savedData) {
@@ -35,18 +34,24 @@ function OxyIntro() {
     const newErrors = {};
 
     if (currentStep === 1) {
-      if (!formData.number.trim()) {
+      if (!formData.number || !formData.number.trim()) {
         newErrors.number = 'Mobile number is required';
+      } else if (!/^\d{10}$/.test(formData.number.trim())) {
+        newErrors.number = 'Please enter a valid 10-digit mobile number';
       }
     } else if (currentStep === 2) {
-      if (!formData.email.trim()) {
+      if (!formData.email || !formData.email.trim()) {
         newErrors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
         newErrors.email = 'Please enter a valid email address';
       }
     } else if (currentStep === 3) {
-      if (!formData.name.trim()) {
+      if (!formData.name || !formData.name.trim()) {
         newErrors.name = 'Name is required';
+      } else if (formData.name.trim().length < 2) {
+        newErrors.name = 'Name must be at least 2 characters';
+      } else if (formData.name.trim().length > 100) {
+        newErrors.name = 'Name cannot exceed 100 characters';
       }
     }
 
@@ -120,12 +125,15 @@ function OxyIntro() {
               <div className="mb-3">
                 <label className="form-label">Mobile Number *</label>
                 <input
-                  type="number"
+                  type="tel"
                   className={`form-control ${errors.number ? 'is-invalid' : ''}`}
-                  placeholder="Enter your Mobile Number"
+                  placeholder="Enter 10-digit Mobile Number"
                   value={formData.number}
-                  // maxLength={10}
-                  onChange={(e) => handleInputChange('number', e.target.value)}
+                  maxLength={10}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    handleInputChange('number', val);
+                  }}
                 />
                 {errors.number && <div className="invalid-feedback">{errors.number}</div>}
               </div>
@@ -155,6 +163,7 @@ function OxyIntro() {
                   className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                   placeholder="Enter your email"
                   value={formData.email}
+                  maxLength={100}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                 />
                 {errors.email && <div className="invalid-feedback">{errors.email}</div>}
@@ -183,9 +192,13 @@ function OxyIntro() {
                 <input
                   type="text"
                   className={`form-control ${errors.name ? 'is-invalid' : ''}`}
-                  placeholder="Enter your name"
+                  placeholder="Enter your name (max 100 characters)"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  maxLength={100}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^a-zA-Z\s]/g, '').slice(0, 100);
+                    handleInputChange('name', val);
+                  }}
                 />
                 {errors.name && <div className="invalid-feedback">{errors.name}</div>}
               </div>

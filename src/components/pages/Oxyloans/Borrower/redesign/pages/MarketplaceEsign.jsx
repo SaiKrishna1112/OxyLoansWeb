@@ -12,7 +12,9 @@ const MarketplaceEsign = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const verificationId = searchParams.get("verification_id") || searchParams.get("verificationId");
+  const assignmentIdParam = searchParams.get("assignmentId") || searchParams.get("assignment_id") || searchParams.get("id");
 
+  const [assignmentId, setAssignmentId] = useState(assignmentIdParam || "");
   const [step, setStep] = useState(verificationId ? "redirect" : "review"); // review | redirect | success
   const [aadharNumber, setAadharNumber] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -20,12 +22,13 @@ const MarketplaceEsign = () => {
   const [error, setError] = useState("");
   const [redirectUrl, setRedirectUrl] = useState("");
 
-  const handleVerifyCompletion = async () => {
+  const handleVerifyCompletion = async (currentAssignmentId) => {
     setLoading(true);
     setError("");
 
     try {
-      const res = await completeCashfreeEsign(loanRequestId);
+      const activeAssignmentId = currentAssignmentId || assignmentId || assignmentIdParam;
+      const res = await completeCashfreeEsign(loanRequestId, activeAssignmentId);
       // Expected response contains userId, loanRequestId. If successful, proceed.
       if (res?.status === 200 || res?.data) {
         setStep("success");
@@ -63,8 +66,13 @@ const MarketplaceEsign = () => {
 
     console.log({ loanData });
 
+    const foundId = loanData?.id ? String(loanData.id) : "";
+    if (foundId && !assignmentId) {
+      setAssignmentId(foundId);
+    }
+
     if (loanData.borrowerEsigned) {
-      navigate(`/enach/${loanRequestId}`);
+      navigate(`/enach/${loanRequestId}${foundId || assignmentId ? `?assignmentId=${foundId || assignmentId}` : ""}`);
     }
   } catch (error) {
     console.error("Error fetching loan status:", error);
@@ -86,7 +94,7 @@ const MarketplaceEsign = () => {
     gettingStatus()
     document.body.classList.add("oxy-redesign-active");
     if (verificationId) {
-      handleVerifyCompletion();
+      handleVerifyCompletion(assignmentIdParam);
     }
     return () => {
       document.body.classList.remove("oxy-redesign-active");
@@ -107,7 +115,8 @@ const MarketplaceEsign = () => {
     setError("");
 
     try {
-      const res = await startCashfreeEsign(loanRequestId, aadharNumber);
+      const activeAssignmentId = assignmentId || assignmentIdParam;
+      const res = await startCashfreeEsign(loanRequestId, aadharNumber, activeAssignmentId);
       if (res?.data && res?.data?.redirect_url) {
         const url = res.data.redirect_url;
         setRedirectUrl(url);

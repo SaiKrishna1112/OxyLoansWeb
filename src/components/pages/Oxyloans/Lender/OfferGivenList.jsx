@@ -71,7 +71,7 @@ const OfferGivenList = () => {
     try {
       // Execute esign API before generating the agreement
       if (offer?.loanRequestId) {
-        await completeEsign(offer.loanRequestId);
+        await completeEsign(offer.loanRequestId, offer?.id);
       }
       
       const response = await aggrementGenerationforLenderSide({
@@ -170,7 +170,7 @@ const OfferGivenList = () => {
         setEsignLoadingById((prev) => ({ ...prev, [rowId]: true }));
       }
 
-      const esignRes = await lenderBorrowerEsign(offer?.loanRequestId, aadharNumber);
+      const esignRes = await lenderBorrowerEsign(offer?.loanRequestId, aadharNumber, offer?.id);
       const data = esignRes?.data;
       if (data && (data.redirect_url || data.redirectUrl)) {
         const url = data.redirect_url || data.redirectUrl;

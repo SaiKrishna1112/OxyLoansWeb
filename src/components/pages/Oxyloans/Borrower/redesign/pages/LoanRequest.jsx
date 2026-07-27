@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -12,6 +12,7 @@ import {
   submitBorrowerLoanRequest,
   getBorrowerRequestAmount,
   getUserDetails,
+  getCibilBasedRoi,
 } from "../../../../../HttpRequest/afterlogin";
 import FeeConfigInfo from "../../FeeConfigInfo";
 import "../redesign.css";
@@ -20,7 +21,8 @@ const LoanRequest = () => {
   const navigate = useNavigate();
   const [requestAmount, setRequestAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [oxyscore,setOxyScore]=useState()
+  const [oxyscore, setOxyScore] = useState();
+  const [selectedTenure, setSelectedTenure] = useState(3);
   
   const [eligibleAmount, setEligibleAmount] = useState({
     amount: null,
@@ -61,8 +63,10 @@ const LoanRequest = () => {
     };
     fetchCibilRoi();
     getUserDetails().then(res=>{
-      setOxyScore(res.data.profileScore)
-    })
+      if (res?.data) {
+        setOxyScore(res.data.profileScore || res.data.cibilScore);
+      }
+    });
   }, [borrowerId]);
 
   useEffect(() => {
@@ -174,6 +178,28 @@ const LoanRequest = () => {
     ? Math.max(0, (eligibleAmountValue || 0) - (requestStatusInfo.requestAmount || 0))
     : eligibleAmountValue;
 
+  const applicableRoi = cibilInfo.data?.roi ? Number(cibilInfo.data.roi) : 24;
+  const parsedAmount = Number(requestAmount || 0);
+
+  const estimatedEmiInfo = useMemo(() => {
+    if (!parsedAmount || parsedAmount <= 0) return { emi: 0, totalInterest: 0, totalPayable: 0 };
+    const monthlyRate = applicableRoi / 12 / 100;
+    const n = selectedTenure;
+    if (monthlyRate === 0) {
+      return { emi: Math.round(parsedAmount / n), totalInterest: 0, totalPayable: parsedAmount };
+    }
+    const emi = Math.round((parsedAmount * monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1));
+    const totalPayable = emi * n;
+    const totalInterest = Math.max(0, totalPayable - parsedAmount);
+    return { emi, totalInterest, totalPayable };
+  }, [parsedAmount, selectedTenure, applicableRoi]);
+
+  const handlePresetClick = (pct) => {
+    if (!maxLimit) return;
+    const val = Math.round((maxLimit * pct) / 100);
+    setRequestAmount(String(val));
+  };
+
   const isSubmitDisabled =
     isSubmitting ||
     isEligibleLoading ||
@@ -255,40 +281,52 @@ const LoanRequest = () => {
           <div className="row g-3 mb-4">
             <div className="col-md-3">
               <div className="oxy-card mb-0 h-100 border-start border-primary border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Verified Income</span>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="text-muted small uppercase text-uppercase">Verified Income</span>
+                  <i className="fa-solid fa-wallet text-primary opacity-50"></i>
+                </div>
                 <h5 className="fw-bold text-dark mb-0">
                   {isEligibleLoading ? "..." : formatCurrency(verifiedMonthlyIncome)}
                 </h5>
               </div>
             </div>
-            {/*<div className="col-md-3">
-              <div className="oxy-card mb-0 h-100 border-start border-warning border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase"> Limit</span>
-                <h5 className="fw-bold text-dark mb-0">
-                  {isEligibleLoading ? "..." : `${processingFeePercentage}%`}
-                </h5>
-              </div>
-            </div>*/}
             <div className="col-md-3">
               <div className="oxy-card mb-0 h-100 border-start border-success border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Max Eligibility Amount</span>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="text-muted small uppercase text-uppercase">Max Eligibility Cap</span>
+                  <i className="fa-solid fa-shield-halved text-success opacity-50"></i>
+                </div>
                 <h5 className="fw-bold text-success mb-0">
                   {isEligibleLoading ? "..." : formatCurrency(eligibleAmountValue)}
                 </h5>
               </div>
             </div>
             <div className="col-md-3">
-              <div className="oxy-card mb-0 h-100 border-start border-secondary border-3" style={{ padding: "16px 20px" }}>
-                <span className="text-muted d-block small mb-1 uppercase text-uppercase">Oxy Score</span>
+              <div className="oxy-card mb-0 h-100 border-start border-info border-3" style={{ padding: "16px 20px" }}>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="text-muted small uppercase text-uppercase">Oxy Score</span>
+                  <i className="fa-solid fa-chart-line text-info opacity-50"></i>
+                </div>
                 <h5 className="fw-bold text-dark mb-0">
                   {cibilInfo.loading ? "..." : oxyscore != null ? `${oxyscore}` : "—"}
                 </h5>
               </div>
             </div> 
+            {/* <div className="col-md-3">
+              <div className="oxy-card mb-0 h-100 border-start border-warning border-3" style={{ padding: "16px 20px" }}>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <span className="text-muted small uppercase text-uppercase">Applicable Rate (ROI)</span>
+                  <i className="fa-solid fa-percent text-warning opacity-50"></i>
+                </div>
+                <h5 className="fw-bold text-dark mb-0">
+                  {cibilInfo.loading ? "..." : `${applicableRoi}% p.a.`}
+                </h5>
+              </div>
+            </div>  */}
           </div>
 
-          <div className="align-items-center justify-content-center">
-            <div className="col-lg-8">
+          <div className="row justify-content-center">
+            <div className="col-lg-9 col-xl-8">
               {eligibleErrorMessage ? (
                 <div className="oxy-card text-center py-5">
                   <div 
@@ -322,16 +360,25 @@ const LoanRequest = () => {
                   </button>
                 </div>
               ) : (
-                <div className="oxy-card">
-                  
-                  <h5 className="fw-bold mb-3">Request Loan Amount</h5>
-                  <span className="text-muted small d-block mb-4">
-                    Please key in the amount you would like to raise. We will share this request with our lender group.
-                  </span>
-                  {requestStatusInfo.status === "PARTIALLYPROCESSING" && !(maxLimit) === 0 &&(
+                <div className="oxy-card p-4">
+                  <div className="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                      <h5 className="fw-bold mb-1">Request Loan Amount</h5>
+                      <span className="text-muted small d-block">
+                        Enter the amount you wish to borrow or choose a quick preset below.
+                      </span>
+                    </div>
+                    {maxLimit > 0 && (
+                      <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill fw-semibold small">
+                        Cap: {formatCurrency(maxLimit)}
+                      </span>
+                    )}
+                  </div>
+
+                  {requestStatusInfo.status === "PARTIALLYPROCESSING" && maxLimit > 0 && (
                     <div className="alert alert-info py-2 px-3 small mb-4">
                       <i className="fa-solid fa-circle-info me-2"></i>
-                      You have an active request of <strong>{formatCurrency(requestStatusInfo.requestAmount)}</strong> in <strong>PARTIALLY_PROCESSING</strong> status (with <strong>{formatCurrency(requestStatusInfo.pendingAmount)}</strong> still pending match). You can apply for a new loan request for the remaining unused limit: <strong>{formatCurrency(maxLimit)}</strong>.
+                      Active request of <strong>{formatCurrency(requestStatusInfo.requestAmount)}</strong> in <strong>PARTIALLY_PROCESSING</strong> ({formatCurrency(requestStatusInfo.pendingAmount)} pending match). You can apply for the remaining unused limit: <strong>{formatCurrency(maxLimit)}</strong>.
                     </div>
                   )}
 
@@ -341,26 +388,100 @@ const LoanRequest = () => {
 
                   <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                      <label className="form-label text-muted small uppercase text-uppercase">Required Amount (₹)</label>
-                      <input 
-                        type="number" 
-                        className="form-control rounded-3 py-3" 
-                        min="500"
-                        max={maxLimit || undefined}
-                        value={requestAmount} 
-                        placeholder="e.g. 50000" 
-                        onChange={(e) => setRequestAmount(e.target.value)}
-                        required
-                      />
-                      {maxLimit && (
-                        <div className="form-text small text-muted mt-2">
-                          Your maximum allowed borrowing cap: <strong>{formatCurrency(maxLimit)}</strong>
-                          {requestStatusInfo.status === "PARTIALLYPROCESSING" && (
-                            <span className="text-warning ms-1">(Remaining pending amount from partial match)</span>
-                          )}
+                      <label className="form-label text-muted small uppercase text-uppercase fw-semibold">Required Loan Amount (₹)</label>
+                      <div className="input-group input-group-lg">
+                        <span className="input-group-text bg-light text-muted fw-bold">₹</span>
+                        <input 
+                          type="number" 
+                          className="form-control fw-bold fs-5" 
+                          min="500"
+                          max={maxLimit || undefined}
+                          value={requestAmount} 
+                          placeholder="e.g. 50000" 
+                          onChange={(e) => setRequestAmount(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      {/* Quick Select Preset Chips */}
+                      {maxLimit > 0 && (
+                        <div className="mt-3">
+                          <span className="text-muted small me-2 d-block d-sm-inline mb-2 mb-sm-0">Quick Presets:</span>
+                          <div className="d-inline-flex flex-wrap gap-2">
+                            {[25, 50, 75, 100].map((pct) => {
+                              const val = Math.round((maxLimit * pct) / 100);
+                              const isSelected = Number(requestAmount) === val;
+                              return (
+                                <button
+                                  key={pct}
+                                  type="button"
+                                  className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
+                                  style={{ borderRadius: "20px", fontSize: "12px", padding: "4px 12px" }}
+                                  onClick={() => handlePresetClick(pct)}
+                                >
+                                  {pct === 100 ? `Max (${formatCurrency(val)})` : `${pct}% (${formatCurrency(val)})`}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Capacity Progress Bar */}
+                      {maxLimit > 0 && parsedAmount > 0 && (
+                        <div className="mt-3">
+                          <div className="d-flex justify-content-between text-muted small mb-1">
+                            <span>Requested: {formatCurrency(parsedAmount)}</span>
+                            <span>Cap: {formatCurrency(maxLimit)}</span>
+                          </div>
+                          <div className="progress" style={{ height: "6px" }}>
+                            <div 
+                              className={`progress-bar ${parsedAmount > maxLimit ? "bg-danger" : "bg-success"}`} 
+                              role="progressbar" 
+                              style={{ width: `${Math.min(100, Math.round((parsedAmount / maxLimit) * 100))}%` }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
+
+                    {/* Dynamic Real-Time Live EMI Preview Card */}
+                    {parsedAmount > 0 && (
+                      <div className="p-3 mb-4 rounded-3 border bg-light">
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <span className="fw-bold text-dark small"><i className="fa-solid fa-calculator text-primary me-2" />Estimated EMI Calculator</span>
+                          {/* Tenure Pills */}
+                          <div className="btn-group btn-group-sm" role="group">
+                            {[3, 6, 12].map((months) => (
+                              <button
+                                key={months}
+                                type="button"
+                                className={`btn ${selectedTenure === months ? "btn-primary" : "btn-outline-primary"}`}
+                                style={{ fontSize: "11px" }}
+                                onClick={() => setSelectedTenure(months)}
+                              >
+                                {months} M
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="row g-2 text-center">
+                          <div className="col-4 border-end">
+                            <span className="text-muted d-block small" style={{ fontSize: "11px" }}>Est. Monthly EMI</span>
+                            <span className="fw-bold text-primary fs-6">{formatCurrency(estimatedEmiInfo.emi)}</span>
+                          </div>
+                          <div className="col-4 border-end">
+                            <span className="text-muted d-block small" style={{ fontSize: "11px" }}>Est. Total Interest</span>
+                            <span className="fw-bold text-dark fs-6">{formatCurrency(estimatedEmiInfo.totalInterest)}</span>
+                          </div>
+                          <div className="col-4">
+                            <span className="text-muted d-block small" style={{ fontSize: "11px" }}>Tenure</span>
+                            <span className="fw-bold text-dark fs-6">{selectedTenure} Months</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="d-flex justify-content-end gap-2 border-top pt-4">
                       <button 
@@ -383,7 +504,7 @@ const LoanRequest = () => {
               )}
             </div>
 
-            <div className="col-lg-8">
+            <div className="col-lg-9 col-xl-8 mt-4">
               <FeeConfigInfo />
             </div>
           </div>

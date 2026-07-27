@@ -38,6 +38,14 @@ import "../redesign.css";
 const LENDER_PIN_COLOR = "#0040e0";
 const PRIMARY = "#0040e0";
 
+const formatCurrency = (amount) => {
+  const numericValue = Number(amount || 0);
+  return `₹ ${numericValue.toLocaleString("en-IN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+};
+
 const createLenderPinIcon = () =>
   L.divIcon({
     className: "custom-map-pin-wrapper",
@@ -391,73 +399,103 @@ const Dashboard = () => {
             <QuickActions />
 
             {/* Bento Grid */}
-            <div className="row g-4">
-              {/* Next Best Action Card & Recent Activity */}
-              {/* <div className="col-lg-7">
-                <div className="oxy-card h-100 d-flex flex-column justify-content-between">
+            <div className="row g-4 mb-4">
+              {/* Next Best Action Card & Current Application Status */}
+              <div className="col-lg-7">
+                <div className="oxy-card h-100 d-flex flex-column justify-content-between p-4">
                   <div>
-                    <h5 className="fw-bold mb-4 text-dark">
+                    <h5 className="fw-bold mb-3 text-dark">
                       <i className="fa-solid fa-bolt text-warning me-2"></i>
-                      Next Recommended Action
+                      Next Recommended Step
                     </h5>
                     
-                    <div className="p-4 rounded-3 d-flex align-items-start gap-3 mb-4" style={{ backgroundColor: "var(--oxy-surface-low)" }}>
+                    <div className="p-4 rounded-3 d-flex align-items-start gap-3 mb-3 border bg-light">
                       <div className="p-3 bg-white rounded-3 text-primary shadow-sm" style={{ flexShrink: 0 }}>
-                        <i className="fa-solid fa-file-invoice fa-lg"></i>
+                        <i className="fa-solid fa-circle-check fa-xl text-primary"></i>
                       </div>
                       <div>
-                        <h6 className="fw-bold mb-1">
-                          {profileDetails?.kycStatus !== true 
-                            ? "Complete KYC & Aadhaar Verification" 
-                            : loansData.apiData.length > 0 
+                        <h6 className="fw-bold mb-1 text-dark">
+                          {profileDetails?.personalDetailsInfo !== true && profileDetails?.kycStatus !== true 
+                            ? "Complete Profile & Verification" 
+                            : !hasActiveRequest 
+                            ? "Apply for a Loan Limit" 
+                            : loansData.apiData?.length > 0 
                             ? "Review Received Proposals" 
                             : "Set Up Auto-Pay Mandate"}
                         </h6>
                         <p className="text-muted small mb-3">
-                          {profileDetails?.kycStatus !== true 
-                            ? "Provide pan and identity details to complete your file verification." 
-                            : loansData.apiData.length > 0 
-                            ? "Compare interests, accept a bid, and execute agreements online." 
-                            : "Configure eNACH auto-pay to handle EMIs without penalties."}
+                          {profileDetails?.personalDetailsInfo !== true && profileDetails?.kycStatus !== true 
+                            ? "Fill personal details, address, and verify your KYC documents." 
+                            : !hasActiveRequest 
+                            ? "Select a required amount within your eligible limit and submit your request." 
+                            : loansData.apiData?.length > 0 
+                            ? "Compare lender interest rates, accept a bid, and complete agreement." 
+                            : "Configure eNACH auto-pay to handle EMIs smoothly."}
                         </p>
                         
                         <button 
-                          className="oxy-btn-primary py-2 px-3 text-xs" 
+                          className="oxy-btn-primary py-2 px-4" 
                           onClick={() => {
-                            if (profileDetails?.kycStatus !== true) navigate("/borrowerProfile");
-                            else if (loansData.apiData.length > 0) navigate("/borrowerLoansInitiated");
-                            else navigate("/my-marketplace-loans");
+                            if (profileDetails?.personalDetailsInfo !== true && profileDetails?.kycStatus !== true) navigate("/borrowerProfile");
+                            else if (!hasActiveRequest) navigate("/borrowerLoanRequestCreate");
+                            else if (loansData.apiData?.length > 0) navigate("/borrowerLoansInitiated");
+                            else navigate("/borrowerLoansInitiated");
                           }}
                         >
-                          Get Started →
+                          Continue Flow →
                         </button>
                       </div>
                     </div>
+                  </div>
 
-                    <h5 className="fw-bold mb-3 text-dark">Current Application Status</h5>
-                    <div className="d-flex justify-content-between align-items-center p-3 border rounded-3 mb-3 bg-white">
+                  <div>
+                    <span className="text-muted d-block small mb-1 uppercase text-uppercase fw-semibold">Current Phase Status</span>
+                    <div className="d-flex justify-content-between align-items-center p-3 border rounded-3 bg-white">
                       <div>
-                        <span className="text-muted d-block small">Phase</span>
                         <span className="fw-bold text-dark">{currentStatusText}</span>
                       </div>
-                      <span className="badge bg-success-light text-success rounded-pill px-3 py-2 fw-semibold">
-                        Active Tracker
+                      <span className="badge bg-success-subtle text-success rounded-pill px-3 py-2 fw-semibold">
+                        <i className="fa-solid fa-signal me-1"></i> Live Tracker
                       </span>
                     </div>
                   </div>
                 </div>
-              </div> */}
+              </div>
 
-              {/* Recent Activity Timeline card */}
-              {/* <div className="col-lg-5">
-                <div className="oxy-card h-100">
-                  <h5 className="fw-bold mb-4 text-dark">
-                    <i className="fa-solid fa-clock-rotate-left text-primary me-2"></i>
-                    Recent Timeline Events
+              {/* Quick Summary Metrics Card */}
+              <div className="col-lg-5">
+                <div className="oxy-card h-100 p-4">
+                  <h5 className="fw-bold mb-3 text-dark">
+                    <i className="fa-solid fa-chart-pie text-primary me-2"></i>
+                    Account Overview
                   </h5>
-                  <Timeline activities={recentActivitiesList} />
+                  <div className="d-flex flex-column gap-3">
+                    <div className="p-3 rounded-3 border bg-light d-flex justify-content-between align-items-center">
+                      <div>
+                        <span className="text-muted d-block small">Eligible Loan Cap</span>
+                        <span className="fw-bold text-dark fs-6">{formatCurrency(eligibleInfo.amount)}</span>
+                      </div>
+                      <i className="fa-solid fa-wallet fa-xl text-primary opacity-50"></i>
+                    </div>
+
+                    <div className="p-3 rounded-3 border bg-light d-flex justify-content-between align-items-center">
+                      <div>
+                        <span className="text-muted d-block small">Total Disbursed</span>
+                        <span className="fw-bold text-success fs-6">{formatCurrency(totalDisbursed)}</span>
+                      </div>
+                      <i className="fa-solid fa-circle-dollar-to-slot fa-xl text-success opacity-50"></i>
+                    </div>
+
+                    <div className="p-3 rounded-3 border bg-light d-flex justify-content-between align-items-center">
+                      <div>
+                        <span className="text-muted d-block small">Outstanding Balance</span>
+                        <span className="fw-bold text-warning fs-6">{formatCurrency(totalOutstanding)}</span>
+                      </div>
+                      <i className="fa-solid fa-clock-rotate-left fa-xl text-warning opacity-50"></i>
+                    </div>
+                  </div>
                 </div>
-              </div> */}
+              </div>
             </div>
 
             {/* Map visualizer for nearby lenders */}

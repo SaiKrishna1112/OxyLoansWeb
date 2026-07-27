@@ -48,7 +48,7 @@ axios.interceptors.response.use(
                   text: "Session regenerated successfully. Reloading...",
                   icon: "success",
                   showConfirmButton: false,
-                  timer: 5000
+                  // timer: 5000
                 });
               } catch (err) {
                 console.error("Failed to regenerate session token", err);
@@ -2017,7 +2017,7 @@ export const getNewSessionTime = async () => {
   const userId = getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/USER/accessTokenGeneration`,
+    `${userId}accessTokenGeneration`,
     "GET",
     token
   );
@@ -3987,10 +3987,17 @@ export const getBorrowerEmiScheduleForLoan = async (loanId) =>
     headers: marketplaceHeaders(),
   });
 
-export const completeEsign = async (loanRequestId) =>
-  axios.post(`${MARKETPLACE_URL}/v1/marketplace/agreement/${loanRequestId}/esign-complete`, {}, {
+export const completeEsign = async (loanRequestId, assignmentId) => {
+  const params = {};
+  if (assignmentId) params.assignmentId = assignmentId;
+  const body = {};
+  if (assignmentId) body.assignmentId = assignmentId;
+
+  return axios.post(`${MARKETPLACE_URL}/v1/marketplace/agreement/${loanRequestId}/esign-complete`, body, {
+    params,
     headers: marketplaceHeaders(),
   });
+};
 
 // ============================================================
 // LENDER PORTFOLIO APIs  (Task 7)
@@ -4155,7 +4162,7 @@ export const getPCreditReportDoc = async () => {
   const userId = getUserId();
   const res = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/download/CREDIT_REPORT`,
+    `${userId}/download/CREDITREPORT`,
     "GET",
     token
   );
@@ -4200,43 +4207,66 @@ export const saveBorrowerReferenceDetails = (payload) =>
     headers: { accessToken: getToken(), "Content-Type": "application/json" },
   });
 
-export const lenderBorrowerEsign = async (loanId,aadharNumber) => {
+export const lenderBorrowerEsign = async (loanId, aadharNumber, assignmentId) => {
   const token = getToken();
   const userId = getUserId();
+  const queryParams = [];
+  if (aadharNumber) queryParams.push(`aadharNumber=${encodeURIComponent(aadharNumber)}`);
+  if (assignmentId) queryParams.push(`assignmentId=${encodeURIComponent(assignmentId)}`);
+  const queryString = queryParams.length ? `?${queryParams.join("&")}` : "";
+
+  const body = {};
+  if (assignmentId) body.assignmentId = assignmentId;
+
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/loan/${loanId}/lenderBorrowerEsign?aadharNumber=${aadharNumber}`,
+    `${userId}/loan/${loanId}/lenderBorrowerEsign${queryString}`,
     "POST",
     token,
-    {}
+    body
   );
   return response;
 };
 
 // Cashfree eSign + eNACH Frontend APIs
-export const startCashfreeEsign = async (loanRequestId, aadharNumber) => {
+export const startCashfreeEsign = async (loanRequestId, aadharNumber, assignmentId) => {
   const token = getToken();
   const userId = getUserId();
+  const params = {};
+  if (aadharNumber) params.aadharNumber = aadharNumber;
+  if (assignmentId) params.assignmentId = assignmentId;
+
+  const body = {};
+  if (assignmentId) body.assignmentId = assignmentId;
+
   return axios.post(
     `${API_BASE_URL}${userId}/loan/${loanRequestId}/lenderBorrowerEsign`,
-    {},
+    body,
     {
-      params: { aadharNumber },
+      params,
       headers: {
         "Content-Type": "application/json",
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
 };
 
-export const completeCashfreeEsign = async (loanRequestId) => {
+export const completeCashfreeEsign = async (loanRequestId, assignmentId) => {
   const token = getToken();
   const userId = getUserId();
+  const params = {};
+  if (assignmentId) params.assignmentId = assignmentId;
+
+  const body = {};
+  if (assignmentId) body.assignmentId = assignmentId;
+
   return axios.post(
     `${API_BASE_URL}${userId}/loan/${loanRequestId}/uploadAgreementForLRAndBr`,
-    { },
+    body,
     {
+      params,
       headers: {
         "Content-Type": "application/json",
         accessToken: token,

@@ -10,6 +10,7 @@ const LenderEsign = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const verificationId = searchParams.get("verification_id") || searchParams.get("verificationId");
+  const assignmentId = searchParams.get("assignmentId") || searchParams.get("assignment_id") || searchParams.get("id");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -22,14 +23,14 @@ const LenderEsign = () => {
     } else {
       startLenderEsign();
     }
-  }, [loanRequestId, verificationId]);
+  }, [loanRequestId, verificationId, assignmentId]);
 
   const startLenderEsign = async () => {
     setLoading(true);
     setIsStarting(true);
     setError("");
     try {
-      const res = await lenderBorrowerEsign(loanRequestId);
+      const res = await lenderBorrowerEsign(loanRequestId, null, assignmentId);
       const data = res?.data;
       if (data && (data.redirect_url || data.redirectUrl)) {
         const url = data.redirect_url || data.redirectUrl;
@@ -60,7 +61,7 @@ const LenderEsign = () => {
     setIsStarting(false);
     setError("");
     try {
-      const res = await completeCashfreeEsign(loanRequestId);
+      const res = await completeCashfreeEsign(loanRequestId, assignmentId);
       if (res?.status === 200 || res?.data) {
         setSuccess(true);
         Swal.fire({

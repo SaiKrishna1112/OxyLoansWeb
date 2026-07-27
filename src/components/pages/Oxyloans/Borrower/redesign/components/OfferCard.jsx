@@ -249,7 +249,7 @@ const OfferCard = ({
               <i className="fa-solid fa-receipt me-1"></i> Repayment
             </Link>
           ) : */}
-          {borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement && offer.lenderEsigned && offer.borrowerEsigned && showEnachBtn ? (
+          {borrowerStatus === "LOANACCEPTED" && offer.borrowerAggrement && offer.lenderEsigned && (offer.borrowerEsigned === true || offer.borrowerEsignStatus === true) && showEnachBtn ? (
             <Link 
               to={`/enach/${offer.loanRequestId}`}
               className="oxy-btn-primary flex-fill btn-info text-white text-center d-flex align-items-center justify-content-center"
