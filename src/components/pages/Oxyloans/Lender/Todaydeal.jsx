@@ -10,6 +10,7 @@ import "./InvoiceGrid.css";
 import SideBar from "../../../SideBar/SideBar";
 import { Table, Pagination, Progress, Space } from "antd";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
+import ActiveOfferPopup from "./ActiveOfferPopup";
 
 const Todaydeal = () => {
   const navigate = useNavigate();
@@ -406,6 +407,7 @@ const Todaydeal = () => {
         </div>
         {/* /Page Wrapper */}
       </div>
+      <ActiveOfferPopup />
       {/* /Main Wrapper */}
     </>
   );

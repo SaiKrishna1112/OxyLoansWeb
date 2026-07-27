@@ -98,6 +98,12 @@ const offerAdminApi = {
   generateOffers: async (segment, limit = 5) =>
     unwrap(await request("POST", "/offers/generate", { data: { segment, limit } })),
 
+  /** Paginated offer-eligible lenders for Generate Offers preview (pageSize default 50). */
+  getEligibleLendersPage: async (segment, page = 1, pageSize = 50) =>
+    unwrap(await request("GET", `/segments/${encodeURIComponent(segment)}/eligible-lenders`, {
+      params: { page, pageSize },
+    })),
+
   getAllPendingOffers: async (limitPerSegment = 100) => {
     const lists = await Promise.all(
       OFFER_SEGMENTS.map((s) =>

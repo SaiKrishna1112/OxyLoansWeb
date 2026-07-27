@@ -4,10 +4,11 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import "./InvoiceGrid.css";
+import "./ParticipateOfferBanners.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
+import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -71,6 +72,7 @@ const Participatedeal = () => {
   const hasActiveOffer =
     deal.apidata &&
     !hasActiveSubscription &&
+    isMandatoryFeeDeal(deal.apidata) &&
     hasActiveReactivationOffer(deal.apidata);
   // First claim: offer applies only when amount meets minimum (₹10,000+)
   const offerAppliesNow =
@@ -785,41 +787,35 @@ const Participatedeal = () => {
 
                 {/* 1st time — offer active, amount not entered yet */}
                 {hasActiveOffer && participationAmount === 0 && !offerIsClaimed && (
-                  <div className="alert alert-info text-center m-4" role="alert">
-                    <h5 className="mb-2">Special Offer — Use Once</h5>
-                    <p className="mb-0">
+                  <div className="participate-offer-banner is-info" role="status">
+                    <h5>Special Offer — Use Once</h5>
+                    <p>
                       {deal.apidata?.offerMessage ||
                         `Enter at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
                           "en-IN"
-                        )}. Your participation fee is free one time, and a free 1-month membership starts after that eligible participation. Lower amounts pay the normal fee and keep this offer ACTIVE.`}
+                        )}. Your participation fee is free one time, and a free 1-month membership starts after that eligible participation. Amount below ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                          "en-IN"
+                        )} pays normal fee and keeps the offer ACTIVE.`}
                     </p>
                   </div>
                 )}
 
                 {/* Offer active but amount below minimum — normal 1% + GST fee applies */}
                 {offerAmountTooLow && !offerIsClaimed && (
-                  <div className="alert alert-warning text-center m-4" role="alert">
-                    <h5 className="mb-2">Amount below offer minimum</h5>
-                    <p className="mb-1">
-                      For ₹{participationAmount.toLocaleString("en-IN")}:{" "}
-                      <strong>
-                        normal participation fee applies (1% + 18% GST) = ₹
-                        {Math.round(participationAmount * 0.01 * 1.18).toLocaleString("en-IN")}
-                      </strong>
-                      .
-                    </p>
-                    <p className="mb-0">
-                      Participate with at least ₹{OFFER_MIN_PARTICIPATION.toLocaleString("en-IN")} to
-                      waive the fee and claim this offer. Your offer stays <strong>ACTIVE</strong>.
+                  <div className="participate-offer-banner is-warning" role="status">
+                    <h5>Amount below offer minimum</h5>
+                    <p>
+                      Amount below ₹{OFFER_MIN_PARTICIPATION.toLocaleString("en-IN")} pays normal
+                      fee and keeps the offer ACTIVE.
                     </p>
                   </div>
                 )}
 
                 {/* Eligible amount — fee waived; claim happens after successful participate */}
                 {offerAppliesNow && !offerIsClaimed && (
-                  <div className="alert alert-success text-center m-4" role="alert">
-                    <h5 className="mb-2">Ready to claim your offer</h5>
-                    <p className="mb-0">
+                  <div className="participate-offer-banner is-success" role="status">
+                    <h5>Ready to claim your offer</h5>
+                    <p>
                       For ₹{participationAmount.toLocaleString("en-IN")}: no participation fee.
                       After you click Participate, this offer becomes CLAIMED and a free{" "}
                       {deal.apidata?.freeSubscriptionMonths || 1}-month membership is activated.
@@ -829,14 +825,14 @@ const Participatedeal = () => {
 
                 {/* Claimed offer — show claim day + 1-month subscription validity (not "active offer") */}
                 {showClaimedOfferMembershipBanner && (
-                  <div className="alert alert-success text-center m-4" role="alert">
-                    <h5 className="mb-2">Your offer is claimed</h5>
-                    <p className="mb-1">
+                  <div className="participate-offer-banner is-success" role="status">
+                    <h5>Your offer is claimed</h5>
+                    <p>
                       {deal.apidata?.claimedAt
                         ? `You claimed this offer on ${formatOfferDay(deal.apidata.claimedAt)}.`
                         : "You have already claimed this one-time offer."}
                     </p>
-                    <p className="mb-0 fw-semibold">
+                    <p className="fw-semibold">
                       {deal.apidata?.subscriptionValidityDate || deal.apidata?.validityDate
                         ? `Your free 1-month membership is valid until ${formatOfferDay(
                             deal.apidata.subscriptionValidityDate || deal.apidata.validityDate
@@ -849,9 +845,9 @@ const Participatedeal = () => {
 
                 {/* Active paid / offer membership without claim metadata */}
                 {hasActiveSubscription && !offerIsClaimed && (
-                  <div className="alert alert-success text-center m-4" role="alert">
-                    <h5 className="mb-2">Membership active — no deal fee</h5>
-                    <p className="mb-0">
+                  <div className="participate-offer-banner is-success" role="status">
+                    <h5>Membership active — no deal fee</h5>
+                    <p>
                       Your MONTHLY membership is active
                       {deal.apidata?.validityDate || deal.apidata?.subscriptionValidityDate
                         ? ` until ${formatOfferDay(
@@ -865,9 +861,9 @@ const Participatedeal = () => {
 
                 {/* Offer used but membership not active */}
                 {offerAlreadyUsed && (
-                  <div className="alert alert-secondary text-center m-4" role="alert">
-                    <h5 className="mb-2">Offer already claimed</h5>
-                    <p className="mb-0">
+                  <div className="participate-offer-banner is-muted" role="status">
+                    <h5>Offer already claimed</h5>
+                    <p>
                       {deal.apidata?.claimedAt
                         ? `You claimed this offer on ${formatOfferDay(deal.apidata.claimedAt)}. `
                         : ""}

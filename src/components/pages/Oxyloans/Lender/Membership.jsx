@@ -22,6 +22,7 @@ import {
   isActiveSubscriptionOffer,
   resolveDiscountPercent,
 } from "./subscriptionOfferUtils";
+import ActiveOfferPopup from "./ActiveOfferPopup";
 import {
   registersuccess,
   WarningAlertwithdrow,
@@ -645,6 +646,10 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
         </div>
         {/*Page wrapper */}
       </div>
+      <ActiveOfferPopup
+        offerTypeFilter="SUBSCRIPTION_DISCOUNT"
+        dismissKey="oxy_subscription_offer_popup_membership"
+      />
     </>
   );
 });

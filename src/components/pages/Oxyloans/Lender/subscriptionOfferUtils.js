@@ -48,6 +48,9 @@ export function isActiveSubscriptionOffer(offer) {
   if (!offer) return false;
   if (normalizeOfferType(offer) !== "SUBSCRIPTION_DISCOUNT") return false;
   if (offer.redeemed === true || offer.redeemed === "true") return false;
+  if (offer.claimStatus === "CLAIMED" || offer.status === "CLAIMED") return false;
+  // Only offers enabled for this lender (not other-segment catalog rows)
+  if (offer.eligible === false || offer.eligible === "false") return false;
 
   const status = (offer.status || "").toUpperCase();
   if (status && status !== "ACTIVE" && status !== "APPROVED") return false;

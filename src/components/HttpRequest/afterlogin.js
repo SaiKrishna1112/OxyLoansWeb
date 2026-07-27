@@ -3250,6 +3250,15 @@ export const getUserReactivationOffers = async () => {
       o.redeemed === "true" ||
       o.claimStatus === "CLAIMED" ||
       o.status === "CLAIMED";
+    const eligible =
+      !redeemed &&
+      (o.eligible === true ||
+        o.eligible === "true" ||
+        (o.eligible == null && !redeemed)); // backward compatible if API omits flag
+    const segmentCode =
+      typeof o.segment === "string"
+        ? o.segment
+        : o.segment?.name || o.segmentCode || null;
     return {
       offerId: o.id ?? o.offerId,
       title: o.title,
@@ -3260,6 +3269,10 @@ export const getUserReactivationOffers = async () => {
       claimStatus: redeemed ? "CLAIMED" : o.claimStatus || "ACTIVE",
       ctaUrl: o.ctaUrl,
       redeemed,
+      eligible,
+      segment: segmentCode,
+      segmentLabel: o.segmentLabel || null,
+      disabledReason: o.disabledReason || null,
       assignedAt: o.approvedAt || o.assignedAt || o.generatedAt,
       claimedAt: o.claimedAt || null,
       expiresAt: o.expiresAt || null,
@@ -3285,6 +3298,24 @@ export const getLenderAIEarnings = async (lenderId, fy, from, to) => {
   if (params.length) url += "?" + params.join("&");
   const token = getToken();
   const response = await axios.get(url, { headers: { accessToken: token } });
+  return response;
+};
+
+export const getLenderFyReport = async (lenderId, fromDate, toDate) => {
+  const token = getToken();
+  const response = await axios.get(
+    `${AI_BASE_URL}lender/${lenderId}/fy-report?from=${fromDate}&to=${toDate}`,
+    { headers: { accessToken: token } }
+  );
+  return response;
+};
+
+export const getLenderFyReportPdf = async (lenderId, fromDate, toDate) => {
+  const token = getToken();
+  const response = await axios.get(
+    `${AI_BASE_URL}lender/${lenderId}/fy-report/pdf?from=${fromDate}&to=${toDate}`,
+    { headers: { accessToken: token } }
+  );
   return response;
 };
 
