@@ -22,6 +22,8 @@ import {
   FaUserPlus,
   FaEnvelope,
   FaWhatsapp,
+  FaSync,
+  FaFilePdf,
 } from "react-icons/fa";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
@@ -63,6 +65,44 @@ import "./AdminAIDashboard.css";
 import AdminAIUserGeographyPanel from "./AdminAIUserGeographyPanel";
 import AdminAILenderAnalyticsPanel from "./AdminAILenderAnalyticsPanel";
 import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
+import AdminAIAutoEmailDraftModal from "./AdminAIAutoEmailDraftModal";
+import { exportTopReferrersLentTreePdf } from "./exportTopReferrersLentTreePdf";
+
+const ADMIN_AI_DASHBOARD_CACHE_KEY = "oxyloans.adminAIDashboard.bootstrap.v1";
+const ADMIN_AI_DASHBOARD_CACHE_TTL_MS = 30 * 60 * 1000;
+
+const readAdminAIDashboardCache = () => {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_AI_DASHBOARD_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.savedAt || Date.now() - parsed.savedAt > ADMIN_AI_DASHBOARD_CACHE_TTL_MS) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const writeAdminAIDashboardCache = (payload) => {
+  try {
+    sessionStorage.setItem(
+      ADMIN_AI_DASHBOARD_CACHE_KEY,
+      JSON.stringify({ ...payload, savedAt: Date.now() })
+    );
+  } catch {
+    // ignore quota / private mode
+  }
+};
+
+const clearAdminAIDashboardCache = () => {
+  try {
+    sessionStorage.removeItem(ADMIN_AI_DASHBOARD_CACHE_KEY);
+  } catch {
+    // ignore
+  }
+};
 
 const activeLendersPageSize = 20;
 const adminUserPageSize = 20;
@@ -267,6 +307,26 @@ const isEliminatedUserView = (userView) => String(userView || "").startsWith("le
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
 const fmtMoney = (n) => `Rs ${fmtNum(n)}`;
+/** Official compact INR for rankings (Cr / Lakh). */
+const fmtOfficialMoney = (n) => {
+  const value = Number(n);
+  if (!Number.isFinite(value)) return String(n ?? "");
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 10000000) {
+    return `${sign}₹ ${(abs / 10000000).toFixed(2)} Cr`;
+  }
+  if (abs >= 100000) {
+    return `${sign}₹ ${(abs / 100000).toFixed(2)} L`;
+  }
+  return `${sign}₹ ${Math.round(abs).toLocaleString("en-IN")}`;
+};
+const shortLenderLabel = (row) => {
+  const code = row?.userCode || (row?.lenderId ? `LR${row.lenderId}` : "");
+  const name = String(row?.name || "").trim();
+  const shortName = name.length > 16 ? `${name.slice(0, 15)}…` : name;
+  return shortName ? `${code} · ${shortName}` : (code || "Lender");
+};
 const pickNumber = (...values) => {
   for (const value of values) {
     if (value != null && value !== "" && !Number.isNaN(Number(value))) {
@@ -996,6 +1056,7 @@ const AdminAIDashboard = () => {
   const [exportingCardKey, setExportingCardKey] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [campaignModalState, setCampaignModalState] = useState(null);
+  const [autoEmailModalState, setAutoEmailModalState] = useState(null);
   const [showReferralRegistrations, setShowReferralRegistrations] = useState(false);
   const [showYearWiseReferrals, setShowYearWiseReferrals] = useState(false);
   const [referralDate, setReferralDate] = useState(() => defaultParticipationDate());
@@ -1007,6 +1068,8 @@ const AdminAIDashboard = () => {
   const [selectedTopReferrerLimit, setSelectedTopReferrerLimit] = useState(null);
   const [topReferrersLoading, setTopReferrersLoading] = useState(false);
   const [topReferrerStatusesLoading, setTopReferrerStatusesLoading] = useState(false);
+  const [topReferrersTreePdfExporting, setTopReferrersTreePdfExporting] = useState(false);
+  const [topReferrersTreePdfProgress, setTopReferrersTreePdfProgress] = useState("");
   const [selectedTopReferrer, setSelectedTopReferrer] = useState(null);
   const [selectedTopReferrerDetail, setSelectedTopReferrerDetail] = useState(null);
   const [selectedTopReferrerLoading, setSelectedTopReferrerLoading] = useState(false);
@@ -1027,7 +1090,21 @@ const AdminAIDashboard = () => {
     || selectedQualityChipKey)
   );
 
-  const loadStats = async () => {
+  const loadStats = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = readAdminAIDashboardCache();
+      if (cached?.stats) {
+        setStats(cached.stats);
+        if (cached.charts) setCharts(cached.charts);
+        if (Array.isArray(cached.referralYearCards) && cached.referralYearCards.length) {
+          setReferralYearCards(cached.referralYearCards);
+          setReferralYearGrandTotal(pickNumber(cached.referralYearGrandTotal));
+        }
+        setLoading(false);
+        setLoadError("");
+        return;
+      }
+    }
     setLoading(true);
     setLoadError("");
     participationLenderRowsCache = null;
@@ -1073,7 +1150,7 @@ const AdminAIDashboard = () => {
 
       const participationBandStats = await resolveParticipationBandStats(registeredUsersData);
 
-      setStats({
+      const nextStats = {
         allUsers: pickNumber(
           registeredUsersData.registeredUsersCount,
           registrationBreakdown.registeredUsers,
@@ -1132,8 +1209,8 @@ const AdminAIDashboard = () => {
         testDeals: pickNumber(registeredUsersData.testDealsCount),
         todayDealsCreated: pickNumber(registeredUsersData.todayDealsCreatedCount, today.dealsCreated),
         todayDealsClosed: pickNumber(registeredUsersData.todayDealsClosedCount, today.dealsClosed),
-      });
-      setCharts({
+      };
+      const nextCharts = {
         registrationBreakdown,
         dailyRegistrationTrend: registeredUsersData.dailyRegistrationTrend || [],
         activeParticipationWindows: registeredUsersData.activeParticipationWindows || [],
@@ -1143,6 +1220,18 @@ const AdminAIDashboard = () => {
         activeLenderLocationByState,
         userLocationByDistrict: registeredUsersData.userLocationByDistrict || [],
         monthlyRegistrationByType: registeredUsersData.monthlyRegistrationByType || [],
+      };
+      setStats(nextStats);
+      setCharts(nextCharts);
+      const existingCache = readAdminAIDashboardCache() || {};
+      writeAdminAIDashboardCache({
+        ...existingCache,
+        stats: nextStats,
+        charts: nextCharts,
+        referralYearCards: yearlyRows.length ? yearlyRows : existingCache.referralYearCards,
+        referralYearGrandTotal: yearlyRows.length
+          ? pickNumber(referralYearly?.grandTotal)
+          : existingCache.referralYearGrandTotal,
       });
     } catch (error) {
       setStats(fallbackStats);
@@ -1360,7 +1449,19 @@ const AdminAIDashboard = () => {
     }
   };
 
-  const loadTopLendersData = async (yearMonth = selectedTopMonth) => {
+  const loadTopLendersData = async (yearMonth = selectedTopMonth, { force = false } = {}) => {
+    if (!force) {
+      const cached = readAdminAIDashboardCache();
+      if (cached?.topLenders) {
+        setTopLenders(cached.topLenders || []);
+        setMonthlyTopLenders(cached.monthlyTopLenders || []);
+        setMonthlyTrend(cached.monthlyTrend || []);
+        if (cached.selectedTopMonth) setSelectedTopMonth(cached.selectedTopMonth);
+        setTopLendersLoading(false);
+        setTopLendersError("");
+        return;
+      }
+    }
     setTopLendersLoading(true);
     setTopLendersError("");
     try {
@@ -1369,13 +1470,25 @@ const AdminAIDashboard = () => {
         getAdminAIMonthlyTopLenders(yearMonth, topLendersLimit),
         getAdminAITopLendersMonthlyTrend(12),
       ]);
-      setTopLenders(responseData(allTimeData)?.topLenders || []);
-      setMonthlyTopLenders(responseData(monthlyData)?.topLenders || []);
+      const nextTop = responseData(allTimeData)?.topLenders || [];
+      const nextMonthly = responseData(monthlyData)?.topLenders || [];
       const trendRows = responseData(trendData)?.monthlyTrend || [];
+      setTopLenders(nextTop);
+      setMonthlyTopLenders(nextMonthly);
       setMonthlyTrend(trendRows);
+      let nextMonth = yearMonth;
       if (trendRows.length && !trendRows.some((row) => row.yearMonth === yearMonth)) {
-        setSelectedTopMonth(trendRows[trendRows.length - 1].yearMonth);
+        nextMonth = trendRows[trendRows.length - 1].yearMonth;
+        setSelectedTopMonth(nextMonth);
       }
+      const existingCache = readAdminAIDashboardCache() || {};
+      writeAdminAIDashboardCache({
+        ...existingCache,
+        topLenders: nextTop,
+        monthlyTopLenders: nextMonthly,
+        monthlyTrend: trendRows,
+        selectedTopMonth: nextMonth,
+      });
     } catch (error) {
       setTopLenders([]);
       setMonthlyTopLenders([]);
@@ -1442,6 +1555,12 @@ const AdminAIDashboard = () => {
     loadTopLendersData();
   }, []);
 
+  const refreshDashboard = () => {
+    clearAdminAIDashboardCache();
+    loadStats({ force: true });
+    loadTopLendersData(undefined, { force: true });
+  };
+
   const resetPanels = () => {
     setAdminUsers([]);
     setActiveLenders([]);
@@ -1480,15 +1599,32 @@ const AdminAIDashboard = () => {
     return years;
   };
 
-  const loadReferralYearCards = async () => {
+  const loadReferralYearCards = async ({ force = false } = {}) => {
     const fallback = buildDefaultReferralYearCards();
+    if (!force) {
+      const cached = readAdminAIDashboardCache();
+      if (Array.isArray(cached?.referralYearCards) && cached.referralYearCards.length) {
+        setReferralYearCards(cached.referralYearCards);
+        setReferralYearGrandTotal(pickNumber(cached.referralYearGrandTotal));
+        setReferralYearsLoading(false);
+        return;
+      }
+    }
     setReferralYearCards((prev) => (prev.length ? prev : fallback));
     setReferralYearsLoading(true);
     try {
       const data = responseData(await getAdminAIReferralRegistrationsYearlySummary(2021));
       const years = Array.isArray(data?.years) ? data.years : [];
-      setReferralYearCards(years.length ? years : fallback);
-      setReferralYearGrandTotal(pickNumber(data?.grandTotal, years.reduce((sum, row) => sum + pickNumber(row.totalCount), 0)));
+      const nextYears = years.length ? years : fallback;
+      setReferralYearCards(nextYears);
+      const grand = pickNumber(data?.grandTotal, years.reduce((sum, row) => sum + pickNumber(row.totalCount), 0));
+      setReferralYearGrandTotal(grand);
+      const existingCache = readAdminAIDashboardCache() || {};
+      writeAdminAIDashboardCache({
+        ...existingCache,
+        referralYearCards: nextYears,
+        referralYearGrandTotal: grand,
+      });
     } catch {
       setReferralYearCards((prev) => (prev.length ? prev : fallback));
     } finally {
@@ -1496,15 +1632,65 @@ const AdminAIDashboard = () => {
     }
   };
 
-  const loadTopReferrers = async () => {
+  const loadTopReferrers = async ({ force = false } = {}) => {
+    if (!force) {
+      const cached = readAdminAIDashboardCache();
+      if (Array.isArray(cached?.topReferrers) && cached.topReferrers.length) {
+        setTopReferrers(cached.topReferrers);
+        setTopReferrersLoading(false);
+        return cached.topReferrers;
+      }
+    }
     setTopReferrersLoading(true);
     try {
       const data = responseData(await getAdminAITopReferrers(50));
-      setTopReferrers(Array.isArray(data?.referrers) ? data.referrers : []);
+      const rows = Array.isArray(data?.referrers) ? data.referrers : [];
+      const ranked = rows
+        .slice()
+        .sort((a, b) => pickNumber(b.lentCount) - pickNumber(a.lentCount) || pickNumber(b.referralCount) - pickNumber(a.referralCount))
+        .map((row, index) => ({ ...row, rank: index + 1 }));
+      setTopReferrers(ranked);
+      const existingCache = readAdminAIDashboardCache() || {};
+      writeAdminAIDashboardCache({ ...existingCache, topReferrers: ranked });
+      return ranked;
     } catch {
       setTopReferrers([]);
+      return [];
     } finally {
       setTopReferrersLoading(false);
+    }
+  };
+
+  const downloadTopReferrersTreePdf = async (limit = 10) => {
+    const safeLimit = limit === 50 ? 50 : 10;
+    if (topReferrersTreePdfExporting) return;
+    let rows = topReferrers.slice(0, safeLimit);
+    if (!rows.length) {
+      const ranked = await loadTopReferrers({ force: true });
+      rows = (Array.isArray(ranked) ? ranked : []).slice(0, safeLimit);
+    }
+    if (!rows.length) {
+      window.alert("Top referrers are not loaded yet. Click Refresh and try again.");
+      return;
+    }
+    setTopReferrersTreePdfExporting(true);
+    setTopReferrersTreePdfProgress(`Preparing Top ${safeLimit} tree maps PDF…`);
+    try {
+      const result = await exportTopReferrersLentTreePdf(rows, {
+        limit: safeLimit,
+        onProgress: (info) => {
+          setTopReferrersTreePdfProgress(
+            info?.message || `Building page ${info.current}/${info.total}…`
+          );
+        },
+      });
+      setTopReferrersTreePdfProgress(`Saved ${result.fileName} (${result.pageCount} pages).`);
+    } catch (error) {
+      setTopReferrersTreePdfProgress("");
+      window.alert(error?.message || "Failed to create Top Referrers tree maps PDF.");
+    } finally {
+      setTopReferrersTreePdfExporting(false);
+      window.setTimeout(() => setTopReferrersTreePdfProgress(""), 4000);
     }
   };
 
@@ -1615,25 +1801,23 @@ const AdminAIDashboard = () => {
     });
   };
 
-  const openTopReferrerDetail = async (referrer) => {
+  const openTopReferrerDetail = (referrer) => {
     const lenderId = pickNumber(referrer?.referrerId);
     if (!lenderId) return;
-    setSelectedTopReferrer(referrer);
-    setSelectedTopReferrerDetail(null);
-    setSelectedTopReferrerError("");
-    setSelectedTopReferrerLoading(true);
-    try {
-      const data = responseData(await getAdminAIActiveLenderReferrals(lenderId, 1, 10));
-      setSelectedTopReferrerDetail(data || {});
-    } catch (error) {
-      setSelectedTopReferrerError(error?.response?.data?.message || error?.message || "Failed to load referral earnings.");
-    } finally {
-      setSelectedTopReferrerLoading(false);
-    }
+    const params = new URLSearchParams({
+      referrerId: String(lenderId),
+      referrerCode: String(referrer?.referrerCode || `LR${lenderId}`),
+      name: String(referrer?.name || ""),
+      rank: String(referrer?.rank || ""),
+      limit: String(selectedTopReferrerLimit || 10),
+    });
+    navigate(`/adminAITopReferrer?${params.toString()}`);
   };
 
   const showTopReferrers = async (limit) => {
     setSelectedTopReferrerLimit(limit);
+    setSelectedTopReferrer(null);
+    setSelectedTopReferrerDetail(null);
     const visibleRows = topReferrers.slice(0, limit);
     if (!visibleRows.length) return;
     setTopReferrerStatusesLoading(true);
@@ -1658,7 +1842,14 @@ const AdminAIDashboard = () => {
         updates.push(...batchUpdates.filter(Boolean));
       }
       const byId = new Map(updates.map((row) => [pickNumber(row.referrerId), row]));
-      setTopReferrers((rows) => rows.map((row) => ({ ...row, ...(byId.get(pickNumber(row.referrerId)) || {}) })));
+      setTopReferrers((rows) => {
+        const merged = rows.map((row) => ({ ...row, ...(byId.get(pickNumber(row.referrerId)) || {}) }));
+        // Keep Top 10 / Top 50 ordered by Lent.
+        return merged
+          .slice()
+          .sort((a, b) => pickNumber(b.lentCount) - pickNumber(a.lentCount) || pickNumber(b.referralCount) - pickNumber(a.referralCount))
+          .map((row, index) => ({ ...row, rank: index + 1 }));
+      });
     } finally {
       setTopReferrerStatusesLoading(false);
     }
@@ -1870,6 +2061,26 @@ const AdminAIDashboard = () => {
     });
   };
 
+  const openIndividualActiveLenderCampaign = (lender, channel) => {
+    if (!lender?.lenderId) {
+      return;
+    }
+    setCampaignModalState({
+      segment: "allTime",
+      segmentLabel: `Individual Active Lender — LR${lender.lenderId}`,
+      recipientCount: 1,
+      channel: channel || "email",
+      campaignSetCount: 1,
+      audienceType: "lenders",
+      targetLender: {
+        lenderId: lender.lenderId,
+        name: lender.name || "",
+        email: lender.email || "",
+        mobileNumber: lender.mobileNumber || "",
+      },
+    });
+  };
+
   const openRegisteredNotParticipatedCampaign = (card, channel) => {
     const segmentByCard = {
       notParticipatedRegistered1Month: "notParticipatedRegistered1Month",
@@ -1883,6 +2094,14 @@ const AdminAIDashboard = () => {
       recipientCount: pickNumber(card.value),
       channel: channel || "email",
       campaignSetCount: 3,
+    });
+  };
+
+  const openRegisteredNotParticipatedAutoEmail = (card) => {
+    setAutoEmailModalState({
+      segment: "notParticipatedRegistered1Month",
+      segmentLabel: card?.label || "Last 1 Month Registered - Not Participated",
+      recipientCount: pickNumber(card?.value),
     });
   };
 
@@ -2340,15 +2559,31 @@ const AdminAIDashboard = () => {
     return {
       series: [{ name: "Total Investment", data: rows.map((row) => Math.round(pickNumber(row.totalInvestment, row.totalParticipationAmount))) }],
       options: {
-        chart: { toolbar: { show: false }, fontFamily: "inherit" },
-        colors: ["#635bff"],
-        plotOptions: { bar: { horizontal: true, borderRadius: 6, barHeight: "62%" } },
+        chart: { toolbar: { show: false }, fontFamily: "inherit", foreColor: "#475569" },
+        colors: ["#0f766e"],
+        plotOptions: { bar: { horizontal: true, borderRadius: 5, barHeight: "58%", distributed: false } },
         dataLabels: { enabled: false },
+        grid: { borderColor: "#e2e8f0", strokeDashArray: 3 },
         xaxis: {
-          categories: rows.map((row) => `#${row.lenderId} ${String(row.name || "").trim() || "Lender"}`),
-          labels: { formatter: (value) => fmtNum(value) },
+          categories: rows.map((row) => shortLenderLabel(row)),
+          labels: {
+            style: { fontSize: "11px", fontWeight: 600, colors: "#334155" },
+            formatter: (value) => fmtOfficialMoney(value),
+          },
+          title: { text: "Investment (₹)", style: { fontSize: "11px", fontWeight: 700, color: "#64748b" } },
         },
-        tooltip: { y: { formatter: (value) => fmtMoney(value) } },
+        yaxis: {
+          labels: {
+            style: { fontSize: "11px", fontWeight: 700, colors: "#0f172a" },
+            maxWidth: 148,
+          },
+        },
+        tooltip: {
+          y: {
+            formatter: (value) => `${fmtOfficialMoney(value)} (${fmtMoney(value)})`,
+          },
+        },
+        legend: { show: false },
       },
     };
   }, [topLenders]);
@@ -2358,15 +2593,31 @@ const AdminAIDashboard = () => {
     return {
       series: [{ name: "Month Investment", data: rows.map((row) => Math.round(pickNumber(row.totalInvestment, row.totalParticipationAmount))) }],
       options: {
-        chart: { toolbar: { show: false }, fontFamily: "inherit" },
-        colors: ["#22c55e"],
-        plotOptions: { bar: { horizontal: true, borderRadius: 6, barHeight: "62%" } },
+        chart: { toolbar: { show: false }, fontFamily: "inherit", foreColor: "#475569" },
+        colors: ["#0369a1"],
+        plotOptions: { bar: { horizontal: true, borderRadius: 5, barHeight: "58%" } },
         dataLabels: { enabled: false },
+        grid: { borderColor: "#e2e8f0", strokeDashArray: 3 },
         xaxis: {
-          categories: rows.map((row) => `#${row.lenderId} ${String(row.name || "").trim() || "Lender"}`),
-          labels: { formatter: (value) => fmtNum(value) },
+          categories: rows.map((row) => shortLenderLabel(row)),
+          labels: {
+            style: { fontSize: "11px", fontWeight: 600, colors: "#334155" },
+            formatter: (value) => fmtOfficialMoney(value),
+          },
+          title: { text: "Investment (₹)", style: { fontSize: "11px", fontWeight: 700, color: "#64748b" } },
         },
-        tooltip: { y: { formatter: (value) => fmtMoney(value) } },
+        yaxis: {
+          labels: {
+            style: { fontSize: "11px", fontWeight: 700, colors: "#0f172a" },
+            maxWidth: 148,
+          },
+        },
+        tooltip: {
+          y: {
+            formatter: (value) => `${fmtOfficialMoney(value)} (${fmtMoney(value)})`,
+          },
+        },
+        legend: { show: false },
       },
     };
   }, [monthlyTopLenders]);
@@ -2379,20 +2630,27 @@ const AdminAIDashboard = () => {
         { name: "Active Lenders", type: "line", data: rows.map((row) => pickNumber(row.activeLenderCount)) },
       ],
       options: {
-        chart: { toolbar: { show: false }, fontFamily: "inherit", type: "line" },
-        colors: ["#0ea5e9", "#f59e0b"],
+        chart: { toolbar: { show: false }, fontFamily: "inherit", type: "line", foreColor: "#475569" },
+        colors: ["#0f766e", "#b45309"],
         stroke: { width: [0, 3], curve: "smooth" },
         plotOptions: { bar: { borderRadius: 6, columnWidth: "48%" } },
         dataLabels: { enabled: false },
+        grid: { borderColor: "#e2e8f0", strokeDashArray: 3 },
         xaxis: { categories: rows.map((row) => row.monthLabel || row.yearMonth) },
         yaxis: [
-          { title: { text: "Investment (Rs)" }, labels: { formatter: (value) => fmtNum(value) } },
+          {
+            title: { text: "Investment (₹)" },
+            labels: { formatter: (value) => fmtOfficialMoney(value) },
+          },
           { opposite: true, title: { text: "Lenders" } },
         ],
         tooltip: {
           shared: true,
           intersect: false,
-          y: [{ formatter: (value) => fmtMoney(value) }, { formatter: (value) => fmtNum(value) }],
+          y: [
+            { formatter: (value) => `${fmtOfficialMoney(value)} (${fmtMoney(value)})` },
+            { formatter: (value) => fmtNum(value) },
+          ],
         },
       },
     };
@@ -2486,13 +2744,24 @@ const AdminAIDashboard = () => {
               <h1 className="admin-ai-pro-title">Admin AI Dashboard</h1>
               <p className="admin-ai-pro-desc">Operational summary of users, lenders, borrowers, and deals.</p>
             </div>
-            <span className="admin-ai-pro-breadcrumb">Admin / AI Dashboard</span>
+            <div className="admin-ai-pro-header-actions">
+              <button
+                type="button"
+                className="admin-ai-search-btn"
+                disabled={loading || topLendersLoading}
+                onClick={refreshDashboard}
+                title="Reload dashboard counts and rankings from server"
+              >
+                <FaSync /> {loading || topLendersLoading ? "Refreshing..." : "Refresh"}
+              </button>
+              <span className="admin-ai-pro-breadcrumb">Admin / AI Dashboard</span>
+            </div>
           </header>
 
           {loadError && (
             <div className="alert alert-danger d-flex justify-content-between align-items-center">
               <span>{loadError}</span>
-              <button className="btn btn-sm btn-outline-danger" onClick={loadStats}>Retry</button>
+              <button className="btn btn-sm btn-outline-danger" onClick={refreshDashboard}>Retry</button>
             </div>
           )}
 
@@ -2509,15 +2778,26 @@ const AdminAIDashboard = () => {
                     <h2>Platform Overview</h2>
                     <p>Summary counts plus full registered-user Excel (name, mobile, email, LENDER/BORROWER, register date).</p>
                   </div>
-                  <button
-                    type="button"
-                    className="admin-ai-pro-section-export-btn"
-                    disabled={exportingOverview}
-                    onClick={() => downloadDashboardExcel("overview")}
-                    title="Sheet 1: counts. Sheet 2: all registered users with details."
-                  >
-                    <FaFileExcel /> {exportingOverview ? "Exporting..." : "Download Excel"}
-                  </button>
+                  <div className="admin-ai-pro-section-head-actions">
+                    <button
+                      type="button"
+                      className="admin-ai-reset-btn"
+                      disabled={loading || topLendersLoading}
+                      onClick={refreshDashboard}
+                      title="Reload dashboard counts and rankings from server"
+                    >
+                      <FaSync /> {loading || topLendersLoading ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-ai-pro-section-export-btn"
+                      disabled={exportingOverview}
+                      onClick={() => downloadDashboardExcel("overview")}
+                      title="Sheet 1: counts. Sheet 2: all registered users with details."
+                    >
+                      <FaFileExcel /> {exportingOverview ? "Exporting..." : "Download Excel"}
+                    </button>
+                  </div>
                 </div>
                 <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
                   {userCards.map((card) => (
@@ -2639,6 +2919,22 @@ const AdminAIDashboard = () => {
                     <span className="admin-ai-yearwise-header-open">Open →</span>
                   </span>
                 </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry"
+                  onClick={() => navigate("/adminAIActiveLendersReferralPortfolio")}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaUsers />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>All Active Lenders Referral Portfolio</h2>
+                    <p>All active lenders with/without referrals, referee tree map, and Excel download.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
               </section>
 
               <section className="admin-ai-pro-section admin-ai-pro-section--high-participation">
@@ -2742,6 +3038,11 @@ const AdminAIDashboard = () => {
                       onExport={() => downloadOverviewCardExcel(card.key)}
                       exporting={exportingCardKey === card.key}
                       onCampaign={(channel) => openRegisteredNotParticipatedCampaign(card, channel)}
+                      onAutoEmail={
+                        card.key === "notParticipatedRegistered1Month"
+                          ? () => openRegisteredNotParticipatedAutoEmail(card)
+                          : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -2778,13 +3079,13 @@ const AdminAIDashboard = () => {
 
               <AdminAILenderAnalyticsPanel onOpenLender={openTopLenderDetail} />
 
-              <section className="admin-ai-panel admin-ai-top-lenders-panel admin-ai-top-lenders-panel--compact">
+              <section className="admin-ai-panel admin-ai-top-lenders-panel admin-ai-top-lenders-panel--compact admin-ai-top-lenders-panel--official">
                 <div className="admin-ai-panel-head">
                   <div>
                     <h4><FaTrophy /> Top 10 Lenders</h4>
-                    <p>Compact rankings by total investment — switch tabs for all-time, monthly, or trend.</p>
+                    <p>Official investment rankings — amounts in ₹ Crore / Lakh. Switch tabs for all-time, monthly, or trend.</p>
                   </div>
-                  <span className="admin-ai-live-pill">Investment Rankings</span>
+                  <span className="admin-ai-live-pill admin-ai-live-pill--official">Investment Rankings</span>
                 </div>
 
                 {topLendersError && (
@@ -3009,11 +3310,11 @@ const AdminAIDashboard = () => {
           )}
 
           {showYearWiseReferrals && (
-            <section className="admin-ai-panel" id="admin-ai-yearwise-referrals">
+            <section className="admin-ai-panel admin-ai-yearwise-panel" id="admin-ai-yearwise-referrals">
               <div className="admin-ai-panel-head">
                 <div>
                   <h5>YearWise referrals</h5>
-                  <p>Each year shows Lent and Registered counts. Click a status box to list those users.</p>
+                  <p>Yearly Lent vs Registered referral audiences. Click a status to list users, or start a campaign.</p>
                 </div>
                 <div className="admin-ai-panel-actions">
                   {referralYear && referralYearStatus ? (
@@ -3021,11 +3322,29 @@ const AdminAIDashboard = () => {
                       {`${fmtNum(referralTotal)} ${referralYearStatus} in ${referralYear}`}
                     </span>
                   ) : null}
-                  <button className="admin-ai-reset-btn" type="button" onClick={loadReferralYearCards} disabled={referralYearsLoading || topReferrersLoading}>
+                  <button
+                    className="admin-ai-reset-btn"
+                    type="button"
+                    onClick={() => {
+                      loadReferralYearCards({ force: true });
+                      loadTopReferrers({ force: true });
+                    }}
+                    disabled={referralYearsLoading || topReferrersLoading}
+                  >
                     {referralYearsLoading || topReferrersLoading ? "Refreshing..." : "Refresh"}
                   </button>
                   <button className="admin-ai-close-btn" type="button" onClick={backToDashboard}>Close</button>
                 </div>
+              </div>
+
+              <div className="admin-ai-ref-portfolio-inline-entry">
+                <div>
+                  <strong>All Active Lenders Referral Portfolio</strong>
+                  <span>View every active lender with/without referrals, referee tree map, and Excel export.</span>
+                </div>
+                <button type="button" className="admin-ai-search-btn" onClick={() => navigate("/adminAIActiveLendersReferralPortfolio")}>
+                  Open portfolio
+                </button>
               </div>
 
               <div className="admin-ai-referral-year-head">
@@ -3035,7 +3354,7 @@ const AdminAIDashboard = () => {
                     <span>
                       {referralYearsLoading
                         ? "Loading yearly totals..."
-                        : "Lent and Registered shown separately — click a box to open users"}
+                        : "Each year card splits Lent and Registered — click a metric to open the user list"}
                     </span>
                   </div>
                 </div>
@@ -3054,12 +3373,14 @@ const AdminAIDashboard = () => {
                         key={year}
                         className={`admin-ai-referral-year-card${yearActive ? " is-active" : ""}`}
                       >
-                        <small>YEAR</small>
-                        <strong className="admin-ai-referral-year-number">{year}</strong>
+                        <div className="admin-ai-referral-year-card-top">
+                          <small>YEAR</small>
+                          <strong className="admin-ai-referral-year-number">{year}</strong>
+                        </div>
                         <div className="admin-ai-referral-year-status-row">
                           <button
                             type="button"
-                            className={`admin-ai-referral-year-status-box${lentActive ? " is-active" : ""}`}
+                            className={`admin-ai-referral-year-status-box admin-ai-referral-year-status-box--lent${lentActive ? " is-active" : ""}`}
                             onClick={() => openReferralYearStatus(year, "Lent")}
                           >
                             <small>Lent</small>
@@ -3068,25 +3389,25 @@ const AdminAIDashboard = () => {
                           </button>
                           <button
                             type="button"
-                            className={`admin-ai-referral-year-status-box${registeredActive ? " is-active" : ""}`}
+                            className={`admin-ai-referral-year-status-box admin-ai-referral-year-status-box--registered${registeredActive ? " is-active" : ""}`}
                             onClick={() => openReferralYearStatus(year, "Registered")}
                           >
                             <small>Registered</small>
                             <strong>{fmtNum(registeredCount)}</strong>
                             <span>users</span>
-                            <span>{fmtNum(registeredLenderCount)} L · {fmtNum(registeredBorrowerCount)} B</span>
+                            <em>{fmtNum(registeredLenderCount)} L · {fmtNum(registeredBorrowerCount)} B</em>
                           </button>
                         </div>
                         <div className="admin-ai-referral-campaign-grid">
                           <div className="admin-ai-referral-campaign-group admin-ai-referral-campaign-group--lent">
-                            <span>Lent Campaign ({fmtNum(lentCount)})</span>
+                            <span>Lent campaign</span>
                             <div>
                               <button type="button" title={`Email ${year} Lent referral lenders`} onClick={() => openReferralCampaign(`referralLentYear${year}`, `${year} Lent Referral Lenders`, lentCount, "email")}><FaEnvelope /> Email</button>
                               <button type="button" title={`WhatsApp ${year} Lent referral lenders`} onClick={() => openReferralCampaign(`referralLentYear${year}`, `${year} Lent Referral Lenders`, lentCount, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
                             </div>
                           </div>
                           <div className="admin-ai-referral-campaign-group admin-ai-referral-campaign-group--registered">
-                            <span>Registered Campaign ({fmtNum(registeredCount)})</span>
+                            <span>Registered campaign</span>
                             <div>
                               <button type="button" title={`Email ${year} Registered referral users`} onClick={() => openReferralCampaign(`referralRegisteredYear${year}`, `${year} Registered Referral Users`, registeredCount, "email")}><FaEnvelope /> Email</button>
                               <button type="button" title={`WhatsApp ${year} Registered referral users`} onClick={() => openReferralCampaign(`referralRegisteredYear${year}`, `${year} Registered Referral Users`, registeredCount, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
@@ -3101,14 +3422,26 @@ const AdminAIDashboard = () => {
 
               <div className="admin-ai-top-referrer-section">
                 <div className="admin-ai-top-referrer-heading">
-                  <div><strong>Top Referrers</strong><span>Ranked by distinct users referred</span></div>
+                  <div>
+                    <strong>Top Referrers</strong>
+                    <span>Ranked by Lent (includes disbursed) — Top 10 and Top 50</span>
+                  </div>
                   <div className="admin-ai-top-referrer-heading-actions">
-                    {topReferrersLoading ? <span>Loading...</span> : null}
-                    <button type="button" onClick={loadReferralYearCards} disabled={topReferrersLoading}>
+                    {topReferrersLoading ? <span className="admin-ai-top-referrer-loading">Loading...</span> : null}
+                    <button
+                      type="button"
+                      className="admin-ai-reset-btn"
+                      onClick={() => {
+                        loadReferralYearCards({ force: true });
+                        loadTopReferrers({ force: true });
+                      }}
+                      disabled={topReferrersLoading}
+                    >
                       {topReferrersLoading ? "Refreshing..." : "Refresh"}
                     </button>
                     <button
                       type="button"
+                      className="admin-ai-close-btn"
                       onClick={() => {
                         if (selectedTopReferrerLimit) {
                           setSelectedTopReferrerLimit(null);
@@ -3128,82 +3461,74 @@ const AdminAIDashboard = () => {
                     const available = Math.min(limit, topReferrers.length);
                     return (
                       <div key={limit} className={`admin-ai-top-referrer-box${selectedTopReferrerLimit === limit ? " is-active" : ""}`}>
-                        <small>RANKED AUDIENCE</small>
+                        <small>LENT RANKING</small>
                         <strong>Top {limit} Referrers</strong>
-                        <span>{fmtNum(available)} available referrers</span>
+                        <span>{fmtNum(available)} ranked by Lent count</span>
                         <button type="button" className="admin-ai-top-referrer-view" disabled={topReferrerStatusesLoading} onClick={() => showTopReferrers(limit)}>
                           {topReferrerStatusesLoading && selectedTopReferrerLimit === limit ? "Loading status..." : "View"}
                         </button>
                         <div className="admin-ai-top-referrer-actions">
                           <button type="button" onClick={() => openReferralCampaign(`top${limit}Referrers`, `Top ${limit} Referrers`, available, "email")}><FaEnvelope /> Email</button>
                           <button type="button" onClick={() => openReferralCampaign(`top${limit}Referrers`, `Top ${limit} Referrers`, available, "whatsapp")}><FaWhatsapp /> WhatsApp</button>
+                          {limit === 10 ? (
+                            <button
+                              type="button"
+                              className="admin-ai-top-referrer-pdf"
+                              disabled={topReferrersTreePdfExporting || topReferrersLoading || available < 1}
+                              onClick={() => downloadTopReferrersTreePdf(10)}
+                              title="PDF with one Lent referral tree map per Top 10 referrer"
+                            >
+                              <FaFilePdf /> {topReferrersTreePdfExporting ? "PDF…" : "Tree PDF"}
+                            </button>
+                          ) : null}
                         </div>
                       </div>
                     );
                   })}
-                </div>
-                {selectedTopReferrerLimit ? (
-                  <>
-                    <div className="admin-ai-top-referrer-table-wrap">
-                      <div className="admin-ai-top-referrer-table-head">
-                        <span>Rank</span><span>Referrer</span><span>Total</span><span>Registered</span><span>Lent</span><span>Invited</span><span>Mobile</span><span>Email</span><span>Details</span>
-                      </div>
-                      <div className="admin-ai-top-referrer-list">
-                        {topReferrers.slice(0, selectedTopReferrerLimit).map((row) => (
-                          <button
-                            type="button"
-                            key={row.referrerId}
-                            className={selectedTopReferrer?.referrerId === row.referrerId ? "is-active" : ""}
-                            onClick={() => openTopReferrerDetail(row)}
-                          >
-                            <strong>#{row.rank}</strong>
-                            <strong>{valueOrDash(row.referrerCode)} · {valueOrDash(row.name)}</strong>
-                            <span>{fmtNum(row.referralCount)}</span>
-                            <span className="registered-count">{fmtNum(row.registeredCount)}</span>
-                            <span className="lent-count">{fmtNum(row.lentCount)}</span>
-                            <span className="invited-count">{fmtNum(row.invitedCount)}</span>
-                            <span>{valueOrDash(row.mobileNumber)}</span>
-                            <span>{valueOrDash(row.email)}</span>
-                            <span className="admin-ai-top-referrer-open">View →</span>
-                          </button>
-                        ))}
-                      </div>
+                  <div className="admin-ai-top-referrer-box admin-ai-top-referrer-box--paid">
+                    <small>PAID EARNINGS</small>
+                    <strong>Top 10 / 50 Paid Earned</strong>
+                    <span>All-time ranking by paid referral earnings</span>
+                    <div className="admin-ai-top-referrer-actions">
+                      <button type="button" className="admin-ai-top-referrer-view" onClick={() => navigate("/adminAITopPaidEarnedReferrers?limit=10")}>
+                        Top 10
+                      </button>
+                      <button type="button" className="admin-ai-top-referrer-view" onClick={() => navigate("/adminAITopPaidEarnedReferrers?limit=50")}>
+                        Top 50
+                      </button>
                     </div>
-
-                    {selectedTopReferrer ? (
-                      <div className="admin-ai-top-referrer-detail">
-                        <div className="admin-ai-top-referrer-detail-head">
-                          <div>
-                            <small>SELECTED REFERRER</small>
-                            <strong>{selectedTopReferrer.referrerCode} · {selectedTopReferrer.name}</strong>
-                          </div>
-                          <button type="button" onClick={() => { setSelectedTopReferrer(null); setSelectedTopReferrerDetail(null); }}>Close</button>
-                        </div>
-                        {selectedTopReferrerLoading ? <div className="admin-ai-empty-state">Loading earnings...</div> : null}
-                        {selectedTopReferrerError ? <div className="alert alert-danger">{selectedTopReferrerError}</div> : null}
-                        {!selectedTopReferrerLoading && selectedTopReferrerDetail ? (() => {
-                          const earnings = selectedTopReferrerDetail.earningsSummary || selectedTopReferrerDetail.referralSummary || {};
-                          const referralSummary = selectedTopReferrerDetail.referralSummary || {};
-                          return (
-                            <>
-                              <div className="admin-ai-top-referrer-status-grid">
-                                <div className="registered"><small>REGISTERED</small><strong>{fmtNum(referralSummary.registered)}</strong></div>
-                                <div className="lent"><small>LENT</small><strong>{fmtNum(pickNumber(referralSummary.lent) + pickNumber(referralSummary.disbursed))}</strong><span>Includes disbursed</span></div>
-                                <div className="invited"><small>INVITED</small><strong>{fmtNum(referralSummary.invited)}</strong></div>
-                              </div>
-                              <div className="admin-ai-top-referrer-amount-grid">
-                                <div className="earned"><small>TOTAL EARNED</small><strong>{fmtMoney(earnings.totalEarned ?? earnings.refEarnings)}</strong></div>
-                                <div className="paid"><small>PAID AMOUNT</small><strong>{fmtMoney(earnings.amountPaid ?? earnings.refPaid)}</strong></div>
-                                <div className="unpaid"><small>UNPAID AMOUNT</small><strong>{fmtMoney(earnings.amountNotPaid ?? earnings.refUnpaid)}</strong></div>
-                                <div className="investment"><small>REFERRED INVESTMENT</small><strong>{fmtMoney(earnings.totalInvestment ?? earnings.refAmt)}</strong></div>
-                                <div className="count"><small>REFERRAL USERS</small><strong>{fmtNum(earnings.refCount ?? selectedTopReferrerDetail.totalCount)}</strong></div>
-                              </div>
-                            </>
-                          );
-                        })() : null}
-                      </div>
-                    ) : null}
-                  </>
+                  </div>
+                </div>
+                {topReferrersTreePdfProgress ? (
+                  <div className="admin-ai-top-referrer-pdf-progress" role="status">
+                    {topReferrersTreePdfProgress}
+                  </div>
+                ) : null}
+                {selectedTopReferrerLimit ? (
+                  <div className="admin-ai-top-referrer-table-wrap">
+                    <div className="admin-ai-top-referrer-table-head">
+                      <span>Rank</span><span>Referrer</span><span>Total</span><span>Registered</span><span>Lent</span><span>Invited</span><span>Mobile</span><span>Email</span><span>Details</span>
+                    </div>
+                    <div className="admin-ai-top-referrer-list">
+                      {topReferrers.slice(0, selectedTopReferrerLimit).map((row) => (
+                        <button
+                          type="button"
+                          key={row.referrerId}
+                          onClick={() => openTopReferrerDetail(row)}
+                        >
+                          <strong>#{row.rank}</strong>
+                          <strong>{valueOrDash(row.referrerCode)} · {valueOrDash(row.name)}</strong>
+                          <span className="admin-ai-top-referrer-count-box total-count">{fmtNum(row.referralCount)}</span>
+                          <span className="admin-ai-top-referrer-count-box registered-count">{fmtNum(row.registeredCount)}</span>
+                          <span className="admin-ai-top-referrer-count-box lent-count">{fmtNum(row.lentCount)}</span>
+                          <span className="admin-ai-top-referrer-count-box invited-count">{fmtNum(row.invitedCount)}</span>
+                          <span>{valueOrDash(row.mobileNumber)}</span>
+                          <span>{valueOrDash(row.email)}</span>
+                          <span className="admin-ai-top-referrer-open">View →</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ) : null}
               </div>
 
@@ -3461,6 +3786,27 @@ const AdminAIDashboard = () => {
                       <div><small>LOCATION</small><strong>{valueOrDash(lender.city)}, {valueOrDash(lender.state)}</strong></div>
                       <div><small>DEALS</small><strong>{fmtNum(lender.dealsCount)}</strong></div>
                       <div><small>PARTICIPATION</small><button className="admin-ai-search-btn" type="button" onClick={() => openLenderDeals(lender)}>{fmtMoney(lender.totalParticipationAmount)}</button></div>
+                      <div className="admin-ai-lender-campaign-actions">
+                        <small>CAMPAIGN</small>
+                        <div className="admin-ai-pro-kpi-stat-campaign-actions">
+                          <button
+                            type="button"
+                            className="admin-ai-pro-kpi-campaign-btn"
+                            title={`Email LR${lender.lenderId} only`}
+                            onClick={() => openIndividualActiveLenderCampaign(lender, "email")}
+                          >
+                            <FaEnvelope /> Email
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn--whatsapp"
+                            title={`WhatsApp LR${lender.lenderId} only`}
+                            onClick={() => openIndividualActiveLenderCampaign(lender, "whatsapp")}
+                          >
+                            <FaWhatsapp /> WhatsApp
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3519,11 +3865,19 @@ const AdminAIDashboard = () => {
           initialChannel={campaignModalState?.channel}
           campaignSetCount={campaignModalState?.campaignSetCount || 3}
           audienceType={campaignModalState?.audienceType || "lenders"}
+          targetLender={campaignModalState?.targetLender || null}
           onSent={(result) => {
             if (result?.status === "SCHEDULED" && result?.message) {
               setExportMessage(result.message);
             }
           }}
+        />
+        <AdminAIAutoEmailDraftModal
+          open={Boolean(autoEmailModalState)}
+          onClose={() => setAutoEmailModalState(null)}
+          segment={autoEmailModalState?.segment}
+          segmentLabel={autoEmailModalState?.segmentLabel}
+          recipientCount={autoEmailModalState?.recipientCount}
         />
         <Footer />
       </div>
@@ -3533,21 +3887,27 @@ const AdminAIDashboard = () => {
 
 const TopLendersCompactList = ({ lenders, onSelect, monthly = false }) => (
   <ul className="admin-ai-top-lenders-compact-list">
-    {(lenders || []).map((lender) => (
-      <li key={`${monthly ? "m" : "a"}-${lender.lenderId}`}>
-        <span className="admin-ai-rank-badge admin-ai-rank-badge--sm">{lender.rank || "-"}</span>
-        <div className="admin-ai-top-lenders-compact-copy">
-          <strong>{lender.userCode || `LR${lender.lenderId}`}</strong>
-          <span>{valueOrDash(lender.name)}</span>
-          <small>{valueOrDash(lender.city)}{lender.state ? `, ${lender.state}` : ""}</small>
-        </div>
-        <div className="admin-ai-top-lenders-compact-meta">
-          <strong>{fmtMoney(lender.totalInvestment ?? lender.totalParticipationAmount)}</strong>
-          <small>{monthly ? "This month" : `${fmtNum(lender.dealsCount)} deals`}</small>
-        </div>
-        <button className="admin-ai-link-btn" type="button" onClick={() => onSelect(lender)}>View</button>
-      </li>
-    ))}
+    {(lenders || []).map((lender) => {
+      const amount = pickNumber(lender.totalInvestment, lender.totalParticipationAmount);
+      return (
+        <li key={`${monthly ? "m" : "a"}-${lender.lenderId}`}>
+          <span className="admin-ai-rank-badge admin-ai-rank-badge--sm">{lender.rank || "-"}</span>
+          <div className="admin-ai-top-lenders-compact-copy">
+            <strong>{lender.userCode || `LR${lender.lenderId}`}</strong>
+            <span>{valueOrDash(lender.name)}</span>
+            <small>{valueOrDash(lender.city)}{lender.state ? `, ${lender.state}` : ""}</small>
+          </div>
+          <div className="admin-ai-top-lenders-compact-meta" title={fmtMoney(amount)}>
+            <strong className="admin-ai-top-lenders-amount">{fmtOfficialMoney(amount)}</strong>
+            <em className="admin-ai-top-lenders-amount-exact">{fmtMoney(amount)}</em>
+            <small>{monthly ? "This month" : `${fmtNum(lender.dealsCount)} deals`}</small>
+          </div>
+          <button className="admin-ai-top-lenders-view-btn" type="button" onClick={() => onSelect(lender)}>
+            View
+          </button>
+        </li>
+      );
+    })}
   </ul>
 );
 
@@ -3617,7 +3977,7 @@ const TopLenderDetailPanel = ({ lender, detail, loading, error, dealsTab, onDeal
   );
 };
 
-const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false, onCampaign, dateFilter, dateFilterLoading, dateFilterError, onDateFilterChange, onDateSearch }) => (
+const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable, onClick, onExport, exporting = false, onCampaign, onAutoEmail, dateFilter, dateFilterLoading, dateFilterError, onDateFilterChange, onDateSearch }) => (
   <div
     className={`admin-ai-pro-kpi admin-ai-pro-kpi--${accent} ${clickable || onClick ? "is-clickable" : ""} ${active ? "is-active" : ""}`}
     onClick={onClick}
@@ -3653,30 +4013,47 @@ const StatCard = ({ label, value, icon, meta, accent = "blue", active, clickable
         {dateFilterError ? <small className="admin-ai-pro-kpi-date-error">{dateFilterError}</small> : null}
       </div>
     ) : null}
-    {onCampaign ? (
+    {onCampaign || onAutoEmail ? (
       <div className="admin-ai-pro-kpi-stat-campaign-actions">
-        <button
-          type="button"
-          className="admin-ai-pro-kpi-campaign-btn"
-          title="Email campaign"
-          onClick={(event) => {
-            event.stopPropagation();
-            onCampaign("email");
-          }}
-        >
-          <FaEnvelope /> Email
-        </button>
-        <button
-          type="button"
-          className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn--whatsapp"
-          title="WhatsApp campaign"
-          onClick={(event) => {
-            event.stopPropagation();
-            onCampaign("whatsapp");
-          }}
-        >
-          <FaWhatsapp /> WhatsApp
-        </button>
+        {onCampaign ? (
+          <>
+            <button
+              type="button"
+              className="admin-ai-pro-kpi-campaign-btn"
+              title="Email campaign"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCampaign("email");
+              }}
+            >
+              <FaEnvelope /> Email
+            </button>
+            <button
+              type="button"
+              className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn--whatsapp"
+              title="WhatsApp campaign"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCampaign("whatsapp");
+              }}
+            >
+              <FaWhatsapp /> WhatsApp
+            </button>
+          </>
+        ) : null}
+        {onAutoEmail ? (
+          <button
+            type="button"
+            className="admin-ai-pro-kpi-campaign-btn admin-ai-pro-kpi-campaign-btn--auto"
+            title="Auto email with WhatsApp approval (test mode)"
+            onClick={(event) => {
+              event.stopPropagation();
+              onAutoEmail();
+            }}
+          >
+            <FaRobot /> Auto Email
+          </button>
+        ) : null}
       </div>
     ) : null}
     {onExport ? (

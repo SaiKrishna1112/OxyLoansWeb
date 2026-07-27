@@ -15,10 +15,10 @@ const hostname = typeof window !== "undefined" ? window.location.hostname : "loc
 const envBaseUrl = trimTrailingSlash(process.env.REACT_APP_BASE_URL || "");
 const envAiChatUrl = trimTrailingSlash(process.env.REACT_APP_AI_CHAT_URL || "");
 
-const BASE_URL = envBaseUrl
-  ? envBaseUrl
-  : hostname === "localhost" || hostname === "127.0.0.1"
-    ? "http://localhost:8181/oxyloans"
+const BASE_URL = hostname === "localhost" || hostname === "127.0.0.1"
+  ? "http://localhost:8181/oxyloans"
+  : envBaseUrl
+    ? envBaseUrl
     : hostname === "15.207.239.145" || hostname.includes("ap-south-1.compute.amazonaws.com")
       ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans"
       : "https://fintech.oxyloans.com/oxyloans";

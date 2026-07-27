@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { goBackOrAdminAI, YEAR_WISE_REFERRALS_PATH } from "./adminAINavigation";
 import {
   FaRobot,
   FaUsers,
@@ -2573,7 +2574,7 @@ const AdminAIDealsDashboard = () => {
                     <strong>{fmtNum(totalLenders || total)}</strong>
                   </div>
                 </div>
-                <button className="admin-ai-close-btn" type="button" onClick={() => navigate("/adminAIDashboard")}>
+                <button className="admin-ai-close-btn" type="button" onClick={() => goBackOrAdminAI(navigate)}>
                   Back to Dashboard
                 </button>
               </div>

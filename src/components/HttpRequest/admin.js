@@ -1022,6 +1022,19 @@ export const getAdminAIActiveLenderStates = async () => {
   return response.data;
 };
 
+export const getAdminAIActiveLendersByState = async (state, pageNo = 1, pageSize = 20) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/geography/active-lenders`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      state,
+      pageNo,
+      pageSize,
+    },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
 export const getAdminAITopLenders = async (limit = 10) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/top-lenders`, {
     headers: adminRegisteredUsersHeaders(),
@@ -1278,6 +1291,105 @@ export const sendAdminAILenderSegmentCampaign = async (payload) => {
     {
       headers: adminRegisteredUsersHeaders(),
       timeout: isScheduleOnly ? 180000 : (payload?.channel === "whatsapp" ? 3600000 : 600000),
+    }
+  );
+  return response.data;
+};
+
+export const createAdminAIAutoEmailDraft = async (payload) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/create`,
+    payload,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 180000,
+    }
+  );
+  return response.data;
+};
+
+export const scheduleAdminAIAutoEmailDraft = async (payload) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/schedule`,
+    payload,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const listAdminAIAutoEmailDrafts = async ({ segment, pageNo = 1, pageSize = 10 } = {}) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/drafts`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        segment: segment || undefined,
+        pageNo,
+        pageSize,
+      },
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAIAutoEmailDraft = async (code) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/draft/${encodeURIComponent(code)}`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const resendAdminAIAutoEmailWhatsApp = async (code) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/resend-whatsapp`,
+    { code },
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+    }
+  );
+  return response.data;
+};
+
+export const decideAdminAIAutoEmailDraft = async (payload) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/decide`,
+    payload,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const deleteAdminAIAutoEmailDraft = async (code) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/delete`,
+    { code },
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const sendAdminAIAutoEmailTest = async (payload) => {
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/auto-email/send-test`,
+    payload,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 180000,
     }
   );
   return response.data;
@@ -1578,6 +1690,95 @@ export const getAdminAITopReferrers = async (limit = 10) => {
     timeout: 120000,
   });
   return response.data;
+};
+
+export const getAdminAITopPaidEarnedReferrers = async (limit = 10) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/referral-registrations/top-paid-earned-referrers`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { limit },
+      timeout: 120000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAITopPaidEarnedReferrerDetail = async (referrerId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/referral-registrations/top-paid-earned-referrers/${referrerId}`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAIActiveLendersReferralPortfolio = async (
+  pageNo = 1,
+  pageSize = 20,
+  { filter = "all", search = "" } = {}
+) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      pageNo,
+      pageSize,
+      filter,
+      search: search || undefined,
+    },
+    timeout: 180000,
+  });
+  return response.data;
+};
+
+export const getAdminAIActiveLenderReferralTree = async (lenderId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/${lenderId}/tree`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAIActiveLenderLentUsers = async (lenderId, pageNo = 1, pageSize = 20) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/${lenderId}/lent-users`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { pageNo, pageSize },
+      timeout: 180000,
+    }
+  );
+  return response.data;
+};
+
+export const downloadAdminAIActiveLendersReferralPortfolioExcel = async (filter = "all") => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/export`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { filter },
+      responseType: "blob",
+      timeout: 600000,
+    }
+  );
+  return response;
+};
+
+export const downloadAdminAIActiveLenderReferralTreeExcel = async (lenderId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/${lenderId}/tree/export`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      responseType: "blob",
+      timeout: 300000,
+    }
+  );
+  return response;
 };
 
 export const getAdminAIReferralRegistrations = async (pageNo = 1, pageSize = 20, { date, year, status, userType } = {}) => {
