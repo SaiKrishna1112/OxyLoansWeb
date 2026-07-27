@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
-import { normalizeOfferType } from "./subscriptionOfferUtils";
+import {
+  hasUnclaimedDealFeeFreeOffer,
+  normalizeOfferType,
+} from "./subscriptionOfferUtils";
+import {
+  shouldHideMembershipOffers,
+  syncDealFeeFreeGateFromOffers,
+} from "./dealFeeFreeGate";
 import "./ActiveOfferPopup.css";
 
 const DEFAULT_DISMISS_KEY = "oxy_active_offer_popup_dismissed";
@@ -60,12 +67,23 @@ const ActiveOfferPopup = ({
       try {
         const list = await getUserReactivationOffers();
         if (cancelled) return;
+        syncDealFeeFreeGateFromOffers(list);
+        const filter = offerTypeFilter
+          ? String(offerTypeFilter).toUpperCase()
+          : null;
+        // Do not prompt membership discount while Deal Fee Free is still unclaimed.
+        if (
+          filter === "SUBSCRIPTION_DISCOUNT" &&
+          (shouldHideMembershipOffers(list) || hasUnclaimedDealFeeFreeOffer(list))
+        ) {
+          return;
+        }
         const hasMatch =
           Array.isArray(list) &&
           list.some((offer) => {
             if (!isActiveOffer(offer)) return false;
-            if (!offerTypeFilter) return true;
-            return normalizeOfferType(offer) === String(offerTypeFilter).toUpperCase();
+            if (!filter) return true;
+            return normalizeOfferType(offer) === filter;
           });
         if (hasMatch) {
           sessionStorage.setItem(dismissKey, "1");

@@ -8,11 +8,18 @@ import {
 } from "../../../HttpRequest/afterlogin";
 import {
   getFinalSubscriptionAmount,
+  hasUnclaimedDealFeeFreeOffer,
   isLenderMembershipPlan,
   formatRupee,
   normalizeOfferType,
   resolveDiscountPercent,
 } from "./subscriptionOfferUtils";
+import {
+  isAssignedUnclaimedDealFeeFree,
+  isDeferredDealFeeFreeOffer,
+  shouldHideMembershipOffers,
+  syncDealFeeFreeGateFromOffers,
+} from "./dealFeeFreeGate";
 import "./ReactivationMyOffers.css";
 
 const OFFER_TYPE_LABELS = {
@@ -92,11 +99,18 @@ function OfferCard({ offer }) {
     Boolean(offer.redeemed) ||
     offer.status === "CLAIMED" ||
     offer.claimStatus === "CLAIMED";
-  const isEligible = !isRedeemed && offer.eligible !== false;
+  const isDeferred = isDeferredDealFeeFreeOffer(offer);
+  const isEligible = !isRedeemed && !isDeferred && offer.eligible !== false;
   const isDisabled = !isRedeemed && !isEligible;
   const typeCode = normalizeOfferType(offer);
   const typeLabel = OFFER_TYPE_LABELS[typeCode] || typeCode || "Special Offer";
-  const statusLabel = isRedeemed ? "CLAIMED" : isEligible ? "AVAILABLE" : "LOCKED";
+  const statusLabel = isRedeemed
+    ? "CLAIMED"
+    : isDeferred
+      ? "AFTER SUBSCRIPTION"
+      : isEligible
+        ? "AVAILABLE"
+        : "LOCKED";
   const isDealFree = typeCode === "FIRST_DEAL_FREE";
   const membershipValidity = formatDay(offer.subscriptionValidityDate);
   const segmentLabel =
@@ -113,9 +127,9 @@ function OfferCard({ offer }) {
     <div className="col-md-6 col-lg-4 mb-4">
       <div
         className={`my-offer-card h-100 ${isRedeemed ? "is-claimed" : ""} ${
-          isDisabled ? "is-disabled" : ""
+          isDisabled || isDeferred ? "is-disabled" : ""
         } is-deal-free`}
-        aria-disabled={isDisabled}
+        aria-disabled={isDisabled || isDeferred}
       >
         <div className="my-offer-card-body d-flex flex-column">
           <div className="d-flex justify-content-between align-items-start mb-3 gap-2">
@@ -158,7 +172,21 @@ function OfferCard({ offer }) {
             </div>
           )}
 
-          {isDisabled && (
+          {isDeferred && (
+            <div className="my-offer-locked-box" role="status">
+              <div className="fw-semibold mb-1">Reserved — after subscription</div>
+              <div className="small mb-0">
+                {offer.disabledReason ||
+                  "This offer will be applicable after your current subscription ends."}
+              </div>
+              <div className="small mt-2 mb-0">
+                Note: Complete your current subscription period, then participate with at least{" "}
+                {formatRupeeAmount(minInvest)} to claim this offer.
+              </div>
+            </div>
+          )}
+
+          {isDisabled && !isDeferred && (
             <div className="my-offer-locked-box" role="status">
               <div className="fw-semibold mb-1">Not available for you yet</div>
               <div className="small mb-0">
@@ -196,9 +224,9 @@ function OfferCard({ offer }) {
               Explore
             </Link>
           )}
-          {isDisabled && (
+          {(isDisabled || isDeferred) && (
             <button type="button" className="btn my-offer-cta is-disabled mt-auto" disabled>
-              Not eligible
+              {isDeferred ? "After subscription" : "Not eligible"}
             </button>
           )}
         </div>
@@ -208,10 +236,9 @@ function OfferCard({ offer }) {
 }
 
 /**
- * Extra card for Deal Fee Free eligibility — same layout as the main offer card.
- * Shown alongside (does not replace) the original Deal Fee Free card.
+ * Bonus card shown with Deal Fee Free — free 1-month membership after claiming (≥ ₹10,000).
  */
-function FreeMembershipBonusCard({ offer }) {
+function FreeMembershipBonusCard({ offer, deferred = false }) {
   const minAmount = Number(offer.minimumInvestment) > 0 ? Number(offer.minimumInvestment) : 10000;
   const freeMonths =
     offer.freeSubscriptionMonths != null
@@ -223,11 +250,13 @@ function FreeMembershipBonusCard({ offer }) {
 
   return (
     <div className="col-md-6 col-lg-4 mb-4">
-      <div className="my-offer-card h-100 is-deal-free">
+      <div className={`my-offer-card h-100 is-deal-free ${deferred ? "is-disabled" : ""}`}>
         <div className="my-offer-card-body d-flex flex-column">
           <div className="d-flex justify-content-between align-items-start mb-3 gap-2">
             <span className="my-offer-type-badge">Free Membership</span>
-            <span className="my-offer-status-badge bonus">BONUS</span>
+            <span className={`my-offer-status-badge ${deferred ? "locked" : "bonus"}`}>
+              {deferred ? "AFTER SUBSCRIPTION" : "BONUS"}
+            </span>
           </div>
 
           {segmentLabel && (
@@ -242,6 +271,16 @@ function FreeMembershipBonusCard({ offer }) {
             {monthsLabel} membership with your Deal Fee Free offer.
           </p>
 
+          {deferred && (
+            <div className="my-offer-locked-box mb-3" role="status">
+              <div className="fw-semibold mb-1">Reserved — after subscription</div>
+              <div className="small mb-0">
+                This bonus will be applicable after your current subscription ends, when you
+                claim Deal Fee Free.
+              </div>
+            </div>
+          )}
+
           <div className="my-offer-perks mb-3">
             <div className="my-offer-perk">
               Min investment to claim: <strong>{formatRupeeAmount(minAmount)}</strong>
@@ -251,10 +290,16 @@ function FreeMembershipBonusCard({ offer }) {
             </div>
           </div>
 
-          <Link to="/regularRunningDeal" className="btn my-offer-cta mt-auto">
-            <GiftIcon />
-            Explore
-          </Link>
+          {deferred ? (
+            <button type="button" className="btn my-offer-cta is-disabled mt-auto" disabled>
+              After subscription
+            </button>
+          ) : (
+            <Link to="/regularRunningDeal" className="btn my-offer-cta mt-auto">
+              <GiftIcon />
+              Explore
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -343,23 +388,33 @@ const isActiveOffer = (o) =>
   !isOfferClaimed(o) &&
   o.eligible === true;
 
+/** Assigned Deal Fee Free must stay visible/claimable even after segment conversion. */
+const isDisplayableDealFeeFree = (o) =>
+  isAssignedUnclaimedDealFeeFree(o) || isDeferredDealFeeFreeOffer(o);
+
 export default function ReactivationMyOffers() {
   const [offers, setOffers] = useState([]);
   const [membershipPlans, setMembershipPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hideMembershipCards, setHideMembershipCards] = useState(false);
 
   const loadOffers = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const list = await getUserReactivationOffers();
-      const activeList = Array.isArray(list) ? list.filter(isActiveOffer) : [];
-      setOffers(Array.isArray(list) ? list : []);
+      const allOffers = Array.isArray(list) ? list : [];
+      setOffers(allOffers);
 
-      const hasMembershipDiscount = activeList.some(
-        (o) => normalizeOfferType(o) === "SUBSCRIPTION_DISCOUNT"
-      );
+      const blockMembership = syncDealFeeFreeGateFromOffers(allOffers);
+      setHideMembershipCards(blockMembership || shouldHideMembershipOffers(allOffers));
+
+      const activeList = allOffers.filter(isActiveOffer);
+      const hasMembershipDiscount =
+        !blockMembership &&
+        !shouldHideMembershipOffers(allOffers) &&
+        activeList.some((o) => normalizeOfferType(o) === "SUBSCRIPTION_DISCOUNT");
 
       if (hasMembershipDiscount) {
         try {
@@ -376,6 +431,7 @@ export default function ReactivationMyOffers() {
       setError(e.message || "Failed to load your offers.");
       setOffers([]);
       setMembershipPlans([]);
+      setHideMembershipCards(shouldHideMembershipOffers([]));
     } finally {
       setLoading(false);
     }
@@ -387,16 +443,27 @@ export default function ReactivationMyOffers() {
 
   const activeOffers = useMemo(() => offers.filter(isActiveOffer), [offers]);
 
-  const dealFeeOffers = useMemo(
-    () => activeOffers.filter((o) => normalizeOfferType(o) !== "SUBSCRIPTION_DISCOUNT"),
-    [activeOffers]
-  );
+  const dealFeeOffers = useMemo(() => {
+    const fromActive = activeOffers.filter(
+      (o) => normalizeOfferType(o) !== "SUBSCRIPTION_DISCOUNT"
+    );
+    const assignedDealFee = offers.filter(isDisplayableDealFeeFree);
+    const byId = new Map();
+    [...fromActive, ...assignedDealFee].forEach((o) => {
+      const key = o.offerId || o.id;
+      if (key != null) byId.set(key, o);
+    });
+    return Array.from(byId.values());
+  }, [activeOffers, offers]);
 
-  const membershipDiscountOffer = useMemo(
-    () =>
-      activeOffers.find((o) => normalizeOfferType(o) === "SUBSCRIPTION_DISCOUNT") || null,
-    [activeOffers]
-  );
+  const membershipDiscountOffer = useMemo(() => {
+    // Hard frontend block — never render membership cards while Deal Fee Free is unclaimed.
+    if (hideMembershipCards || shouldHideMembershipOffers(offers)) return null;
+    if (hasUnclaimedDealFeeFreeOffer(offers)) return null;
+    return (
+      activeOffers.find((o) => normalizeOfferType(o) === "SUBSCRIPTION_DISCOUNT") || null
+    );
+  }, [activeOffers, offers, hideMembershipCards]);
 
   const hasAnyCards =
     dealFeeOffers.length > 0 ||
@@ -497,11 +564,12 @@ export default function ReactivationMyOffers() {
                       const key = offer.offerId || offer.id;
                       const showMembershipBonus =
                         normalizeOfferType(offer) === "FIRST_DEAL_FREE";
+                      const deferred = isDeferredDealFeeFreeOffer(offer);
                       return (
                         <React.Fragment key={key}>
                           <OfferCard offer={offer} />
                           {showMembershipBonus && (
-                            <FreeMembershipBonusCard offer={offer} />
+                            <FreeMembershipBonusCard offer={offer} deferred={deferred} />
                           )}
                         </React.Fragment>
                       );

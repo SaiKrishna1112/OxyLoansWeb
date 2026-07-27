@@ -9,6 +9,12 @@ import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "..
 import { Button, Table,Tooltip } from "antd";
 import { toastrError } from "../../Base UI Elements/Toast";
 import { participatedapi, isParticipationFeeWaived, hasActiveReactivationOffer, isMandatoryFeeDeal, OFFER_STATUS_ACTIVE, OFFER_MIN_PARTICIPATION } from "../../Base UI Elements/SweetAlert";
+import {
+  isAssignedUnclaimedDealFeeFree,
+  markUnclaimedDealFeeFree,
+  syncDealFeeFreeGateFromDealApi,
+  syncDealFeeFreeGateFromOffers,
+} from "./dealFeeFreeGate";
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -64,24 +70,7 @@ const Participatedeal = () => {
     !isParticipationFeeWaived(deal.apidata, deal.participatedAmount);
 
   const participationAmount = Number(deal.participatedAmount) || 0;
-  const hasActiveSubscription =
-    deal.apidata?.subscriptionActive === true ||
-    deal.apidata?.subscriptionActive === "true" ||
-    deal.apidata?.lenderValidityStatus === false ||
-    deal.apidata?.lenderValidityStatus === "false";
-  const hasActiveOffer =
-    deal.apidata &&
-    !hasActiveSubscription &&
-    isMandatoryFeeDeal(deal.apidata) &&
-    hasActiveReactivationOffer(deal.apidata);
-  // First claim: offer applies only when amount meets minimum (₹10,000+)
-  const offerAppliesNow =
-    hasActiveOffer && participationAmount >= OFFER_MIN_PARTICIPATION;
-  // Offer active but amount too low — pay normal fee, offer stays ACTIVE
-  const offerAmountTooLow =
-    hasActiveOffer &&
-    participationAmount > 0 &&
-    participationAmount < OFFER_MIN_PARTICIPATION;
+
   // Offer already claimed (FIRST_DEAL_FREE only — not SUBSCRIPTION_DISCOUNT)
   const offerIsClaimed =
     deal.apidata?.offerClaimed === true ||
@@ -92,19 +81,66 @@ const Participatedeal = () => {
       (deal.apidata?.offerClaimed === true ||
         deal.apidata?.grantsFreeSubscription === true ||
         normalizeOfferType(deal.apidata?.activeOfferType) === "FIRST_DEAL_FREE"));
-  // Membership from claim (or paid) — primary post-claim banner
+
+  // Unclaimed Deal Fee Free usable now (membership not already active).
+  const membershipAlreadyActive =
+    deal.apidata?.subscriptionActive === true ||
+    deal.apidata?.subscriptionActive === "true";
+
+  const hasDeferredOfferBanner =
+    !offerIsClaimed &&
+    membershipAlreadyActive &&
+    (deal.apidata?.offerDeferredUntilSubscriptionEnds === true ||
+      deal.apidata?.offerDeferredUntilSubscriptionEnds === "true" ||
+      ((deal.apidata?.offerActive === true ||
+        deal.apidata?.offerActive === "true" ||
+        deal.apidata?.offerStatus === OFFER_STATUS_ACTIVE) &&
+        deal.apidata?.offerEligible !== true &&
+        deal.apidata?.offerEligible !== "true" &&
+        (normalizeOfferType(deal.apidata?.activeOfferType) === "FIRST_DEAL_FREE" ||
+          !!deal.apidata?.activeOfferId ||
+          !!deal.apidata?.offerMessage)));
+
+  const hasUnclaimedDealFeeFree =
+    !offerIsClaimed &&
+    !membershipAlreadyActive &&
+    isMandatoryFeeDeal(deal.apidata) &&
+    hasActiveReactivationOffer(deal.apidata);
+
+  const hasActiveSubscriptionRaw =
+    membershipAlreadyActive ||
+    deal.apidata?.lenderValidityStatus === false ||
+    deal.apidata?.lenderValidityStatus === "false";
+
+  // While Deal Fee Free is still unclaimed (and membership not already active),
+  // do not treat membership as the primary flow.
+  const hasActiveSubscription =
+    hasActiveSubscriptionRaw && !hasUnclaimedDealFeeFree;
+
+  const hasActiveOffer = !!deal.apidata && hasUnclaimedDealFeeFree;
+
+  // First claim: offer applies only when amount meets minimum (₹10,000+)
+  const offerAppliesNow =
+    hasActiveOffer && participationAmount >= OFFER_MIN_PARTICIPATION;
+  // Offer active but amount too low — pay normal fee, offer stays ACTIVE
+  const offerAmountTooLow =
+    hasActiveOffer &&
+    participationAmount > 0 &&
+    participationAmount < OFFER_MIN_PARTICIPATION;
+  // Membership from claim (or paid) — only after Deal Fee Free is claimed
   const showClaimedOfferMembershipBanner =
-    offerIsClaimed && (hasActiveSubscription || !!deal.apidata?.subscriptionValidityDate);
+    offerIsClaimed &&
+    (hasActiveSubscriptionRaw || !!deal.apidata?.subscriptionValidityDate);
   // Offer used but membership not active → fee applies again
   const offerAlreadyUsed =
     offerIsClaimed &&
-    !hasActiveSubscription &&
+    !hasActiveSubscriptionRaw &&
     !deal.apidata?.subscriptionValidityDate &&
     !isParticipationFeeWaived(deal.apidata, participationAmount);
   // Hide "validity expired" when offer or subscription covers the fee
   const showValidityExpiredNote =
     deal.apidata?.lenderValidityStatus == true &&
-    !hasActiveSubscription &&
+    !hasActiveSubscriptionRaw &&
     !hasActiveOffer &&
     !offerIsClaimed &&
     deal.apidata.paymentRequired !== false &&
@@ -127,13 +163,14 @@ const Participatedeal = () => {
 
   const mergeActiveOffersIntoDealData = (dealData, offers) => {
     const list = offers || [];
+    // Only assigned/eligible Deal Fee Free — never catalog rows for other segments.
     const activeOffers = list.filter(
       (offer) =>
         offer &&
-        (offer.status === "ACTIVE" || offer.claimStatus === "ACTIVE") &&
-        !offer.redeemed &&
-        offer.claimStatus !== "CLAIMED" &&
-        FEE_WAIVER_OFFER_TYPES.has(normalizeOfferType(offer.offerType))
+        isAssignedUnclaimedDealFeeFree(offer) &&
+        (offer.status === "ACTIVE" ||
+          offer.claimStatus === "ACTIVE" ||
+          offer.eligible === true)
     );
     const claimedOffers = list.filter(
       (offer) =>
@@ -192,15 +229,52 @@ const Participatedeal = () => {
         merged.feeAmount = 0;
         merged.subscriptionActive = true;
       }
+      markUnclaimedDealFeeFree(false);
       return merged;
     }
 
-    // Offer-granted or paid membership → treat like old valid subscription (no fee, any amount)
+    // Offer-granted or paid membership → no fee. Keep pending Deal Fee Free for banner/note only.
     if (merged.subscriptionActive === true || merged.subscriptionActive === "true") {
       merged.lenderValidityStatus = false;
       merged.validityStatus = false;
       merged.paymentRequired = false;
       merged.feeAmount = 0;
+      if (activeOffers.length > 0) {
+        const primaryOffer = activeOffers[0];
+        const freeMonths = primaryOffer.freeSubscriptionMonths || 1;
+        const minInvest =
+          Number(primaryOffer.minimumInvestment) > 0
+            ? Number(primaryOffer.minimumInvestment)
+            : OFFER_MIN_PARTICIPATION;
+        return {
+          ...merged,
+          offerActive: true,
+          offerStatus: OFFER_STATUS_ACTIVE,
+          offerClaimed: false,
+          offerEligible: false,
+          offerApplied: false,
+          offerDeferredUntilSubscriptionEnds: true,
+          claimStatus: "ACTIVE",
+          activeOfferId: primaryOffer.offerId,
+          activeOfferType: primaryOffer.offerType,
+          activeOfferTitle: primaryOffer.title,
+          grantsFreeSubscription: true,
+          freeSubscriptionMonths: freeMonths,
+          minimumInvestment: minInvest,
+          activeOffers,
+          offerMessage:
+            `Membership active — no deal fee. Your Deal Fee Free offer will be applicable after your ` +
+            `current subscription ends. Then participate with at least ₹${minInvest.toLocaleString(
+              "en-IN"
+            )} to claim it (fee waiver + free ${freeMonths}-month membership).`,
+        };
+      }
+      merged.offerActive = false;
+      merged.offerEligible = false;
+      merged.offerApplied = false;
+      merged.offerDeferredUntilSubscriptionEnds = false;
+      merged.activeOfferId = null;
+      merged.activeOffers = [];
       return merged;
     }
 
@@ -214,6 +288,7 @@ const Participatedeal = () => {
       Number(primaryOffer.minimumInvestment) > 0
         ? Number(primaryOffer.minimumInvestment)
         : OFFER_MIN_PARTICIPATION;
+    markUnclaimedDealFeeFree(true);
     return {
       ...merged,
       offerActive: true,
@@ -293,10 +368,12 @@ const Participatedeal = () => {
         }
         try {
           const offers = await getUserReactivationOffers();
+          syncDealFeeFreeGateFromOffers(offers);
           newObj = mergeActiveOffersIntoDealData(newObj, offers);
         } catch (error) {
           /* single-deal API still carries offer flags when backend is updated */
         }
+        syncDealFeeFreeGateFromDealApi(newObj);
         // Membership (paid or offer-granted) → no fee. Active unclaimed offer alone does NOT waive fee
         // until participate amount meets minimum (see isParticipationFeeWaived).
         if (
@@ -843,8 +920,41 @@ const Participatedeal = () => {
                   </div>
                 )}
 
-                {/* Active paid / offer membership without claim metadata */}
-                {hasActiveSubscription && !offerIsClaimed && (
+                {/* Active membership + reserved Deal Fee Free (usable after subscription ends) */}
+                {hasDeferredOfferBanner && (
+                  <>
+                    <div className="participate-offer-banner is-success" role="status">
+                      <h5>Membership active — no deal fee</h5>
+                      <p>
+                        Your membership is active
+                        {deal.apidata?.validityDate || deal.apidata?.subscriptionValidityDate
+                          ? ` until ${formatOfferDay(
+                              deal.apidata.subscriptionValidityDate || deal.apidata.validityDate
+                            )}`
+                          : ""}
+                        . You can participate without paying a participation fee.
+                      </p>
+                    </div>
+                    <div className="participate-offer-banner is-info" role="status">
+                      <h5>Special Offer — reserved for you</h5>
+                      <p>
+                        {deal.apidata?.offerMessage ||
+                          `Your Deal Fee Free offer will be applicable after your current subscription ends. Then participate with at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
+                            "en-IN"
+                          )} to claim it (no participation fee + free 1-month membership).`}
+                      </p>
+                      <p className="fw-semibold mb-0">
+                        Note: This offer is not usable until your current subscription is completed.
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                {/* Active paid membership — only when no deferred / unclaimed Deal Fee Free */}
+                {hasActiveSubscription &&
+                  !offerIsClaimed &&
+                  !hasUnclaimedDealFeeFree &&
+                  !hasDeferredOfferBanner && (
                   <div className="participate-offer-banner is-success" role="status">
                     <h5>Membership active — no deal fee</h5>
                     <p>

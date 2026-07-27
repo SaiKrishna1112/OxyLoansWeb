@@ -21,6 +21,7 @@ import {
   withdrawriaseapipay,
 } from "../../HttpRequest/afterlogin";
 import { toastrSuccess } from "./Toast";
+import { markUnclaimedDealFeeFree } from "../Oxyloans/Lender/dealFeeFreeGate";
 
 export const OFFER_MIN_PARTICIPATION = 10000;
 export const OFFER_STATUS_ACTIVE = "ACTIVE";
@@ -41,6 +42,10 @@ export const isParticipationFeeOfferType = (offerType) =>
 
 export const hasActiveReactivationOffer = (apidata) => {
   if (!apidata) return false;
+  // Active membership: offers are not usable.
+  if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
+    return false;
+  }
   if (apidata.offerStatus === OFFER_STATUS_DEACTIVATED) return false;
 
   const activeType = apidata.activeOfferType || apidata.activeOfferTypeCode;
@@ -70,6 +75,7 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
   if (!apidata) return false;
   if (apidata.feeStatusToParticipate === "OPTIONAL") return true;
 
+  // Active membership already covers fee — offers must not be used/claimed.
   if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
     return true;
   }
@@ -79,15 +85,17 @@ export const isParticipationFeeWaived = (apidata, participationAmount = 0) => {
     }
   }
 
+  // Unclaimed Deal Fee Free (no active membership): waive only at/above ₹10,000 (claim path).
+  const offerClaimed =
+    apidata.offerClaimed === true ||
+    apidata.offerClaimed === "true" ||
+    apidata.claimStatus === "CLAIMED" ||
+    apidata.offerStatus === OFFER_STATUS_DEACTIVATED;
+  if (!offerClaimed && hasActiveReactivationOffer(apidata)) {
+    return Number(participationAmount) >= OFFER_MIN_PARTICIPATION;
+  }
+
   if (apidata.paymentRequired === false || apidata.paymentRequired === "false") {
-    if (apidata.subscriptionActive === true || apidata.subscriptionActive === "true") {
-      return true;
-    }
-    if (apidata.lenderValidityStatus === false || apidata.lenderValidityStatus === "false") {
-      if (apidata.groupName !== "NewLender") {
-        return true;
-      }
-    }
     if (hasActiveReactivationOffer(apidata) || apidata.offerEligible === true || apidata.offerEligible === "true") {
       return Number(participationAmount) >= OFFER_MIN_PARTICIPATION;
     }
@@ -260,6 +268,8 @@ const participateWithoutFee = (deal) => {
         });
         return;
       }
+
+      markUnclaimedDealFeeFree(false);
 
       const months =
         resp.freeSubscriptionMonths ||
@@ -571,6 +581,12 @@ export const personalDetails = (message, route) => {
   });
 };
 
+const runPerDealParticipation = (deal) => {
+  participateWithPerDealFee(deal)
+    .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
+    .catch((err) => showPerDealFeeParticipationError(err));
+};
+
 export const participatedapi = async (deal) => {
   const payoutmethod = localStorage.getItem("choosenPayOutOption");
   Swal.fire({
@@ -585,31 +601,35 @@ export const participatedapi = async (deal) => {
     confirmButtonText: "Ok!",
   }).then((result) => {
     if (result.isConfirmed) {
-      // Fee waived when membership is active OR FIRST_DEAL_FREE amount >= ₹10,000.
+      // Fee waived when: (1) Deal Fee Free amount >= ₹10,000 → claim + free month, OR
+      // (2) no unclaimed Deal Fee Free and membership already covers the fee.
       if (isParticipationFeeWaived(deal.apidata, deal.participatedAmount)) {
         participateWithoutFee(deal);
         return;
       }
 
-      if (deal.apidata.groupName == "NewLender") {
-        participateWithPerDealFee(deal)
-          .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
-          .catch((err) => showPerDealFeeParticipationError(err));
+      // Active Deal Fee Free + amount < ₹10,000 → per-deal fee only; offer stays ACTIVE.
+      // Do not open membership/subscription plans until Deal Fee Free is claimed.
+      const hasUnclaimedDealFeeFreeBelowMin =
+        hasActiveReactivationOffer(deal.apidata) &&
+        Number(deal.participatedAmount) < OFFER_MIN_PARTICIPATION;
+
+      if (hasUnclaimedDealFeeFreeBelowMin || deal.apidata.groupName == "NewLender") {
+        runPerDealParticipation(deal);
       } else if (
         deal.apidata.lenderValidityStatus == true &&
         deal.apidata.groupName != "NewLender" &&
-        isMandatoryFeeDeal(deal.apidata) &&
-        hasActiveReactivationOffer(deal.apidata) &&
-        Number(deal.participatedAmount) < OFFER_MIN_PARTICIPATION
+        !hasActiveReactivationOffer(deal.apidata)
       ) {
-        participateWithPerDealFee(deal)
-          .then(({ feeAmount }) => showPerDealFeeParticipationSuccess(deal, feeAmount))
-          .catch((err) => showPerDealFeeParticipationError(err));
+        // No active Deal Fee Free → normal membership / subscription plan picker.
+        membership(deal.urldealId, deal, deal.participatedAmount);
       } else if (
         deal.apidata.lenderValidityStatus == true &&
-        deal.apidata.groupName != "NewLender"
+        deal.apidata.groupName != "NewLender" &&
+        hasActiveReactivationOffer(deal.apidata)
       ) {
-        membership(deal.urldealId, deal, deal.participatedAmount);
+        // Safety: unclaimed Deal Fee Free must never open membership plans.
+        runPerDealParticipation(deal);
       } else if (
         deal.apidata.lenderValidityStatus == false &&
         deal.apidata.groupName != "NewLender"
@@ -629,6 +649,7 @@ export const participatedapi = async (deal) => {
               resp.subscriptionGrantedThroughOffer === "true";
 
             if (offerWasConsumed || subscriptionGranted) {
+              markUnclaimedDealFeeFree(false);
               const months =
                 resp.freeSubscriptionMonths ||
                 deal.apidata?.freeSubscriptionMonths ||
@@ -674,6 +695,15 @@ export const participatedapi = async (deal) => {
 export const membership = async (dealId, dealInfo, participatedAmount) => {
   if (isParticipationFeeWaived(dealInfo?.apidata, participatedAmount)) {
     participateWithoutFee(dealInfo);
+    return;
+  }
+
+  // Do not show membership/subscription plans while Deal Fee Free is still unclaimed.
+  if (
+    hasActiveReactivationOffer(dealInfo?.apidata) &&
+    Number(participatedAmount) < OFFER_MIN_PARTICIPATION
+  ) {
+    runPerDealParticipation(dealInfo);
     return;
   }
 
