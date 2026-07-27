@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaEnvelope, FaFileExcel, FaHistory, FaTimes, FaWhatsapp } from "react-icons/fa";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { goBackOrAdminAI, YEAR_WISE_REFERRALS_PATH } from "./adminAINavigation";
 import { saveAs } from "file-saver";
 import {
   fetchAllCampaignBatchDeliveries,
@@ -29,14 +30,40 @@ const escapeXml = (value) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
-const buildFailedDeliveriesExcelXml = (rows) => {
-  const headers = ["Sent At", "Lender ID", "Lender Name", "Email", "Mobile", "Recipient", "Channel", "Status", "Error"];
+const isBorrowerCampaignContext = (...sources) =>
+  sources.some((value) => String(value || "").toLowerCase().includes("borrower"));
+
+const formatCampaignUserCode = (row, batch) => {
+  if (row?.userCode) return row.userCode;
+  const id = row?.lenderId;
+  if (!id) return "";
+  if (row?.userType === "borrower" || isBorrowerCampaignContext(row?.segment, row?.segmentLabel, batch?.segment, batch?.segmentLabel, batch?.audience)) {
+    return `BR${id}`;
+  }
+  return `LR${id}`;
+};
+
+const campaignUserColumnLabel = (batch, segmentLabel, deliveries = []) => {
+  if (Array.isArray(deliveries) && deliveries.length > 0) {
+    const hasBorrower = deliveries.some((row) => row?.userType === "borrower" || String(row?.userCode || "").startsWith("BR"));
+    const hasLender = deliveries.some((row) => row?.userType === "lender" || String(row?.userCode || "").startsWith("LR"));
+    if (hasBorrower && hasLender) return "User";
+    if (hasBorrower) return "Borrower";
+    if (hasLender) return "Lender";
+  }
+  return isBorrowerCampaignContext(batch?.segment, batch?.segmentLabel, batch?.audience, segmentLabel) ? "Borrower" : "Lender";
+};
+
+const buildFailedDeliveriesExcelXml = (rows, batch, segmentLabel) => {
+  const userColumnLabel = `${campaignUserColumnLabel(batch, segmentLabel)} ID`;
+  const nameColumnLabel = `${campaignUserColumnLabel(batch, segmentLabel)} Name`;
+  const headers = ["Sent At", userColumnLabel, nameColumnLabel, "Email", "Mobile", "Recipient", "Channel", "Status", "Error"];
   const headerXml = headers.map((title) => `<Cell><Data ss:Type="String">${escapeXml(title)}</Data></Cell>`).join("");
   const rowXml = rows
     .map((row) => {
       const cells = [
         formatDateTime(row.sentAt),
-        row.lenderId ? `LR${row.lenderId}` : "",
+        formatCampaignUserCode(row, batch),
         row.lenderName || "",
         row.email || "",
         row.mobileNumber || "",
@@ -186,7 +213,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
       onClose();
       return;
     }
-    navigate("/adminAIDashboard");
+    goBackOrAdminAI(navigate);
   };
 
   const backToHistoryList = () => {
@@ -395,7 +422,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
         );
         return;
       }
-      const xml = buildFailedDeliveriesExcelXml(failedRows);
+      const xml = buildFailedDeliveriesExcelXml(failedRows, selectedBatch, titleSuffix);
       const fileName = `campaign-failed-${selectedBatch.batchId}.xls`;
       saveAs(new Blob([xml], { type: "application/vnd.ms-excel;charset=utf-8;" }), fileName);
       setDeliveryTotalCount(failedRows.length);
@@ -503,11 +530,12 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
         status: effectiveDeliveryFilter || undefined,
         pageSize: 200,
       });
-      const normalizedId = query.replace(/^lr/i, "");
+      const normalizedId = query.replace(/^(lr|br)/i, "");
       const matches = rows.filter((row) => {
+        const userCode = formatCampaignUserCode(row, selectedBatch).toLowerCase();
         const lenderId = String(row?.lenderId || "").toLowerCase();
         const email = String(row?.email || row?.recipient || "").toLowerCase();
-        return lenderId.includes(normalizedId) || email.includes(query);
+        return userCode.includes(query) || lenderId.includes(normalizedId) || email.includes(query);
       });
       setDeliverySearchResults(matches);
     } catch (err) {
@@ -1003,14 +1031,14 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
               searchBatchDeliveries();
             }}
           >
-            <label htmlFor="campaign-delivery-search">Search Lender ID or Email</label>
+            <label htmlFor="campaign-delivery-search">Search {campaignUserColumnLabel(selectedBatch, titleSuffix, visibleDeliveries)} ID or Email</label>
             <div>
               <input
                 id="campaign-delivery-search"
                 type="search"
                 value={deliverySearch}
                 onChange={(event) => setDeliverySearch(event.target.value)}
-                placeholder="Example: LR64812 or user@gmail.com"
+                placeholder={`Example: ${isBorrowerCampaignContext(selectedBatch?.segment, selectedBatch?.segmentLabel, selectedBatch?.audience, titleSuffix) ? "BR64812" : "LR64812"} or user@gmail.com`}
               />
               <button type="submit" disabled={deliverySearchLoading || !deliverySearch.trim()}>
                 {deliverySearchLoading ? "Searching..." : "Search"}
@@ -1067,7 +1095,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                 <thead>
                   <tr>
                     <th>Sent at</th>
-                    <th>Lender</th>
+                    <th>{campaignUserColumnLabel(selectedBatch, titleSuffix, visibleDeliveries)}</th>
                     <th>Recipient</th>
                     <th>Channel</th>
                     <th>Status</th>
@@ -1083,7 +1111,7 @@ const AdminAILenderCampaignHistoryPanel = ({ segment, segmentLabel, onClose }) =
                       <td>{formatDateTime(row.sentAt)}</td>
                       <td>
                         {row.lenderName || "-"}
-                        {row.lenderId ? <small className="admin-ai-campaign-subtext">LR{row.lenderId}</small> : null}
+                        {row.lenderId ? <small className="admin-ai-campaign-subtext">{formatCampaignUserCode(row, selectedBatch)}</small> : null}
                       </td>
                       <td>{row.recipient || row.email || row.mobileNumber || "-"}</td>
                       <td>

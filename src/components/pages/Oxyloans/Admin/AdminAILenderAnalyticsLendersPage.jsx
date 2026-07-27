@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { goBackOrAdminAI, YEAR_WISE_REFERRALS_PATH } from "./adminAINavigation";
 import { FaRobot, FaArrowLeft, FaUsers, FaFileExcel, FaEnvelope, FaWhatsapp } from "react-icons/fa";
 import { saveAs } from "file-saver";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
@@ -196,7 +197,7 @@ const AdminAILenderAnalyticsLendersPage = () => {
                 <strong>{appliedLenderIdSearch ? fmtNum(totalCount) : fmtNum(summaryCount)}</strong>
               </div>
             </div>
-            <button className="admin-ai-close-btn" type="button" onClick={() => navigate("/adminAIDashboard")}>
+            <button className="admin-ai-close-btn" type="button" onClick={() => goBackOrAdminAI(navigate)}>
               <FaArrowLeft /> Back to Dashboard
             </button>
           </div>

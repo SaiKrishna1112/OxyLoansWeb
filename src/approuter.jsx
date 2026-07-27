@@ -14,6 +14,13 @@ import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICr
 import AdminAILenderAnalyticsLendersPage from "./components/pages/Oxyloans/Admin/AdminAILenderAnalyticsLendersPage";
 import AdminAIUserProfilePage from "./components/pages/Oxyloans/Admin/AdminAIUserProfilePage";
 import AdminAIReferralUsersPage from "./components/pages/Oxyloans/Admin/AdminAIReferralUsersPage";
+import AdminAITopReferrerDetailPage from "./components/pages/Oxyloans/Admin/AdminAITopReferrerDetailPage";
+import AdminAITopPaidEarnedReferrersPage from "./components/pages/Oxyloans/Admin/AdminAITopPaidEarnedReferrersPage";
+import AdminAITopPaidEarnedHistoryPage from "./components/pages/Oxyloans/Admin/AdminAITopPaidEarnedHistoryPage";
+import AdminAIActiveLendersReferralPortfolioPage from "./components/pages/Oxyloans/Admin/AdminAIActiveLendersReferralPortfolioPage";
+import AdminAILentReferralTreeMapPage from "./components/pages/Oxyloans/Admin/AdminAILentReferralTreeMapPage";
+import AdminAILentUsersDetailPage from "./components/pages/Oxyloans/Admin/AdminAILentUsersDetailPage";
+import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Admin/AdminAIInactiveReactivatedReportPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
@@ -283,6 +290,13 @@ const AppRouter = () => {
         <Route path="/adminAILenderAnalytics" element={<AdminAILenderAnalyticsLendersPage />} />
         <Route path="/adminAIUserProfile" element={<AdminAIUserProfilePage />} />
         <Route path="/adminAIReferralUsers" element={<AdminAIReferralUsersPage />} />
+        <Route path="/adminAITopReferrer" element={<AdminAITopReferrerDetailPage />} />
+        <Route path="/adminAITopPaidEarnedReferrers" element={<AdminAITopPaidEarnedReferrersPage />} />
+        <Route path="/adminAITopPaidEarnedHistory" element={<AdminAITopPaidEarnedHistoryPage />} />
+        <Route path="/adminAIActiveLendersReferralPortfolio" element={<AdminAIActiveLendersReferralPortfolioPage />} />
+        <Route path="/adminAILentReferralTreeMap" element={<AdminAILentReferralTreeMapPage />} />
+        <Route path="/adminAILentUsersDetail" element={<AdminAILentUsersDetailPage />} />
+        <Route path="/adminAIInactiveReactivatedReport" element={<AdminAIInactiveReactivatedReportPage />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
 
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />

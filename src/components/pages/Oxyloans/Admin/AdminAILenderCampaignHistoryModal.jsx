@@ -7,6 +7,22 @@ import {
 
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
 
+const isBorrowerCampaignContext = (...sources) =>
+  sources.some((value) => String(value || "").toLowerCase().includes("borrower"));
+
+const formatCampaignUserCode = (row, batch, segmentLabel) => {
+  if (row?.userCode) return row.userCode;
+  const id = row?.lenderId;
+  if (!id) return "";
+  if (row?.userType === "borrower" || isBorrowerCampaignContext(row?.segment, row?.segmentLabel, batch?.segment, batch?.segmentLabel, batch?.audience, segmentLabel)) {
+    return `BR${id}`;
+  }
+  return `LR${id}`;
+};
+
+const campaignUserColumnLabel = (batch, segmentLabel) =>
+  isBorrowerCampaignContext(batch?.segment, batch?.segmentLabel, batch?.audience, segmentLabel) ? "Borrower" : "Lender";
+
 const formatDateTime = (value) => {
   if (!value) return "-";
   const date = new Date(String(value).replace(" ", "T"));
@@ -323,7 +339,7 @@ const AdminAILenderCampaignHistoryModal = ({ open, onClose, segment, segmentLabe
                     <thead>
                       <tr>
                         <th>Sent at</th>
-                        <th>Lender</th>
+                        <th>{campaignUserColumnLabel(selectedBatch, segmentLabel)}</th>
                         <th>Recipient</th>
                         <th>Channel</th>
                         <th>Status</th>
@@ -336,7 +352,7 @@ const AdminAILenderCampaignHistoryModal = ({ open, onClose, segment, segmentLabe
                           <td>{formatDateTime(row.sentAt)}</td>
                           <td>
                             {row.lenderName || "-"}
-                            {row.lenderId ? <small className="admin-ai-campaign-subtext">LR{row.lenderId}</small> : null}
+                            {row.lenderId ? <small className="admin-ai-campaign-subtext">{formatCampaignUserCode(row, selectedBatch, segmentLabel)}</small> : null}
                           </td>
                           <td>{row.recipient || row.email || row.mobileNumber || "-"}</td>
                           <td>
