@@ -172,7 +172,7 @@ export default function LenderUpgradePortal() {
         return;
       }
 
-      const cashfree = window.Cashfree({ mode: ENV === "production" ? "production" : "sandbox" });
+      const cashfree = window.Cashfree({ mode: ENV === "local" ? "sandbox" : "production" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setPlanError(e?.response?.data?.error || e.message || "Payment initiation failed");

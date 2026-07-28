@@ -4,7 +4,7 @@ import axios from "axios";
 import Header from "../../Header/Header";
 import SideBar from "../../SideBar/SideBar";
 import Footer from "../../Footer/Footer";
-import { MARKETPLACE_URL } from "../../../config";
+import { MARKETPLACE_URL, ENV } from "../../../config";
 import { getToken, getUserId } from "../../HttpRequest/afterlogin";
 
 const PLANS = [
@@ -134,7 +134,7 @@ export default function LenderAIPlanPage() {
         return;
       }
 
-      const cashfree = window.Cashfree({ mode: "sandbox" });
+      const cashfree = window.Cashfree({ mode: ENV === "local" ? "sandbox" : "production" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");
