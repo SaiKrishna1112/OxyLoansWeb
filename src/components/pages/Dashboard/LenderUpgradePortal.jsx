@@ -344,14 +344,17 @@ export default function LenderUpgradePortal() {
           <div style={{ display: "flex", gap: 24, justifyContent: "center" }}>
             {PLANS.map((plan) => {
               const isPaidThisPlan = (plan.key === "PRO" && isPaidPro) || (plan.key === "SMART" && isPaidSmart);
+              const isDowngrade = isPaidPro && plan.key === "SMART"; // PRO → Smart = downgrade
               const isUpgradeFromSmart = plan.key === "PRO" && isPaidSmart;
-              const showSubscribeBtn = !isPaidThisPlan;
+              const isActionable = !isPaidThisPlan && !isDowngrade;
 
               let btnLabel;
               if (paying === plan.key) {
                 btnLabel = "Processing…";
               } else if (isPaidThisPlan) {
                 btnLabel = "✓ Current Plan";
+              } else if (isDowngrade) {
+                btnLabel = "Downgrade not available";
               } else if (onTrial) {
                 btnLabel = `Subscribe to OXY ${plan.label} — ₹${plan.displayPrice.toLocaleString("en-IN")}/year`;
               } else if (isUpgradeFromSmart) {
@@ -420,13 +423,13 @@ export default function LenderUpgradePortal() {
 
                   {/* CTA button */}
                   <button
-                    onClick={() => !isPaidThisPlan && handleSubscribe(plan.key)}
-                    disabled={isPaidThisPlan || paying === plan.key}
+                    onClick={() => isActionable && handleSubscribe(plan.key)}
+                    disabled={!isActionable || paying === plan.key}
                     style={{
                       ...styles.planBtn,
-                      background: isPaidThisPlan ? plan.color + "22" : plan.color,
-                      color: isPaidThisPlan ? plan.color : "#fff",
-                      cursor: isPaidThisPlan ? "default" : "pointer",
+                      background: isPaidThisPlan ? plan.color + "22" : isDowngrade ? "#f5f5f5" : plan.color,
+                      color: isPaidThisPlan ? plan.color : isDowngrade ? "#bfbfbf" : "#fff",
+                      cursor: isActionable ? "pointer" : "default",
                       fontSize: onTrial ? 13 : 14,
                     }}
                   >
