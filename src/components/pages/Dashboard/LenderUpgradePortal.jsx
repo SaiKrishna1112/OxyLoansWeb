@@ -341,7 +341,7 @@ export default function LenderUpgradePortal() {
         {plansLoading ? (
           <p style={{ textAlign: "center", color: "#8c8c8c" }}>Loading your plan…</p>
         ) : (
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: 24, justifyContent: "center" }}>
             {PLANS.map((plan) => {
               const isPaidThisPlan = (plan.key === "PRO" && isPaidPro) || (plan.key === "SMART" && isPaidSmart);
               const isUpgradeFromSmart = plan.key === "PRO" && isPaidSmart;
@@ -362,7 +362,7 @@ export default function LenderUpgradePortal() {
 
               return (
                 <div key={plan.key} style={{
-                  flex: "1 1 300px", maxWidth: 360,
+                  flex: "1 1 0", maxWidth: 380,
                   background: "#fff", borderRadius: 18,
                   border: plan.key === "PRO"
                     ? `2px solid ${plan.color}`
