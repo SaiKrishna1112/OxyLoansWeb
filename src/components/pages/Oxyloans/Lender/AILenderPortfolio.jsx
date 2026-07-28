@@ -1518,7 +1518,8 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
                         </div>
                       ))}
                     </div>
-                    {t !== 'FREE' && t !== actualTier && (
+                    {/* Show subscribe button for: paid upgrade tiers OR PRO card when on trial */}
+                    {t !== 'FREE' && (t !== actualTier || onTrial) && (
                       <button
                         onClick={e => { e.stopPropagation(); nav('/oxai-upgrade'); }}
                         style={{
@@ -1527,7 +1528,9 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
                           marginBottom: 6, transition: "all 0.15s",
                         }}
                       >
-                        Upgrade to OXY {info.label} — {info.price}
+                        {t === actualTier && onTrial
+                          ? `Subscribe to OXY ${info.label} — ${info.price}`
+                          : `Upgrade to OXY ${info.label} — ${info.price}`}
                       </button>
                     )}
                     <button
@@ -1540,7 +1543,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
                         transition: "all 0.15s",
                       }}
                     >
-                      {t === actualTier ? "✓ Your Plan" : isActive ? "Previewing" : `Preview ${info.label}`}
+                      {t === actualTier && !onTrial ? "✓ Your Plan" : isActive ? "Previewing" : `Preview ${info.label}`}
                     </button>
                   </div>
                 </div>
@@ -1553,7 +1556,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
                 🚀 <strong>Unlock the full AI dashboard</strong> — AI narratives, earnings intelligence, maturity planner & more
               </div>
               <button
-                onClick={() => nav('/oxai-upgrade')}
+                onClick={() => window.location.href = '/oxai-upgrade'}
                 style={{ background: "linear-gradient(135deg, #4a148c, #6a1b9a)", color: "#fff", border: "none", borderRadius: 20, padding: "8px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 Upgrade Now →
@@ -1756,7 +1759,7 @@ const LenderPortfolioDashboard = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => nav('/oxai-upgrade')}
+                    onClick={() => window.location.href = '/oxai-upgrade'}
                     style={{ background: "#fff", color: "#4a148c", border: "none", borderRadius: 24, padding: "10px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
                   >
                     Subscribe Now →
@@ -1782,7 +1785,7 @@ const LenderPortfolioDashboard = () => {
                     </div>
                   </div>
                   <button
-                    onClick={() => nav('/oxai-upgrade')}
+                    onClick={() => window.location.href = '/oxai-upgrade'}
                     style={{ background: "#fff", color: "#4a148c", border: "none", borderRadius: 24, padding: "10px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
                   >
                     Upgrade Now →
