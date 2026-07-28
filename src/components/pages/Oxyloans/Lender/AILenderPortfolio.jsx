@@ -100,7 +100,7 @@ const LockCard = ({ title, requiredTier }) => {
         </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
       </div>
       <div
-        onClick={() => nav('/ai/plans')}
+        onClick={() => nav('/oxai-upgrade')}
         style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
         Upgrade to OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
       </div>
@@ -1428,6 +1428,9 @@ const TIER_INFO = {
 
 const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
   const [expanded, setExpanded] = useState(false);
+  const nav = useNavigate();
+  const tierInfo = TIER_INFO[actualTier] || TIER_INFO['FREE'];
+  const needsUpgrade = actualTier === 'FREE' || actualTier === 'SMART';
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, overflow: "hidden" }}>
       {/* Top bar */}
@@ -1438,8 +1441,11 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>🎯</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXY Pro (trial)</strong></div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>OXY AI Plans</div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+              Your plan: <strong style={{ color: tierInfo.color }}>{tierInfo.icon} OXY {tierInfo.label}</strong>
+              {needsUpgrade && <span style={{ marginLeft: 8, color: "#722ed1" }}>— upgrade to unlock AI features</span>}
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1506,26 +1512,48 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
                         </div>
                       ))}
                     </div>
+                    {t !== 'FREE' && t !== actualTier && (
+                      <button
+                        onClick={e => { e.stopPropagation(); nav('/oxai-upgrade'); }}
+                        style={{
+                          width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                          background: info.color, color: "#fff",
+                          marginBottom: 6, transition: "all 0.15s",
+                        }}
+                      >
+                        Upgrade to OXY {info.label} — {info.price}
+                      </button>
+                    )}
                     <button
                       onClick={e => { e.stopPropagation(); onSelect(t); }}
                       style={{
-                        width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                        width: "100%", padding: "8px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600,
                         background: isActive ? info.color : info.bg,
                         color: isActive ? "#fff" : info.color,
                         border: `1px solid ${info.border}`,
                         transition: "all 0.15s",
                       }}
                     >
-                      {isActive ? "Currently Previewing" : `Preview ${info.label}`}
+                      {t === actualTier ? "✓ Your Plan" : isActive ? "Previewing" : `Preview ${info.label}`}
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
-            💡 <strong>Limited time trial:</strong> All lenders can experience OXY Pro features for free. Subscribe before the trial ends to keep your AI insights.
-          </div>
+          {needsUpgrade && (
+            <div style={{ marginTop: 14, padding: "12px 16px", background: "linear-gradient(135deg, #f9f0ff, #e6f7ff)", borderRadius: 8, border: "1px solid #d3adf7", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ fontSize: 13, color: "#262626" }}>
+                🚀 <strong>Unlock the full AI dashboard</strong> — AI narratives, earnings intelligence, maturity planner & more
+              </div>
+              <button
+                onClick={() => nav('/oxai-upgrade')}
+                style={{ background: "linear-gradient(135deg, #4a148c, #6a1b9a)", color: "#fff", border: "none", borderRadius: 20, padding: "8px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+              >
+                Upgrade Now →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1574,8 +1602,8 @@ const LenderPortfolioDashboard = () => {
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
 
-  // Default PRO view; lender can switch via tier pills; ?tier= URL override for testing
-  const effectiveTier = (tierOverride || previewTier || 'PRO').toUpperCase();
+  // Use actual backend tier; lender can preview other tiers via pills; ?tier= URL override for testing
+  const effectiveTier = (tierOverride || previewTier || data?.membershipTier || 'FREE').toUpperCase();
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
@@ -1705,10 +1733,38 @@ const LenderPortfolioDashboard = () => {
 
           {!loading && data && (
             <>
-              {/* ── 0. TIER PREVIEW BANNER ── */}
+              {/* ── 0a. UPGRADE ALERT — shown for FREE and SMART users ── */}
+              {['FREE', 'SMART'].includes((data?.membershipTier || 'FREE').toUpperCase()) && (
+                <div style={{
+                  background: "linear-gradient(135deg, #4a148c 0%, #0050b3 100%)",
+                  borderRadius: 14, padding: "18px 24px", marginBottom: 20,
+                  display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14
+                }}>
+                  <div>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
+                      {(data?.membershipTier || 'FREE').toUpperCase() === 'FREE'
+                        ? '✦ Upgrade to OXY Smart or Pro to unlock AI insights'
+                        : '✦ Upgrade to OXY Pro for the full AI dashboard experience'}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
+                      {(data?.membershipTier || 'FREE').toUpperCase() === 'FREE'
+                        ? 'AI narratives, earnings intelligence, maturity planner & more — from ₹500/year'
+                        : 'FY filter, investment charts, smart maturity planner — ₹1,000/year'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => nav('/oxai-upgrade')}
+                    style={{ background: "#fff", color: "#4a148c", border: "none", borderRadius: 24, padding: "10px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
+                  >
+                    Upgrade Now →
+                  </button>
+                </div>
+              )}
+
+              {/* ── 0b. TIER PREVIEW BANNER ── */}
               <TierPreviewBanner
                 activeTier={effectiveTier}
-                actualTier={(data?.membershipTier || 'PRO').toUpperCase()}
+                actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
                 onSelect={(t) => setPreviewTier(t)}
               />
 
