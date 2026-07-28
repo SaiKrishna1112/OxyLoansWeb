@@ -1426,11 +1426,12 @@ const TIER_INFO = {
   },
 };
 
-const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
+const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
   const [expanded, setExpanded] = useState(false);
   const nav = useNavigate();
   const tierInfo = TIER_INFO[actualTier] || TIER_INFO['FREE'];
   const needsUpgrade = actualTier === 'FREE' || actualTier === 'SMART';
+  const isPaidPro = actualTier === 'PRO' && !onTrial;
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, overflow: "hidden" }}>
       {/* Top bar */}
@@ -1443,8 +1444,13 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>OXY AI Plans</div>
             <div style={{ fontSize: 12, color: "#8c8c8c" }}>
-              Your plan: <strong style={{ color: tierInfo.color }}>{tierInfo.icon} OXY {tierInfo.label}</strong>
-              {needsUpgrade && <span style={{ marginLeft: 8, color: "#722ed1" }}>— upgrade to unlock AI features</span>}
+              {isPaidPro
+                ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro</strong> — paid &amp; active</>
+                : onTrial
+                ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro (free trial)</strong> — <span style={{ color: "#cf1322", fontWeight: 600 }}>ends Aug 1st</span></>
+                : <>Your plan: <strong style={{ color: tierInfo.color }}>{tierInfo.icon} OXY {tierInfo.label}</strong>
+                    <span style={{ marginLeft: 8, color: "#722ed1" }}>— upgrade to unlock AI features</span></>
+              }
             </div>
           </div>
         </div>
@@ -1733,8 +1739,31 @@ const LenderPortfolioDashboard = () => {
 
           {!loading && data && (
             <>
-              {/* ── 0a. UPGRADE ALERT — shown for FREE and SMART users ── */}
-              {['FREE', 'SMART'].includes((data?.membershipTier || 'FREE').toUpperCase()) && (
+              {/* ── 0a. TRIAL / UPGRADE BANNER ── */}
+              {data?.onTrial ? (
+                /* Free PRO trial — ends Aug 1 */
+                <div style={{
+                  background: "linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)",
+                  borderRadius: 14, padding: "18px 24px", marginBottom: 20,
+                  display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14
+                }}>
+                  <div>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
+                      🎁 Free PRO trial ends <strong>August 1st</strong> — Subscribe now to keep your access
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>
+                      OXY Smart ₹500/year &nbsp;|&nbsp; OXY Pro ₹1,000/year &nbsp;·&nbsp; Early subscribers get validity until <strong>August 1, 2027</strong>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => nav('/oxai-upgrade')}
+                    style={{ background: "#fff", color: "#4a148c", border: "none", borderRadius: 24, padding: "10px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
+                  >
+                    Subscribe Now →
+                  </button>
+                </div>
+              ) : ['FREE', 'SMART'].includes((data?.membershipTier || 'FREE').toUpperCase()) && (
+                /* Post-trial: upgrade prompt */
                 <div style={{
                   background: "linear-gradient(135deg, #4a148c 0%, #0050b3 100%)",
                   borderRadius: 14, padding: "18px 24px", marginBottom: 20,
@@ -1765,6 +1794,7 @@ const LenderPortfolioDashboard = () => {
               <TierPreviewBanner
                 activeTier={effectiveTier}
                 actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
+                onTrial={!!data?.onTrial}
                 onSelect={(t) => setPreviewTier(t)}
               />
 
