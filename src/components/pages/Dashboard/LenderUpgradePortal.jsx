@@ -294,7 +294,13 @@ export default function LenderUpgradePortal() {
             </span>
           )}
 
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 8, display: "flex", justifyContent: "center", gap: 20 }}>
+            <button
+              onClick={() => { window.location.href = `/lender-portfolio/${userId}`; }}
+              style={styles.linkBtn}
+            >
+              ← Dashboard
+            </button>
             <button onClick={handleLogout} style={styles.linkBtn}>Logout</button>
           </div>
         </div>
