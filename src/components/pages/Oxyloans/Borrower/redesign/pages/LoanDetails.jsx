@@ -14,6 +14,7 @@ import ErrorState from "../components/ErrorState";
 import {
   getBorrowerActiveLoans,
   getBorrowerEmiScheduleForLoan,
+  getBorrowerLoanEmiCards,
 } from "../../../../../HttpRequest/afterlogin";
 import "../redesign.css";
 
@@ -23,13 +24,26 @@ const LoanCard = ({ loan }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const loadSchedule = () => {
-    if (!loan.internalId || schedule.length > 0) return;
+    const loanReqId = loan.loanRequestId || loan.internalId || loan.id;
+    if (!loanReqId || schedule.length > 0) return;
     setLoadingSchedule(true);
-    getBorrowerEmiScheduleForLoan(loan.internalId)
+    getBorrowerLoanEmiCards(loanReqId)
       .then((res) => {
-        if (res.status === 200) setSchedule(res.data || []);
+        if (res.status === 200 && Array.isArray(res.data) && res.data.length > 0) {
+          setSchedule(res.data);
+        } else {
+          return getBorrowerEmiScheduleForLoan(loanReqId).then((fallbackRes) => {
+            if (fallbackRes.status === 200) setSchedule(fallbackRes.data || []);
+          });
+        }
       })
-      .catch(() => {})
+      .catch(() => {
+        getBorrowerEmiScheduleForLoan(loanReqId)
+          .then((fallbackRes) => {
+            if (fallbackRes.status === 200) setSchedule(fallbackRes.data || []);
+          })
+          .catch(() => {});
+      })
       .finally(() => setLoadingSchedule(false));
   };
 

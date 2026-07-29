@@ -6,11 +6,82 @@ import SideBar from "../../../SideBar/SideBar";
 import { completeEsign, lenderBorrowerEsign, completeCashfreeEsign } from "../../../HttpRequest/afterlogin";
 
 const LenderEsign = () => {
-  const { loanRequestId } = useParams();
+  const params = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const verificationId = searchParams.get("verification_id") || searchParams.get("verificationId");
-  const assignmentId = searchParams.get("assignmentId") || searchParams.get("assignment_id") || searchParams.get("id");
+
+  // Extract loanRequestId handling trailing slashes and query strings:
+  // e.g. /lender_esign/1040972 or /lender_esign/1040972/ or ?loanId=1040972
+  const getLoanRequestId = () => {
+    let rawId = params.loanRequestId || params["*"] || "";
+    if (rawId) {
+      rawId = rawId.replace(/\/+$/, "").trim();
+      const parts = rawId.split("/").filter(Boolean);
+      if (parts.length > 0 && parts[0] !== "lender_esign") {
+        return parts[0];
+      }
+    }
+
+    const queryLoanId =
+      searchParams.get("loanId") ||
+      searchParams.get("loan_id") ||
+      searchParams.get("loanRequestId") ||
+      searchParams.get("loan_request_id");
+    if (queryLoanId) {
+      return queryLoanId.trim();
+    }
+
+    const pathname = window.location.pathname || "";
+    const match = pathname.match(/\/lender_esign\/([^\/?#]+)/i);
+    if (match && match[1]) {
+      return match[1].replace(/\/+$/, "").trim();
+    }
+
+    return "";
+  };
+
+  const loanRequestId = getLoanRequestId();
+
+  // Verification mode check:
+  // Detects if `verification_id` or `verificationId` parameter is present in URL (with or without a value `=...`)
+  const hasVerificationIdParam =
+    searchParams.has("verification_id") ||
+    searchParams.has("verificationId") ||
+    searchParams.has("verification_status") ||
+    searchParams.has("status") ||
+    window.location.search.includes("verification_id") ||
+    window.location.search.includes("verificationId");
+
+  const verificationIdValue =
+    searchParams.get("verification_id") ||
+    searchParams.get("verificationId") ||
+    searchParams.get("verification_status") ||
+    searchParams.get("status");
+
+  const isVerificationMode = Boolean(hasVerificationIdParam || verificationIdValue);
+
+  const getAssignmentId = () => {
+    if (params.assignmentId) {
+      return params.assignmentId.replace(/\/+$/, "").trim();
+    }
+    const queryAssignmentId =
+      searchParams.get("assignmentId") ||
+      searchParams.get("assignment_id") ||
+      searchParams.get("id") ||
+      searchParams.get("assignment");
+    if (queryAssignmentId) {
+      return queryAssignmentId.trim();
+    }
+    const pathname = window.location.pathname || "";
+    const parts = pathname.split("?")[0].split("/").filter(Boolean);
+    const index = parts.indexOf("lender_esign");
+    if (index !== -1 && parts[index + 2]) {
+      return parts[index + 2].replace(/\/+$/, "").trim();
+    }
+    return "";
+  };
+
+  const assignmentId = getAssignmentId();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -18,19 +89,27 @@ const LenderEsign = () => {
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
-    if (verificationId) {
+    if (isVerificationMode) {
       verifyLenderEsign();
     } else {
       startLenderEsign();
     }
-  }, [loanRequestId, verificationId, assignmentId]);
+  }, [loanRequestId, isVerificationMode, assignmentId]);
 
   const startLenderEsign = async () => {
+    if (!loanRequestId) {
+      setError("Invalid Loan ID. Please return to your offers list and try again.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setIsStarting(true);
     setError("");
     try {
-      const res = await lenderBorrowerEsign(loanRequestId, null, assignmentId);
+      const redirectUrl = assignmentId
+        ? `${window.location.origin}/lender_esign/${loanRequestId}/${assignmentId}`
+        : `${window.location.origin}/lender_esign/${loanRequestId}`;
+      const res = await lenderBorrowerEsign(loanRequestId, null, assignmentId, redirectUrl);
       const data = res?.data;
       if (data && (data.redirect_url || data.redirectUrl)) {
         const url = data.redirect_url || data.redirectUrl;
@@ -57,6 +136,11 @@ const LenderEsign = () => {
   };
 
   const verifyLenderEsign = async () => {
+    if (!loanRequestId) {
+      setError("Invalid Loan ID. Please return to your offers list and try again.");
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setIsStarting(false);
     setError("");

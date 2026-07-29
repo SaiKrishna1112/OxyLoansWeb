@@ -343,7 +343,9 @@ const AppRouter = () => {
         <Route path="/proximityLoans" element={<ProximityLoans />} />
         <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
         <Route path="/disburseLoans" element={<DisburseLoans />} />
+        <Route path="/lender_esign/:loanRequestId/:assignmentId" element={<LenderEsign />} />
         <Route path="/lender_esign/:loanRequestId" element={<LenderEsign />} />
+        <Route path="/lender_esign/:loanRequestId/*" element={<LenderEsign />} />
         <Route path="/WalletToWallet" element={<WalletToWallet />} />
         <Route
           path="/withdrawalFromWallet"
@@ -422,7 +424,9 @@ const AppRouter = () => {
         <Route path="/borrowerDocuments/:userId" element={<PrivateRoute element={<BorrowerDocuments />} />} />
         <Route path="/offerGivenList" element={<PrivateRoute element={<OfferGivenList />} />} />
         <Route path="/disburseLoans" element={<PrivateRoute element={<DisburseLoans />} />} />
+        <Route path="/lender_esign/:loanRequestId/:assignmentId" element={<PrivateRoute element={<LenderEsign />} />} />
         <Route path="/lender_esign/:loanRequestId" element={<PrivateRoute element={<LenderEsign />} />} />
+        <Route path="/lender_esign/:loanRequestId/*" element={<PrivateRoute element={<LenderEsign />} />} />
         <Route path="/WalletToWallet" element={<PrivateRoute element={<WalletToWallet />} />} />
         <Route path="/withdrawalFromWallet" element={<PrivateRoute element={<WithdrawalFromWallet />} />} />
         <Route path="/withdrawdealFounds" element={<PrivateRoute element={<WithdrawdealFounds />} />} />

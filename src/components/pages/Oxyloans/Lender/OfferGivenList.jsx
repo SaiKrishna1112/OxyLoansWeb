@@ -730,7 +730,7 @@ const OfferGivenList = () => {
                                     <i className="fa fa-times me-1" /> Reject
                                   </button>
                                 )}
-                                {canProcess && (
+                                {/* {canProcess && (
                                   <button
                                     className="btn btn-sm"
                                     title="Accept"
@@ -751,7 +751,7 @@ const OfferGivenList = () => {
                                     <i className="fa fa-check me-1" /> Process &
                                     Disburse Loan
                                   </button>
-                                )}
+                                )} */}
                                 {isLoanAcceptedStatus &&  (
                                   <button
                                     className="btn btn-sm text-white"
@@ -776,6 +776,21 @@ const OfferGivenList = () => {
                                       </>
                                     )}
                                   </button>
+                                )}
+                                {canProcess && (
+                                  <div
+                                      style={{
+                                        backgroundColor: "#FFF3CD",
+                                        color: "#856404",
+                                        padding: "12px 16px",
+                                        border: "1px solid #FFE69C",
+                                        borderRadius: "8px",
+                                        fontWeight: "600",
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      🚀 Disbursal is in progress.
+                                    </div>
                                 )}
                               </div>
                             </td>

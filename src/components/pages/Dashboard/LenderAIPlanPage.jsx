@@ -30,7 +30,7 @@ const PLANS = [
   {
     key: "SMART",
     label: "Smart",
-    price: 1,
+    price: 500,
     color: "#1890ff",
     badge: "Popular",
     features: [
@@ -50,7 +50,7 @@ const PLANS = [
   {
     key: "PRO",
     label: "Pro",
-    price: 2,
+    price: 1000,
     color: "#722ed1",
     badge: "Full AI",
     features: [

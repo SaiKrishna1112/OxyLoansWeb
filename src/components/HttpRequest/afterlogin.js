@@ -4207,16 +4207,29 @@ export const saveBorrowerReferenceDetails = (payload) =>
     headers: { accessToken: getToken(), "Content-Type": "application/json" },
   });
 
-export const lenderBorrowerEsign = async (loanId, aadharNumber, assignmentId) => {
+export const lenderBorrowerEsign = async (loanId, aadharNumber, assignmentId, redirectUrl) => {
   const token = getToken();
   const userId = getUserId();
+
+  let targetUrl = redirectUrl;
+  if (!targetUrl) {
+    targetUrl = assignmentId
+      ? `${window.location.origin}/lender_esign/${loanId}/${assignmentId}`
+      : `${window.location.origin}/lender_esign/${loanId}`;
+  }
+
   const queryParams = [];
   if (aadharNumber) queryParams.push(`aadharNumber=${encodeURIComponent(aadharNumber)}`);
   if (assignmentId) queryParams.push(`assignmentId=${encodeURIComponent(assignmentId)}`);
-  const queryString = queryParams.length ? `?${queryParams.join("&")}` : "";
+  queryParams.push(`url=${encodeURIComponent(targetUrl)}`);
 
-  const body = {};
+  const queryString = `?${queryParams.join("&")}`;
+
+  const body = {
+    url: targetUrl,
+  };
   if (assignmentId) body.assignmentId = assignmentId;
+  if (aadharNumber) body.aadharNumber = aadharNumber;
 
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
@@ -4229,15 +4242,27 @@ export const lenderBorrowerEsign = async (loanId, aadharNumber, assignmentId) =>
 };
 
 // Cashfree eSign + eNACH Frontend APIs
-export const startCashfreeEsign = async (loanRequestId, aadharNumber, assignmentId) => {
+export const startCashfreeEsign = async (loanRequestId, aadharNumber, assignmentId, redirectUrl) => {
   const token = getToken();
   const userId = getUserId();
+
+  let targetUrl = redirectUrl;
+  if (!targetUrl) {
+    targetUrl = assignmentId
+      ? `${window.location.origin}/esign/${loanRequestId}?assignmentId=${assignmentId}`
+      : `${window.location.origin}/esign/${loanRequestId}`;
+  }
+
   const params = {};
   if (aadharNumber) params.aadharNumber = aadharNumber;
   if (assignmentId) params.assignmentId = assignmentId;
+  params.url = targetUrl;
 
-  const body = {};
+  const body = {
+    url: targetUrl,
+  };
   if (assignmentId) body.assignmentId = assignmentId;
+  if (aadharNumber) body.aadharNumber = aadharNumber;
 
   return axios.post(
     `${API_BASE_URL}${userId}/loan/${loanRequestId}/lenderBorrowerEsign`,
@@ -4385,5 +4410,22 @@ export const adminReconcilePaidEmis = async () => {
     }
   );
 };
+
+// Borrower Loan EMI Cards API
+export const getBorrowerLoanEmiCards = async (loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/${loanRequestId}/loanEmiCards`,
+    "GET",
+    token
+  );
+};
+
+export const getLoanEmiCards = getBorrowerLoanEmiCards;
+export const borrowerLoanEmiCards = getBorrowerLoanEmiCards;
+
 
 

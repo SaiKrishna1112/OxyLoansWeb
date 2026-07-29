@@ -258,7 +258,7 @@ const LoanRequest = () => {
         Swal.fire("Submission Failed", "Unable to submit your loan request. Please try again.", "error");
       }
     } catch (error) {
-      Swal.fire("Submission Failed", "Unable to submit your loan request. Please try again.", "error");
+      Swal.fire("Submission Failed", error?.response?.data?.errorMessage || "Unable to submit your loan request. Please try again.", "error");
     } finally {
       setIsSubmitting(false);
     }

@@ -18,6 +18,9 @@ export default function BorrowerRegister() {
 
   const navigate = useNavigate();
   const [field, setField] = useState(true);
+  const [submitotp, setSubmitOtp] = useState(false);
+  const [error, setError] = useState("");
+  const [response1, setResponse] = useState({});
   const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
   const [resendTimer, setResendTimer] = useState(30);
   const [loadingResend, setLoadingResend] = useState(false);
@@ -66,9 +69,6 @@ export default function BorrowerRegister() {
       );
     }
   }, []);
-  const [submitotp, setSubmitOtp] = useState(false);
-  const [error, setError] = useState("");
-  const [response1, setResponse] = useState({});
   const localData = JSON.parse(localStorage.getItem("userData") || "{}");
 
   const [registrationField, setRegistrationField] = useState({

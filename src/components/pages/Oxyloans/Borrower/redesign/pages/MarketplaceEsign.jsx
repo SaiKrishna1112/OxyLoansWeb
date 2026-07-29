@@ -42,7 +42,13 @@ const MarketplaceEsign = () => {
         setError("Verification pending. Please ensure you have completed the eSign in the opened window.");
       }
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Verification failed. Please make sure you completed the signing process on Cashfree first.";
+      const msg = e?.response?.data?.errorMessage || e?.message || "Verification failed. Please make sure you completed the signing process on Cashfree first.";
+      Swal.fire({
+          title: "Verification failed",
+          text: msg,
+          icon: "OK",
+          confirmButtonColor: "var(--oxy-error)"
+        });
       setError(msg);
     } finally {
       setLoading(false);
@@ -134,7 +140,13 @@ const MarketplaceEsign = () => {
         setError(msg);
       }
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Failed to start eSign. Please try again.";
+      const msg = e?.response?.data?.errorMessage || e?.message || "Failed to start eSign. Please try again.";
+      Swal.fire({
+          title: "eSign initiation failed",
+          text: msg,
+          icon: "error",
+          confirmButtonColor: "var(--oxy-error)"
+        });
       setError(msg);
     } finally {
       setLoading(false);

@@ -74,14 +74,14 @@ const OfferCard = ({
 
   const getMandateStatus = (off) => {
     const raw = off?.mandateStatus || off?.MandateStatus || off?.borrowerMandateStatus || off?.enachStatus;
-    if (!raw) return "NOT_FOUND";
+    if (!raw) return "INITIATED";
     const norm = String(raw).trim().toUpperCase().replace(/[\s_-]/g, "");
     if (norm === "INITIATED") return "INITIATED";
     if (norm === "BANKAPPROVALPENDING" || norm === "BANK_APPROVAL_PENDING") return "BANK_APPROVAL_PENDING";
     if (norm === "SUCCESS" || norm === "ACTIVE") return "SUCCESS";
     if (norm === "FAILED") return "FAILED";
     if (norm === "ADMINREJECTED" || norm === "ADMIN_REJECTED") return "ADMINREJECTED";
-    return "NOT_FOUND";
+    return "INITIATED";
   };
 
   const mandateStatusValue = getMandateStatus(offer);
@@ -92,8 +92,8 @@ const OfferCard = ({
     offer?.borrowerEsignStatus === "true" || 
     offer?.borrowerEsigned === true || 
     offer?.borrowerEsigned === "true" || 
-    offer?.MandateStatus === "NOT_FOUND" ||
-    offer?.mandateStatus === "NOT_FOUND"
+    offer?.MandateStatus === "INITIATED" ||
+    offer?.mandateStatus === "INITIATED"
   );
 
   return (
@@ -233,7 +233,7 @@ const OfferCard = ({
           )}
           {borrowerStatus === "LOANACCEPTED" && !offer.borrowerEsigned && offer.borrowerAggrement && offer.lenderEsigned && (
             <Link 
-              to={`/esign/${offer.loanRequestId}`}
+              to={`/esign/${offer.loanRequestId}?assignmentId=${offer.id}`}
               className="oxy-btn-primary flex-fill btn-warning text-white text-center d-flex align-items-center justify-content-center"
               style={{ textDecoration: "none", fontSize: "12px", fontWeight: "600", borderRadius: "6px", padding: "8px 12px" }}
             >
@@ -249,7 +249,7 @@ const OfferCard = ({
               <i className="fa-solid fa-receipt me-1"></i> Repayment
             </Link>
           ) : */}
-          {borrowerStatus === "LOANACCEPTED" && offer.borrowerAggrement && offer.lenderEsigned && (offer.borrowerEsigned === true || offer.borrowerEsignStatus === true) && showEnachBtn ? (
+          {borrowerStatus === "PROCESSING" &&  offer.borrowerAggrement && offer.lenderEsigned && (offer.borrowerEsigned === true || offer.borrowerEsignStatus === true) && showEnachBtn && offer.loanStatus === "AWAITING_ENACH" ? (
             <Link 
               to={`/enach/${offer.loanRequestId}`}
               className="oxy-btn-primary flex-fill btn-info text-white text-center d-flex align-items-center justify-content-center"
@@ -263,7 +263,7 @@ const OfferCard = ({
               Processed
             </button>
           )}
-        {offer.mandateStatus === "SUCCESS" &&  
+        {offer.loanStatus === "ACTIVE" &&
         <div
             style={{
               backgroundColor: "#FFF3CD",

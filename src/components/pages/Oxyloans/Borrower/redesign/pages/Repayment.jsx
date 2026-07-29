@@ -13,6 +13,7 @@ import EmptyState from "../components/EmptyState";
 import ErrorState from "../components/ErrorState";
 
 import BASE_URL from "../../../../../../config";
+import { getBorrowerLoanEmiCards } from "../../../../../HttpRequest/afterlogin";
 import "../redesign.css";
 
 const Repayment = () => {
@@ -42,18 +43,49 @@ const Repayment = () => {
     }
     setLoading(true);
     setErrorMessage("");
-    axios
-      .get(`${BASE_URL}/v1/marketplace/repayment/loan/${loanRequestId}`, {
-        headers: { userId },
+    getBorrowerLoanEmiCards(loanRequestId)
+      .then((res) => {
+        if (res.status === 200 && res.data) {
+          const emiData = Array.isArray(res.data) ? res.data[0] : res.data;
+          if (emiData) {
+            setRepayment({
+              id: emiData.id || emiData.emiCardId || loanRequestId,
+              principalAmount: emiData.emiPrincipalAmount || emiData.principalAmount || emiData.amount || 0,
+              interestAmount: emiData.emiInterestAmount || emiData.interestAmount || 0,
+              penaltyAmount: emiData.penaltyAmount || 0,
+              totalRepaymentAmount: emiData.emiAmount || emiData.totalRepaymentAmount || emiData.amount || 0,
+              repaymentStatus: emiData.status || emiData.repaymentStatus || (emiData.emiPaidOn ? "PAID" : "PENDING"),
+              dueDateStart: emiData.emiDueOn || emiData.dueDateStart,
+              dueDateEnd: emiData.emiDueOn || emiData.dueDateEnd,
+              lenderSplits: emiData.lenderSplits || [],
+            });
+            setLoading(false);
+            return;
+          }
+        }
+        return axios
+          .get(`${BASE_URL}/v1/marketplace/repayment/loan/${loanRequestId}`, {
+            headers: { userId },
+          })
+          .then((response) => {
+            setRepayment(response.data);
+            setLoading(false);
+          });
       })
-      .then((response) => {
-        setRepayment(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error loading repayment schedule", error);
-        setErrorMessage("Could not load your repayment schedule. Please try again.");
-        setLoading(false);
+      .catch(() => {
+        axios
+          .get(`${BASE_URL}/v1/marketplace/repayment/loan/${loanRequestId}`, {
+            headers: { userId },
+          })
+          .then((response) => {
+            setRepayment(response.data);
+            setLoading(false);
+          })
+          .catch((error) => {
+            console.error("Error loading repayment schedule", error);
+            setErrorMessage("Could not load your repayment schedule. Please try again.");
+            setLoading(false);
+          });
       });
   };
 

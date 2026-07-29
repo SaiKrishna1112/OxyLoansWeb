@@ -84,6 +84,12 @@ const MarketplaceEnach = () => {
         setError("No eNACH mandate found. Please ensure your eSign is completed successfully.");
       }
     } catch (e) {
+      Swal.fire({
+          title: "Failed",
+          text: e?.response?.data?.errorMessage || e?.message || "Error fetching mandates.",
+          icon: "error",
+          confirmButtonColor: "var(--oxy-error)"
+        })
       setError("Failed to retrieve eNACH mandates. Please check back later.");
     } finally {
       setLoading(false);
@@ -110,18 +116,23 @@ const MarketplaceEnach = () => {
         
         cashfree.subscriptionsCheckout({
           subsSessionId: res.data.subscriptionSessionId,
-          redirectTarget: `https://user.oxyloans.com/enach/${loanRequestId}?mandateId=${selectedMandate.id}`
+          redirectTarget: "_self"
         }).then(function (result) {
           if (result && result.error) {
             console.error(result.error.message || result.error);
           }
         });
-        
       } else {
-        setError(res?.data?.message || "Failed to initiate Cashfree eNACH authorization.");
+        setError(res?.data?.errorMessage || "Failed to initiate Cashfree eNACH authorization.");
       }
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || "Error starting eNACH authorization.");
+      Swal.fire({
+          title: "Failed",
+          text: e?.response?.data?.errorMessage || e?.message || "Error starting eNACH authorization.",
+          icon: "error",
+          confirmButtonColor: "var(--oxy-error)"
+        });
+      setError(e?.response?.data?.errorMessage || e?.message || "Error starting eNACH authorization.");
     } finally {
       setLoading(false);
     }
@@ -164,6 +175,12 @@ const MarketplaceEnach = () => {
       // If manually checking, show error, otherwise ignore polling network hiccups
       if (!isPoll) {
         setError("Could not update eNACH status. Please check your bank authorization.");
+        Swal.fire({
+          title: "Failed",
+          text: "Could not update eNACH status. Please check your bank authorization.",
+          icon: "error",
+          confirmButtonColor: "var(--oxy-error)"
+        });
       }
     } finally {
       if (!isPoll) setLoading(false);
@@ -177,7 +194,7 @@ const MarketplaceEnach = () => {
       const res = await cancelCashfreeEnach(selectedMandate.id);
       // Catalog expects: "allowed", "loanStillDue", "message", "mandateStatus"
       // "Show message that cancel is not allowed from app"
-      const msg = res?.data?.message || "eNACH cancellation requests are not permitted directly by borrowers while loan obligations remain active.";
+      const msg = res?.data?.errorMessage || "eNACH cancellation requests are not permitted directly by borrowers while loan obligations remain active.";
       Swal.fire({
         title: "Cancellation Request Denied",
         text: msg,
@@ -185,7 +202,7 @@ const MarketplaceEnach = () => {
         confirmButtonColor: "var(--oxy-primary)"
       });
     } catch (e) {
-      const msg = e?.response?.data?.message || "Mandate cancellation cannot be performed from the borrower application.";
+      const msg = e?.response?.data?.errorMessage || "Mandate cancellation cannot be performed from the borrower application.";
       Swal.fire({
         title: "Action Restricted",
         text: msg,

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { MARKETPLACE_URL, API_USER_URL, ENV } from "../../../config";
+import Header from "../../Header/Header";
+import SideBar from "../../SideBar/SideBar";
 
 // Display prices (what lenders pay) — Cashfree charges may differ for test users
 const PLANS = [
@@ -266,190 +268,373 @@ export default function LenderUpgradePortal() {
 
   // ── Plans Screen ──────────────────────────────────────────────
   return (
-    <div style={styles.page}>
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "30px 16px" }}>
-
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <img
-            src="/assets/img/logo.png"
+    <div className="main-wrapper">
+      <Header />
+      <SideBar />
+      <div className="page-wrapper">
+        <div style={styles.page}>
+          <div style={{ margin: "0 auto", padding: "30px 16px" }}>
+            {/* Header */}
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              {/* <img
+            src="../../../assets/img/logo.png"
             alt="OxyLoans"
             style={{ height: 36, marginBottom: 10 }}
             onError={(e) => { e.target.style.display = "none"; }}
-          />
-          <h3 style={{ fontWeight: 700, marginBottom: 6 }}>OxyLoans AI Dashboard Plans</h3>
-          <p style={{ color: "#8c8c8c", fontSize: 14 }}>
-            Unlock AI-powered insights on your lending portfolio
-          </p>
+          /> */}
+              <h3 style={{ fontWeight: 700, marginBottom: 6 }}>
+                AI Dashboard Plans
+              </h3>
+              <p style={{ color: "#8c8c8c", fontSize: 14 }}>
+                Unlock AI-powered insights on your lending portfolio
+              </p>
 
-          {!onTrial && validUntil && (
-            <span style={{
-              background: isPaidPro ? "#f0e6ff" : "#e6f4ff",
-              color: isPaidPro ? "#722ed1" : "#1890ff",
-              borderRadius: 20, padding: "4px 16px", fontSize: 13, fontWeight: 600,
-              display: "inline-block", marginTop: 8,
-            }}>
-              {currentTier} Plan · Valid until{" "}
-              {new Date(validUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-            </span>
-          )}
+              {!onTrial && validUntil && (
+                <span
+                  style={{
+                    background: isPaidPro ? "#f0e6ff" : "#e6f4ff",
+                    color: isPaidPro ? "#722ed1" : "#1890ff",
+                    borderRadius: 20,
+                    padding: "4px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    display: "inline-block",
+                    marginTop: 8,
+                  }}
+                >
+                  {currentTier} Plan · Valid until{" "}
+                  {new Date(validUntil).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              )}
 
-          <div style={{ marginTop: 8, display: "flex", justifyContent: "center", gap: 20 }}>
-            <button
-              onClick={() => { window.location.href = `/lender-portfolio/${userId}`; }}
-              style={styles.linkBtn}
-            >
-              ← Dashboard
-            </button>
+              {/* <div style={{ marginTop: 8 }}>
             <button onClick={handleLogout} style={styles.linkBtn}>Logout</button>
-          </div>
-        </div>
-
-        {/* Free trial banner */}
-        {onTrial && (
-          <div style={{
-            background: "linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)",
-            borderRadius: 14, padding: "16px 24px", marginBottom: 24,
-            display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12,
-          }}>
-            <div>
-              <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                🎁 Free PRO trial — ends August 1st
-              </div>
-              <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 3 }}>
-                Subscribe now and your plan stays valid until <strong>August 1, 2027</strong>
-              </div>
+          </div> */}
             </div>
-            <span style={{
-              background: "rgba(255,255,255,0.2)", color: "#fff",
-              borderRadius: 20, padding: "4px 14px", fontSize: 12, fontWeight: 600,
-            }}>
-              Trial ends {new Date(trialEndsOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-            </span>
-          </div>
-        )}
 
-        {planError && <div style={styles.errorBox}>{planError}</div>}
-
-        {pendingOrderId && onTrial && (
-          <div style={{ background: "#fff7e6", border: "1px solid #ffa940", borderRadius: 12, padding: "14px 20px", textAlign: "center", marginBottom: 24 }}>
-            <strong>Payment detected!</strong> You have a recent payment pending verification.{" "}
-            <button
-              onClick={handleVerifyPending}
-              disabled={verifying}
-              style={{ background: "#fa8c16", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, padding: "4px 16px", cursor: "pointer", marginLeft: 8 }}
-            >
-              {verifying ? "Verifying…" : "Activate Subscription"}
-            </button>
-          </div>
-        )}
-
-        {plansLoading ? (
-          <p style={{ textAlign: "center", color: "#8c8c8c" }}>Loading your plan…</p>
-        ) : (
-          <div style={{ display: "flex", gap: 24, justifyContent: "center" }}>
-            {PLANS.map((plan) => {
-              const isPaidThisPlan = (plan.key === "PRO" && isPaidPro) || (plan.key === "SMART" && isPaidSmart);
-              const isDowngrade = isPaidPro && plan.key === "SMART"; // PRO → Smart = downgrade
-              const isUpgradeFromSmart = plan.key === "PRO" && isPaidSmart;
-              const isActionable = !isPaidThisPlan && !isDowngrade;
-
-              let btnLabel;
-              if (paying === plan.key) {
-                btnLabel = "Processing…";
-              } else if (isPaidThisPlan) {
-                btnLabel = "✓ Current Plan";
-              } else if (isDowngrade) {
-                btnLabel = "Downgrade not available";
-              } else if (onTrial) {
-                btnLabel = `Subscribe to OXY ${plan.label} — ₹${plan.displayPrice.toLocaleString("en-IN")}/year`;
-              } else if (isUpgradeFromSmart) {
-                btnLabel = "Upgrade to Pro — ₹500 more/yr";
-              } else {
-                btnLabel = `Subscribe to OXY ${plan.label} — ₹${plan.displayPrice.toLocaleString("en-IN")}/year`;
-              }
-
-              return (
-                <div key={plan.key} style={{
-                  flex: "1 1 0", maxWidth: 380,
-                  background: "#fff", borderRadius: 18,
-                  border: plan.key === "PRO"
-                    ? `2px solid ${plan.color}`
-                    : isPaidThisPlan
-                      ? `2px solid ${plan.color}`
-                      : "1px solid #e8e8e8",
-                  boxShadow: plan.key === "PRO"
-                    ? `0 6px 28px ${plan.color}33`
-                    : "0 2px 10px rgba(0,0,0,0.06)",
-                  padding: 28, display: "flex", flexDirection: "column",
-                }}>
-                  {/* Plan header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <h5 style={{ fontWeight: 800, color: plan.color, margin: 0, fontSize: 18 }}>{plan.label}</h5>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      {onTrial && plan.key === "PRO" && (
-                        <span style={{ background: "#fff3cd", color: "#856404", borderRadius: 10, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>
-                          FREE TRIAL
-                        </span>
-                      )}
-                      {plan.badge && (
-                        <span style={{ background: plan.color + "22", color: plan.color, borderRadius: 12, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>
-                          {plan.badge}
-                        </span>
-                      )}
-                    </div>
+            {/* Free trial banner */}
+            {onTrial && (
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)",
+                  borderRadius: 14,
+                  padding: "16px 24px",
+                  marginBottom: 24,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
+                    🎁 Free PRO trial — ends August 1st
                   </div>
-
-                  {/* Price */}
-                  <div style={{ marginBottom: 4 }}>
-                    <span style={{ fontSize: 32, fontWeight: 800 }}>₹{plan.displayPrice.toLocaleString("en-IN")}</span>
-                    <span style={{ fontSize: 13, color: "#8c8c8c", marginLeft: 4 }}>/year</span>
-                  </div>
-
-                  {/* Early subscriber note */}
-                  {onTrial && (
-                    <div style={{ fontSize: 12, color: "#722ed1", fontWeight: 600, marginBottom: 14 }}>
-                      Subscribe now → valid until Aug 1, 2027
-                    </div>
-                  )}
-
-                  {/* Features */}
-                  <ul style={{ listStyle: "none", padding: 0, flex: 1, margin: "0 0 16px 0" }}>
-                    {plan.features.map((f, i) => (
-                      <li key={i} style={{ fontSize: 13, marginBottom: 7, display: "flex", alignItems: "flex-start" }}>
-                        <span style={{ color: "#52c41a", marginRight: 8, flexShrink: 0 }}>✓</span>{f}
-                      </li>
-                    ))}
-                    {(plan.locked || []).map((f, i) => (
-                      <li key={`l${i}`} style={{ fontSize: 13, marginBottom: 7, color: "#bfbfbf", display: "flex", alignItems: "flex-start" }}>
-                        <span style={{ marginRight: 8, flexShrink: 0 }}>🔒</span>{f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA button */}
-                  <button
-                    onClick={() => isActionable && handleSubscribe(plan.key)}
-                    disabled={!isActionable || paying === plan.key}
+                  <div
                     style={{
-                      ...styles.planBtn,
-                      background: isPaidThisPlan ? plan.color + "22" : isDowngrade ? "#f5f5f5" : plan.color,
-                      color: isPaidThisPlan ? plan.color : isDowngrade ? "#bfbfbf" : "#fff",
-                      cursor: isActionable ? "pointer" : "default",
-                      fontSize: onTrial ? 13 : 14,
+                      color: "rgba(255,255,255,0.8)",
+                      fontSize: 13,
+                      marginTop: 3,
                     }}
                   >
-                    {btnLabel}
-                  </button>
+                    Subscribe now and your plan stays valid until{" "}
+                    <strong>August 1, 2027</strong>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+                <span
+                  style={{
+                    background: "rgba(255,255,255,0.2)",
+                    color: "#fff",
+                    borderRadius: 20,
+                    padding: "4px 14px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  Trial ends{" "}
+                  {new Date(trialEndsOn).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
+            )}
 
-        <p style={{ textAlign: "center", color: "#bfbfbf", fontSize: 12, marginTop: 32 }}>
-          Annual subscription · Auto-renews on expiry · Cancel anytime before renewal
-        </p>
+            {planError && <div style={styles.errorBox}>{planError}</div>}
+
+            {pendingOrderId && onTrial && (
+              <div
+                style={{
+                  background: "#fff7e6",
+                  border: "1px solid #ffa940",
+                  borderRadius: 12,
+                  padding: "14px 20px",
+                  textAlign: "center",
+                  marginBottom: 24,
+                }}
+              >
+                <strong>Payment detected!</strong> You have a recent payment
+                pending verification.{" "}
+                <button
+                  onClick={handleVerifyPending}
+                  disabled={verifying}
+                  style={{
+                    background: "#fa8c16",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    padding: "4px 16px",
+                    cursor: "pointer",
+                    marginLeft: 8,
+                  }}
+                >
+                  {verifying ? "Verifying…" : "Activate Subscription"}
+                </button>
+              </div>
+            )}
+
+            {plansLoading ? (
+              <p style={{ textAlign: "center", color: "#8c8c8c" }}>
+                Loading your plan…
+              </p>
+            ) : (
+              <div
+                style={{ display: "flex", gap: 24, justifyContent: "center" }}
+              >
+                {PLANS.map((plan) => {
+                  const isPaidThisPlan =
+                    (plan.key === "PRO" && isPaidPro) ||
+                    (plan.key === "SMART" && isPaidSmart);
+                  const isDowngrade = isPaidPro && plan.key === "SMART"; // PRO → Smart = downgrade
+                  const isUpgradeFromSmart = plan.key === "PRO" && isPaidSmart;
+                  const isActionable = !isPaidThisPlan && !isDowngrade;
+
+                  let btnLabel;
+                  if (paying === plan.key) {
+                    btnLabel = "Processing…";
+                  } else if (isPaidThisPlan) {
+                    btnLabel = "✓ Current Plan";
+                  } else if (isDowngrade) {
+                    btnLabel = "Downgrade not available";
+                  } else if (onTrial) {
+                    btnLabel = `Subscribe to OXY ${plan.label} — ₹${plan.displayPrice.toLocaleString("en-IN")}/year`;
+                  } else if (isUpgradeFromSmart) {
+                    btnLabel = "Upgrade to Pro — ₹500 more/yr";
+                  } else {
+                    btnLabel = `Subscribe to OXY ${plan.label} — ₹${plan.displayPrice.toLocaleString("en-IN")}/year`;
+                  }
+
+                  return (
+                    <div
+                      key={plan.key}
+                      style={{
+                        flex: "1 1 0",
+                        maxWidth: 380,
+                        background: "#fff",
+                        borderRadius: 18,
+                        border:
+                          plan.key === "PRO"
+                            ? `2px solid ${plan.color}`
+                            : isPaidThisPlan
+                              ? `2px solid ${plan.color}`
+                              : "1px solid #e8e8e8",
+                        boxShadow:
+                          plan.key === "PRO"
+                            ? `0 6px 28px ${plan.color}33`
+                            : "0 2px 10px rgba(0,0,0,0.06)",
+                        padding: 28,
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
+                      {/* Plan header */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 6,
+                        }}
+                      >
+                        <h5
+                          style={{
+                            fontWeight: 800,
+                            color: plan.color,
+                            margin: 0,
+                            fontSize: 18,
+                          }}
+                        >
+                          {plan.label}
+                        </h5>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 6,
+                            alignItems: "center",
+                          }}
+                        >
+                          {onTrial && plan.key === "PRO" && (
+                            <span
+                              style={{
+                                background: "#fff3cd",
+                                color: "#856404",
+                                borderRadius: 10,
+                                padding: "2px 8px",
+                                fontSize: 10,
+                                fontWeight: 700,
+                              }}
+                            >
+                              FREE TRIAL
+                            </span>
+                          )}
+                          {plan.badge && (
+                            <span
+                              style={{
+                                background: plan.color + "22",
+                                color: plan.color,
+                                borderRadius: 12,
+                                padding: "2px 10px",
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {plan.badge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Price */}
+                      <div style={{ marginBottom: 4 }}>
+                        <span style={{ fontSize: 32, fontWeight: 800 }}>
+                          ₹{plan.displayPrice.toLocaleString("en-IN")}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 13,
+                            color: "#8c8c8c",
+                            marginLeft: 4,
+                          }}
+                        >
+                          /year
+                        </span>
+                      </div>
+
+                      {/* Early subscriber note */}
+                      {onTrial && (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "#722ed1",
+                            fontWeight: 600,
+                            marginBottom: 14,
+                          }}
+                        >
+                          Subscribe now → valid until Aug 1, 2027
+                        </div>
+                      )}
+
+                      {/* Features */}
+                      <ul
+                        style={{
+                          listStyle: "none",
+                          padding: 0,
+                          flex: 1,
+                          margin: "0 0 16px 0",
+                        }}
+                      >
+                        {plan.features.map((f, i) => (
+                          <li
+                            key={i}
+                            style={{
+                              fontSize: 13,
+                              marginBottom: 7,
+                              display: "flex",
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <span
+                              style={{
+                                color: "#52c41a",
+                                marginRight: 8,
+                                flexShrink: 0,
+                              }}
+                            >
+                              ✓
+                            </span>
+                            {f}
+                          </li>
+                        ))}
+                        {(plan.locked || []).map((f, i) => (
+                          <li
+                            key={`l${i}`}
+                            style={{
+                              fontSize: 13,
+                              marginBottom: 7,
+                              color: "#bfbfbf",
+                              display: "flex",
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <span style={{ marginRight: 8, flexShrink: 0 }}>
+                              🔒
+                            </span>
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* CTA button */}
+                      <button
+                        onClick={() =>
+                          isActionable && handleSubscribe(plan.key)
+                        }
+                        disabled={!isActionable || paying === plan.key}
+                        style={{
+                          ...styles.planBtn,
+                          background: isPaidThisPlan
+                            ? plan.color + "22"
+                            : isDowngrade
+                              ? "#f5f5f5"
+                              : plan.color,
+                          color: isPaidThisPlan
+                            ? plan.color
+                            : isDowngrade
+                              ? "#bfbfbf"
+                              : "#fff",
+                          cursor: isActionable ? "pointer" : "default",
+                          fontSize: onTrial ? 13 : 14,
+                        }}
+                      >
+                        {btnLabel}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p
+              style={{
+                textAlign: "center",
+                color: "#bfbfbf",
+                fontSize: 12,
+                marginTop: 32,
+              }}
+            >
+              Annual subscription · Auto-renews on expiry · Cancel anytime
+              before renewal
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -459,10 +644,10 @@ const styles = {
   page: {
     minHeight: "100vh",
     background: "#f5f7fa",
-    display: "flex",
+    // display: "flex",
     alignItems: "flex-start",
     justifyContent: "center",
-    paddingTop: 60,
+    // paddingTop: 60,
     fontFamily: "'Segoe UI', sans-serif",
   },
   loginCard: {
