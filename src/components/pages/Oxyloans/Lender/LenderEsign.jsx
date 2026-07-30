@@ -52,13 +52,13 @@ const LenderEsign = () => {
     window.location.search.includes("verification_id") ||
     window.location.search.includes("verificationId");
 
-  const verificationIdValue =
+  const verificationId =
     searchParams.get("verification_id") ||
     searchParams.get("verificationId") ||
     searchParams.get("verification_status") ||
     searchParams.get("status");
 
-  const isVerificationMode = Boolean(hasVerificationIdParam || verificationIdValue);
+  const isVerificationMode = Boolean(hasVerificationIdParam || verificationId);
 
   const getAssignmentId = () => {
     if (params.assignmentId) {

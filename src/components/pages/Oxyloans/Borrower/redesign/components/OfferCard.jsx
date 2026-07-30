@@ -251,7 +251,7 @@ const OfferCard = ({
           ) : */}
           {borrowerStatus === "PROCESSING" &&  offer.borrowerAggrement && offer.lenderEsigned && (offer.borrowerEsigned === true || offer.borrowerEsignStatus === true) && showEnachBtn && offer.loanStatus === "AWAITING_ENACH" ? (
             <Link 
-              to={`/enach/${offer.loanRequestId}`}
+              to={`/enach/${offer.loanRequestId}?assignmentId=${offer.id}`}
               className="oxy-btn-primary flex-fill btn-info text-white text-center d-flex align-items-center justify-content-center"
               style={{ textDecoration: "none", fontSize: "12px", fontWeight: "600", borderRadius: "6px", padding: "8px 12px" }}
             >

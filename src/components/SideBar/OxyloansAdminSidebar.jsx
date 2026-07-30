@@ -112,6 +112,13 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN"],
     },
     {
+      key: "adminProximityLoanOverview",
+      label: "Proximity Loan Overview",
+      link: "/admin/proximity-loan-overview",
+      icon: "fa-solid fa-map-location-dot",
+      type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
+    },
+    {
       key: "lenderLoanApplications",
       label: "Lender Loan Applications",
       link: "/lenderLoanApplications",

@@ -20,6 +20,8 @@ import {
   getuploadCredit,
   getBorrowerSecureInfo,
   borrowerSecureInfo,
+  getBorrowerRunningloans,
+  getBorrowerLoanDetails,
   sendWhatsappOtpapi,
   verifyWhatsappOtpapi,
   updatebankDetails,
@@ -65,6 +67,76 @@ const Profile = () => {
 
   // Edit Modal State: null | "personal" | "bank" | "nominee" | "kyc" | "references" | "pan"
   const [editSection, setEditSection] = useState(null);
+  const [hasRunningLoans, setHasRunningLoans] = useState(false);
+
+  const handleOpenEditSection = (section) => {
+    if (hasRunningLoans) {
+      if (section === "personal") {
+        const isPersonalCompletedAndVerified = Boolean(
+          profileData.firstName &&
+          profileData.email &&
+          profileData.mobileNumber &&
+          profileData.panNumber &&
+          (profileData.kycStatus || isPanVerified)
+        );
+        if (isPersonalCompletedAndVerified) {
+          Swal.fire({
+            icon: "warning",
+            title: "Profile Editing Locked",
+            text: "You have active running loans. Verified personal profile details cannot be edited while loans are active.",
+            confirmButtonColor: "#006242",
+          });
+          return;
+        }
+      }
+
+      if (section === "bank") {
+        const isBankCompletedAndVerified = Boolean(
+          profileData.bankDetailsInfo ||
+          isBankVerified ||
+          (verifiedBankAccount.accountNumber && verifiedBankAccount.ifscCode)
+        );
+        if (isBankCompletedAndVerified) {
+          Swal.fire({
+            icon: "warning",
+            title: "Bank Details Locked",
+            text: "You have active running loans. Verified bank account details cannot be edited while loans are active.",
+            confirmButtonColor: "#006242",
+          });
+          return;
+        }
+      }
+
+      if (section === "kyc") {
+        const isKycCompletedAndVerified = Boolean(
+          profileData.kycStatus === true ||
+          (kycDocs && Object.values(kycDocs).filter((v) => v !== null).length > 0)
+        );
+        if (isKycCompletedAndVerified) {
+          Swal.fire({
+            icon: "warning",
+            title: "KYC & Documents Locked",
+            text: "You have active running loans. Verified KYC documents cannot be edited or re-uploaded while loans are active.",
+            confirmButtonColor: "#006242",
+          });
+          return;
+        }
+      }
+
+      if (section === "pan") {
+        if (isPanVerified || profileData.panNumber) {
+          Swal.fire({
+            icon: "warning",
+            title: "PAN Details Locked",
+            text: "You have active running loans. Verified PAN card details cannot be edited while loans are active.",
+            confirmButtonColor: "#006242",
+          });
+          return;
+        }
+      }
+    }
+    setEditSection(section);
+  };
 
   // Profile data state
   const [profileData, setProfileData] = useState({
@@ -357,9 +429,63 @@ const Profile = () => {
         });
       }
 
-      // 4. Load KYC Files status
-      // await fetchKycFiles();
+      // 5. Check if borrower has active running loans via getBorrowerLoanDetails(userId)
+      try {
+        const loanDetailsRes = await getBorrowerLoanDetails(userId);
+        if (loanDetailsRes?.status === 200 && loanDetailsRes.data) {
+          const list = Array.isArray(loanDetailsRes.data)
+            ? loanDetailsRes.data
+            : [loanDetailsRes.data];
 
+          const hasActiveDetails = list.length > 0 && list.some((item) => {
+            if (!item || Object.keys(item).length === 0) return false;
+            const st = String(item.loanStatus || item.status || item.loanRequestStatus || "").toUpperCase();
+            return (
+              st === "ACTIVE" ||
+              st === "DISBURSED" ||
+              st === "ENACH_APPROVED" ||
+              st === "ESIGN_DONE" ||
+              st === "LOANACCEPTED" ||
+              st === "RUNNING" ||
+              st === "REQUEST" ||
+              Number(item.requestAmount || item.loanRequestAmount || item.amount || 0) > 0
+            );
+          });
+
+          if (hasActiveDetails) {
+            setHasRunningLoans(true);
+          } else {
+            const runningRes = await getBorrowerRunningloans(1, 10);
+            if (runningRes?.status === 200 && runningRes.data) {
+              const runList = Array.isArray(runningRes.data)
+                ? runningRes.data
+                : runningRes.data.results || runningRes.data.listOfApplications || runningRes.data.loans || [];
+              setHasRunningLoans(runList.length > 0);
+            }
+          }
+        } else {
+          const runningRes = await getBorrowerRunningloans(1, 10);
+          if (runningRes?.status === 200 && runningRes.data) {
+            const runList = Array.isArray(runningRes.data)
+              ? runningRes.data
+              : runningRes.data.results || runningRes.data.listOfApplications || runningRes.data.loans || [];
+            setHasRunningLoans(runList.length > 0);
+          }
+        }
+      } catch (activeErr) {
+        console.log("Failed to check getBorrowerLoanDetails for profile edit lock", activeErr);
+        try {
+          const runningRes = await getBorrowerRunningloans(1, 10);
+          if (runningRes?.status === 200 && runningRes.data) {
+            const runList = Array.isArray(runningRes.data)
+              ? runningRes.data
+              : runningRes.data.results || runningRes.data.listOfApplications || runningRes.data.loans || [];
+            setHasRunningLoans(runList.length > 0);
+          }
+        } catch {
+          setHasRunningLoans(false);
+        }
+      }
     } catch (err) {
       console.error("Error populating profile data", err);
     } finally {
@@ -420,6 +546,73 @@ const Profile = () => {
     const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
     return Math.round((filledFields.length / fields.length) * 100);
   }, [profileData]);
+
+const validateNomineeDetails = (nominee) => {
+  if (!nominee?.nomineeName?.trim()) {
+    return { valid: false, message: "Nominee name is mandatory." };
+  }
+  if (!/^[a-zA-Z\s.]{2,50}$/.test(nominee.nomineeName.trim())) {
+    return { valid: false, message: "Nominee name must contain only letters and spaces (at least 2 characters)." };
+  }
+  if (!nominee?.relation?.trim()) {
+    return { valid: false, message: "Nominee relation is mandatory." };
+  }
+  if (!nominee?.nomineeMobile?.trim()) {
+    return { valid: false, message: "Nominee mobile number is mandatory." };
+  }
+  if (!/^[6-9]\d{9}$/.test(nominee.nomineeMobile.trim())) {
+    return { valid: false, message: "Nominee mobile must be a valid 10-digit Indian mobile number starting with 6-9." };
+  }
+  if (nominee.nomineeEmail?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nominee.nomineeEmail.trim())) {
+    return { valid: false, message: "Invalid Nominee email format." };
+  }
+  if (nominee.accountNo?.trim() && !/^\d{9,18}$/.test(nominee.accountNo.trim())) {
+    return { valid: false, message: "Nominee account number must be 9 to 18 digits." };
+  }
+  if (nominee.nomineeIfsc?.trim() && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(nominee.nomineeIfsc.trim().toUpperCase())) {
+    return { valid: false, message: "Invalid Nominee IFSC code format (e.g. SBIN0001234)." };
+  }
+  return { valid: true };
+};
+
+const validateReferenceDetails = (references, borrowerMobile = "") => {
+  const filledReferences = Object.entries(references || {})
+    .filter(([key, val]) => key.startsWith("reference") && val && String(val).trim() !== "")
+    .map(([key, val]) => String(val).trim());
+
+  if (filledReferences.length < 2) {
+    return { valid: false, message: "At least 2 reference contacts are required." };
+  }
+
+  const mobileSet = new Set();
+
+  for (let i = 0; i < filledReferences.length; i++) {
+    const refStr = filledReferences[i];
+    const match = refStr.match(/[6-9]\d{9}/);
+    if (!match) {
+      return {
+        valid: false,
+        message: `Reference contact ${i + 1} ("${refStr}") must include a valid 10-digit mobile number starting with 6-9.`,
+      };
+    }
+    const refMobile = match[0];
+    if (borrowerMobile && refMobile === String(borrowerMobile).trim()) {
+      return {
+        valid: false,
+        message: `Reference mobile number (${refMobile}) cannot be your own registered mobile number.`,
+      };
+    }
+    if (mobileSet.has(refMobile)) {
+      return {
+        valid: false,
+        message: `Duplicate reference mobile number detected: ${refMobile}. Each reference contact must be unique.`,
+      };
+    }
+    mobileSet.add(refMobile);
+  }
+
+  return { valid: true };
+};
 
   const [localityOptions, setLocalityOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
@@ -571,7 +764,20 @@ const Profile = () => {
       if (response.status === 200 && (response.data?.valid === "true" || response.data?.valid === true || response.data?.valid === undefined)) {
         setIsPanVerified(true);
         setPanVerificationStatus("PAN card verified successfully!");
-        Swal.fire("Success", "PAN verified successfully!", "success");
+        const panName = response.data?.registered_name || response.data?.name || response.data?.panName || response.data?.registeredName || response.data?.fullName;
+        if (panName) {
+          setProfileData((prev) => ({ ...prev, firstName: panName }));
+          try {
+            await profileupadate({
+              ...profileData,
+              firstName: panName,
+              panVerified: true,
+            });
+          } catch (persistErr) {
+            console.log("Error saving PAN name update", persistErr);
+          }
+        }
+        Swal.fire("Success", panName ? `PAN verified successfully! Name updated to "${panName}".` : "PAN verified successfully!", "success");
         setEditSection(null);
       } else {
         setIsPanVerified(false);
@@ -670,7 +876,15 @@ const Profile = () => {
 
   const handleNomineeInput = (e) => {
     const { name, value } = e.target;
-    setNominee((prev) => ({ ...prev, [name]: value }));
+    let sanitized = value;
+    if (name === "nomineeMobile") {
+      sanitized = value.replace(/\D/g, "").slice(0, 10);
+    } else if (name === "accountNo") {
+      sanitized = value.replace(/\D/g, "").slice(0, 18);
+    } else if (name === "nomineeIfsc") {
+      sanitized = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 11);
+    }
+    setNominee((prev) => ({ ...prev, [name]: sanitized }));
   };
 
   const handleReferenceInput = (e) => {
@@ -791,9 +1005,10 @@ const Profile = () => {
           if (verifyRes.status === 200 && (verifyRes.data?.valid === "true" || verifyRes.data?.valid === true || verifyRes.data?.valid === undefined)) {
             setIsPanVerified(true);
             setPanVerificationStatus("PAN card verified successfully!");
-            if (verifyRes.data && verifyRes.data.registered_name) {
-              updatedFirstName = verifyRes.data.registered_name;
-              setProfileData((prev) => ({ ...prev, firstName: verifyRes.data.registered_name }));
+            const panName = verifyRes.data?.registered_name || verifyRes.data?.name || verifyRes.data?.panName || verifyRes.data?.registeredName || verifyRes.data?.fullName;
+            if (panName) {
+              updatedFirstName = panName;
+              setProfileData((prev) => ({ ...prev, firstName: panName }));
             }
           } else {
             setIsPanVerified(false);
@@ -1070,8 +1285,9 @@ const Profile = () => {
 
   // Save Nominee details
   const saveNomineeDetails = async () => {
-    if (!nominee.nomineeName || !nominee.relation || !nominee.nomineeMobile) {
-      Swal.fire("Missing Fields", "Nominee name, relation, and contact are mandatory.", "warning");
+    const valRes = validateNomineeDetails(nominee);
+    if (!valRes.valid) {
+      Swal.fire("Validation Error", valRes.message, "warning");
       return;
     }
 
@@ -1093,6 +1309,12 @@ const Profile = () => {
 
   // Save reference details
   const saveReferenceDetails = async () => {
+    const valRes = validateReferenceDetails(references, profileData.mobileNumber);
+    if (!valRes.valid) {
+      Swal.fire("Validation Error", valRes.message, "warning");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -1145,6 +1367,21 @@ const Profile = () => {
       <BorrowerSidebar />
       <div className="page-wrapper">
         <div className="content container-fluid py-4" style={{ backgroundColor: "var(--oxy-background)" }}>
+          
+          {/* Active Running Loans Lock Banner */}
+          {hasRunningLoans && (
+            <div className="alert alert-warning border border-warning shadow-sm rounded-4 mb-4 p-3 d-flex align-items-center gap-3 bg-warning bg-opacity-10">
+              <div className="rounded-circle bg-warning text-dark p-3 d-flex align-items-center justify-content-center" style={{ width: "45px", height: "45px" }}>
+                <i className="fa-solid fa-lock fs-5"></i>
+              </div>
+              <div>
+                <h6 className="fw-bold text-dark mb-1">Active Loans Lock Policy Active</h6>
+                <span className="text-dark small">
+                  Because you have running loans, verified profile details and bank account information are locked and cannot be edited until your active loans are completed.
+                </span>
+              </div>
+            </div>
+          )}
           
           {loading ? (
             <LoadingState count={2} type="card" />
@@ -1206,7 +1443,7 @@ const Profile = () => {
                   
                   <button 
                     className="btn edit-profile-btn"
-                    onClick={() => setEditSection("personal")}
+                    onClick={() => handleOpenEditSection("personal")}
                   >
                     <i className="fa-regular fa-edit me-2"></i> Edit Profile
                   </button>
@@ -1239,7 +1476,7 @@ const Profile = () => {
                 <div className="d-flex flex-wrap gap-2 pt-2 border-top">
                   <span 
                     className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.firstName && profileData.pinCode ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
-                    onClick={() => setEditSection("personal")}
+                    onClick={() => handleOpenEditSection("personal")}
                     style={{ cursor: "pointer" }}
                   >
                     <i className={`fa-solid ${profileData.firstName && profileData.pinCode ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> Personal & Address
@@ -1247,7 +1484,7 @@ const Profile = () => {
 
                   <span 
                     className={`badge p-2 px-3 rounded-pill fw-semibold border ${isPanVerified ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
-                    onClick={() => setEditSection("personal")}
+                    onClick={() => handleOpenEditSection("personal")}
                     style={{ cursor: "pointer" }}
                   >
                     <i className={`fa-solid ${isPanVerified ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> PAN Verified
@@ -1255,7 +1492,7 @@ const Profile = () => {
 
                   <span 
                     className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.bankDetailsInfo && isBankVerified ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
-                    onClick={() => setEditSection("bank")}
+                    onClick={() => handleOpenEditSection("bank")}
                     style={{ cursor: "pointer" }}
                   >
                     <i className={`fa-solid ${profileData.bankDetailsInfo && isBankVerified ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> Bank Account Linked
@@ -1263,7 +1500,7 @@ const Profile = () => {
 
                   <span 
                     className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.kycStatus === true ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
-                    onClick={() => setEditSection("kyc")}
+                    onClick={() => handleOpenEditSection("kyc")}
                     style={{ cursor: "pointer" }}
                   >
                     <i className={`fa-solid ${profileData.kycStatus === true ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> KYC Documents
@@ -1281,7 +1518,7 @@ const Profile = () => {
                       <h5 className="fw-bold mb-0 text-dark">PERSONAL INFO</h5>
                       <button 
                         className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
-                        onClick={() => setEditSection("personal")}
+                        onClick={() => handleOpenEditSection("personal")}
                         style={{ fontSize: "14px" }}
                       >
                         <i className="fa-regular fa-edit"></i> Edit
@@ -1394,7 +1631,7 @@ const Profile = () => {
                           </div>
                           <button 
                             className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
-                            onClick={() => setEditSection("bank")}
+                            onClick={() => handleOpenEditSection("bank")}
                             style={{ fontSize: "14px" }}
                           >
                             <i className="fa-regular fa-edit"></i> Edit
@@ -1455,7 +1692,7 @@ const Profile = () => {
                             className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
                             onClick={() => {
                               setIsPanVerified(false);
-                              setEditSection("personal");
+                              handleOpenEditSection("personal");
                             }}
                             style={{ fontSize: "14px" }}
                           >
@@ -1491,7 +1728,7 @@ const Profile = () => {
                               className="btn btn-sm btn-outline-primary mt-1 d-inline-flex align-items-center gap-1"
                               onClick={() => {
                                 setIsPanVerified(false);
-                                setEditSection("personal");
+                                handleOpenEditSection("personal");
                               }}
                             >
                               <i className="fa-solid fa-pen-to-square"></i> Edit PAN Number
@@ -1513,7 +1750,7 @@ const Profile = () => {
                           </div>
                           <button 
                             className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
-                            onClick={() => setEditSection("kyc")}
+                            onClick={() => handleOpenEditSection("kyc")}
                             style={{ fontSize: "14px" }}
                           >
                             <i className="fa-solid fa-cloud-arrow-up me-1"></i> Upload

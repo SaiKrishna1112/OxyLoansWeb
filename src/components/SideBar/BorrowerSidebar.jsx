@@ -243,7 +243,7 @@ const BorrowerSidebar = (props) => {
                               : ""
                           }`}
                         >
-                          Loan Disbursement Status
+                          Loan Details
                         </Link>
                       </li> */}
                     </ul>

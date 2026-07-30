@@ -2106,3 +2106,27 @@ export const getBorrowerListNearByRediusForLender = async (
   );
   return response;
 };
+
+export const deductBorrowerLoanDisbursementWallet = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanDisbursementFile",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerLoanGeneratedFiles = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanGeneratedFiles",
+    "GET",
+    token
+  );
+  return response;
+};
+

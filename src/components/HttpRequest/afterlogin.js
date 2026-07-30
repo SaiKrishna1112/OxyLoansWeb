@@ -4301,11 +4301,12 @@ export const completeCashfreeEsign = async (loanRequestId, assignmentId) => {
   );
 };
 
-export const listBorrowerLoanEnachMandates = async (loanRequestId) => {
+export const listBorrowerLoanEnachMandates = async (loanRequestId, assignmentId = null) => {
   const token = getToken();
   const userId = getUserId();
+  const queryParam = assignmentId ? `?assignmentId=${assignmentId}` : "";
   return axios.get(
-    `${API_BASE_URL}${userId}/loan/${loanRequestId}/borrowerLoanEnachMandates`,
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/borrowerLoanEnachMandates${queryParam}`,
     {
       headers: {
         accesstoken: token,
@@ -4426,6 +4427,69 @@ export const getBorrowerLoanEmiCards = async (loanRequestId) => {
 
 export const getLoanEmiCards = getBorrowerLoanEmiCards;
 export const borrowerLoanEmiCards = getBorrowerLoanEmiCards;
+
+// Admin Proximity Loan Overview API
+export const getAdminProximityLoanOverview = async (params = {}) => {
+  const token = getToken();
+  const userId = getUserId();
+
+  const queryParams = new URLSearchParams();
+  if (params.page !== undefined) queryParams.append("page", params.page);
+  if (params.size !== undefined) queryParams.append("size", params.size);
+  if (params.radiusKm !== undefined) queryParams.append("radiusKm", params.radiusKm);
+  if (params.status) queryParams.append("status", params.status);
+  if (params.city) queryParams.append("city", params.city);
+  if (params.pincode) queryParams.append("pincode", params.pincode);
+
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+  try {
+    return await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `admin/proximityLoanOverview${queryString}`,
+      "GET",
+      token
+    );
+  } catch (e) {
+    try {
+      return await axios.get(`${MARKETPLACE_URL}/v1/admin/proximityLoanOverview${queryString}`, {
+        headers: marketplaceHeaders(),
+      });
+    } catch (err) {
+      return await axios.get(`${API_BASE_URL}admin/proximityLoanOverview${queryString}`, {
+        headers: { accesstoken: token, accessToken: token },
+      });
+    }
+  }
+};
+
+export const getProximityLoanOverview = getAdminProximityLoanOverview;
+export const adminProximityLoanOverview = getAdminProximityLoanOverview;
+
+export const deductBorrowerLoanDisbursementWallet = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanDisbursementFile",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerLoanGeneratedFiles = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanGeneratedFiles",
+    "GET",
+    token
+  );
+  return response;
+};
+
+
 
 
 

@@ -4,7 +4,10 @@ import { Table, Tag, Collapse, Progress } from "antd";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
 import { onShowSizeChange } from "../../../Pagination";
-import { getBorrowerEmiSchedule } from "../../../HttpRequest/afterlogin";
+import {
+  getBorrowerRunningloans,
+  getBorrowerLoanEmiCards,
+} from "../../../HttpRequest/afterlogin";
 
 const { Panel } = Collapse;
 
@@ -14,9 +17,9 @@ const formatINR = (n) =>
 const statusColor = (s) => {
   if (!s) return "default";
   s = s.toUpperCase();
-  if (s === "PAID" || s === "ACTIVE") return "green";
-  if (s === "UPCOMING") return "orange";
-  if (s === "OVERDUE") return "red";
+  if (s === "PAID" || s === "ACTIVE" || s === "COMPLETED") return "green";
+  if (s === "UPCOMING" || s === "PENDING" || s === "INPROCESS") return "orange";
+  if (s === "OVERDUE" || s === "ADMINREJECTED" || s === "FAILED") return "red";
   if (s === "CONSENT_PENDING") return "orange";
   if (s === "CLOSED" || s === "CLOSEDBYPLATFORM") return "blue";
   return "default";
@@ -60,19 +63,68 @@ const BorrowerEmiSchedule = () => {
   });
 
   useEffect(() => {
-    getBorrowerEmiSchedule()
-      .then((res) => {
-        if (res.status === 200) {
-          setState({ loans: res.data || [], loading: false, error: "" });
-        } else {
-          setState({ loans: [], loading: false, error: "Failed to load EMI schedule." });
-        }
-      })
-      .catch((e) => {
-        const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Failed to load EMI schedule.";
-        setState({ loans: [], loading: false, error: msg });
-      });
+    fetchBorrowerEmiCardsAndLoans();
   }, []);
+
+  const fetchBorrowerEmiCardsAndLoans = async () => {
+    setState((prev) => ({ ...prev, loading: true, error: "" }));
+    try {
+      const activeRes = await getBorrowerRunningloans(1, 20);
+      const rawLoans = Array.isArray(activeRes.data)
+        ? activeRes.data
+        : activeRes.data?.results || activeRes.data?.listOfApplications || activeRes.data?.loans || [];
+
+      if (!Array.isArray(rawLoans) || rawLoans.length === 0) {
+        setState({ loans: [], loading: false, error: "" });
+        return;
+      }
+
+      const loansWithCards = await Promise.all(
+        rawLoans.map(async (loan) => {
+          const reqId = loan.loanRequestId || loan.id || loan.internalId;
+          let emiSchedule = loan.emiSchedule || [];
+          if (reqId) {
+            try {
+              const cardsRes = await getBorrowerLoanEmiCards(reqId);
+              if (cardsRes?.status === 200 && cardsRes?.data) {
+                const cards = Array.isArray(cardsRes.data) ? cardsRes.data : [cardsRes.data];
+                emiSchedule = cards.map((card, idx) => ({
+                  emiNo: card.emiNumber || card.emiNo || idx + 1,
+                  dueDate: card.emiDueOn || card.dueDate || card.dueDateStart || "—",
+                  emiAmount: card.emiAmount || card.amount || card.totalRepaymentAmount || 0,
+                  principal: card.emiPrincipalAmount || card.principalAmount || 0,
+                  interest: card.emiInterestAmount || card.interestAmount || 0,
+                  balance: card.outstandingBalance || card.balance || 0,
+                  status: card.status || (card.emiPaidOn ? "PAID" : "UPCOMING"),
+                }));
+              }
+            } catch (cardErr) {
+              console.log("Failed to fetch loanEmiCards for loan", reqId, cardErr);
+            }
+          }
+
+          return {
+            loanRequestId: reqId || loan.loanId,
+            loanId: loan.loanId || `LOAN#${reqId}`,
+            loanAmount: loan.amount || loan.loanAmount || loan.loanRequestAmount || 0,
+            annualRoi: loan.rateOfInterest || loan.annualRoi || 0,
+            durationMonths: loan.duration || loan.durationMonths || 0,
+            monthlyEmi: loan.monthlyEmi || (emiSchedule[0]?.emiAmount || 0),
+            totalInterest: loan.totalInterest || 0,
+            totalPayable: loan.totalPayable || loan.amount || 0,
+            loanStatus: loan.loanStatus || loan.status || "ACTIVE",
+            consentStatus: loan.consentStatus || "COMPLETED",
+            emiSchedule,
+          };
+        })
+      );
+
+      setState({ loans: loansWithCards, loading: false, error: "" });
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Failed to load EMI schedule.";
+      setState({ loans: [], loading: false, error: msg });
+    }
+  };
 
   const summaryColumns = [
     {

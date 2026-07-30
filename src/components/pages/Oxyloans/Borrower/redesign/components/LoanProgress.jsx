@@ -3,7 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import "../redesign.css";
 
-const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
+const LoanProgress = ({ 
+  profileDetails, 
+  loans = [], 
+  loanRequests = [], 
+  loading = false 
+}) => {
   const navigate = useNavigate();
 
   const profileCompletionPct = useMemo(() => {
@@ -31,9 +36,9 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
       { key: "KYC", label: "KYC", status: "PENDING", statusText: "KYC pending", icon: "fa-solid fa-id-card", path: "/borrowerProfile" },
       { key: "LOAN_REQUEST", label: "Loan Request", status: "PENDING", statusText: "Create new request", icon: "fa-solid fa-file-invoice-dollar", path: "/borrowerLoanRequestCreate" },
       { key: "OFFERS", label: "Offers", status: "PENDING", statusText: "Awaiting bids", icon: "fa-solid fa-hand-holding-dollar", path: "/borrowerLoansInitiated" },
-      { key: "DOCUMENTS", label: "Documents", status: "PENDING", statusText: "Agreement pending", icon: "fa-solid fa-signature", path: "/my-marketplace-loans" },
+      { key: "DOCUMENTS", label: "Documents", status: "PENDING", statusText: "Agreement pending", icon: "fa-solid fa-signature", path: "/borrowerLoanRequestCreate" },
       { key: "FUNDS", label: "Funds", status: "PENDING", statusText: "Awaiting documents", icon: "fa-solid fa-wallet", path: "/borrowerDisbursementAmount" },
-      { key: "REPAYMENT", label: "Repayment", status: "PENDING", statusText: "EMI not started", icon: "fa-solid fa-calendar-check", path: "/borrower-emi-schedule" },
+      { key: "REPAYMENT", label: "Repayment", status: "PENDING", statusText: "EMI not started", icon: "fa-solid fa-calendar-check", path: "/borrowerDisbursementAmount" },
     ];
 
     let currentStep = "";
@@ -373,6 +378,37 @@ const LoanProgress = ({ profileDetails, loans = [], loanRequests = [] }) => {
       });
     }
   };
+
+  if (loading || (!profileDetails && loading !== false)) {
+    return (
+      <div className="oxy-stepper-container p-4 rounded-4 shadow-sm bg-white border mb-4">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div className="d-flex align-items-center gap-2">
+            <span className="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+            <h5 className="fw-bold mb-0 text-dark" style={{ fontSize: "15px" }}>
+              Loading Onboarding & Loan Journey...
+            </h5>
+          </div>
+          <div className="oxy-skeleton rounded-pill" style={{ width: "130px", height: "26px" }}></div>
+        </div>
+
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <div className="oxy-skeleton rounded-2" style={{ width: "140px", height: "14px" }}></div>
+          <div className="oxy-skeleton rounded-2" style={{ width: "80px", height: "14px" }}></div>
+        </div>
+
+        <div className="d-flex flex-column flex-md-row justify-content-between gap-3 pt-2">
+          {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+            <div key={num} className="d-flex flex-column align-items-center flex-fill gap-2 p-2">
+              <div className="oxy-skeleton rounded-circle mb-1" style={{ width: "44px", height: "44px" }}></div>
+              <div className="oxy-skeleton rounded-2 mb-1" style={{ width: "65px", height: "12px" }}></div>
+              <div className="oxy-skeleton rounded-2" style={{ width: "85px", height: "10px" }}></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="oxy-stepper-container">

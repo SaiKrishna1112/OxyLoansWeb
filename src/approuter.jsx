@@ -44,6 +44,7 @@ import LoadwaletThroughQr from "./components/pages/Oxyloans/Lender/LoadwaletThro
 import LoadwalletThroughVirtualAccount from "./components/pages/Oxyloans/Lender/LoadwalletThroughVirtualAccount";
 import LoanListings from "./components/pages/Oxyloans/Lender/LoanListings";
 import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
+import AdminProximityLoanOverview from "./components/pages/Oxyloans/Admin/AdminProximityLoanOverview";
 import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
@@ -515,6 +516,8 @@ const AppRouter = () => {
         <Route path="/dealsInfo" element={<PrivateRoute element={<DealsInfo />} />} />
         <Route path="/adminBorrowerCharges" element={<PrivateRoute element={<BorrowerCharges />} />} />
         <Route path="/adminProcessingFees" element={<PrivateRoute element={<ProcessingFees />} />} />
+        <Route path="/adminProximityLoanOverview" element={<PrivateRoute element={<AdminProximityLoanOverview />} />} />
+        <Route path="/admin/proximity-loan-overview" element={<PrivateRoute element={<AdminProximityLoanOverview />} />} />
 
         {/* MARKETPLACE */}
         <Route path="/post-loan-request" element={<PrivateRoute element={<PostLoanRequest />} />} />

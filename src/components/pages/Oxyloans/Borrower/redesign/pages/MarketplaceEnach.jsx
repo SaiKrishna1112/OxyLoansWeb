@@ -13,10 +13,11 @@ import {
 import "../redesign.css";
 
 const MarketplaceEnach = () => {
-  const { loanRequestId } = useParams();
+  const { loanRequestId, assignmentId: routeAssignmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryMandateId = searchParams.get("mandateId") || searchParams.get("mandate_id");
+  const queryAssignmentId = searchParams.get("assignmentId") || searchParams.get("assignment_id") || routeAssignmentId;
 
   const [step, setStep] = useState("check"); // check | authorize | success
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ const MarketplaceEnach = () => {
       document.body.classList.remove("oxy-redesign-active");
       stopPolling();
     };
-  }, [loanRequestId, queryMandateId]);
+  }, [loanRequestId, queryMandateId, queryAssignmentId]);
 
   const cashfree = window.Cashfree({ mode: "sandbox" });
 
@@ -56,15 +57,17 @@ const MarketplaceEnach = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await listBorrowerLoanEnachMandates(loanRequestId);
+      const res = await listBorrowerLoanEnachMandates(loanRequestId, queryAssignmentId);
       const list = res?.data || [];
       setMandates(list);
       
       if (list.length > 0) {
-        // If we have a queryMandateId from URL, find it in the list or use list[0]
+        // If we have a queryMandateId or queryAssignmentId from URL, find matching mandate in the list or use list[0]
         const mandateFromQuery = queryMandateId ? list.find(m => String(m.id) === String(queryMandateId)) : null;
-        const currentMandate = mandateFromQuery || list[0];
+        const mandateFromAssignment = queryAssignmentId ? list.find(m => String(m.assignmentId || m.loanAssignmentId || m.id) === String(queryAssignmentId)) : null;
+        const currentMandate = mandateFromQuery || mandateFromAssignment || list[0];
         setSelectedMandate(currentMandate);
+        console.log("currentMandate", currentMandate);
         
         // If already success/active, jump to success step
         if (
@@ -103,7 +106,7 @@ const MarketplaceEnach = () => {
     console.log('enach started..........')
 
     try {
-      const res = await startCashfreeEnachAuthorization(selectedMandate.id);
+      const res = await startCashfreeEnachAuthorization(selectedMandate.mandateId);
       if (res?.data && res?.data?.subscriptionSessionId) {
         setAuthData(res.data);
         setStep("authorize");
@@ -284,11 +287,11 @@ const MarketplaceEnach = () => {
                   <div className="bg-light p-3 rounded-3 mb-4">
                     <div className="info-row">
                       <span className="info-label">Mandate Ref ID</span>
-                      <span className="info-value text-dark">{selectedMandate.id}</span>
+                      <span className="info-value text-dark">{selectedMandate.mandateId}</span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Transaction ID</span>
-                      <span className="info-value text-muted">{selectedMandate.mandateTransactionId || "—"}</span>
+                      <span className="info-value text-muted">{selectedMandate.subscriptionId || "—"}</span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Mandate Type</span>
@@ -296,7 +299,7 @@ const MarketplaceEnach = () => {
                     </div>
                     <div className="info-row">
                       <span className="info-label">Maximum Debit Limit</span>
-                      <span className="info-value text-success">₹ {Number(selectedMandate.maxAmount || 0).toLocaleString("en-IN")}</span>
+                      <span className="info-value text-success">₹ {Number(selectedMandate.fundedAmount || 0).toLocaleString("en-IN")}</span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Loan Request ID</span>

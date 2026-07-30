@@ -382,6 +382,7 @@ const Dashboard = () => {
               loanRequests={loanRequests}
               disbursementCount={disbursementData.apiData.length}
               hasActiveRequest={hasActiveRequest}
+              loading={!profileDetails || loansData.loading}
             />
 
             {/* Loan Portfolio Overview strip */}

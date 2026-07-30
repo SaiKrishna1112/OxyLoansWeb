@@ -902,6 +902,12 @@ const Sidebar = (props) => {
                     <span>Marketplace Dashboard</span>
                   </Link>
                 </li>
+                <li className={`${"/adminProximityLoanOverview" === pathName ? "active" : ""}`}>
+                  <Link to="/adminProximityLoanOverview">
+                    <i className="fa-solid fa-map-location-dot"></i>
+                    <span>Proximity Loan Overview</span>
+                  </Link>
+                </li>
                 <li className={`${"/admin/disbursal-control" === pathName ? "active" : ""}`}>
                   <Link to="/admin/disbursal-control">
                     <i className="fa-solid fa-money-bill-transfer"></i>

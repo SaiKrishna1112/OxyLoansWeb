@@ -77,7 +77,7 @@ export const validateDob = (dobStr) => {
   if (age < 18) {
     return { valid: false, message: `Borrower must be at least 18 years old. Current calculated age is ${age} years.` };
   }
-  if (age > 70) {
+  if (age > 85) {
     return { valid: false, message: `Age (${age} years) exceeds the maximum allowed limit of 70 years.` };
   }
 
