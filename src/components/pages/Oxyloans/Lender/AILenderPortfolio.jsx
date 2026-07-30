@@ -1793,6 +1793,28 @@ const LenderPortfolioDashboard = () => {
                 </div>
               )}
 
+              {/* ── 0a-ii. PAID SUBSCRIPTION VALIDITY ── */}
+              {!data?.onTrial && data?.subscriptionValidUntil && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10, marginBottom: 16,
+                  background: (data?.membershipTier || '').toUpperCase() === 'PRO' ? "#f0e6ff" : "#e6f4ff",
+                  borderRadius: 10, padding: "10px 18px",
+                }}>
+                  <span style={{ fontSize: 18 }}>{(data?.membershipTier || '').toUpperCase() === 'PRO' ? '✦' : '★'}</span>
+                  <div>
+                    <span style={{
+                      fontWeight: 700, fontSize: 14,
+                      color: (data?.membershipTier || '').toUpperCase() === 'PRO' ? "#722ed1" : "#1890ff"
+                    }}>
+                      OXY {data.membershipTier} Subscription
+                    </span>
+                    <span style={{ fontSize: 13, color: "#595959", marginLeft: 10 }}>
+                      Valid until {new Date(data.subscriptionValidUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* ── 0b. TIER PREVIEW BANNER ── */}
               <TierPreviewBanner
                 activeTier={effectiveTier}
