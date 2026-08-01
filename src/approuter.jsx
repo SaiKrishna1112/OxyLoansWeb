@@ -20,7 +20,9 @@ import AdminAITopPaidEarnedHistoryPage from "./components/pages/Oxyloans/Admin/A
 import AdminAIActiveLendersReferralPortfolioPage from "./components/pages/Oxyloans/Admin/AdminAIActiveLendersReferralPortfolioPage";
 import AdminAILentReferralTreeMapPage from "./components/pages/Oxyloans/Admin/AdminAILentReferralTreeMapPage";
 import AdminAILentUsersDetailPage from "./components/pages/Oxyloans/Admin/AdminAILentUsersDetailPage";
+import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
 import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Admin/AdminAIInactiveReactivatedReportPage";
+import AdminAIOXYInsightsPage from "./components/pages/Oxyloans/Admin/AdminAIOXYInsightsPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
@@ -294,9 +296,11 @@ const AppRouter = () => {
         <Route path="/adminAITopPaidEarnedReferrers" element={<AdminAITopPaidEarnedReferrersPage />} />
         <Route path="/adminAITopPaidEarnedHistory" element={<AdminAITopPaidEarnedHistoryPage />} />
         <Route path="/adminAIActiveLendersReferralPortfolio" element={<AdminAIActiveLendersReferralPortfolioPage />} />
+        <Route path="/adminAIReferrerRefereesDetail" element={<AdminAIReferrerRefereesDetailPage />} />
         <Route path="/adminAILentReferralTreeMap" element={<AdminAILentReferralTreeMapPage />} />
         <Route path="/adminAILentUsersDetail" element={<AdminAILentUsersDetailPage />} />
         <Route path="/adminAIInactiveReactivatedReport" element={<AdminAIInactiveReactivatedReportPage />} />
+        <Route path="/adminAIOXYInsights" element={<AdminAIOXYInsightsPage />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
 
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />

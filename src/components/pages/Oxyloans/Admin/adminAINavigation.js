@@ -12,6 +12,7 @@ export const goBackOrAdminAI = (navigate, fallback = "/adminAIDashboard") => {
 
 export const ADMIN_AI_DASHBOARD_PATH = "/adminAIDashboard";
 export const YEAR_WISE_REFERRALS_PATH = "/adminAIDashboard?panel=yearWiseReferrals";
+export const OXYINSIGHTS_PATH = "/adminAIOXYInsights";
 
 /** Always open main Admin AI Dashboard (avoids history back to nested pages). */
 export const goToAdminAIDashboard = (navigate) => {

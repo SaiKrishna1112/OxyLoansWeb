@@ -13,19 +13,64 @@ import {
 
 const PROJECT_TYPES = [
   { id: "oxyloans", label: "oxyloans (admin@oxyloans.com)", displayName: "OxyLoans" },
-  { id: "bmv", label: "bmv (Hi@BMV.money)", displayName: "BMV" },
+  { id: "bmv", label: "bmv (anil@askoxy.ai)", displayName: "BMV" },
   { id: "oxybricks", label: "oxybricks (radha@oxybricks.world)", displayName: "Oxybricks" },
-  { id: "erice", label: "erice (Hi@BMV.money)", displayName: "Erice" },
+  { id: "erice", label: "erice (ceo@oxyglobaltech.net)", displayName: "Erice" },
+  { id: "rotary", label: "rotary (Rotaryaihub@rotary3150.com)", displayName: "Rotary AI Hub" },
 ];
 
-const OXYLOANS_BRAND_LOGO = "https://oxyloans.com/wp-content/themes/oxyloan/oxyloan/_ui/images/logo4.png";
-const OXYLOANS_BRAND_LOGO_FALLBACK = `${process.env.PUBLIC_URL || ""}/assets/img/oxyloans-campaign-logo.png`;
+// Clean OxyLoans logo without the mark above the final S (local preview asset only).
+const OXYLOANS_UI_LOGO = `${process.env.PUBLIC_URL || ""}/assets/img/oxyloans-campaign-logo.png`;
+// Inbox-safe public HTTPS logo (S3/private/signed URLs break for email recipients).
+const OXYLOANS_EMAIL_LOGO =
+  "https://oxyloans.com/wp-content/themes/oxyloan/oxyloan/_ui/images/logo4.png";
 
 const DEFAULT_LOGOS = {
-  oxyloans: OXYLOANS_BRAND_LOGO,
+  oxyloans: OXYLOANS_UI_LOGO,
   bmv: "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/PAN_askoxylogoblack.56dbb158b7a0beaf4fbe.png",
   oxybricks: "https://oxyloanstestv1.s3.ap-south-1.amazonaws.com/BULKINVITE_logo%20(1).png",
   erice: "https://oxyloansv1.s3.ap-south-1.amazonaws.com/BULKINVITE_Oxyrice%20logo.png",
+  rotary: OXYLOANS_UI_LOGO,
+};
+
+const defaultLogoForProject = (projectId) =>
+  DEFAULT_LOGOS[projectId] || DEFAULT_LOGOS.oxyloans;
+
+const isPublicHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
+
+const isFragileEmailLogoUrl = (value) => {
+  const url = String(value || "").trim().toLowerCase();
+  if (!url) return true;
+  const s3 = url.includes(".amazonaws.com/") || url.includes("s3.");
+  if (!s3) return false;
+  return (
+    url.includes("x-amz-") ||
+    url.includes("signature=") ||
+    url.includes("awsaccesskeyid=") ||
+    url.includes("oxyloansv1.s3.") ||
+    url.includes("oxyloanstestv1.s3.")
+  );
+};
+
+/** Inbox-safe logo URL: public HTTPS only (no localhost / relative / known-private S3 defaults). */
+const resolveDeliverableLogoUrl = (candidate, projectId) => {
+  const url = String(candidate || "").trim();
+  const projectDefault = defaultLogoForProject(projectId);
+  // Custom upload (not the project default asset)
+  if (
+    isPublicHttpUrl(url) &&
+    !/localhost|127\.0\.0\.1/i.test(url) &&
+    url !== projectDefault
+  ) {
+    return url;
+  }
+  if (projectId === "oxyloans" || projectId === "rotary") {
+    return OXYLOANS_EMAIL_LOGO;
+  }
+  if (isPublicHttpUrl(projectDefault) && !isFragileEmailLogoUrl(projectDefault)) {
+    return projectDefault;
+  }
+  return OXYLOANS_EMAIL_LOGO;
 };
 
 const TEST_PREVIEW_NAME = "Vijay Dasari";
@@ -918,10 +963,17 @@ const AdminAILenderCampaignModal = ({
   campaignSetCount = 3,
   audienceType = "lenders",
   targetLender = null,
+  customEmails = null,
 }) => {
   const navigate = useNavigate();
-  const audienceLabel = audienceType === "borrowers" ? "borrowers" : "lenders";
-  const isIndividualLender = Boolean(targetLender?.lenderId);
+  const excelEmailList = Array.isArray(customEmails)
+    ? [...new Set(customEmails.map((v) => String(v || "").trim().toLowerCase()).filter((v) => v.includes("@")))]
+    : [];
+  const isExcelCampaign = excelEmailList.length > 0 || segment === "excelUpload";
+  // Kept for compatibility with hot-reload / older modal paths (Excel no longer uses Send Test).
+  const excelTestEmail = excelEmailList[0] || "";
+  const audienceLabel = audienceType === "borrowers" ? "borrowers" : isExcelCampaign ? "Excel emails" : "lenders";
+  const isIndividualLender = Boolean(targetLender?.lenderId) && !isExcelCampaign;
   const individualLabel = isIndividualLender
     ? `LR${targetLender.lenderId}${targetLender.name ? ` — ${targetLender.name}` : ""}`
     : "";
@@ -941,6 +993,10 @@ const AdminAILenderCampaignModal = ({
   const [whatsappSubject, setWhatsappSubject] = useState("Update from OxyLoans");
   const [testEmail, setTestEmail] = useState("");
   const [testMobile, setTestMobile] = useState("");
+  const [mailDisplayName, setMailDisplayName] = useState("OxyLoans");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoFileName, setLogoFileName] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageFileName, setImageFileName] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -961,7 +1017,9 @@ const AdminAILenderCampaignModal = ({
   const isWhatsapp = channel === "whatsapp";
   const totalRecipients = isIndividualLender
     ? 1
-    : Math.max(Number(recipientCount) || 0, Number(liveRecipientCount) || 0);
+    : isExcelCampaign
+      ? excelEmailList.length
+      : Math.max(Number(recipientCount) || 0, Number(liveRecipientCount) || 0);
   const splitSetCount = Math.max(1, Number(campaignSetCount) || DEFAULT_CAMPAIGN_SET_COUNT);
   const shouldSplitCampaign = !isIndividualLender && channel === "email" && totalRecipients > 0;
   const setSize = shouldSplitCampaign ? Math.ceil(totalRecipients / splitSetCount) : 0;
@@ -1005,10 +1063,11 @@ const AdminAILenderCampaignModal = ({
     return stripSubjectFromPreview(withoutGreeting, whatsappSubject || mailSubject);
   }, [message, whatsappSubject, mailSubject]);
   const previewGreeting = `Dear ${TEST_PREVIEW_NAME},`;
-  const brandLogo = DEFAULT_LOGOS[projectType] || DEFAULT_LOGOS.oxyloans;
-  const whatsappPreviewImage = imageUrl || brandLogo;
-  const mailDisplayName = PROJECT_TYPES.find((option) => option.id === projectType)?.displayName || "OxyLoans";
-  const campaignFingerprint = `${channel}|${projectType}|${mailSubject}|${whatsappSubject}|${message}|${imageUrl}`;
+  const brandLogo = logoUrl || defaultLogoForProject(projectType);
+  const previewLogo = brandLogo;
+  const deliverableLogo = resolveDeliverableLogoUrl(brandLogo, projectType);
+  const whatsappPreviewImage = imageUrl || previewLogo;
+  const campaignFingerprint = `${channel}|${projectType}|${mailSubject}|${whatsappSubject}|${message}|${imageUrl}|${logoUrl}|${mailDisplayName}`;
   const schedulePreview = useMemo(
     () => formatSchedulePreview(scheduleDate, scheduleTime),
     [scheduleDate, scheduleTime]
@@ -1123,8 +1182,11 @@ const AdminAILenderCampaignModal = ({
 
   useEffect(() => {
     if (!open) return;
-    setChannel(initialChannel);
+    setChannel(isExcelCampaign ? "email" : initialChannel);
     setProjectType("oxyloans");
+    setMailDisplayName(PROJECT_TYPES.find((option) => option.id === "oxyloans")?.displayName || "OxyLoans");
+    setLogoUrl("");
+    setLogoFileName("");
     setMessageMode("templates");
     setSelectedTemplateId("");
     setContentSource("manual");
@@ -1136,14 +1198,22 @@ const AdminAILenderCampaignModal = ({
     setMessage("");
     setMailSubject("Update from OxyLoans");
     setWhatsappSubject("Update from OxyLoans");
-    setTestEmail(isIndividualLender ? String(targetLender?.email || "").trim() : "");
-    setTestMobile(isIndividualLender ? String(targetLender?.mobileNumber || "").replace(/\D/g, "") : "");
+    if (isExcelCampaign) {
+      setTestEmail("");
+      setTestMobile("");
+    } else if (isIndividualLender) {
+      setTestEmail(String(targetLender?.email || "").trim());
+      setTestMobile(String(targetLender?.mobileNumber || "").replace(/\D/g, ""));
+    } else {
+      setTestEmail("");
+      setTestMobile("");
+    }
     setImageUrl("");
     setImageFileName("");
     setStatus("");
     setError("");
     setShowPreview(false);
-    setTestVerified(Boolean(isIndividualLender));
+    setTestVerified(Boolean(isIndividualLender || isExcelCampaign));
     setScheduledTestQueued(false);
     setUseSchedule(false);
     setScheduleDate(defaultScheduleDate());
@@ -1164,7 +1234,7 @@ const AdminAILenderCampaignModal = ({
     } catch {
       // ignore invalid session storage
     }
-  }, [open, initialChannel, segment, segmentLabel, isIndividualLender, targetLender?.lenderId, targetLender?.email, targetLender?.mobileNumber, targetLender?.name]);
+  }, [open, initialChannel, segment, segmentLabel, isIndividualLender, isExcelCampaign, targetLender?.lenderId, targetLender?.email, targetLender?.mobileNumber, targetLender?.name]);
 
   useEffect(() => {
     if (!open) return;
@@ -1185,6 +1255,10 @@ const AdminAILenderCampaignModal = ({
     }
     if (isIndividualLender) {
       setLiveRecipientCount(1);
+      return;
+    }
+    if (isExcelCampaign) {
+      setLiveRecipientCount(excelEmailList.length);
       return;
     }
     const initialCount = Number(recipientCount) || 0;
@@ -1208,7 +1282,7 @@ const AdminAILenderCampaignModal = ({
     return () => {
       cancelled = true;
     };
-  }, [open, recipientCount, segment]);
+  }, [open, recipientCount, segment, isIndividualLender, isExcelCampaign, excelEmailList.length]);
 
   useEffect(() => {
     setTestVerified(false);
@@ -1324,6 +1398,33 @@ const AdminAILenderCampaignModal = ({
     }
   };
 
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload a logo image file (PNG, JPG, etc.).");
+      return;
+    }
+    setUploadingLogo(true);
+    setError("");
+    setLogoFileName(file.name);
+    try {
+      const url = await uploadAdminAILenderCampaignImage(file);
+      if (!isPublicHttpUrl(url)) {
+        throw new Error("Upload did not return a public https logo URL.");
+      }
+      setLogoUrl(url);
+      setStatus("Custom campaign logo uploaded.");
+    } catch (err) {
+      setLogoUrl("");
+      setLogoFileName("");
+      setError(err?.response?.data?.message || err?.message || "Failed to upload logo.");
+    } finally {
+      setUploadingLogo(false);
+      event.target.value = "";
+    }
+  };
+
   const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1339,7 +1440,7 @@ const AdminAILenderCampaignModal = ({
       setImageFileName(file.name);
       setStatus(channel === "whatsapp"
         ? "Image uploaded. It will be sent as the WhatsApp campaign card."
-        : "Image uploaded. It will appear in the email campaign.");
+        : "Banner image uploaded. It will appear below the logo in the email.");
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to upload image.");
     } finally {
@@ -1362,14 +1463,22 @@ const AdminAILenderCampaignModal = ({
       setError("Email subject is required.");
       return;
     }
+    if (channel === "email" && !String(mailDisplayName || "").trim()) {
+      setError("Mail Display Name is required.");
+      return;
+    }
     if (dryRun && channel === "whatsapp" && useSchedule) {
       if (!scheduleDate || !scheduleTime) {
         setError("Select schedule date and time (24-hour IST) for the scheduled test.");
         return;
       }
     }
-    if (dryRun && channel === "email" && !String(testEmail || "").trim()) {
+    if (dryRun && channel === "email" && !isExcelCampaign && !String(testEmail || "").trim()) {
       setError("Enter a test email address for Send Test.");
+      return;
+    }
+    if (dryRun && isExcelCampaign) {
+      setError("Excel campaigns do not use Send Test. Choose content and send to all Excel emails.");
       return;
     }
     if (dryRun && channel === "whatsapp" && !String(testMobile || "").trim()) {
@@ -1377,7 +1486,7 @@ const AdminAILenderCampaignModal = ({
       return;
     }
 
-    if (!dryRun && !testVerified && !isIndividualLender) {
+    if (!dryRun && !testVerified && !isIndividualLender && !isExcelCampaign) {
       setError(
         useSchedule && channel === "whatsapp"
           ? "Schedule a test first, wait until it arrives at your chosen IST time, then confirm below before scheduling bulk."
@@ -1415,7 +1524,9 @@ const AdminAILenderCampaignModal = ({
         ? `Schedule bulk WhatsApp to ${fmtNum(totalRecipients)} ${audienceLabel} at ${schedulePreview || `${scheduleDate} ${scheduleTime}`} IST?\n\nNothing sends now — only at that time.`
         : channel === "whatsapp"
           ? `Send WhatsApp now to ${fmtNum(totalRecipients)} ${audienceLabel} in "${segmentLabel}"?`
-          : `Send email to ${fmtNum(totalRecipients)} ${audienceLabel} in "${segmentLabel}" now${setText}?`;
+          : isExcelCampaign
+            ? `Send email now to all ${fmtNum(totalRecipients)} Excel emails and track opens/clicks?`
+            : `Send email to ${fmtNum(totalRecipients)} ${audienceLabel} in "${segmentLabel}" now${setText}?`;
     if (!skipConfirm && !window.confirm(confirmText)) {
       return;
     }
@@ -1426,19 +1537,21 @@ const AdminAILenderCampaignModal = ({
     const isScheduledWhatsApp = !isIndividualLender && channel === "whatsapp" && useSchedule;
     try {
       const data = await sendAdminAILenderSegmentCampaign({
-        segment,
+        segment: isExcelCampaign ? "excelUpload" : segment,
         segmentLabel: isIndividualLender
           ? `Individual Active Lender — ${individualLabel}`
-          : segmentLabel,
+          : isExcelCampaign
+            ? (segmentLabel || `Excel Upload (${excelEmailList.length} emails)`)
+            : segmentLabel,
         channel,
         projectType,
-        mailDisplayName,
+        mailDisplayName: String(mailDisplayName || "").trim() || "OxyLoans",
         message: trimmedMessage,
         mailSubject,
         whatsappSubject,
         imageUrl: channel === "email" ? (imageUrl || undefined) : undefined,
-        logoUrl: brandLogo,
-        testEmail: dryRun && channel === "email" ? testEmail.trim() : undefined,
+        logoUrl: deliverableLogo || undefined,
+        testEmail: dryRun && channel === "email" && !isExcelCampaign ? testEmail.trim() : undefined,
         testMobile: channel === "whatsapp" && (dryRun || isScheduledWhatsApp) ? testMobile.trim() : undefined,
         dryRun: dryRun && !isScheduledWhatsApp,
         scheduleSend: Boolean(isScheduledWhatsApp),
@@ -1447,10 +1560,11 @@ const AdminAILenderCampaignModal = ({
         scheduleTime: isScheduledWhatsApp
           ? (scheduleTime ? scheduleTime.slice(0, 5) : undefined)
           : undefined,
-        recipientCount: isScheduledWhatsApp || isIndividualLender ? totalRecipients : undefined,
+        recipientCount: isScheduledWhatsApp || isIndividualLender || isExcelCampaign ? totalRecipients : undefined,
         maxRecipients: !isIndividualLender && !dryRun && activeSet && !activeSet.isAllUsers ? activeSet.maxRecipients : undefined,
         recipientOffset: !isIndividualLender && !dryRun && activeSet && !activeSet.isAllUsers ? activeSet.offset : undefined,
         targetLenderId: isIndividualLender && !dryRun ? Number(targetLender.lenderId) : undefined,
+        customEmails: isExcelCampaign ? excelEmailList : undefined,
       });
       const deliveryError = Array.isArray(data?.deliveryResults)
         ? data.deliveryResults.find((row) => row?.errorMessage)?.errorMessage
@@ -1458,6 +1572,7 @@ const AdminAILenderCampaignModal = ({
       const recipient = Array.isArray(data?.deliveryResults)
         ? data.deliveryResults[0]?.recipient || data.deliveryResults[0]?.email || data.deliveryResults[0]?.mobileNumber
         : "";
+      const notifySent = (payload) => onSent?.(payload, { dryRun });
       if (isScheduledWhatsApp) {
         if (data?.status === "SCHEDULED") {
           const isTestSchedule = Boolean(data?.scheduleTestOnly || dryRun);
@@ -1470,46 +1585,57 @@ const AdminAILenderCampaignModal = ({
             } catch {
               // ignore quota errors
             }
+            setStatus(data?.message || `Test WhatsApp scheduled for ${data?.scheduledAtDisplay || schedulePreview}.`);
+            setTestVerified(true);
+            notifySent(data);
+            // Keep modal open after Schedule Test so user can proceed to bulk.
+          } else {
+            notifySent(data);
+            onClose?.();
           }
-          onSent?.(data);
-          onClose?.();
         } else if (data?.status === "SUCCESS" && (data?.sentCount || 0) > 0) {
           setError(
             `WhatsApp was sent immediately at ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })} IST `
               + `instead of at ${schedulePreview || "your scheduled time"}. `
               + "Restart the backend, run migration v4, hard-refresh (Ctrl+Shift+R), then use Schedule Test again."
           );
-          onSent?.(data);
+          notifySent(data);
         } else {
           setError(
             data?.message
               || `Schedule failed (status: ${data?.status || "unknown"}). Enable the schedule checkbox and use Schedule Test — not Send Test.`
           );
-          onSent?.(data);
+          notifySent(data);
         }
       } else if (data?.status === "SCHEDULED") {
         const serverNow = data?.serverNowIst ? ` Server time now: ${data.serverNowIst}.` : "";
         setStatus((data?.message || `Scheduled for ${data?.scheduledAtDisplay || schedulePreview}.`) + serverNow);
-        onSent?.(data);
-        setTimeout(() => onClose?.(), 2500);
+        notifySent(data);
+        if (!dryRun) {
+          setTimeout(() => onClose?.(), 2500);
+        } else {
+          setTestVerified(true);
+        }
       } else if (!useSchedule && dryRun && data?.status === "SUCCESS" && (data?.sentCount || 0) > 0) {
         const summary = data?.message || `Test sent to ${recipient || "your number"}.`;
         setStatus(channel === "whatsapp"
           ? `${summary} — Check WhatsApp, then use the green button to send or schedule for all ${audienceLabel}.`
-          : summary);
+          : `${summary} — Check your inbox, then send to all ${audienceLabel} when ready.`);
         setTestVerified(true);
-        onSent?.(data);
+        notifySent(data);
       } else if (data?.status === "SUCCESS" && (data?.sentCount || 0) > 0 && (data?.failedCount || 0) === 0) {
         const summary = data?.message || `Sent: ${fmtNum(data?.sentCount || 0)} | Failed: ${fmtNum(data?.failedCount || 0)}`;
         const detail = dryRun && recipient ? `${summary} (to ${recipient})` : summary;
         setStatus(dryRun && channel === "whatsapp"
           ? `${detail} — Check WhatsApp: ONE message with OxyLoans image and your text as caption below (not two separate messages).`
-          : detail);
+          : dryRun
+            ? `${detail} — Check your inbox, then send to all ${audienceLabel} when ready.`
+            : detail);
         if (dryRun) {
           setTestVerified(true);
         }
         rememberSendResult(data, dryRun);
-        onSent?.(data);
+        notifySent(data);
         if (!dryRun && !keepOpen) {
           setTimeout(() => onClose?.(), 2000);
         }
@@ -1517,12 +1643,12 @@ const AdminAILenderCampaignModal = ({
         const summary = data?.message || "Test send failed.";
         setError(deliveryError ? `${summary} — ${deliveryError}` : summary);
         setTestVerified(false);
-        onSent?.(data);
+        notifySent(data);
       } else {
         const summary = data?.message || `Sent: ${fmtNum(data?.sentCount || 0)} | Failed: ${fmtNum(data?.failedCount || 0)}`;
         setError(deliveryError ? `${summary} — ${deliveryError}` : summary || "Campaign send failed.");
         rememberSendResult(data, dryRun);
-        onSent?.(data);
+        notifySent(data);
       }
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || "Failed to send campaign.";
@@ -1563,11 +1689,13 @@ const AdminAILenderCampaignModal = ({
             <p>
               {isIndividualLender
                 ? `${individualLabel} · 1 lender · Email or WhatsApp to this lender only (no bulk / no auto schedule)`
-                : `${segmentLabel} · ${fmtNum(totalRecipients)} ${audienceLabel} · ${
-                    isWhatsapp && useSchedule
-                ? "Step 1: Schedule test · Step 2: Confirm test · Step 3: Schedule bulk"
-                      : "Step 1: Send Test · Step 2: Send now or schedule"
-                  }`}
+                : isExcelCampaign
+                  ? `${segmentLabel} · ${fmtNum(totalRecipients)} Excel emails · Compose and send (opens tracked)`
+                  : `${segmentLabel} · ${fmtNum(totalRecipients)} ${audienceLabel} · ${
+                      isWhatsapp && useSchedule
+                        ? "Step 1: Schedule test · Step 2: Confirm test · Step 3: Schedule bulk"
+                        : "Step 1: Send Test · Step 2: Send now or schedule"
+                    }`}
             </p>
           </div>
           <button type="button" className="admin-ai-close-btn" onClick={onClose}>
@@ -1575,10 +1703,12 @@ const AdminAILenderCampaignModal = ({
           </button>
         </div>
 
-        <div className={`admin-ai-pro-note ${isIndividualLender || testVerified || scheduledTestQueued ? "admin-ai-campaign-test-ok" : ""}`}>
+        <div className={`admin-ai-pro-note ${isIndividualLender || isExcelCampaign || testVerified || scheduledTestQueued ? "admin-ai-campaign-test-ok" : ""}`}>
           <strong>
             {isIndividualLender
               ? "Individual send mode"
+              : isExcelCampaign
+                ? "Excel send mode"
               : isWhatsapp && useSchedule
               ? scheduledTestQueued
                 ? "Test scheduled — waiting for IST time."
@@ -1589,6 +1719,8 @@ const AdminAILenderCampaignModal = ({
           </strong>{" "}
           {isIndividualLender
             ? `Choose a template or AI content, then send Email/WhatsApp only to ${individualLabel}. Optional Send Test still goes to the address/number you enter below.`
+            : isExcelCampaign
+              ? `No Send Test. Choose content and send to all ${fmtNum(totalRecipients)} Excel emails. Opens and clicks are tracked.`
             : isWhatsapp && useSchedule
             ? scheduledTestQueued
               ? `Test goes only to your number at ${schedulePreview || "your chosen time"} IST. After you receive it, check the box below, then schedule bulk.`
@@ -1597,22 +1729,38 @@ const AdminAILenderCampaignModal = ({
               ? isWhatsapp
                 ? "Step 2: Send WhatsApp to all now, or enable schedule below."
                 : `You can now send the email campaign to all ${audienceLabel} in this segment.`
-              : "Send Test to your number first. Send-all stays disabled until test succeeds."}
+                : "Send Test to your number first. Send-all stays disabled until test succeeds."}
         </div>
 
         <div className="admin-ai-campaign-channel-tabs">
           <button type="button" className={channel === "email" ? "active" : ""} onClick={() => setChannel("email")}>
             <FaEnvelope /> Email
           </button>
-          <button type="button" className={channel === "whatsapp" ? "active" : ""} onClick={() => setChannel("whatsapp")}>
-            <FaWhatsapp /> WhatsApp
-          </button>
+          {!isExcelCampaign ? (
+            <button type="button" className={channel === "whatsapp" ? "active" : ""} onClick={() => setChannel("whatsapp")}>
+              <FaWhatsapp /> WhatsApp
+            </button>
+          ) : null}
         </div>
 
         <div className="admin-ai-campaign-grid">
           <label>
             Project Type *
-            <select value={projectType} onChange={(event) => setProjectType(event.target.value)}>
+            <select
+              value={projectType}
+              onChange={(event) => {
+                const next = event.target.value;
+                setProjectType(next);
+                const matched = PROJECT_TYPES.find((option) => option.id === next);
+                if (matched?.displayName) {
+                  setMailDisplayName(matched.displayName);
+                }
+                // Reset to that project's default logo (OxyLoans → OxyLoans logo).
+                setLogoUrl("");
+                setLogoFileName("");
+                setError("");
+              }}
+            >
               {PROJECT_TYPES.map((option) => (
                 <option key={option.id} value={option.id}>{option.label}</option>
               ))}
@@ -1620,7 +1768,11 @@ const AdminAILenderCampaignModal = ({
           </label>
           <label>
             {isIndividualLender ? "Target Lender" : "Segment"}
-            <input value={isIndividualLender ? individualLabel : segmentLabel} readOnly />
+            <input
+              value={isIndividualLender ? individualLabel : segmentLabel}
+              readOnly
+              title={isIndividualLender ? individualLabel : segmentLabel}
+            />
           </label>
           {shouldSplitCampaign ? (
             <label>
@@ -1645,19 +1797,26 @@ const AdminAILenderCampaignModal = ({
             </label>
           ) : null}
           <label>
-            Mail Display Name
-            <input value={mailDisplayName} readOnly />
-          </label>
-          <label>
-            {isIndividualLender ? "Optional Test Email" : `Test Email ${channel === "email" ? "*" : ""}`}
+            Mail Display Name *
             <input
-              type="email"
-              value={testEmail}
-              onChange={(event) => { setTestEmail(event.target.value); setError(""); }}
-              placeholder="your-email@gmail.com"
-              disabled={channel !== "email"}
+              value={mailDisplayName}
+              onChange={(event) => { setMailDisplayName(event.target.value); setError(""); }}
+              placeholder="Name shown in recipient inbox"
             />
           </label>
+          {!isExcelCampaign ? (
+            <label>
+              {isIndividualLender ? "Optional Test Email" : `Test Email ${channel === "email" ? "*" : ""}`}
+              <input
+                type="email"
+                value={testEmail}
+                onChange={(event) => { setTestEmail(event.target.value); setError(""); }}
+                placeholder="your-email@gmail.com"
+                disabled={channel !== "email"}
+              />
+            </label>
+          ) : null}
+          {!isExcelCampaign ? (
           <label>
             {isIndividualLender ? "Optional Test WhatsApp" : `Test WhatsApp ${channel === "whatsapp" ? "*" : ""}`}
             <input
@@ -1667,6 +1826,7 @@ const AdminAILenderCampaignModal = ({
               disabled={channel !== "whatsapp"}
             />
           </label>
+          ) : null}
           {isWhatsapp && !isIndividualLender ? (
             <div className="admin-ai-campaign-full admin-ai-campaign-schedule-block">
               <label className="admin-ai-campaign-schedule-check">
@@ -1736,6 +1896,47 @@ const AdminAILenderCampaignModal = ({
             </div>
           ) : null}
           <label className="admin-ai-campaign-full">
+            Campaign Logo
+            <div className="admin-ai-campaign-image-row">
+              <label className="admin-ai-campaign-upload-btn">
+                <FaImage /> {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingLogo}
+                  onChange={handleLogoUpload}
+                  hidden
+                />
+              </label>
+              {logoFileName ? <small title={logoFileName}>{logoFileName}</small> : (
+                <small>
+                  {projectType === "oxyloans"
+                    ? "Default: OxyLoans logo. Upload only to use a different logo."
+                    : `Default: ${PROJECT_TYPES.find((p) => p.id === projectType)?.displayName || projectType} logo. Upload to override.`}
+                </small>
+              )}
+              {logoUrl ? (
+                <button
+                  type="button"
+                  className="admin-ai-reset-btn"
+                  onClick={() => {
+                    setLogoUrl("");
+                    setLogoFileName("");
+                  }}
+                >
+                  Use default logo
+                </button>
+              ) : null}
+            </div>
+            <div className="admin-ai-campaign-image-preview admin-ai-campaign-logo-preview">
+              <img
+                key={previewLogo}
+                src={previewLogo}
+                alt="Campaign logo"
+              />
+            </div>
+          </label>
+          <label className="admin-ai-campaign-full">
             Campaign Image (optional — email only)
             <div className="admin-ai-campaign-image-row">
               <label className={`admin-ai-campaign-upload-btn ${channel !== "email" ? "is-disabled" : ""}`}>
@@ -1751,8 +1952,8 @@ const AdminAILenderCampaignModal = ({
               {imageFileName ? <small>{imageFileName}</small> : (
                 <small>
                   {channel === "whatsapp"
-                    ? "WhatsApp uses the OxyLoans logo automatically. Your caption appears below the image."
-                    : "OxyLoans logo + date are added automatically in email."}
+                    ? "WhatsApp uses the campaign logo automatically. Your caption appears below the image."
+                    : "Optional banner below the logo. Logo + date are still added automatically."}
                 </small>
               )}
               {imageUrl && channel === "email" ? (
@@ -1935,9 +2136,9 @@ const AdminAILenderCampaignModal = ({
               <div className="admin-ai-campaign-email-preview">
                 <div className="admin-ai-campaign-email-preview-head">
                   <img
-                    src={brandLogo}
-                    alt="OxyLoans"
-                    onError={(event) => { event.currentTarget.src = OXYLOANS_BRAND_LOGO_FALLBACK; }}
+                    key={`email-preview-${previewLogo}`}
+                    src={previewLogo}
+                    alt="Campaign logo"
                   />
                   <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
                 </div>
@@ -1950,10 +2151,10 @@ const AdminAILenderCampaignModal = ({
               <div className="admin-ai-campaign-whatsapp-preview">
                 <div className="admin-ai-campaign-whatsapp-preview-bubble admin-ai-campaign-whatsapp-card-style">
                   <img
+                    key={`wa-preview-${whatsappPreviewImage}`}
                     src={whatsappPreviewImage}
-                    alt="OxyLoans"
+                    alt="Campaign logo"
                     className="admin-ai-campaign-whatsapp-card-image admin-ai-campaign-whatsapp-logo-card"
-                    onError={(event) => { event.currentTarget.src = OXYLOANS_BRAND_LOGO_FALLBACK; }}
                   />
                   <div className="admin-ai-campaign-whatsapp-caption">
                     <p className="admin-ai-campaign-whatsapp-greeting"><strong>{previewGreeting}</strong></p>
@@ -1997,6 +2198,7 @@ const AdminAILenderCampaignModal = ({
           <button type="button" className="admin-ai-reset-btn" onClick={() => setShowPreview((value) => !value)}>
             {showPreview ? "Hide Preview" : "Preview"}
           </button>
+          {!isExcelCampaign ? (
           <button
             type="button"
             className="admin-ai-reset-btn"
@@ -2017,19 +2219,23 @@ const AdminAILenderCampaignModal = ({
                 ? "Schedule Test"
                 : "Send Test"}
           </button>
+          ) : null}
           <button
             type="button"
             className="admin-ai-search-btn"
             disabled={
               sendingAction !== null
-              || (!isIndividualLender && !testVerified)
+              || (!isIndividualLender && !isExcelCampaign && !testVerified)
               || (!isIndividualLender && isWhatsapp && useSchedule && (!scheduleDate || !scheduleTime))
+              || (isExcelCampaign && excelEmailList.length < 1)
             }
             title={
               isIndividualLender
                 ? channel === "whatsapp"
                   ? `Send WhatsApp to ${individualLabel}`
                   : `Send email to ${individualLabel}`
+                : isExcelCampaign
+                  ? `Send email to all ${fmtNum(totalRecipients)} Excel emails (tracked)`
                 : isWhatsapp && useSchedule
                 ? testVerified
                   ? `Bulk to ${fmtNum(totalRecipients)} ${audienceLabel} at ${schedulePreview || "selected time"} IST only`
@@ -2045,11 +2251,13 @@ const AdminAILenderCampaignModal = ({
             onClick={() => handleSend(false)}
           >
             {sendingAction === "bulk"
-              ? (isIndividualLender ? "Sending..." : "Scheduling...")
+              ? (isIndividualLender || isExcelCampaign ? "Sending..." : "Scheduling...")
               : isIndividualLender
                 ? channel === "whatsapp"
                   ? `Send WhatsApp to ${individualLabel}`
                   : `Send Email to ${individualLabel}`
+              : isExcelCampaign
+                ? `Send Email to ${fmtNum(totalRecipients)} Excel emails`
               : isWhatsapp && useSchedule
                 ? `Schedule WhatsApp to ${fmtNum(totalRecipients)}`
                 : isWhatsapp
@@ -2058,13 +2266,24 @@ const AdminAILenderCampaignModal = ({
                     ? `Send ${selectedCampaignSet.label}`
                     : `Send Email to ${fmtNum(totalRecipients)}`}
           </button>
-          {shouldSplitCampaign ? (
+          {shouldSplitCampaign && !isExcelCampaign ? (
             <button
               type="button"
               className="admin-ai-search-btn"
               disabled={sendingAction !== null || !testVerified}
               onClick={handleSendAllSets}
               title="Send Set 1, Set 2 and Set 3 in order"
+            >
+              Send All Sets
+            </button>
+          ) : null}
+          {shouldSplitCampaign && isExcelCampaign ? (
+            <button
+              type="button"
+              className="admin-ai-search-btn"
+              disabled={sendingAction !== null || excelEmailList.length < 1}
+              onClick={handleSendAllSets}
+              title="Send Set 1, Set 2 and Set 3 in order to Excel emails"
             >
               Send All Sets
             </button>

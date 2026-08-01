@@ -72,7 +72,11 @@ const Login = () => {
           toastrSuccess("Login Success !");
           history("/oxyloansadmindashboard");
         } else {
-          toastrWarning(retriveresponse?.response?.data?.errorMessage || "Static admin shortcut could not get backend token.");
+          toastrWarning(
+            retriveresponse?.response?.data?.errorMessage ||
+              retriveresponse?.message ||
+              "Static admin shortcut could not get backend token. Confirm backend is up on :8181 and retry."
+          );
         }
         return;
       }

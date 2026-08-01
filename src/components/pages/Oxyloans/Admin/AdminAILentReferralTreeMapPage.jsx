@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FaArrowLeft, FaChevronRight, FaDownload, FaProjectDiagram, FaSync, FaTimes, FaUser, FaUserFriends } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaChevronRight,
+  FaDownload,
+  FaEnvelope,
+  FaProjectDiagram,
+  FaSync,
+  FaTimes,
+  FaUser,
+  FaUserFriends,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { saveAs } from "file-saver";
 import html2canvas from "html2canvas";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
@@ -10,6 +21,7 @@ import {
   getAdminAIActiveLenderReferralTree,
   parseAdminAIExportError,
 } from "../../../HttpRequest/admin";
+import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
 import "./AdminAIDashboard.css";
 
 const PORTFOLIO_PATH = "/adminAIActiveLendersReferralPortfolio";
@@ -23,12 +35,50 @@ const pickNumber = (value) => {
 const responseData = (payload) => payload?.data || payload || {};
 const csvEscape = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
+const TREE_MAX_LEVEL = 20;
+const TREE_TYPES = [
+  { id: "lent", label: "Lent Tree", short: "Lent" },
+  { id: "registered", label: "Registered Tree", short: "Registered" },
+  { id: "invited", label: "Invited Tree", short: "Invited" },
+];
+const treeTypeMeta = (treeType) => TREE_TYPES.find((row) => row.id === treeType) || TREE_TYPES[0];
+const campaignSegmentForTree = (treeType, lenderId) => {
+  if (treeType === "registered") return `activeLenderRegisteredTreeDownline_r${lenderId}`;
+  if (treeType === "invited") return `activeLenderInvitedTreeDownline_r${lenderId}`;
+  return `activeLenderLentTreeDownline_r${lenderId}`;
+};
+
+/** Fixed Main–L4 colors. From L5+, unique non-repeating chain palette (cycles only after many levels). */
+const DEEP_LEVEL_PALETTE = [
+  { bg: "#ecfeff", border: "#0891b2", text: "#155e75", badge: "#0e7490" }, // L5 cyan
+  { bg: "#fff7ed", border: "#ea580c", text: "#9a3412", badge: "#c2410c" }, // L6 vivid orange
+  { bg: "#f0fdf4", border: "#16a34a", text: "#14532d", badge: "#15803d" }, // L7 green
+  { bg: "#fef2f2", border: "#e11d48", text: "#9f1239", badge: "#be123c" }, // L8 rose
+  { bg: "#eef2ff", border: "#4f46e5", text: "#312e81", badge: "#4338ca" }, // L9 indigo
+  { bg: "#fdf4ff", border: "#c026d3", text: "#86198f", badge: "#a21caf" }, // L10 fuchsia
+  { bg: "#fffbeb", border: "#ca8a04", text: "#854d0e", badge: "#a16207" }, // L11 gold
+  { bg: "#f0f9ff", border: "#0284c7", text: "#075985", badge: "#0369a1" }, // L12 sky
+  { bg: "#ecfdf5", border: "#0d9488", text: "#115e59", badge: "#0f766e" }, // L13 teal
+  { bg: "#faf5ff", border: "#7c3aed", text: "#5b21b6", badge: "#6d28d9" }, // L14 violet
+  { bg: "#fff1f2", border: "#f43f5e", text: "#9f1239", badge: "#e11d48" }, // L15 pink-red
+  { bg: "#f7fee7", border: "#65a30d", text: "#3f6212", badge: "#4d7c0f" }, // L16 lime
+];
+
 const tierClass = (isRoot, depth) => {
   if (isRoot || depth === 0) return "tier-l0";
-  if (depth === 1) return "tier-l1";
-  if (depth === 2) return "tier-l2";
-  if (depth === 3) return "tier-l3";
-  return "tier-l4";
+  if (depth >= 1 && depth <= 4) return `tier-l${depth}`;
+  return "tier-l-deep";
+};
+
+const tierStyle = (isRoot, depth) => {
+  if (isRoot || depth <= 4) return undefined;
+  const palette = DEEP_LEVEL_PALETTE[(depth - 5) % DEEP_LEVEL_PALETTE.length];
+  return {
+    "--ftree-deep-bg": palette.bg,
+    "--ftree-deep-border": palette.border,
+    "--ftree-deep-text": palette.text,
+    "--ftree-deep-badge": palette.badge,
+  };
 };
 
 const roleLabel = (isRoot, depth) => {
@@ -49,17 +99,19 @@ const countMembersByLevel = (tree) => {
   return counts;
 };
 
-const findNodeChildren = (tree, lenderId) => {
-  const targetId = pickNumber(lenderId);
-  if (!tree || !targetId) return [];
-  const rootId = pickNumber(tree.lenderId);
-  if (rootId === targetId) {
+const findNodeChildren = (tree, personOrId) => {
+  if (!tree) return [];
+  const targetKey = typeof personOrId === "object"
+    ? nodeSelectKey(personOrId)
+    : (pickNumber(personOrId) > 0 ? `u${pickNumber(personOrId)}` : "");
+  if (!targetKey) return [];
+  const rootKey = nodeSelectKey({ lenderId: tree.lenderId, isRoot: true });
+  if (rootKey === targetKey) {
     return Array.isArray(tree.children) ? tree.children : [];
   }
   const walk = (nodes) => {
     for (const node of nodes || []) {
-      const id = pickNumber(node.refereeId);
-      if (id === targetId) {
+      if (nodeSelectKey(node) === targetKey) {
         return Array.isArray(node.children) ? node.children : [];
       }
       const found = walk(node.children);
@@ -70,59 +122,187 @@ const findNodeChildren = (tree, lenderId) => {
   return walk(tree.children) || [];
 };
 
+const inviteDisplayLabel = (node) => {
+  const name = String(node?.refereeName || "").trim();
+  const email = String(node?.refereeEmail || "").trim();
+  const mobile = String(node?.refereeMobileNumber || "").trim();
+  const refereeId = pickNumber(node?.refereeId);
+  const referenceId = pickNumber(node?.referenceId);
+  const looksLikeInviteId = /^invite\s*#?\s*\d+$/i.test(name) || /^user\s+\d+$/i.test(name);
+  if (name && !looksLikeInviteId && name !== "-") return name;
+  if (email) return email;
+  if (mobile) return mobile;
+  if (name) return name;
+  if (refereeId > 0) return `User ${refereeId}`;
+  if (referenceId > 0) return `Invite #${referenceId}`;
+  return "-";
+};
+
+const inviteDisplayCode = (node) => {
+  const code = String(node?.refereeCode || "").trim();
+  if (code && code !== "-") return code;
+  const refereeId = pickNumber(node?.refereeId);
+  if (refereeId > 0) return `LR${refereeId}`;
+  const email = String(node?.refereeEmail || "").trim();
+  if (email) return email.includes("@") ? email.split("@")[0] : email;
+  const mobile = String(node?.refereeMobileNumber || "").trim();
+  if (mobile) return mobile;
+  const referenceId = pickNumber(node?.referenceId);
+  return referenceId > 0 ? `INV${referenceId}` : "-";
+};
+
+const nodeSelectKey = (nodeOrPerson) => {
+  if (!nodeOrPerson) return "";
+  if (nodeOrPerson.isRoot) {
+    const rootId = pickNumber(nodeOrPerson.lenderId || nodeOrPerson.refereeId);
+    return rootId > 0 ? `u${rootId}` : "root";
+  }
+  const refereeId = pickNumber(nodeOrPerson.refereeId ?? nodeOrPerson.lenderId);
+  if (refereeId > 0) return `u${refereeId}`;
+  const referenceId = pickNumber(nodeOrPerson.referenceId);
+  if (referenceId > 0) return `r${referenceId}`;
+  const code = String(nodeOrPerson.lenderCode || nodeOrPerson.refereeCode || "").trim();
+  return code ? `c${code}` : "";
+};
+
+const formatTreeSourceLabel = (source) => {
+  const value = String(source || "").trim();
+  if (!value) return "-";
+  if (/^bulkinvite$/i.test(value)) return "BulkInvite";
+  if (/^partner$/i.test(value)) return "Partner";
+  if (/^referrallink$/i.test(value)) return "Invite";
+  return value;
+};
+
+const personFromTreeNode = (node, extras = {}) => {
+  const refereeId = pickNumber(node?.refereeId);
+  const referenceId = pickNumber(node?.referenceId);
+  const name = inviteDisplayLabel(node);
+  const lenderCode = inviteDisplayCode(node);
+  return {
+    lenderId: refereeId || 0,
+    referenceId,
+    name,
+    lenderCode,
+    email: String(node?.refereeEmail || "").trim(),
+    mobileNumber: String(node?.refereeMobileNumber || "").trim(),
+    status: String(node?.status || "").trim(),
+    referredOn: String(node?.referredOn || "").trim(),
+    source: String(node?.source || "").trim(),
+    childCount: Array.isArray(node?.children) ? node.children.length : pickNumber(node?.childCount),
+    selectKey: nodeSelectKey({ refereeId, referenceId, lenderCode }),
+    ...extras,
+  };
+};
+
 const mapChildRows = (children, parentDepth = 0) =>
   (children || []).map((node) => {
-    const refereeId = pickNumber(node.refereeId);
-    const childCount = Array.isArray(node.children) ? node.children.length : pickNumber(node.childCount);
+    const person = personFromTreeNode(node, { depth: parentDepth + 1 });
     return {
-      lenderId: refereeId,
-      name: valueOrDash(node.refereeName) || (refereeId ? `User ${refereeId}` : "-"),
-      lenderCode: valueOrDash(node.refereeCode) || (refereeId ? `LR${refereeId}` : "-"),
+      ...person,
       status: valueOrDash(node.status),
       referredOn: valueOrDash(node.referredOn),
-      childCount,
-      depth: parentDepth + 1,
     };
   });
 
-const buildLentRefereesCsvBlob = (tree, rootName, rootId) => {
+const isTreeStatusMatch = (status, treeType) => {
+  const value = String(status || "").trim();
+  if (treeType === "registered") return /^registered$/i.test(value);
+  if (treeType === "invited") return /^invited$/i.test(value);
+  return /^lent$/i.test(value) || /^disbursed$/i.test(value);
+};
+
+const isLentTreeStatus = (status) => isTreeStatusMatch(status, "lent");
+
+const buildFullTreeUsersCsvBlob = (tree, rootName, rootId, treeType = "lent") => {
+  const typeLabel = treeTypeMeta(treeType).short;
   const rootCode = valueOrDash(tree?.lenderCode) || (rootId ? `LR${rootId}` : "-");
-  const children = Array.isArray(tree?.children) ? tree.children : [];
   const header = [
     "S.No",
-    "Referrer Lender ID",
-    "Referrer Name",
-    "Referrer Code",
-    "Referee Lender ID",
-    "Referee Name",
-    "Referee Code",
-    "Status",
+    "Level",
+    "Level Label",
+    "Tree Path (Main > L1 > L2 > ...)",
+    "User Lender ID",
+    "User Code",
+    "User Name",
+    "Mobile",
+    "Email",
+    `Status (${typeLabel} only)`,
+    "Source",
     "Referred On",
-    "Has Lent Downline",
-    "Downline Count",
+    "Parent Lender ID",
+    "Parent Code",
+    "Parent Name",
+    `Direct ${typeLabel} Kids Count`,
+    `Has ${typeLabel} Downline`,
   ];
-  const lines = children.map((node, index) => {
-    const refereeId = pickNumber(node.refereeId);
-    const refereeName = valueOrDash(node.refereeName) || (refereeId ? `User ${refereeId}` : "-");
-    const refereeCode = valueOrDash(node.refereeCode) || (refereeId ? `LR${refereeId}` : "-");
-    const childCount = Array.isArray(node.children) ? node.children.length : pickNumber(node.childCount);
-    return [
-      index + 1,
-      rootId,
-      rootName,
-      rootCode,
-      refereeId,
-      refereeName,
-      refereeCode,
-      valueOrDash(node.status),
-      valueOrDash(node.referredOn),
-      childCount > 0 ? "Yes" : "No",
-      childCount,
-    ]
-      .map(csvEscape)
-      .join(",");
+  const rows = [];
+  const walk = (nodes, level, parentId, parentName, parentCode, pathNames) => {
+    if (level > TREE_MAX_LEVEL) return;
+    (nodes || []).forEach((node) => {
+      if (!isTreeStatusMatch(node.status, treeType)) return;
+      const refereeId = pickNumber(node.refereeId);
+      const refereeName = valueOrDash(node.refereeName) || (refereeId ? `User ${refereeId}` : "-");
+      const refereeCode = valueOrDash(node.refereeCode) || (refereeId ? `LR${refereeId}` : "-");
+      const childCount = Array.isArray(node.children) ? node.children.length : pickNumber(node.childCount);
+      const nextPath = [...pathNames, refereeName];
+      const source = String(node.source || "").trim();
+      const sourceLabel = /^bulkinvite$/i.test(source)
+        ? "BulkInvite"
+        : /^partner$/i.test(source)
+          ? "Partner"
+          : /^referrallink$/i.test(source)
+            ? "Invite"
+            : source;
+      rows.push([
+        rows.length + 1,
+        level,
+        `L${level}`,
+        nextPath.join(" > "),
+        refereeId,
+        refereeCode,
+        refereeName,
+        valueOrDash(node.refereeMobileNumber),
+        valueOrDash(node.refereeEmail),
+        valueOrDash(node.status),
+        sourceLabel,
+        valueOrDash(node.referredOn),
+        parentId || "",
+        parentCode || "",
+        parentName || "",
+        childCount,
+        childCount > 0 ? "Yes" : "No",
+      ]);
+      walk(node.children, level + 1, refereeId, refereeName, refereeCode, nextPath);
+    });
+  };
+
+  rows.push([
+    1,
+    0,
+    "Main",
+    rootName || rootCode,
+    rootId,
+    rootCode,
+    rootName,
+    valueOrDash(tree?.mobileNumber),
+    valueOrDash(tree?.email),
+    "Main",
+    "",
+    "",
+    "",
+    "",
+    "",
+    Array.isArray(tree?.children) ? tree.children.length : pickNumber(tree?.childCount),
+    (Array.isArray(tree?.children) ? tree.children.length : pickNumber(tree?.childCount)) > 0 ? "Yes" : "No",
+  ]);
+  walk(tree?.children, 1, rootId, rootName, rootCode, [rootName || rootCode]);
+  const body = rows.map((cols, index) => {
+    const next = [...cols];
+    next[0] = index + 1;
+    return next.map(csvEscape).join(",");
   });
-  return new Blob([`\uFEFF${header.join(",")}\n${lines.join("\n")}`], {
+  return new Blob([`\uFEFF${header.join(",")}\n${body.join("\n")}`], {
     type: "text/csv;charset=utf-8;",
   });
 };
@@ -130,6 +310,8 @@ const buildLentRefereesCsvBlob = (tree, rootName, rootId) => {
 const FtreeCard = ({
   name,
   lenderId,
+  displayCode = "",
+  selectPayload = null,
   isRoot = false,
   depth = 0,
   parentName = "",
@@ -139,65 +321,69 @@ const FtreeCard = ({
   onSelect,
 }) => {
   const isParentReferee = !isRoot && childCount > 0;
-  const displayId = lenderId ? `LR${lenderId}` : "-";
+  const displayId = displayCode || (lenderId ? `LR${lenderId}` : "-");
+  const levelText = roleLabel(isRoot, depth);
+  const emitSelect = () => {
+    if (typeof onSelect !== "function") return;
+    if (selectPayload) {
+      onSelect(selectPayload);
+      return;
+    }
+    const id = pickNumber(lenderId);
+    if (id > 0) {
+      onSelect({
+        lenderId: id,
+        name,
+        depth,
+        parentName,
+        parentId,
+        childCount,
+        isRoot,
+        selectKey: nodeSelectKey({ lenderId: id, isRoot }),
+      });
+    }
+  };
   return (
     <button
       type="button"
       className={[
         "admin-ai-ftree-card",
         "admin-ai-ftree-card--compact",
+        "admin-ai-ftree-card--clear",
         "is-clickable",
         tierClass(isRoot, depth),
         isParentReferee ? "has-children" : "is-leaf",
         selected ? "is-selected" : "",
+        depth >= 5 ? "is-deep-chain" : "",
       ].filter(Boolean).join(" ")}
+      style={tierStyle(isRoot, depth)}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        const id = pickNumber(lenderId);
-        if (id > 0 && typeof onSelect === "function") {
-          onSelect({
-            lenderId: id,
-            name,
-            depth,
-            parentName,
-            parentId,
-            childCount,
-            isRoot,
-          });
-        }
+        emitSelect();
       }}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           event.stopPropagation();
-          const id = pickNumber(lenderId);
-          if (id > 0 && typeof onSelect === "function") {
-            onSelect({
-              lenderId: id,
-              name,
-              depth,
-              parentName,
-              parentId,
-              childCount,
-              isRoot,
-            });
-          }
+          emitSelect();
         }
       }}
       title={[
-        name,
+        `${levelText}: ${name}`,
         displayId,
-        "Click for personal details & earnings",
+        "Click for invite / person details",
         parentName ? `Referred by: ${parentName}${parentId ? ` (LR${parentId})` : ""}` : "",
-        isParentReferee ? `Also referring ${childCount} Lent user(s) below` : "No Lent children",
+        isParentReferee ? `Also referring ${childCount} user(s) below` : "No children in this tree",
       ].filter(Boolean).join(" · ")}
     >
-      <span className="admin-ai-ftree-card-level">{roleLabel(isRoot, depth)}</span>
+      <span className="admin-ai-ftree-card-level" aria-label={`Level ${levelText}`}>
+        {levelText}
+      </span>
       <span className="admin-ai-ftree-card-main">
         <strong title={name}>{name}</strong>
         <span className="admin-ai-ftree-id-row">
-          <b className="admin-ai-ftree-id">{displayId}</b>
+          <b className="admin-ai-ftree-id" title={displayId}>{displayId}</b>
           {isParentReferee ? <em className="admin-ai-ftree-kids-pill">↓{fmtNum(childCount)}</em> : null}
         </span>
       </span>
@@ -210,29 +396,38 @@ const FtreeNode = ({
   depth = 1,
   parentName = "",
   parentId = null,
-  selectedId = null,
+  selectedKey = null,
   onSelect,
 }) => {
   const children = Array.isArray(node?.children) ? node.children : [];
   const refereeId = pickNumber(node.refereeId);
-  const name = valueOrDash(node.refereeName) || (refereeId ? `User ${refereeId}` : "-");
+  const person = personFromTreeNode(node, {
+    depth,
+    parentName,
+    parentId,
+    isRoot: false,
+  });
   const singleChildChain = children.length === 1;
 
   return (
     <div
-      className={`admin-ai-ftree-node ${tierClass(false, depth)}${singleChildChain ? " is-chain" : ""}${children.length > 1 ? " is-branch" : ""}`}
+      className={`admin-ai-ftree-node ${tierClass(false, depth)}${singleChildChain ? " is-chain" : ""}${children.length > 1 ? " is-branch" : ""}${depth >= 5 ? " is-deep-chain" : ""}`}
       data-depth={depth}
+      data-level={roleLabel(false, depth)}
       data-parent-id={parentId || ""}
+      style={tierStyle(false, depth)}
     >
       <div className="admin-ai-ftree-node-stem" aria-hidden="true" />
       <FtreeCard
-        name={name}
+        name={person.name}
         lenderId={refereeId || null}
+        displayCode={person.lenderCode}
+        selectPayload={person}
         depth={depth}
         parentName={parentName}
         parentId={parentId}
         childCount={children.length}
-        selected={selectedId === refereeId}
+        selected={selectedKey === person.selectKey}
         onSelect={onSelect}
       />
       {children.length ? (
@@ -244,9 +439,9 @@ const FtreeNode = ({
                 key={`${node.refereeId}-${child.refereeId}-${child.referenceId}`}
                 node={child}
                 depth={depth + 1}
-                parentName={name}
-                parentId={refereeId}
-                selectedId={selectedId}
+                parentName={person.name}
+                parentId={refereeId || parentId}
+                selectedKey={selectedKey}
                 onSelect={onSelect}
               />
             ))}
@@ -278,14 +473,17 @@ const AdminAILentReferralTreeMapPage = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [showChildren, setShowChildren] = useState(false);
+  const [campaignState, setCampaignState] = useState(null);
+  const [treeType, setTreeType] = useState("lent");
+  const activeTreeMeta = treeTypeMeta(treeType);
 
   const selectedChildren = useMemo(() => {
     if (!selected || !tree) return [];
-    const kids = findNodeChildren(tree, selected.lenderId);
+    const kids = findNodeChildren(tree, selected);
     return mapChildRows(kids, pickNumber(selected.depth));
   }, [selected, tree]);
 
-  const loadTree = useCallback(async (id) => {
+  const loadTree = useCallback(async (id, type = "lent") => {
     if (!id) {
       setTree(null);
       setError("lenderId is required.");
@@ -293,8 +491,11 @@ const AdminAILentReferralTreeMapPage = () => {
     }
     setLoading(true);
     setError("");
+    setSelected(null);
+    setDetail(null);
+    setShowChildren(false);
     try {
-      const data = responseData(await getAdminAIActiveLenderReferralTree(id));
+      const data = responseData(await getAdminAIActiveLenderReferralTree(id, type));
       if (data.status && data.status !== "SUCCESS") {
         throw new Error(data.message || "Failed to load tree map.");
       }
@@ -308,16 +509,51 @@ const AdminAILentReferralTreeMapPage = () => {
   }, []);
 
   useEffect(() => {
-    loadTree(lenderId);
-  }, [lenderId, loadTree]);
+    loadTree(lenderId, treeType);
+  }, [lenderId, treeType, loadTree]);
 
   const loadPersonDetail = useCallback(async (person) => {
+    if (!person) return;
     const id = pickNumber(person?.lenderId);
-    if (!id) return;
-    setSelected(person);
+    const selectKey = person.selectKey || nodeSelectKey(person);
+    setSelected({ ...person, selectKey });
     setShowChildren(false);
-    setDetailLoading(true);
     setDetailError("");
+
+    // Invited (and some registered) nodes may have no user account yet — show tree-row details.
+    if (!id) {
+      setDetailLoading(false);
+      setDetail({
+        lenderId: 0,
+        referenceId: pickNumber(person.referenceId),
+        name: valueOrDash(person.name),
+        lenderCode: valueOrDash(person.lenderCode),
+        email: valueOrDash(person.email),
+        mobileNumber: valueOrDash(person.mobileNumber),
+        city: "-",
+        state: "-",
+        status: valueOrDash(person.status),
+        referredOn: valueOrDash(person.referredOn),
+        source: formatTreeSourceLabel(person.source),
+        depth: person.depth,
+        isRoot: !!person.isRoot,
+        parentName: valueOrDash(person.parentName),
+        parentId: person.parentId,
+        childCount: pickNumber(person.childCount),
+        totalEarned: 0,
+        amountPaid: 0,
+        amountNotPaid: 0,
+        totalInvestment: 0,
+        ownParticipation: 0,
+        referredByName: valueOrDash(person.parentName),
+        referredById: pickNumber(person.parentId),
+        inviteOnly: true,
+        selectKey,
+      });
+      return;
+    }
+
+    setDetailLoading(true);
     setDetail(null);
     try {
       const [profileRes, referralRes] = await Promise.all([
@@ -331,12 +567,16 @@ const AdminAILentReferralTreeMapPage = () => {
       const referredBy = referralPayload?.referredBy || {};
       setDetail({
         lenderId: id,
+        referenceId: pickNumber(person.referenceId),
         name: valueOrDash(profile.name || profile.fullName || person.name),
-        lenderCode: valueOrDash(profile.userCode || profile.lenderCode || `LR${id}`),
-        email: valueOrDash(profile.email),
-        mobileNumber: valueOrDash(profile.mobileNumber),
+        lenderCode: valueOrDash(profile.userCode || profile.lenderCode || person.lenderCode || `LR${id}`),
+        email: valueOrDash(profile.email || person.email),
+        mobileNumber: valueOrDash(profile.mobileNumber || person.mobileNumber),
         city: valueOrDash(profile.city),
         state: valueOrDash(profile.state),
+        status: valueOrDash(person.status),
+        referredOn: valueOrDash(person.referredOn),
+        source: formatTreeSourceLabel(person.source),
         depth: person.depth,
         isRoot: !!person.isRoot,
         parentName: valueOrDash(person.parentName),
@@ -354,6 +594,8 @@ const AdminAILentReferralTreeMapPage = () => {
         ownParticipation: pickNumber(profile.totalParticipationAmount ?? profile.totalInvestment),
         referredByName: valueOrDash(referredBy.name || referredBy.referrerName || person.parentName),
         referredById: pickNumber(referredBy.referrerId || referredBy.lenderId || person.parentId),
+        inviteOnly: false,
+        selectKey,
       });
     } catch (requestError) {
       setDetail(null);
@@ -380,8 +622,8 @@ const AdminAILentReferralTreeMapPage = () => {
 
   const downloadTreeLocal = (rootNameLocal, rootIdLocal) => {
     const code = valueOrDash(tree?.lenderCode) || `LR${rootIdLocal || lenderId}`;
-    const blob = buildLentRefereesCsvBlob(tree, rootNameLocal, rootIdLocal || lenderId);
-    saveAs(blob, `${code}-referees-list-${new Date().toISOString().slice(0, 10)}.csv`);
+    const blob = buildFullTreeUsersCsvBlob(tree, rootNameLocal, rootIdLocal || lenderId, treeType);
+    saveAs(blob, `${code}-${treeType}-tree-chain-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   const captureTreeStagePng = async () => {
@@ -452,7 +694,7 @@ const AdminAILentReferralTreeMapPage = () => {
       capture = await captureTreeStagePng();
       const response = await fetch(capture.pngDataUrl);
       const blob = await response.blob();
-      saveAs(blob, `${code}-lent-referral-tree-map-${new Date().toISOString().slice(0, 10)}.png`);
+      saveAs(blob, `${code}-${treeType}-referral-tree-map-${new Date().toISOString().slice(0, 10)}.png`);
     } catch (requestError) {
       setError(requestError?.message || "Failed to download tree picture.");
     } finally {
@@ -474,15 +716,14 @@ const AdminAILentReferralTreeMapPage = () => {
     setExporting(true);
     setError("");
     try {
-      // Excel sheet = only this referrer's direct Lent referees list.
-      const response = await downloadAdminAIActiveLenderReferralTreeExcel(lenderId);
+      const response = await downloadAdminAIActiveLenderReferralTreeExcel(lenderId, treeType);
       const blob = response?.data;
       if (!blob) throw new Error("Empty Excel response.");
       const contentType = String(blob.type || "");
       if (contentType.includes("json") || contentType.includes("text/plain") || blob.size < 64) {
         throw new Error("Server Excel unavailable.");
       }
-      saveAs(blob, `${code}-referees-list-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      saveAs(blob, `${code}-${treeType}-tree-chain-${new Date().toISOString().slice(0, 10)}.xlsx`);
     } catch (requestError) {
       try {
         downloadTreeLocal(rootNameLocal, rootIdLocal);
@@ -496,22 +737,52 @@ const AdminAILentReferralTreeMapPage = () => {
 
   const refreshTree = () => {
     if (!lenderId || loading) return;
-    loadTree(lenderId);
+    loadTree(lenderId, treeType);
+  };
+
+  const switchTreeType = (nextType) => {
+    if (!nextType || nextType === treeType || loading) return;
+    setTreeType(nextType);
   };
 
   const children = Array.isArray(tree?.children) ? tree.children : [];
-  const lentCount = pickNumber(tree?.referralSummary?.lent) + pickNumber(tree?.referralSummary?.disbursed);
+  const statusCount = treeType === "registered"
+    ? pickNumber(tree?.referralSummary?.registered)
+    : treeType === "invited"
+      ? pickNumber(tree?.referralSummary?.invited)
+      : pickNumber(tree?.referralSummary?.lent) + pickNumber(tree?.referralSummary?.disbursed);
   const levelCounts = countMembersByLevel(tree);
   const levelEntries = Object.keys(levelCounts)
     .map(Number)
     .sort((a, b) => a - b)
     .map((level) => ({ level, count: levelCounts[level] }));
   const totalInTree = levelEntries.reduce((sum, row) => sum + row.count, 0);
+  const openTreeDownlineCampaign = (channel) => {
+    if (!lenderId || !tree) return;
+    const rootCode = tree?.lenderCode || `LR${lenderId}`;
+    setCampaignState({
+      channel,
+      segment: campaignSegmentForTree(treeType, lenderId),
+      segmentLabel: `${activeTreeMeta.short} tree downline of ${rootCode} (excl. parent)`,
+      recipientCount: totalInTree || children.length,
+    });
+  };
   const rootName = valueOrDash(tree?.name) !== "-"
     ? valueOrDash(tree?.name)
     : valueOrDash(tree?.lenderCode) || `LR${lenderId}`;
   const rootId = pickNumber(tree?.lenderId) || lenderId;
-  const selectedId = pickNumber(selected?.lenderId);
+  const selectedKey = selected?.selectKey || nodeSelectKey(selected);
+  const rootSelectPayload = {
+    lenderId: rootId,
+    name: rootName,
+    lenderCode: valueOrDash(tree?.lenderCode) || (rootId ? `LR${rootId}` : "-"),
+    email: valueOrDash(tree?.email),
+    mobileNumber: valueOrDash(tree?.mobileNumber),
+    depth: 0,
+    isRoot: true,
+    childCount: children.length,
+    selectKey: nodeSelectKey({ lenderId: rootId, isRoot: true }),
+  };
 
   return (
     <div className="admin-ai-page-shell">
@@ -521,15 +792,49 @@ const AdminAILentReferralTreeMapPage = () => {
             <button type="button" className="admin-ai-referral-back" onClick={goBackToPortfolio}>
               <FaArrowLeft /> Portfolio
             </button>
-            <h2>Lent Referral Tree Map</h2>
+            <h2>{activeTreeMeta.label} Map</h2>
             <div className="admin-ai-ftree-page-identity">
               <strong className="admin-ai-ftree-page-name">{rootName}</strong>
               <span className="admin-ai-ftree-page-lender-id">
                 Lender ID <b>{rootId || "-"}</b>
               </span>
             </div>
+            <div className="admin-ai-ftree-type-toggle" role="tablist" aria-label="Referral tree type">
+              {TREE_TYPES.map((row) => (
+                <button
+                  key={row.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={treeType === row.id}
+                  className={`admin-ai-ftree-type-btn is-${row.id}${treeType === row.id ? " is-active" : ""}`}
+                  disabled={loading || !lenderId}
+                  onClick={() => switchTreeType(row.id)}
+                  title={`Show ${row.label} for this lender`}
+                >
+                  {row.short}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="admin-ai-ftree-page-actions">
+            <button
+              type="button"
+              className="admin-ai-search-btn admin-ai-ftree-campaign-email"
+              disabled={loading || !tree || !totalInTree}
+              onClick={() => openTreeDownlineCampaign("email")}
+              title={`Email campaign for all ${activeTreeMeta.short} tree users except the parent referrer`}
+            >
+              <FaEnvelope /> Email
+            </button>
+            <button
+              type="button"
+              className="admin-ai-search-btn admin-ai-ftree-campaign-whatsapp"
+              disabled={loading || !tree || !totalInTree}
+              onClick={() => openTreeDownlineCampaign("whatsapp")}
+              title={`WhatsApp campaign for all ${activeTreeMeta.short} tree users except the parent referrer`}
+            >
+              <FaWhatsapp /> WhatsApp
+            </button>
             <button
               type="button"
               className="admin-ai-search-btn admin-ai-ftree-picture-btn"
@@ -544,7 +849,7 @@ const AdminAILentReferralTreeMapPage = () => {
               className="admin-ai-search-btn"
               disabled={exporting || loading || !tree}
               onClick={downloadTree}
-              title="Download Excel Referees List for this referrer"
+              title={`Download ${activeTreeMeta.short} referral chain Excel (L1–L20)`}
             >
               <FaDownload /> {exporting ? "..." : "Excel"}
             </button>
@@ -553,7 +858,7 @@ const AdminAILentReferralTreeMapPage = () => {
               className="admin-ai-search-btn"
               disabled={loading || !lenderId}
               onClick={refreshTree}
-              title="Refresh lent referral tree"
+              title={`Refresh ${activeTreeMeta.short} referral tree`}
             >
               <FaSync /> {loading ? "..." : "Refresh"}
             </button>
@@ -564,13 +869,16 @@ const AdminAILentReferralTreeMapPage = () => {
         </header>
 
         <div className="admin-ai-ftree-stats">
-          <span className="admin-ai-top-referrer-count-box lent-count">{fmtNum(lentCount)} Lent</span>
+          <span className={`admin-ai-top-referrer-count-box ${treeType}-count`}>
+            {fmtNum(statusCount)} {activeTreeMeta.short}
+          </span>
           <span className="admin-ai-top-referrer-count-box total-count">{fmtNum(totalInTree || children.length)} in tree</span>
           {levelEntries.map(({ level, count }) => (
             <span
               key={level}
               className={`admin-ai-top-referrer-count-box admin-ai-ftree-level-count ${tierClass(false, level)}`}
-              title={`Level ${level} members in this tree`}
+              style={tierStyle(false, level)}
+              title={`Level ${level} members in this ${activeTreeMeta.short} chain`}
             >
               L{level} = {fmtNum(count)}
             </span>
@@ -582,12 +890,27 @@ const AdminAILentReferralTreeMapPage = () => {
           <span className="tier-l1">L1</span>
           <span className="tier-l2">L2</span>
           <span className="tier-l3">L3</span>
-          <span className="tier-l4">L4+</span>
+          <span className="tier-l4">L4</span>
+          {levelEntries
+            .filter(({ level }) => level >= 5)
+            .map(({ level }) => {
+              const style = tierStyle(false, level);
+              return (
+                <span
+                  key={`legend-l${level}`}
+                  className="tier-l-deep"
+                  style={style}
+                  title={`Level ${level} chain color`}
+                >
+                  L{level}
+                </span>
+              );
+            })}
           <span className="role-has-kids">↓N kids</span>
         </div>
 
         {error ? <div className="alert alert-danger">{error}</div> : null}
-        {loading ? <div className="admin-ai-empty-state">Loading Lent referral tree map...</div> : null}
+        {loading ? <div className="admin-ai-empty-state">Loading {activeTreeMeta.short} referral tree map...</div> : null}
 
         {!loading && tree ? (
           <section
@@ -599,10 +922,12 @@ const AdminAILentReferralTreeMapPage = () => {
                 <FtreeCard
                   name={rootName}
                   lenderId={rootId}
+                  displayCode={rootSelectPayload.lenderCode}
+                  selectPayload={rootSelectPayload}
                   isRoot
                   depth={0}
                   childCount={children.length}
-                  selected={selectedId === rootId}
+                  selected={selectedKey === rootSelectPayload.selectKey}
                   onSelect={loadPersonDetail}
                 />
               </div>
@@ -618,7 +943,7 @@ const AdminAILentReferralTreeMapPage = () => {
                         depth={1}
                         parentName={rootName}
                         parentId={rootId}
-                        selectedId={selectedId}
+                        selectedKey={selectedKey}
                         onSelect={loadPersonDetail}
                       />
                     ))}
@@ -627,7 +952,7 @@ const AdminAILentReferralTreeMapPage = () => {
               ) : (
                 <div className="admin-ai-empty-state">
                   <FaProjectDiagram />
-                  <p>No Lent referees under this lender.</p>
+                  <p>No {activeTreeMeta.short} referees under this lender.</p>
                 </div>
               )}
             </div>
@@ -643,11 +968,12 @@ const AdminAILentReferralTreeMapPage = () => {
             >
               <header className="admin-ai-ftree-detail-head">
                 <div>
-                  <small><FaUser /> Selected person</small>
+                  <small><FaUser /> {detail?.inviteOnly || treeType === "invited" ? "Selected invite" : "Selected person"}</small>
                   <h3>{valueOrDash(detail?.name || selected.name)}</h3>
                   <p>
-                    {valueOrDash(detail?.lenderCode || `LR${selected.lenderId}`)}
+                    {valueOrDash(detail?.lenderCode || selected.lenderCode || (selected.lenderId ? `LR${selected.lenderId}` : "-"))}
                     {selected.isRoot ? " · Main referrer" : ` · Level ${selected.depth}`}
+                    {detail?.status ? ` · ${detail.status}` : ""}
                   </p>
                 </div>
                 <button type="button" className="admin-ai-close-btn" onClick={closeDetail}>
@@ -660,41 +986,71 @@ const AdminAILentReferralTreeMapPage = () => {
 
               {!detailLoading && detail ? (
                 <>
-                  <div className="admin-ai-ftree-detail-money">
-                    <div className="earned">
-                      <small>Total earning</small>
-                      <strong>{fmtMoney(detail.totalEarned)}</strong>
+                  {!detail.inviteOnly ? (
+                    <div className="admin-ai-ftree-detail-money">
+                      <div className="earned">
+                        <small>Total earning</small>
+                        <strong>{fmtMoney(detail.totalEarned)}</strong>
+                      </div>
+                      <div className="paid">
+                        <small>Paid amount</small>
+                        <strong>{fmtMoney(detail.amountPaid)}</strong>
+                      </div>
+                      <div className="unpaid">
+                        <small>Unpaid amount</small>
+                        <strong>{fmtMoney(detail.amountNotPaid)}</strong>
+                      </div>
+                      <div className="investment">
+                        <small>Total investment (lent users)</small>
+                        <strong>{fmtMoney(detail.totalInvestment)}</strong>
+                      </div>
                     </div>
-                    <div className="paid">
-                      <small>Paid amount</small>
-                      <strong>{fmtMoney(detail.amountPaid)}</strong>
+                  ) : (
+                    <div className="admin-ai-ftree-detail-money">
+                      <div className="earned">
+                        <small>Invite status</small>
+                        <strong>{valueOrDash(detail.status || "Invited")}</strong>
+                      </div>
+                      <div className="paid">
+                        <small>Invite ID</small>
+                        <strong>{detail.referenceId ? `INV${detail.referenceId}` : valueOrDash(detail.lenderCode)}</strong>
+                      </div>
+                      <div className="unpaid">
+                        <small>Source</small>
+                        <strong>{valueOrDash(detail.source)}</strong>
+                      </div>
+                      <div className="investment">
+                        <small>Referred on</small>
+                        <strong>{valueOrDash(detail.referredOn)}</strong>
+                      </div>
                     </div>
-                    <div className="unpaid">
-                      <small>Unpaid amount</small>
-                      <strong>{fmtMoney(detail.amountNotPaid)}</strong>
-                    </div>
-                    <div className="investment">
-                      <small>Total investment (lent users)</small>
-                      <strong>{fmtMoney(detail.totalInvestment)}</strong>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="admin-ai-ftree-detail-grid">
-                    <div><small>Lender ID</small><strong>{valueOrDash(detail.lenderId)}</strong></div>
+                    <div><small>Name</small><strong>{valueOrDash(detail.name)}</strong></div>
                     <div><small>Code</small><strong>{valueOrDash(detail.lenderCode)}</strong></div>
-                    <div><small>Mobile</small><strong>{valueOrDash(detail.mobileNumber)}</strong></div>
                     <div><small>Email</small><strong>{valueOrDash(detail.email)}</strong></div>
+                    <div><small>Mobile</small><strong>{valueOrDash(detail.mobileNumber)}</strong></div>
+                    {detail.lenderId ? (
+                      <div><small>Lender ID</small><strong>{valueOrDash(detail.lenderId)}</strong></div>
+                    ) : (
+                      <div><small>Invite record ID</small><strong>{detail.referenceId || "-"}</strong></div>
+                    )}
+                    <div><small>Status</small><strong>{valueOrDash(detail.status || (detail.isRoot ? "Main" : activeTreeMeta.short))}</strong></div>
+                    <div><small>Source</small><strong>{valueOrDash(detail.source)}</strong></div>
+                    <div><small>Referred on</small><strong>{valueOrDash(detail.referredOn)}</strong></div>
                     <div><small>City</small><strong>{valueOrDash(detail.city)}</strong></div>
                     <div><small>State</small><strong>{valueOrDash(detail.state)}</strong></div>
                     <div><small>Referred by</small><strong>{valueOrDash(detail.referredByName)}{detail.referredById ? ` · LR${detail.referredById}` : ""}</strong></div>
+                    <div><small>Tree level</small><strong>{detail.isRoot ? "Main" : `L${detail.depth}`}</strong></div>
                     <button
                       type="button"
                       className={`admin-ai-ftree-children-trigger${showChildren ? " is-open" : ""}${selectedChildren.length ? " has-kids" : ""}`}
                       disabled={!selectedChildren.length}
                       onClick={() => setShowChildren((open) => !open)}
-                      title={selectedChildren.length ? "Click to view Lent children names & details" : "No Lent children in tree"}
+                      title={selectedChildren.length ? `Click to view ${activeTreeMeta.short} children names & details` : `No ${activeTreeMeta.short} children in tree`}
                     >
-                      <small>Lent children in tree</small>
+                      <small>{activeTreeMeta.short} children in tree</small>
                       <strong>
                         {fmtNum(selectedChildren.length || detail.childCount)}
                         {selectedChildren.length ? <FaChevronRight /> : null}
@@ -709,23 +1065,20 @@ const AdminAILentReferralTreeMapPage = () => {
                     <div className="admin-ai-ftree-children-panel">
                       <header>
                         <FaUserFriends />
-                        <strong>Lent children ({fmtNum(selectedChildren.length)})</strong>
+                        <strong>{activeTreeMeta.short} children ({fmtNum(selectedChildren.length)})</strong>
                         <em>Click a row to open that person</em>
                       </header>
                       {selectedChildren.length ? (
                         <ul>
                           {selectedChildren.map((child) => (
-                            <li key={child.lenderId || child.lenderCode}>
+                            <li key={child.selectKey || child.lenderCode || child.referenceId}>
                               <button
                                 type="button"
                                 onClick={() =>
                                   loadPersonDetail({
-                                    lenderId: child.lenderId,
-                                    name: child.name,
-                                    depth: child.depth,
+                                    ...child,
                                     parentName: detail.name || selected.name,
                                     parentId: detail.lenderId || selected.lenderId,
-                                    childCount: child.childCount,
                                     isRoot: false,
                                   })
                                 }
@@ -736,6 +1089,8 @@ const AdminAILentReferralTreeMapPage = () => {
                                 </span>
                                 <span className="admin-ai-ftree-children-meta">
                                   <em>Status: {child.status}</em>
+                                  <em>Email: {child.email || "-"}</em>
+                                  <em>Mobile: {child.mobileNumber || "-"}</em>
                                   <em>Referred: {child.referredOn}</em>
                                   <em>↓{fmtNum(child.childCount)} kids</em>
                                 </span>
@@ -745,7 +1100,7 @@ const AdminAILentReferralTreeMapPage = () => {
                           ))}
                         </ul>
                       ) : (
-                        <p className="admin-ai-ftree-children-empty">No Lent children under this person.</p>
+                        <p className="admin-ai-ftree-children-empty">No {activeTreeMeta.short} children under this person.</p>
                       )}
                     </div>
                   ) : null}
@@ -755,6 +1110,19 @@ const AdminAILentReferralTreeMapPage = () => {
           </div>
         ) : null}
       </div>
+
+      <AdminAILenderCampaignModal
+        open={Boolean(campaignState)}
+        onClose={() => setCampaignState(null)}
+        segment={campaignState?.segment}
+        segmentLabel={campaignState?.segmentLabel}
+        recipientCount={campaignState?.recipientCount}
+        initialChannel={campaignState?.channel}
+        onSent={(result, meta) => {
+          if (meta?.dryRun) return;
+          setCampaignState(null);
+        }}
+      />
     </div>
   );
 };
