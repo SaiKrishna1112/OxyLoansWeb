@@ -1005,6 +1005,43 @@ export const getRegisteredUsersSummary = async () => {
   return response.data;
 };
 
+/** OXYINSIGHTS login analytics — view: hourly | weekly | yearly; date: YYYY-MM-DD (day view) */
+export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/oxyinsights/login-history`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      view,
+      ...(date ? { date } : {}),
+    },
+    timeout: 60000,
+  });
+  return response.data;
+};
+
+/** OXYINSIGHTS drill-down rows behind a KPI / role / registration card */
+export const getAdminAIOXYInsightsDetails = async ({
+  view = "hourly",
+  date,
+  metric = "uniqueUsers",
+  bucketLabel = "",
+  pageNo = 1,
+  pageSize = 50,
+} = {}) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/oxyinsights/details`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      view,
+      ...(date ? { date } : {}),
+      metric,
+      bucketLabel: bucketLabel || undefined,
+      pageNo,
+      pageSize,
+    },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
 export const getAdminAIUserMapPins = async (state = "all", limit = 500) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/geography/user-pins`, {
     headers: adminRegisteredUsersHeaders(),
@@ -1410,14 +1447,33 @@ export const uploadAdminAILenderCampaignImage = async (file) => {
   if (payload?.status === "FAILED") {
     throw new Error(payload?.message || "Image upload failed.");
   }
-  const url = payload?.downloadUrl || payload?.url;
+  // Prefer signed downloadUrl (always loadable). publicUrl is only usable if S3 PublicRead succeeded.
+  const url = payload?.downloadUrl || payload?.url || payload?.publicUrl;
   if (!url) {
     throw new Error(payload?.message || "Image upload did not return a URL.");
   }
   return url;
 };
 
-export const getAdminAILenderCampaignHistory = async (segment, { channel, date, testMode, pageNo = 1, pageSize = 10 } = {}) => {
+export const parseAdminAICampaignExcelRecipients = async (file) => {
+  const formData = new FormData();
+  formData.append("EXCEL", file);
+  const response = await axios.post(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/campaign/parse-excel-recipients`,
+    formData,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 120000,
+    }
+  );
+  const payload = response.data;
+  if (payload?.status === "FAILED") {
+    throw new Error(payload?.message || "Failed to parse Excel recipients.");
+  }
+  return payload;
+};
+
+export const getAdminAILenderCampaignHistory = async (segment, { channel, date, testMode, source, pageNo = 1, pageSize = 10 } = {}) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history`, {
     headers: adminRegisteredUsersHeaders(),
     params: {
@@ -1425,6 +1481,7 @@ export const getAdminAILenderCampaignHistory = async (segment, { channel, date, 
       channel: channel || undefined,
       date: date || undefined,
       testMode,
+      source: source || undefined,
       pageNo,
       pageSize,
     },
@@ -1458,10 +1515,20 @@ export const getAdminAILenderCampaignBatchEngagement = async (batchId) => {
     {
       headers: adminRegisteredUsersHeaders(),
       params: { batchId },
-      timeout: 120000,
+      timeout: 60000,
       validateStatus: (status) => status < 500,
     }
   );
+  return response.data;
+};
+
+export const getAdminAILenderCampaignHistoryMessage = async (batchId) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/lender-analytics/campaign/history/message`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: { batchId },
+    timeout: 120000,
+    validateStatus: (status) => status < 500,
+  });
   return response.data;
 };
 
@@ -1704,6 +1771,23 @@ export const getAdminAITopPaidEarnedReferrers = async (limit = 10) => {
   return response.data;
 };
 
+/** Lenders with referral earnings >= minEarned (default ₹1). */
+export const getAdminAIEarnersAtLeast = async (pageNo = 1, pageSize = 50, minEarned = 1) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/referral-registrations/earners-at-least`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        pageNo,
+        pageSize,
+        minEarned,
+      },
+      timeout: 180000,
+    }
+  );
+  return response.data;
+};
+
 export const getAdminAITopPaidEarnedReferrerDetail = async (referrerId) => {
   const response = await axios.get(
     `${API_BASE_URL}admin/registered-users/referral-registrations/top-paid-earned-referrers/${referrerId}`,
@@ -1733,11 +1817,36 @@ export const getAdminAIActiveLendersReferralPortfolio = async (
   return response.data;
 };
 
-export const getAdminAIActiveLenderReferralTree = async (lenderId) => {
+/** Invited / Registered referees scoped to active lenders' referral rows only.
+ *  Pass groupBy: "referrer" to get referrer-grouped rows + topReferrers. */
+export const getAdminAIActiveLendersReferralPortfolioReferees = async (
+  pageNo = 1,
+  pageSize = 20,
+  { status = "Invited", search = "", groupBy = "" } = {}
+) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/referees`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        pageNo,
+        pageSize,
+        status,
+        search: search || undefined,
+        groupBy: groupBy || undefined,
+      },
+      timeout: 180000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAIActiveLenderReferralTree = async (lenderId, treeType = "lent") => {
   const response = await axios.get(
     `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/${lenderId}/tree`,
     {
       headers: adminRegisteredUsersHeaders(),
+      params: { treeType: treeType || "lent" },
       timeout: 120000,
     }
   );
@@ -1756,12 +1865,15 @@ export const getAdminAIActiveLenderLentUsers = async (lenderId, pageNo = 1, page
   return response.data;
 };
 
-export const downloadAdminAIActiveLendersReferralPortfolioExcel = async (filter = "all") => {
+export const downloadAdminAIActiveLendersReferralPortfolioExcel = async (filter = "all", { referrerId } = {}) => {
   const response = await axios.get(
     `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/export`,
     {
       headers: adminRegisteredUsersHeaders(),
-      params: { filter },
+      params: {
+        filter,
+        referrerId: referrerId || undefined,
+      },
       responseType: "blob",
       timeout: 600000,
     }
@@ -1769,11 +1881,12 @@ export const downloadAdminAIActiveLendersReferralPortfolioExcel = async (filter 
   return response;
 };
 
-export const downloadAdminAIActiveLenderReferralTreeExcel = async (lenderId) => {
+export const downloadAdminAIActiveLenderReferralTreeExcel = async (lenderId, treeType = "lent") => {
   const response = await axios.get(
     `${API_BASE_URL}admin/registered-users/active-lenders/referral-portfolio/${lenderId}/tree/export`,
     {
       headers: adminRegisteredUsersHeaders(),
+      params: { treeType: treeType || "lent" },
       responseType: "blob",
       timeout: 300000,
     }

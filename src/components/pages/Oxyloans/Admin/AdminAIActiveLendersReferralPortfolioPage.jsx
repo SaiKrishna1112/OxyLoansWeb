@@ -1,12 +1,32 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { FaArrowLeft, FaDownload, FaEye, FaProjectDiagram, FaSearch, FaSync, FaTimes, FaUser, FaUserFriends } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaDownload,
+  FaEnvelope,
+  FaEye,
+  FaProjectDiagram,
+  FaSearch,
+  FaSync,
+  FaTimes,
+  FaUser,
+  FaUserFriends,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { saveAs } from "file-saver";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   downloadAdminAIActiveLendersReferralPortfolioExcel,
   getAdminAIActiveLendersReferralPortfolio,
+  getAdminAIActiveLendersReferralPortfolioReferees,
   parseAdminAIExportError,
 } from "../../../HttpRequest/admin";
+import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
+import {
+  inviteSourceMeta,
+  RefereeTypeCountBadges,
+  SourceTypeBadges,
+  splitRefereesByType,
+} from "./AdminAIReferralRefereeTypeSplit";
 import {
   goBackOrAdminAI,
   goToAdminAIDashboard,
@@ -15,6 +35,9 @@ import {
 import "./AdminAIDashboard.css";
 
 const PAGE_SIZE = 20;
+const PORTFOLIO_PATH = "/adminAIActiveLendersReferralPortfolio";
+const LENDER_FILTERS = ["all", "withReferrals", "withLentReferrals", "withoutReferrals", "fromReferrers", "noParentReferrer"];
+const REFEREE_VIEWS = ["invitedUsers", "registeredUsers"];
 const fmtNum = (value) => Number(value || 0).toLocaleString("en-IN");
 const fmtMoney = (value) => `₹ ${Number(value || 0).toLocaleString("en-IN")}`;
 const valueOrDash = (value) => (value == null || value === "" ? "-" : value);
@@ -31,31 +54,69 @@ const paidSharePct = (paid, unpaid) => {
   return Math.round((p / total) * 100);
 };
 
+const emptyTotals = () => ({
+  activeLenders: 0,
+  withReferrals: 0,
+  withLentReferrals: 0,
+  withoutReferrals: 0,
+  fromReferrers: 0,
+  noParentReferrer: 0,
+  invitedUsers: 0,
+  registeredUsers: 0,
+});
+
+const refereeCampaignSegment = (filter) =>
+  (filter === "registeredUsers" ? "activeLenderRegisteredReferees" : "activeLenderInvitedReferees");
+
+const LENDER_AUDIENCE_CAMPAIGNS = {
+  fromReferrers: {
+    segment: "activeLenderPortfolioFromReferrers",
+    label: "Active Lender Portfolio — From Referrers",
+    countKey: "fromReferrers",
+  },
+  noParentReferrer: {
+    segment: "activeLenderPortfolioDirectLenders",
+    label: "Active Lender Portfolio — Direct Lenders",
+    countKey: "noParentReferrer",
+  },
+  withReferrals: {
+    segment: "activeLenderPortfolioActiveReferrals",
+    label: "Active Lender Portfolio — Active Referrals",
+    countKey: "withReferrals",
+  },
+  withLentReferrals: {
+    segment: "activeLenderPortfolioLentReferrals",
+    label: "Active Lender Portfolio — Lent Referral Earners",
+    countKey: "withLentReferrals",
+  },
+  withoutReferrals: {
+    segment: "activeLenderPortfolioNotReferring",
+    label: "Active Lender Portfolio — Not Actively Referring",
+    countKey: "withoutReferrals",
+  },
+};
+
 const AdminAIActiveLendersReferralPortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const filter = ["all", "withReferrals", "withoutReferrals", "fromReferrers", "noParentReferrer"].includes(searchParams.get("filter"))
-    ? searchParams.get("filter")
-    : "all";
+  const filterParam = searchParams.get("filter") || "all";
+  const isRefereeView = REFEREE_VIEWS.includes(filterParam);
+  const filter = LENDER_FILTERS.includes(filterParam) ? filterParam : isRefereeView ? filterParam : "all";
+  const refereeStatus = filter === "registeredUsers" ? "Registered" : "Invited";
 
   const [rows, setRows] = useState([]);
+  const [topReferrers, setTopReferrers] = useState([]);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [totals, setTotals] = useState({
-    activeLenders: 0,
-    withReferrals: 0,
-    withLentReferrals: 0,
-    withoutReferrals: 0,
-    fromReferrers: 0,
-    noParentReferrer: 0,
-  });
+  const [totals, setTotals] = useState(emptyTotals());
   const [lenderIdSearch, setLenderIdSearch] = useState(searchParams.get("lenderId") || "");
   const [mobileSearch, setMobileSearch] = useState(searchParams.get("mobile") || "");
   const [appliedSearch, setAppliedSearch] = useState(searchParams.get("search") || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
-  const [openProfileId, setOpenProfileId] = useState(null);
+  const [exportingReferrerId, setExportingReferrerId] = useState(null);
+  const [campaignState, setCampaignState] = useState(null);
 
   const buildSearchValue = (lenderIdValue, mobileValue) => {
     const id = String(lenderIdValue || "").trim();
@@ -68,23 +129,27 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
     setLoading(true);
     setError("");
     try {
-      const data = responseData(await getAdminAIActiveLendersReferralPortfolio(nextPage, PAGE_SIZE, {
-        filter: nextFilter,
-        search: nextSearch,
-      }));
+      const refereeMode = REFEREE_VIEWS.includes(nextFilter);
+      const data = responseData(
+        refereeMode
+          ? await getAdminAIActiveLendersReferralPortfolioReferees(nextPage, PAGE_SIZE, {
+              status: nextFilter === "registeredUsers" ? "Registered" : "Invited",
+              search: nextSearch,
+              groupBy: "referrer",
+            })
+          : await getAdminAIActiveLendersReferralPortfolio(nextPage, PAGE_SIZE, {
+              filter: nextFilter,
+              search: nextSearch,
+            })
+      );
       setRows(Array.isArray(data.rows) ? data.rows : []);
+      setTopReferrers(refereeMode && Array.isArray(data.topReferrers) ? data.topReferrers : []);
       setPage(pickNumber(data.pageNo) || nextPage);
       setTotalCount(pickNumber(data.totalCount));
-      setTotals(data.totals || {
-        activeLenders: 0,
-        withReferrals: 0,
-        withLentReferrals: 0,
-        withoutReferrals: 0,
-        fromReferrers: 0,
-        noParentReferrer: 0,
-      });
+      setTotals({ ...emptyTotals(), ...(data.totals || {}) });
     } catch (requestError) {
       setRows([]);
+      setTopReferrers([]);
       setTotalCount(0);
       setError(requestError?.response?.data?.message || requestError?.message || "Failed to load referral portfolio.");
     } finally {
@@ -141,11 +206,61 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
     navigate(`/adminAILentUsersDetail?lenderId=${lenderId}&returnTo=${encodeURIComponent("/adminAIActiveLendersReferralPortfolio")}`);
   };
 
-  const downloadExcel = async () => {
+  const openLenderProfilePage = (row) => {
+    const lenderId = pickNumber(row?.lenderId);
+    if (!lenderId) return;
+    const returnTo = `${PORTFOLIO_PATH}${filter && filter !== "all" ? `?filter=${filter}` : ""}`;
+    const params = new URLSearchParams({
+      lenderId: String(lenderId),
+      view: "profile",
+      returnTo,
+    });
+    navigate(`/adminAIDeals?${params.toString()}`, {
+      state: {
+        lender: {
+          lenderId,
+          name: row?.name || "",
+          userCode: row?.lenderCode || `LR${lenderId}`,
+          email: row?.email || "",
+          mobileNumber: row?.mobileNumber || "",
+        },
+      },
+    });
+  };
+
+  const openReferrerListPage = (row) => {
+    const referrerId = pickNumber(row?.referrerId);
+    if (!referrerId) return;
+    const returnTo = `${PORTFOLIO_PATH}?filter=${filter}`;
+    navigate(
+      `/adminAIReferrerRefereesDetail?referrerId=${referrerId}&filter=${filter}&returnTo=${encodeURIComponent(returnTo)}`,
+      { state: { referrerRow: row } }
+    );
+  };
+
+  const openReferrerProfile = (row) => {
+    const referrerId = pickNumber(row?.referrerId);
+    if (!referrerId) return;
+    const code = row?.referrerCode || `LR${referrerId}`;
+    const returnTo = `${PORTFOLIO_PATH}?filter=${filter}`;
+    const params = new URLSearchParams({
+      userId: String(referrerId),
+      view: "referralRegistered",
+      label: `Referrer ${code}`,
+      returnTo,
+    });
+    navigate(`/adminAIUserProfile?${params.toString()}`);
+  };
+
+  const downloadExcel = async (exportFilter = filter, referrerId = null, referrerCode = "") => {
+    const scopedReferrerId = pickNumber(referrerId) || null;
     setExporting(true);
+    if (scopedReferrerId) setExportingReferrerId(scopedReferrerId);
     setError("");
     try {
-      const response = await downloadAdminAIActiveLendersReferralPortfolioExcel(filter);
+      const response = await downloadAdminAIActiveLendersReferralPortfolioExcel(exportFilter, {
+        referrerId: scopedReferrerId || undefined,
+      });
       const blob = response?.data;
       if (!blob) throw new Error("Empty export response.");
       if (blob.type && String(blob.type).includes("json")) {
@@ -158,16 +273,182 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
         }
         throw new Error(message);
       }
-      saveAs(blob, `active-lenders-referral-portfolio-${filter}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      const slug = REFEREE_VIEWS.includes(exportFilter)
+        ? (exportFilter === "registeredUsers" ? "registered-users" : "invited-users")
+        : exportFilter;
+      const referrerSlug = scopedReferrerId
+        ? `-${String(referrerCode || `LR${scopedReferrerId}`).replace(/[^a-zA-Z0-9_-]/g, "")}`
+        : "";
+      saveAs(
+        blob,
+        `active-lenders-referral-portfolio-${slug}${referrerSlug}-${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
     } catch (requestError) {
       const parsed = await parseAdminAIExportError(requestError);
       setError(parsed || requestError?.message || "Failed to download Excel.");
     } finally {
       setExporting(false);
+      setExportingReferrerId(null);
     }
   };
 
+  const openCardCampaign = (nextFilter, channel) => {
+    const lenderAudience = LENDER_AUDIENCE_CAMPAIGNS[nextFilter];
+    if (lenderAudience) {
+      setCampaignState({
+        segment: lenderAudience.segment,
+        segmentLabel: lenderAudience.label,
+        recipientCount: pickNumber(totals[lenderAudience.countKey]),
+        channel: channel || "email",
+      });
+      return;
+    }
+    const isRegistered = nextFilter === "registeredUsers";
+    const count = isRegistered ? totals.registeredUsers : totals.invitedUsers;
+    setCampaignState({
+      segment: refereeCampaignSegment(nextFilter),
+      segmentLabel: isRegistered
+        ? "Active Lender Portfolio — Registered Users"
+        : "Active Lender Portfolio — Invited Users",
+      recipientCount: pickNumber(count),
+      channel: channel || "email",
+    });
+  };
+
+  const renderLenderAudienceCard = (key, className, label, count, description, title) => {
+    const active = filter === key;
+    return (
+      <div
+        className={`${className} admin-ai-ref-portfolio-total-card is-highlight${active ? " is-active" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => selectFilter(key)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectFilter(key);
+          }
+        }}
+        title={title}
+      >
+        <small>{label}</small>
+        <strong>{fmtNum(count)}</strong>
+        <em>{description}</em>
+        {active ? (
+          <div
+            className="admin-ai-ref-portfolio-card-campaigns"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn"
+              title={`Email campaign for ${label}`}
+              onClick={() => openCardCampaign(key, "email")}
+            >
+              <FaEnvelope /> Email
+            </button>
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn is-whatsapp"
+              title={`WhatsApp campaign for ${label}`}
+              onClick={() => openCardCampaign(key, "whatsapp")}
+            >
+              <FaWhatsapp /> WhatsApp
+            </button>
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn is-excel"
+              disabled={exporting}
+              title={`Download Excel for ${label}`}
+              onClick={() => downloadExcel(key)}
+            >
+              <FaDownload /> {exporting ? "..." : "Excel"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const openReferrerCampaign = (row, channel) => {
+    const referrerId = pickNumber(row?.referrerId);
+    if (!referrerId) return;
+    const isRegistered = filter === "registeredUsers";
+    const base = refereeCampaignSegment(filter);
+    const code = row.referrerCode || `LR${referrerId}`;
+    const name = row.referrerName ? `${row.referrerName} · ${code}` : code;
+    setCampaignState({
+      segment: `${base}_r${referrerId}`,
+      segmentLabel: isRegistered
+        ? `Registered users of ${name}`
+        : `Invited users of ${name}`,
+      recipientCount: pickNumber(row.refereeCount),
+      channel: channel || "email",
+    });
+  };
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const listLabel = isRefereeView
+    ? (filter === "registeredUsers" ? "referrers with registered users" : "referrers with invited users")
+    : "lenders";
+  const topTitle = filter === "registeredUsers" ? "Top registered" : "Top invited";
+
+  const renderRefereeAudienceCard = (key, label, count, description) => {
+    const active = filter === key;
+    return (
+      <div
+        className={`${key === "invitedUsers" ? "invited" : "registered"} admin-ai-ref-portfolio-total-card is-highlight${active ? " is-active" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => selectFilter(key)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectFilter(key);
+          }
+        }}
+        title={`Show ${label} referred by these active lenders`}
+      >
+        <small>{label.toUpperCase()}</small>
+        <strong>{fmtNum(count)}</strong>
+        <em>{description}</em>
+        {active ? (
+          <div
+            className="admin-ai-ref-portfolio-card-campaigns"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn"
+              title={`Email campaign for ${label}`}
+              onClick={() => openCardCampaign(key, "email")}
+            >
+              <FaEnvelope /> Email
+            </button>
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn is-whatsapp"
+              title={`WhatsApp campaign for ${label}`}
+              onClick={() => openCardCampaign(key, "whatsapp")}
+            >
+              <FaWhatsapp /> WhatsApp
+            </button>
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn is-excel"
+              disabled={exporting}
+              title={`Download Excel for ${label}`}
+              onClick={() => downloadExcel(key)}
+            >
+              <FaDownload /> {exporting ? "..." : "Excel"}
+            </button>
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <div className="admin-ai-page-shell">
@@ -196,7 +477,7 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
             <p>Official active-lender referral report · earnings summary · Lent user & tree map access</p>
           </div>
           <div className="admin-ai-ref-portfolio-head-actions">
-            <button type="button" className="admin-ai-search-btn" disabled={exporting} onClick={downloadExcel}>
+            <button type="button" className="admin-ai-search-btn" disabled={exporting} onClick={() => downloadExcel(filter)}>
               <FaDownload /> {exporting ? "Exporting..." : "Download Excel"}
             </button>
             <button
@@ -219,7 +500,7 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
           </div>
         </header>
 
-        <section className="admin-ai-ref-portfolio-totals admin-ai-ref-portfolio-totals--highlight admin-ai-ref-portfolio-totals--five">
+        <section className="admin-ai-ref-portfolio-totals admin-ai-ref-portfolio-totals--highlight admin-ai-ref-portfolio-totals--eight">
           <button
             type="button"
             className={`all admin-ai-ref-portfolio-total-card${filter === "all" ? " is-active" : ""}`}
@@ -230,46 +511,58 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
             <strong>{fmtNum(totals.activeLenders)}</strong>
             <em>Total active lenders in portfolio</em>
           </button>
-          <button
-            type="button"
-            className={`from admin-ai-ref-portfolio-total-card is-highlight${filter === "fromReferrers" ? " is-active" : ""}`}
-            onClick={() => selectFilter("fromReferrers")}
-            title="Show lenders who came through a referrer"
-          >
-            <small>FROM REFERRERS</small>
-            <strong>{fmtNum(totals.fromReferrers)}</strong>
-            <em>Came through a parent referrer</em>
-          </button>
-          <button
-            type="button"
-            className={`direct admin-ai-ref-portfolio-total-card is-highlight${filter === "noParentReferrer" ? " is-active" : ""}`}
-            onClick={() => selectFilter("noParentReferrer")}
-            title="Show direct / organic lenders with no parent referrer"
-          >
-            <small>DIRECT LENDERS</small>
-            <strong>{fmtNum(totals.noParentReferrer)}</strong>
-            <em>Joined with no parent referrer</em>
-          </button>
-          <button
-            type="button"
-            className={`with admin-ai-ref-portfolio-total-card is-highlight${filter === "withReferrals" ? " is-active" : ""}`}
-            onClick={() => selectFilter("withReferrals")}
-            title="Show lenders who actively referred at least one user"
-          >
-            <small>ACTIVE REFERRALS</small>
-            <strong>{fmtNum(totals.withReferrals)}</strong>
-            <em>Lenders who actively referred at least one user</em>
-          </button>
-          <button
-            type="button"
-            className={`without admin-ai-ref-portfolio-total-card${filter === "withoutReferrals" ? " is-active" : ""}`}
-            onClick={() => selectFilter("withoutReferrals")}
-            title="Show lenders not actively referring anyone"
-          >
-            <small>NOT ACTIVELY REFERRING</small>
-            <strong>{fmtNum(totals.withoutReferrals)}</strong>
-            <em>Lenders with zero referrals made</em>
-          </button>
+          {renderLenderAudienceCard(
+            "fromReferrers",
+            "from",
+            "FROM REFERRERS",
+            totals.fromReferrers,
+            "Came through a parent referrer",
+            "Show lenders who came through a referrer"
+          )}
+          {renderLenderAudienceCard(
+            "noParentReferrer",
+            "direct",
+            "DIRECT LENDERS",
+            totals.noParentReferrer,
+            "Joined with no parent referrer",
+            "Show direct / organic lenders with no parent referrer"
+          )}
+          {renderLenderAudienceCard(
+            "withReferrals",
+            "with",
+            "ACTIVE REFERRALS",
+            totals.withReferrals,
+            "Lenders who actively referred at least one user",
+            "Show lenders who actively referred at least one user"
+          )}
+          {renderLenderAudienceCard(
+            "withLentReferrals",
+            "lent-earned",
+            "LENT REFERRAL EARNERS",
+            totals.withLentReferrals,
+            "Distinct referrers with Lent or Disbursed status",
+            "Show all referrers with at least one Lent or Disbursed referral"
+          )}
+          {renderLenderAudienceCard(
+            "withoutReferrals",
+            "without",
+            "NOT ACTIVELY REFERRING",
+            totals.withoutReferrals,
+            "Lenders with zero referrals made",
+            "Show lenders not actively referring anyone"
+          )}
+          {renderRefereeAudienceCard(
+            "invitedUsers",
+            "Invited Users",
+            totals.invitedUsers,
+            "Invited via referral · not registered yet"
+          )}
+          {renderRefereeAudienceCard(
+            "registeredUsers",
+            "Registered Users",
+            totals.registeredUsers,
+            "Registered via referral · not participated yet"
+          )}
         </section>
 
         <section className="admin-ai-ref-portfolio-toolbar admin-ai-ref-portfolio-toolbar--official">
@@ -279,7 +572,10 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
               { key: "fromReferrers", label: "From referrers" },
               { key: "noParentReferrer", label: "Direct lenders" },
               { key: "withReferrals", label: "Active referrals" },
+              { key: "withLentReferrals", label: "Lent referral earners" },
               { key: "withoutReferrals", label: "Not actively referring" },
+              { key: "invitedUsers", label: "Invited users" },
+              { key: "registeredUsers", label: "Registered users" },
             ].map((item) => (
               <button
                 key={item.key}
@@ -293,14 +589,14 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
           </div>
           <div className="admin-ai-ref-portfolio-search admin-ai-ref-portfolio-search--split">
             <label>
-              <span>Lender ID</span>
+              <span>{isRefereeView ? "Referee / Referrer ID" : "Lender ID"}</span>
               <input
                 value={lenderIdSearch}
                 onChange={(event) => setLenderIdSearch(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") applySearch();
                 }}
-                placeholder="e.g. 34447 or LR34447"
+                placeholder={isRefereeView ? "e.g. referee or LR id" : "e.g. 34447 or LR34447"}
               />
             </label>
             <label>
@@ -326,7 +622,179 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
         {error ? <div className="alert alert-danger">{error}</div> : null}
 
         {loading ? <div className="admin-ai-empty-state">Loading active lenders referral portfolio...</div> : null}
-        {!loading ? (
+        {!loading && isRefereeView ? (
+          <section className={`admin-ai-ref-portfolio-list admin-ai-ref-portfolio-list--full admin-ai-ref-portfolio-list--referee-official ${filter === "registeredUsers" ? "is-registered-view" : "is-invited-view"}`}>
+            {topReferrers.length ? (
+              <div className="admin-ai-ref-portfolio-top-strip is-highlighted">
+                <div className="admin-ai-ref-portfolio-top-strip-head">
+                  <strong>{topTitle}</strong>
+                  <span>
+                    Ranked by {filter === "registeredUsers" ? "registered" : "invited"} count · top 10 referrers
+                  </span>
+                </div>
+                <div className="admin-ai-ref-portfolio-top-strip-list">
+                  {topReferrers.map((item) => {
+                    const rank = pickNumber(item.rank) || 1;
+                    const rankClass = rank <= 3 ? `is-rank-${rank}` : "is-rank-rest";
+                    return (
+                      <button
+                        type="button"
+                        key={`top-${item.referrerId}`}
+                        className={`admin-ai-ref-portfolio-top-chip is-highlight ${rankClass}`}
+                        title={`Open profile for ${item.referrerCode || item.referrerId}`}
+                        onClick={() => openReferrerProfile(item)}
+                      >
+                        <div className="admin-ai-ref-portfolio-top-chip-rank">
+                          <em>#{rank}</em>
+                          <b>{fmtNum(item.refereeCount)}</b>
+                        </div>
+                        <strong title={valueOrDash(item.referrerName || item.referrerCode)}>
+                          {valueOrDash(item.referrerName || item.referrerCode)}
+                        </strong>
+                        <small>{valueOrDash(item.referrerCode)}</small>
+                        <SourceTypeBadges
+                          inviteCount={item.inviteCount}
+                          bulkInviteCount={item.bulkInviteCount}
+                          partnerCount={item.partnerCount}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="admin-ai-ref-portfolio-list-head">
+              <strong>{fmtNum(totalCount)} {listLabel}</strong>
+              <span>
+                Grouped by referrer · Status: {refereeStatus} · scoped to {fmtNum(totals.activeLenders)} active lenders · Page {page} of {totalPages}
+              </span>
+            </div>
+
+            <div className="admin-ai-ref-portfolio-referrer-groups">
+              {rows.map((row) => {
+                const referrerId = pickNumber(row.referrerId);
+                const referees = Array.isArray(row.referees) ? row.referees : [];
+                const previewNames = (row.refereeNamesPreview
+                  || referees
+                    .slice(0, 3)
+                    .map((r) => r.refereeName || r.refereeEmail || r.refereeMobileNumber)
+                    .filter(Boolean)
+                    .join(", "));
+                const previewExtra = Math.max(0, pickNumber(row.refereeCount) - 3);
+                const statusVerb = filter === "registeredUsers" ? "registered" : "invited";
+                const splitByType = filter === "registeredUsers";
+                const typeSplit = splitByType ? splitRefereesByType(referees) : null;
+                let inviteCount = pickNumber(row.inviteCount);
+                let bulkInviteCount = pickNumber(row.bulkInviteCount);
+                let partnerCount = pickNumber(row.partnerCount);
+                if (inviteCount + bulkInviteCount + partnerCount <= 0 && referees.length) {
+                  inviteCount = 0;
+                  bulkInviteCount = 0;
+                  partnerCount = 0;
+                  referees.forEach((referee) => {
+                    const kind = inviteSourceMeta(referee.source).kind;
+                    if (kind === "bulk") bulkInviteCount += 1;
+                    else if (kind === "partner") partnerCount += 1;
+                    else inviteCount += 1;
+                  });
+                }
+                return (
+                  <article key={referrerId || row.referrerCode} className="admin-ai-ref-portfolio-referrer-group">
+                    <div className="admin-ai-ref-portfolio-referrer-group-head">
+                      <div className="admin-ai-ref-portfolio-referrer-group-expand">
+                        <div className="admin-ai-ref-portfolio-referrer-group-who">
+                          <small>Referrer</small>
+                          <button
+                            type="button"
+                            className="admin-ai-ref-portfolio-referrer-profile-btn"
+                            title={`Open profile for ${row.referrerCode || referrerId}`}
+                            onClick={() => openReferrerProfile(row)}
+                          >
+                            <strong>
+                              {valueOrDash(row.referrerName)}
+                              <span className="admin-ai-ref-portfolio-referrer-code">{valueOrDash(row.referrerCode)}</span>
+                            </strong>
+                            <span className="admin-ai-ref-portfolio-referrer-profile-hint">
+                              <FaUser /> View profile
+                            </span>
+                          </button>
+                          <SourceTypeBadges
+                            inviteCount={inviteCount}
+                            bulkInviteCount={bulkInviteCount}
+                            partnerCount={partnerCount}
+                          />
+                          {typeSplit ? (
+                            <RefereeTypeCountBadges
+                              lenders={typeSplit.lenders.length}
+                              borrowers={typeSplit.borrowers.length}
+                              other={typeSplit.other.length}
+                            />
+                          ) : null}
+                          <em className="admin-ai-ref-portfolio-referrer-preview">
+                            <b className="admin-ai-ref-portfolio-preview-count">{fmtNum(row.refereeCount)}</b>
+                            {" "}{statusVerb}
+                            {previewNames ? ` · ${previewNames}` : ""}
+                            {previewExtra > 0 ? ` +${fmtNum(previewExtra)} more` : ""}
+                          </em>
+                        </div>
+                        <button
+                          type="button"
+                          className="admin-ai-ref-portfolio-referrer-group-meta"
+                          title={`Show ${statusVerb} list for ${row.referrerCode || referrerId}`}
+                          onClick={() => openReferrerListPage(row)}
+                        >
+                          <b>{fmtNum(row.refereeCount)}</b>
+                          <span>Show list</span>
+                        </button>
+                      </div>
+                      <div className="admin-ai-ref-portfolio-referrer-group-actions">
+                        <button
+                          type="button"
+                          className="admin-ai-ref-portfolio-campaign-btn"
+                          title={`Email campaign for ${row.referrerCode || referrerId}`}
+                          onClick={() => openReferrerCampaign(row, "email")}
+                        >
+                          <FaEnvelope /> Email
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-ai-ref-portfolio-campaign-btn is-whatsapp"
+                          title={`WhatsApp campaign for ${row.referrerCode || referrerId}`}
+                          onClick={() => openReferrerCampaign(row, "whatsapp")}
+                        >
+                          <FaWhatsapp /> WhatsApp
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-ai-ref-portfolio-campaign-btn is-excel"
+                          disabled={exporting && exportingReferrerId === referrerId}
+                          title={`Download Excel for ${row.referrerCode || referrerId}`}
+                          onClick={() => downloadExcel(filter, referrerId, row.referrerCode)}
+                        >
+                          <FaDownload /> {exporting && exportingReferrerId === referrerId ? "..." : "Excel"}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+              {!rows.length ? (
+                <div className="admin-ai-empty-state">
+                  <FaUserFriends />
+                  <p>No {listLabel} found for active lenders with this search.</p>
+                </div>
+              ) : null}
+            </div>
+            <div className="admin-ai-referral-users-pager">
+              <button type="button" disabled={page <= 1 || loading} onClick={() => loadPortfolio(page - 1)}>Previous</button>
+              <span>{page} / {totalPages}</span>
+              <button type="button" disabled={page >= totalPages || loading} onClick={() => loadPortfolio(page + 1)}>Next</button>
+            </div>
+          </section>
+        ) : null}
+
+        {!loading && !isRefereeView ? (
           <section className="admin-ai-ref-portfolio-list admin-ai-ref-portfolio-list--full">
             <div className="admin-ai-ref-portfolio-list-head">
               <strong>{fmtNum(totalCount)} lenders</strong>
@@ -334,7 +802,6 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
             </div>
             <div className="admin-ai-ref-portfolio-rows admin-ai-ref-portfolio-rows--grid">
               {rows.map((row) => {
-                const profileOpen = openProfileId === row.lenderId;
                 const paidPct = paidSharePct(row.amountPaid, row.amountNotPaid);
                 const unpaidPct = Math.max(0, 100 - paidPct);
                 return (
@@ -362,9 +829,9 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
                       <div className="admin-ai-ref-portfolio-mock-actions">
                         <button
                           type="button"
-                          className={`admin-ai-ref-portfolio-icon-btn${profileOpen ? " is-open" : ""}`}
-                          onClick={() => setOpenProfileId(profileOpen ? null : row.lenderId)}
-                          title="View mobile & email"
+                          className="admin-ai-ref-portfolio-icon-btn"
+                          onClick={() => openLenderProfilePage(row)}
+                          title="Open lender personal details"
                         >
                           <FaUser />
                           <em>Profile</em>
@@ -389,13 +856,6 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
                         </button>
                       </div>
                     </div>
-
-                    {profileOpen ? (
-                      <div className="admin-ai-ref-portfolio-profile-panel">
-                        <span><b>Mobile</b> {valueOrDash(row.mobileNumber)}</span>
-                        <span><b>Email</b> {valueOrDash(row.email)}</span>
-                      </div>
-                    ) : null}
 
                     <div className="admin-ai-ref-portfolio-mock-folio">
                       <p className="admin-ai-ref-portfolio-mock-folio-title">Earnings Folio</p>
@@ -452,6 +912,19 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
           </section>
         ) : null}
       </div>
+
+      <AdminAILenderCampaignModal
+        open={Boolean(campaignState)}
+        onClose={() => setCampaignState(null)}
+        segment={campaignState?.segment}
+        segmentLabel={campaignState?.segmentLabel}
+        recipientCount={campaignState?.recipientCount}
+        initialChannel={campaignState?.channel}
+        onSent={(result, meta) => {
+          if (meta?.dryRun) return;
+          setCampaignState(null);
+        }}
+      />
     </div>
   );
 };
