@@ -22,6 +22,7 @@ import {
   isActiveSubscriptionOffer,
   resolveDiscountPercent,
 } from "./subscriptionOfferUtils";
+import { shouldHideMembershipOffers } from "./dealFeeFreeGate";
 import ActiveOfferPopup from "./ActiveOfferPopup";
 import {
   registersuccess,
@@ -418,6 +419,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                       )}
                       {subscriptionOffer &&
                         isActiveSubscriptionOffer(subscriptionOffer) &&
+                        !shouldHideMembershipOffers([subscriptionOffer]) &&
                         !membershipPaymentBlocked && (
                         <div className="col-12 mb-3">
                           <div className="alert alert-success subscription-offer-banner mb-0">

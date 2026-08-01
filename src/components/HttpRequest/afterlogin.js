@@ -3270,6 +3270,11 @@ export const getUserReactivationOffers = async () => {
       ctaUrl: o.ctaUrl,
       redeemed,
       eligible,
+      assignedToUser:
+        o.assignedToUser === true ||
+        o.assignedToUser === "true" ||
+        o.mappedToUser === true ||
+        o.mappedToUser === "true",
       segment: segmentCode,
       segmentLabel: o.segmentLabel || null,
       disabledReason: o.disabledReason || null,

@@ -1,4 +1,8 @@
 import { getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
+import {
+  shouldHideMembershipOffers,
+  syncDealFeeFreeGateFromOffers,
+} from "./dealFeeFreeGate";
 
 const AI_SUBSCRIPTION_TIERS = new Set(["FREE", "SMART", "PRO"]);
 const LENDER_MEMBERSHIP_PLANS = new Set([
@@ -30,6 +34,14 @@ export function isLenderMembershipPlan(planData) {
   return LENDER_MEMBERSHIP_PLANS.has(plan);
 }
 
+/** True when lender still has an assigned, unclaimed Deal Fee Free (FIRST_DEAL_FREE) offer. */
+export function hasUnclaimedDealFeeFreeOffer(offers) {
+  if (!Array.isArray(offers) || offers.length === 0) {
+    return shouldHideMembershipOffers([]);
+  }
+  return shouldHideMembershipOffers(offers);
+}
+
 /** Fetch active SUBSCRIPTION_DISCOUNT offer for the logged-in user (single API call). */
 export async function fetchSubscriptionOffer() {
   try {
@@ -37,6 +49,7 @@ export async function fetchSubscriptionOffer() {
     if (!Array.isArray(offers) || offers.length === 0) {
       return null;
     }
+    syncDealFeeFreeGateFromOffers(offers);
     return pickSubscriptionDiscountOffer(offers);
   } catch (error) {
     console.warn("Subscription offer fetch failed:", error?.message || error);
@@ -67,6 +80,8 @@ export function isActiveSubscriptionOffer(offer) {
 /** Pick the best SUBSCRIPTION_DISCOUNT offer when multiple are returned. */
 export function pickSubscriptionDiscountOffer(offers) {
   if (!Array.isArray(offers) || offers.length === 0) return null;
+  // Membership offer cards only after Deal Fee Free is claimed (or if user never had one).
+  if (shouldHideMembershipOffers(offers)) return null;
   const active = offers.filter((offer) => isActiveSubscriptionOffer(offer));
   if (active.length === 0) return null;
   return active.sort((a, b) => resolveDiscountPercent(b) - resolveDiscountPercent(a))[0];
