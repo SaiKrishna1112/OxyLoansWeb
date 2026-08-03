@@ -67,6 +67,7 @@ import { BASE_URL } from "../../../../config";
 import "./AdminAIDashboard.css";
 import AdminAIUserGeographyPanel from "./AdminAIUserGeographyPanel";
 import AdminAILenderAnalyticsPanel from "./AdminAILenderAnalyticsPanel";
+import AdminAILatestFirstParticipatedPanel from "./AdminAILatestFirstParticipatedPanel";
 import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
 import AdminAIAutoEmailDraftModal from "./AdminAIAutoEmailDraftModal";
 import { OXYINSIGHTS_PATH } from "./adminAINavigation";
@@ -3371,6 +3372,8 @@ const AdminAIDashboard = () => {
               </section>
 
               <AdminAILenderAnalyticsPanel onOpenLender={openTopLenderDetail} />
+
+              <AdminAILatestFirstParticipatedPanel onOpenLender={openTopLenderDetail} />
 
               <section className="admin-ai-panel admin-ai-top-lenders-panel admin-ai-top-lenders-panel--compact admin-ai-top-lenders-panel--official">
                 <div className="admin-ai-panel-head">

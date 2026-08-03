@@ -5545,7 +5545,7 @@
   color: #1e40af;
 }
 
-/* ── Professional dashboard (admin-ai-pro) — isolated from legacy magic styles ── */
+/* ?? Professional dashboard (admin-ai-pro) ? isolated from legacy magic styles ?? */
 .admin-ai-pro {
   background: #f4f6f8 !important;
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -6870,7 +6870,7 @@
 }
 
 .admin-ai-pro-kpi-link::after {
-  content: " →";
+  content: " ?";
 }
 
 .admin-ai-pro-kpi-value {
@@ -8842,7 +8842,7 @@
   width: min(1080px, 100%);
 }
 
-/* ── Delivery details section ─────────────────────────────── */
+/* ?? Delivery details section ??????????????????????????????? */
 .admin-ai-campaign-report {
   margin-top: 20px;
   padding: 20px;
@@ -8923,7 +8923,7 @@
   background: #f0fdf4;
 }
 
-/* ── Engagement stat boxes ──────────────────────────────── */
+/* ?? Engagement stat boxes ???????????????????????????????? */
 .admin-ai-delivery-stats-row {
   display: flex;
   gap: 10px;
@@ -8985,7 +8985,7 @@
 .admin-ai-delivery-stat.is-complaint small { color: #dc2626; }
 .admin-ai-delivery-stat.is-complaint strong { color: #7f1d1d; }
 
-/* ── Filter chips ───────────────────────────────────────── */
+/* ?? Filter chips ????????????????????????????????????????? */
 .admin-ai-delivery-filter-chips {
   display: flex;
   gap: 8px;
@@ -9039,7 +9039,7 @@
 .admin-ai-delivery-chip.is-active em { background: rgba(255,255,255,0.3); color: #fff; }
 .admin-ai-delivery-chip:hover:not(.is-active) { background: #f8fafc; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 
-/* ── old report-head h6/p (kept for backward compat with old routes) ── */
+/* ?? old report-head h6/p (kept for backward compat with old routes) ?? */
 .admin-ai-campaign-report-head h6 {
   margin: 0 0 4px;
   display: inline-flex;
@@ -10275,7 +10275,7 @@
   font-size: 0.78rem;
 }
 
-/* Referral Registered Users — highlight clickable REFERRER cell */
+/* Referral Registered Users ? highlight clickable REFERRER cell */
 .admin-ai-referral-referrer-cell {
   display: flex;
   flex-direction: column;
@@ -10741,6 +10741,10 @@
 
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--eight {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--ten {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight > button.admin-ai-ref-portfolio-total-card.invited::before,
@@ -12051,7 +12055,7 @@
   height: 5px;
 }
 
-/* Active Lenders — navy */
+/* Active Lenders ? navy */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .all {
   border-color: #9eb0c3;
   background: linear-gradient(180deg, #e8eef5 0%, #f7f9fc 55%);
@@ -12072,7 +12076,7 @@
   color: #0f2942;
 }
 
-/* From Referrers — steel blue */
+/* From Referrers ? steel blue */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .from {
   border-color: #8eb9cb;
   background: linear-gradient(180deg, #e4f3f8 0%, #f5fbfd 55%);
@@ -12095,7 +12099,7 @@
   font-size: 2.55rem;
 }
 
-/* Direct Lenders — forest slate */
+/* Direct Lenders ? forest slate */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .direct {
   border-color: #a8b98f;
   background: linear-gradient(180deg, #eef5e6 0%, #f7faf3 55%);
@@ -12118,7 +12122,7 @@
   font-size: 2.55rem;
 }
 
-/* Active Referrals — indigo */
+/* Active Referrals ? indigo */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .with {
   border-color: #a5b4d4;
   background: linear-gradient(180deg, #e8edf8 0%, #f5f7fc 55%);
@@ -12141,7 +12145,7 @@
   font-size: 2.55rem;
 }
 
-/* Lent referral earners — amber */
+/* Lent referral earners ? amber */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .lent-earned {
   border-color: #f0c36d;
   background: linear-gradient(180deg, #fff7e8 0%, #ffffff 72%);
@@ -12163,7 +12167,7 @@
   font-size: 2.55rem;
 }
 
-/* Not Actively Referring — slate stone */
+/* Not Actively Referring ? slate stone */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .without {
   border-color: #b7c0cb;
   background: linear-gradient(180deg, #eceff3 0%, #f7f8fa 55%);
@@ -12184,7 +12188,7 @@
   color: #334155;
 }
 
-/* Invited Users — deep teal */
+/* Invited Users ? deep teal */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .invited {
   border-color: #7eb8b0;
   background: linear-gradient(180deg, #dff3ef 0%, #f2faf8 55%);
@@ -12206,7 +12210,7 @@
   color: #0f766e;
 }
 
-/* Registered Users — royal navy */
+/* Registered Users ? royal navy */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .registered {
   border-color: #90a4c4;
   background: linear-gradient(180deg, #e4ebf6 0%, #f4f7fb 55%);
@@ -12226,6 +12230,53 @@
 }
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .registered strong {
   color: #1e3a8a;
+}
+
+/* Borrowers referred by lenders ? rose slate */
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .lender-to-borrower {
+  border-color: #d4a5a5;
+  background: linear-gradient(180deg, #f8eaea 0%, #fbf6f6 55%);
+  box-shadow: 0 2px 6px rgba(153, 27, 27, 0.08);
+  cursor: default;
+}
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .lender-to-borrower::before {
+  background: #9f1239;
+}
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .lender-to-borrower small {
+  color: #9f1239;
+  font-weight: 800;
+}
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .lender-to-borrower strong {
+  color: #9f1239;
+}
+
+/* Lenders referred by borrowers ? warm ochre */
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .borrower-to-lender {
+  border-color: #d4b896;
+  background: linear-gradient(180deg, #f7efe3 0%, #fbf8f3 55%);
+  box-shadow: 0 2px 6px rgba(146, 64, 14, 0.08);
+  cursor: default;
+}
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .borrower-to-lender::before {
+  background: #9a3412;
+}
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .borrower-to-lender small {
+  color: #9a3412;
+  font-weight: 800;
+}
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight .borrower-to-lender strong {
+  color: #9a3412;
+}
+
+.admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-view-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--highlight small {
@@ -12258,7 +12309,8 @@
   .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--four,
   .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--five,
   .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--seven,
-  .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--eight {
+  .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--eight,
+  .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--ten {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -12266,7 +12318,8 @@
 @media (max-width: 700px) {
   .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--five,
   .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--seven,
-  .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--eight {
+  .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--eight,
+  .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-totals--ten {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -12441,7 +12494,7 @@
   color: #0f2942;
 }
 
-/* Short grid cards — not full-width */
+/* Short grid cards ? not full-width */
 .admin-ai-ref-portfolio-page--corporate .admin-ai-ref-portfolio-rows--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -14422,6 +14475,74 @@
   box-shadow: 0 4px 12px rgba(29, 78, 216, 0.28);
 }
 
+.admin-ai-ftree-label-toggle {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  margin-left: 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.06);
+  border: 1px solid #99f6e4;
+}
+
+.admin-ai-ftree-label-btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.admin-ai-ftree-label-btn:hover:not(:disabled) {
+  background: #fff;
+  color: #115e59;
+}
+
+.admin-ai-ftree-label-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-ai-ftree-label-btn.is-active {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25);
+}
+
+.admin-ai-ftree-card--ids-only {
+  min-width: 88px;
+  max-width: 120px;
+  padding: 6px 8px 6px 22px;
+}
+
+.admin-ai-ftree-card--ids-only .admin-ai-ftree-card-main {
+  min-width: 0;
+}
+
+.admin-ai-ftree-card--ids-only .admin-ai-ftree-id-row--solo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.admin-ai-ftree-card--ids-only .admin-ai-ftree-id {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.admin-ai-ftree-stage--ids-only .admin-ai-ftree-kids--root,
+.admin-ai-ftree-stage--ids-only .admin-ai-ftree-kids--siblings {
+  gap: 8px;
+}
+
 .admin-ai-ftree-type-btn.is-active.is-registered {
   background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
   color: #fff;
@@ -14797,7 +14918,7 @@
   box-shadow: 0 0 0 1px rgba(162, 28, 175, 0.25);
 }
 
-/* Parent → children branch lines use parent level color */
+/* Parent ? children branch lines use parent level color */
 .admin-ai-ftree-node.tier-l1 > .admin-ai-ftree-branch > .admin-ai-ftree-vline,
 .admin-ai-ftree-node.tier-l1 > .admin-ai-ftree-branch > .admin-ai-ftree-kids::before {
   background: #1d4ed8;
@@ -15046,7 +15167,7 @@
   color: #c2410c;
 }
 
-/* L4 = magenta/pink — keep distinct and readable */
+/* L4 = magenta/pink ? keep distinct and readable */
 .admin-ai-ftree-card.tier-l4 {
   border-color: #d946ef;
   border-width: 2px;
@@ -15080,7 +15201,7 @@
   font-weight: 900;
 }
 
-/* L5+ deep chain — colors come from CSS variables (non-repeating palette) */
+/* L5+ deep chain ? colors come from CSS variables (non-repeating palette) */
 .admin-ai-ftree-card.tier-l-deep,
 .admin-ai-ftree-card.is-deep-chain {
   border-color: var(--ftree-deep-border, #0891b2);
@@ -17030,7 +17151,7 @@
   margin-bottom: 16px;
 }
 
-/* OXYINSIGHTS — colorful, large-heading login analytics */
+/* OXYINSIGHTS ? colorful, large-heading login analytics */
 .admin-ai-oxyinsights {
   margin: 0 0 18px;
   padding: 18px 20px 18px;
@@ -17825,5 +17946,212 @@
   }
   .admin-ai-oxy-bucket-track {
     display: none;
+  }
+}
+
+/* Latest first-time participations ? Main AI Dashboard */
+.admin-ai-pro-section--first-time {
+  border-top: 5px solid #0f766e;
+}
+
+.admin-ai-pro-section--first-time .admin-ai-pro-section-head {
+  background: linear-gradient(135deg, #ccfbf1 0%, #f0fdfa 100%);
+}
+
+.admin-ai-pro-section--first-time .admin-ai-pro-section-head h2 {
+  color: #115e59;
+}
+
+.admin-ai-latest-first-panel .admin-ai-latest-first-datebar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 16px 8px;
+  padding: 6px;
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  background: #f0fdfa;
+}
+
+.admin-ai-latest-first-panel .admin-ai-latest-first-datebar > button {
+  border: 0;
+  background: transparent;
+  color: #0f766e;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.admin-ai-latest-first-panel .admin-ai-latest-first-datebar > button.is-active,
+.admin-ai-latest-first-panel .admin-ai-oxy-date-pick.is-active {
+  background: #0f766e;
+  color: #ecfdf5;
+  box-shadow: 0 1px 3px rgba(15, 118, 110, 0.25);
+}
+
+.admin-ai-latest-first-panel .admin-ai-oxy-date-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: #0f766e;
+  cursor: pointer;
+}
+
+.admin-ai-latest-first-panel .admin-ai-oxy-date-pick input[type="date"] {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+}
+
+.admin-ai-latest-first-count {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #115e59;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding-right: 8px;
+}
+
+.admin-ai-latest-first-range {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid #99f6e4;
+  background: #fff;
+}
+
+.admin-ai-latest-first-range.is-active {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.12);
+}
+
+.admin-ai-latest-first-range label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-ai-latest-first-range input[type="date"] {
+  border: 1px solid #99f6e4;
+  border-radius: 6px;
+  padding: 4px 6px;
+  color: #115e59;
+  font-weight: 700;
+  background: #f0fdfa;
+}
+
+.admin-ai-latest-first-search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ecfdf5;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.admin-ai-latest-first-search-btn.is-refresh {
+  background: #fff;
+  color: #0f766e;
+}
+
+.admin-ai-latest-first-search-btn.is-close {
+  background: #fff;
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.admin-ai-latest-first-search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-ai-latest-first-close-btn {
+  border-color: #fecaca !important;
+  color: #b91c1c !important;
+}
+
+.admin-ai-latest-first-table-wrap {
+  overflow-x: auto;
+  padding: 4px 16px 16px;
+}
+
+.admin-ai-latest-first-table {
+  width: 100%;
+  min-width: 920px;
+}
+
+.admin-ai-latest-first-table th {
+  white-space: nowrap;
+}
+
+.admin-ai-latest-first-table td small {
+  display: block;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.admin-ai-linkish-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.admin-ai-linkish-btn strong {
+  display: block;
+  color: #0f766e;
+}
+
+.admin-ai-linkish-btn:hover strong {
+  text-decoration: underline;
+}
+
+.admin-ai-latest-first-referred {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+@media (max-width: 900px) {
+  .admin-ai-latest-first-count {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .admin-ai-latest-first-range {
+    width: 100%;
+  }
+
+  .admin-ai-latest-first-range label {
+    flex: 1 1 140px;
+  }
+
+  .admin-ai-latest-first-range input[type="date"] {
+    width: 100%;
   }
 }

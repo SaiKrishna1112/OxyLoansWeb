@@ -319,6 +319,7 @@ const FtreeCard = ({
   childCount = 0,
   selected = false,
   onSelect,
+  idsOnly = false,
 }) => {
   const isParentReferee = !isRoot && childCount > 0;
   const displayId = displayCode || (lenderId ? `LR${lenderId}` : "-");
@@ -350,6 +351,7 @@ const FtreeCard = ({
         "admin-ai-ftree-card",
         "admin-ai-ftree-card--compact",
         "admin-ai-ftree-card--clear",
+        idsOnly ? "admin-ai-ftree-card--ids-only" : "",
         "is-clickable",
         tierClass(isRoot, depth),
         isParentReferee ? "has-children" : "is-leaf",
@@ -381,11 +383,20 @@ const FtreeCard = ({
         {levelText}
       </span>
       <span className="admin-ai-ftree-card-main">
-        <strong title={name}>{name}</strong>
-        <span className="admin-ai-ftree-id-row">
-          <b className="admin-ai-ftree-id" title={displayId}>{displayId}</b>
-          {isParentReferee ? <em className="admin-ai-ftree-kids-pill">↓{fmtNum(childCount)}</em> : null}
-        </span>
+        {idsOnly ? (
+          <span className="admin-ai-ftree-id-row admin-ai-ftree-id-row--solo">
+            <b className="admin-ai-ftree-id" title={`${name} · ${displayId}`}>{displayId}</b>
+            {isParentReferee ? <em className="admin-ai-ftree-kids-pill">↓{fmtNum(childCount)}</em> : null}
+          </span>
+        ) : (
+          <>
+            <strong title={name}>{name}</strong>
+            <span className="admin-ai-ftree-id-row">
+              <b className="admin-ai-ftree-id" title={displayId}>{displayId}</b>
+              {isParentReferee ? <em className="admin-ai-ftree-kids-pill">↓{fmtNum(childCount)}</em> : null}
+            </span>
+          </>
+        )}
       </span>
     </button>
   );
@@ -398,6 +409,7 @@ const FtreeNode = ({
   parentId = null,
   selectedKey = null,
   onSelect,
+  idsOnly = false,
 }) => {
   const children = Array.isArray(node?.children) ? node.children : [];
   const refereeId = pickNumber(node.refereeId);
@@ -429,6 +441,7 @@ const FtreeNode = ({
         childCount={children.length}
         selected={selectedKey === person.selectKey}
         onSelect={onSelect}
+        idsOnly={idsOnly}
       />
       {children.length ? (
         <div className={`admin-ai-ftree-branch ${singleChildChain ? "admin-ai-ftree-branch--chain" : "admin-ai-ftree-branch--multi"}`}>
@@ -443,6 +456,7 @@ const FtreeNode = ({
                 parentId={refereeId || parentId}
                 selectedKey={selectedKey}
                 onSelect={onSelect}
+                idsOnly={idsOnly}
               />
             ))}
           </div>
@@ -475,6 +489,8 @@ const AdminAILentReferralTreeMapPage = () => {
   const [showChildren, setShowChildren] = useState(false);
   const [campaignState, setCampaignState] = useState(null);
   const [treeType, setTreeType] = useState("lent");
+  const [labelMode, setLabelMode] = useState("full"); // full | ids
+  const idsOnly = labelMode === "ids";
   const activeTreeMeta = treeTypeMeta(treeType);
 
   const selectedChildren = useMemo(() => {
@@ -815,6 +831,30 @@ const AdminAILentReferralTreeMapPage = () => {
                 </button>
               ))}
             </div>
+            <div className="admin-ai-ftree-label-toggle" role="tablist" aria-label="Tree label mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!idsOnly}
+                className={`admin-ai-ftree-label-btn${!idsOnly ? " is-active" : ""}`}
+                disabled={loading || !tree}
+                onClick={() => setLabelMode("full")}
+                title="Show name and lender ID (existing tree labels)"
+              >
+                Name + ID
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={idsOnly}
+                className={`admin-ai-ftree-label-btn${idsOnly ? " is-active" : ""}`}
+                disabled={loading || !tree}
+                onClick={() => setLabelMode("ids")}
+                title="Same tree structure with lender IDs only"
+              >
+                IDs only
+              </button>
+            </div>
           </div>
           <div className="admin-ai-ftree-page-actions">
             <button
@@ -915,7 +955,7 @@ const AdminAILentReferralTreeMapPage = () => {
         {!loading && tree ? (
           <section
             ref={treeStageRef}
-            className="admin-ai-ftree-stage admin-ai-ftree-stage--dense"
+            className={`admin-ai-ftree-stage admin-ai-ftree-stage--dense${idsOnly ? " admin-ai-ftree-stage--ids-only" : ""}`}
           >
             <div className="admin-ai-ftree">
               <div className="admin-ai-ftree-root">
@@ -929,6 +969,7 @@ const AdminAILentReferralTreeMapPage = () => {
                   childCount={children.length}
                   selected={selectedKey === rootSelectPayload.selectKey}
                   onSelect={loadPersonDetail}
+                  idsOnly={idsOnly}
                 />
               </div>
 
@@ -945,6 +986,7 @@ const AdminAILentReferralTreeMapPage = () => {
                         parentId={rootId}
                         selectedKey={selectedKey}
                         onSelect={loadPersonDetail}
+                        idsOnly={idsOnly}
                       />
                     ))}
                   </div>

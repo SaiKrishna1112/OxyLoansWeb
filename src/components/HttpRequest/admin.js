@@ -1118,6 +1118,52 @@ export const getAdminAIActiveLenders = async (pageNo = 1, pageSize = 10, filters
   return response.data;
 };
 
+/** Latest first-time / newly participated lenders (default last 12). Optional date or fromDate/toDate. */
+export const getAdminAILatestFirstParticipations = async ({
+  date = "",
+  fromDate = "",
+  toDate = "",
+  limit = 12,
+} = {}) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/latest-first-participations`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        date: date || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        limit,
+      },
+      timeout: 180000,
+    }
+  );
+  return response.data;
+};
+
+export const downloadAdminAILatestFirstParticipationsExcel = async ({
+  date = "",
+  fromDate = "",
+  toDate = "",
+  limit = 500,
+} = {}) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/active-lenders/latest-first-participations/export`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        date: date || undefined,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        limit,
+      },
+      responseType: "blob",
+      timeout: 300000,
+    }
+  );
+  return response;
+};
+
 export const getAdminAIActiveLendersSheetData = async () => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/active-lenders/sheet-data`, {
     headers: adminRegisteredUsersHeaders(),

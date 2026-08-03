@@ -36,8 +36,18 @@ import "./AdminAIDashboard.css";
 
 const PAGE_SIZE = 20;
 const PORTFOLIO_PATH = "/adminAIActiveLendersReferralPortfolio";
-const LENDER_FILTERS = ["all", "withReferrals", "withLentReferrals", "withoutReferrals", "fromReferrers", "noParentReferrer"];
+const LENDER_FILTERS = [
+  "all",
+  "withReferrals",
+  "withLentReferrals",
+  "withoutReferrals",
+  "fromReferrers",
+  "noParentReferrer",
+  "borrowerReferredLenders",
+];
 const REFEREE_VIEWS = ["invitedUsers", "registeredUsers"];
+const BORROWER_BY_LENDER_VIEW = "lenderReferredBorrowers";
+const CROSS_TYPE_VIEWS = [BORROWER_BY_LENDER_VIEW];
 const fmtNum = (value) => Number(value || 0).toLocaleString("en-IN");
 const fmtMoney = (value) => `₹ ${Number(value || 0).toLocaleString("en-IN")}`;
 const valueOrDash = (value) => (value == null || value === "" ? "-" : value);
@@ -63,6 +73,8 @@ const emptyTotals = () => ({
   noParentReferrer: 0,
   invitedUsers: 0,
   registeredUsers: 0,
+  lenderReferredBorrowers: 0,
+  borrowerReferredLenders: 0,
 });
 
 const refereeCampaignSegment = (filter) =>
@@ -94,14 +106,24 @@ const LENDER_AUDIENCE_CAMPAIGNS = {
     label: "Active Lender Portfolio — Not Actively Referring",
     countKey: "withoutReferrals",
   },
+  borrowerReferredLenders: {
+    segment: "activeLenderPortfolioBorrowerReferred",
+    label: "Active Lender Portfolio — Lenders by Borrowers",
+    countKey: "borrowerReferredLenders",
+  },
 };
 
 const AdminAIActiveLendersReferralPortfolioPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParam = searchParams.get("filter") || "all";
+  const isBorrowerByLenderView = filterParam === BORROWER_BY_LENDER_VIEW || CROSS_TYPE_VIEWS.includes(filterParam);
   const isRefereeView = REFEREE_VIEWS.includes(filterParam);
-  const filter = LENDER_FILTERS.includes(filterParam) ? filterParam : isRefereeView ? filterParam : "all";
+  const filter = LENDER_FILTERS.includes(filterParam)
+    ? filterParam
+    : isRefereeView || isBorrowerByLenderView
+      ? filterParam
+      : "all";
   const refereeStatus = filter === "registeredUsers" ? "Registered" : "Invited";
 
   const [rows, setRows] = useState([]);
@@ -130,12 +152,17 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
     setError("");
     try {
       const refereeMode = REFEREE_VIEWS.includes(nextFilter);
+      const borrowerByLenderMode = nextFilter === BORROWER_BY_LENDER_VIEW;
       const data = responseData(
-        refereeMode
+        refereeMode || borrowerByLenderMode
           ? await getAdminAIActiveLendersReferralPortfolioReferees(nextPage, PAGE_SIZE, {
-              status: nextFilter === "registeredUsers" ? "Registered" : "Invited",
+              status: borrowerByLenderMode
+                ? "Borrower"
+                : nextFilter === "registeredUsers"
+                  ? "Registered"
+                  : "Invited",
               search: nextSearch,
-              groupBy: "referrer",
+              groupBy: borrowerByLenderMode ? "" : "referrer",
             })
           : await getAdminAIActiveLendersReferralPortfolio(nextPage, PAGE_SIZE, {
               filter: nextFilter,
@@ -273,8 +300,12 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
         }
         throw new Error(message);
       }
-      const slug = REFEREE_VIEWS.includes(exportFilter)
-        ? (exportFilter === "registeredUsers" ? "registered-users" : "invited-users")
+      const slug = REFEREE_VIEWS.includes(exportFilter) || exportFilter === BORROWER_BY_LENDER_VIEW
+        ? (exportFilter === "registeredUsers"
+          ? "registered-users"
+          : exportFilter === BORROWER_BY_LENDER_VIEW
+            ? "borrowers-by-lenders"
+            : "invited-users")
         : exportFilter;
       const referrerSlug = scopedReferrerId
         ? `-${String(referrerCode || `LR${scopedReferrerId}`).replace(/[^a-zA-Z0-9_-]/g, "")}`
@@ -304,12 +335,19 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
       return;
     }
     const isRegistered = nextFilter === "registeredUsers";
-    const count = isRegistered ? totals.registeredUsers : totals.invitedUsers;
+    const isBorrowerByLender = nextFilter === BORROWER_BY_LENDER_VIEW;
+    const count = isBorrowerByLender
+      ? totals.lenderReferredBorrowers
+      : isRegistered
+        ? totals.registeredUsers
+        : totals.invitedUsers;
     setCampaignState({
-      segment: refereeCampaignSegment(nextFilter),
-      segmentLabel: isRegistered
-        ? "Active Lender Portfolio — Registered Users"
-        : "Active Lender Portfolio — Invited Users",
+      segment: isBorrowerByLender ? "activeLenderReferredBorrowers" : refereeCampaignSegment(nextFilter),
+      segmentLabel: isBorrowerByLender
+        ? "Active Lender Portfolio — Borrowers by Lenders"
+        : isRegistered
+          ? "Active Lender Portfolio — Registered Users"
+          : "Active Lender Portfolio — Invited Users",
       recipientCount: pickNumber(count),
       channel: channel || "email",
     });
@@ -389,10 +427,100 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
   };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const listLabel = isRefereeView
-    ? (filter === "registeredUsers" ? "referrers with registered users" : "referrers with invited users")
-    : "lenders";
+  const listLabel = isBorrowerByLenderView
+    ? "borrowers referred by lenders"
+    : isRefereeView
+      ? (filter === "registeredUsers" ? "referrers with registered users" : "referrers with invited users")
+      : "lenders";
   const topTitle = filter === "registeredUsers" ? "Top registered" : "Top invited";
+
+  const openBorrowerProfile = (row) => {
+    const refereeId = pickNumber(row?.refereeId);
+    if (!refereeId) return;
+    const code = row?.refereeCode || `BR${refereeId}`;
+    const returnTo = `${PORTFOLIO_PATH}?filter=${BORROWER_BY_LENDER_VIEW}`;
+    const params = new URLSearchParams({
+      userId: String(refereeId),
+      view: "profile",
+      label: `Borrower ${code}`,
+      returnTo,
+    });
+    navigate(`/adminAIUserProfile?${params.toString()}`);
+  };
+
+  const renderCrossTypeStatCard = (key, className, label, count, description, title) => {
+    const active = filter === key;
+    return (
+      <div
+        className={`${className} admin-ai-ref-portfolio-total-card is-highlight${active ? " is-active" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => selectFilter(key)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectFilter(key);
+          }
+        }}
+        title={title}
+      >
+        <small>{label}</small>
+        <strong>{fmtNum(count)}</strong>
+        <em>{description}</em>
+        {active ? (
+          <div
+            className="admin-ai-ref-portfolio-card-campaigns"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            {key === "borrowerReferredLenders" ? (
+              <>
+                <button
+                  type="button"
+                  className="admin-ai-ref-portfolio-campaign-btn"
+                  title={`Email campaign for ${label}`}
+                  onClick={() => openCardCampaign(key, "email")}
+                >
+                  <FaEnvelope /> Email
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-ref-portfolio-campaign-btn is-whatsapp"
+                  title={`WhatsApp campaign for ${label}`}
+                  onClick={() => openCardCampaign(key, "whatsapp")}
+                >
+                  <FaWhatsapp /> WhatsApp
+                </button>
+              </>
+            ) : null}
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn is-excel"
+              disabled={exporting}
+              title={`Download Excel for ${label}`}
+              onClick={() => downloadExcel(key)}
+            >
+              <FaDownload /> {exporting ? "..." : "Excel"}
+            </button>
+            <button
+              type="button"
+              className="admin-ai-ref-portfolio-campaign-btn"
+              title={`View ${label} list`}
+              onClick={() => selectFilter(key)}
+            >
+              <FaEye /> View
+            </button>
+          </div>
+        ) : (
+          <div className="admin-ai-ref-portfolio-card-campaigns">
+            <span className="admin-ai-ref-portfolio-view-hint">
+              <FaEye /> View
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderRefereeAudienceCard = (key, label, count, description) => {
     const active = filter === key;
@@ -500,7 +628,7 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
           </div>
         </header>
 
-        <section className="admin-ai-ref-portfolio-totals admin-ai-ref-portfolio-totals--highlight admin-ai-ref-portfolio-totals--eight">
+        <section className="admin-ai-ref-portfolio-totals admin-ai-ref-portfolio-totals--highlight admin-ai-ref-portfolio-totals--ten">
           <button
             type="button"
             className={`all admin-ai-ref-portfolio-total-card${filter === "all" ? " is-active" : ""}`}
@@ -563,6 +691,22 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
             totals.registeredUsers,
             "Registered via referral · not participated yet"
           )}
+          {renderCrossTypeStatCard(
+            BORROWER_BY_LENDER_VIEW,
+            "lender-to-borrower",
+            "BORROWERS BY LENDERS",
+            totals.lenderReferredBorrowers,
+            "Borrowers referred by lenders",
+            "View borrowers referred by active lenders"
+          )}
+          {renderCrossTypeStatCard(
+            "borrowerReferredLenders",
+            "borrower-to-lender",
+            "LENDERS BY BORROWERS",
+            totals.borrowerReferredLenders,
+            "Lenders referred by borrowers",
+            "View active lenders whose parent referrer is a borrower"
+          )}
         </section>
 
         <section className="admin-ai-ref-portfolio-toolbar admin-ai-ref-portfolio-toolbar--official">
@@ -576,6 +720,8 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
               { key: "withoutReferrals", label: "Not actively referring" },
               { key: "invitedUsers", label: "Invited users" },
               { key: "registeredUsers", label: "Registered users" },
+              { key: BORROWER_BY_LENDER_VIEW, label: "Borrowers by lenders" },
+              { key: "borrowerReferredLenders", label: "Lenders by borrowers" },
             ].map((item) => (
               <button
                 key={item.key}
@@ -589,14 +735,18 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
           </div>
           <div className="admin-ai-ref-portfolio-search admin-ai-ref-portfolio-search--split">
             <label>
-              <span>{isRefereeView ? "Referee / Referrer ID" : "Lender ID"}</span>
+              <span>{isBorrowerByLenderView || isRefereeView ? "Referee / Referrer ID" : "Lender ID"}</span>
               <input
                 value={lenderIdSearch}
                 onChange={(event) => setLenderIdSearch(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") applySearch();
                 }}
-                placeholder={isRefereeView ? "e.g. referee or LR id" : "e.g. 34447 or LR34447"}
+                placeholder={
+                  isBorrowerByLenderView || isRefereeView
+                    ? "e.g. referee or LR id"
+                    : "e.g. 34447 or LR34447"
+                }
               />
             </label>
             <label>
@@ -794,7 +944,79 @@ const AdminAIActiveLendersReferralPortfolioPage = () => {
           </section>
         ) : null}
 
-        {!loading && !isRefereeView ? (
+        {!loading && isBorrowerByLenderView ? (
+          <section className="admin-ai-ref-portfolio-list admin-ai-ref-portfolio-list--full admin-ai-ref-portfolio-list--referee-official is-borrower-by-lender-view">
+            <div className="admin-ai-ref-portfolio-list-head">
+              <strong>{fmtNum(totalCount)} {listLabel}</strong>
+              <span>Borrowers referred by active lenders · Page {page} of {totalPages}</span>
+            </div>
+            <div className="admin-ai-ref-portfolio-rows admin-ai-ref-portfolio-rows--grid">
+              {rows.map((row) => (
+                <article
+                  key={row.id || `${row.refereeId}-${row.referrerId}-${row.referredOn}`}
+                  className="admin-ai-ref-portfolio-card admin-ai-ref-portfolio-card--mock"
+                >
+                  <div className="admin-ai-ref-portfolio-mock-head">
+                    <div className="admin-ai-ref-portfolio-mock-who">
+                      <small>Borrower referred by lender</small>
+                      <div className="admin-ai-ref-portfolio-mock-name-row">
+                        <strong>{valueOrDash(row.refereeName)}</strong>
+                        <span className="admin-ai-ref-portfolio-referred-by">
+                          <small>Referred by</small>
+                          <b>
+                            {valueOrDash(row.referrerName)}
+                            {row.referrerCode ? ` · ${row.referrerCode}` : ""}
+                          </b>
+                        </span>
+                      </div>
+                      <div className="admin-ai-ref-portfolio-mock-ids">
+                        <span>{valueOrDash(row.refereeCode || (row.refereeId ? `BR${row.refereeId}` : "Invited"))}</span>
+                        <span>{valueOrDash(row.status)}</span>
+                        <span>{valueOrDash(row.refereeMobileNumber)}</span>
+                      </div>
+                      <em className="admin-ai-ref-portfolio-referrer-preview">
+                        {valueOrDash(row.refereeEmail)} · {valueOrDash(row.referredOn)}
+                      </em>
+                    </div>
+                    <div className="admin-ai-ref-portfolio-mock-actions">
+                      {pickNumber(row.refereeId) > 0 ? (
+                        <button
+                          type="button"
+                          className="admin-ai-ref-portfolio-icon-btn"
+                          title="View borrower profile"
+                          onClick={() => openBorrowerProfile(row)}
+                        >
+                          <FaEye />
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="admin-ai-ref-portfolio-icon-btn"
+                        title="View referrer profile"
+                        onClick={() => openReferrerProfile(row)}
+                      >
+                        <FaUser />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+              {!rows.length ? (
+                <div className="admin-ai-empty-state">
+                  <FaUserFriends />
+                  <p>No borrowers referred by active lenders for this search.</p>
+                </div>
+              ) : null}
+            </div>
+            <div className="admin-ai-referral-users-pager">
+              <button type="button" disabled={page <= 1 || loading} onClick={() => loadPortfolio(page - 1)}>Previous</button>
+              <span>{page} / {totalPages}</span>
+              <button type="button" disabled={page >= totalPages || loading} onClick={() => loadPortfolio(page + 1)}>Next</button>
+            </div>
+          </section>
+        ) : null}
+
+        {!loading && !isRefereeView && !isBorrowerByLenderView ? (
           <section className="admin-ai-ref-portfolio-list admin-ai-ref-portfolio-list--full">
             <div className="admin-ai-ref-portfolio-list-head">
               <strong>{fmtNum(totalCount)} lenders</strong>
