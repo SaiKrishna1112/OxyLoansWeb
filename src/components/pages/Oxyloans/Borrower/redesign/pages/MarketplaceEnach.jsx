@@ -16,8 +16,9 @@ const MarketplaceEnach = () => {
   const { loanRequestId, assignmentId: routeAssignmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const queryMandateId = searchParams.get("mandateId") || searchParams.get("mandate_id");
-  const queryAssignmentId = searchParams.get("assignmentId") || searchParams.get("assignment_id") || routeAssignmentId;
+  const storedAssignmentId = sessionStorage.getItem(`enach_assignmentId_${loanRequestId}`) || sessionStorage.getItem("enach_assignmentId");
+  const queryMandateId = searchParams.get("mandateId") || searchParams.get("mandate_id") || searchParams.get("sub_id") || searchParams.get("subscription_id");
+  const queryAssignmentId = searchParams.get("assignmentId") || searchParams.get("assignment_id") || routeAssignmentId || storedAssignmentId;
 
   const [step, setStep] = useState("check"); // check | authorize | success
   const [loading, setLoading] = useState(true);
@@ -62,12 +63,21 @@ const MarketplaceEnach = () => {
       setMandates(list);
       
       if (list.length > 0) {
-        // If we have a queryMandateId or queryAssignmentId from URL, find matching mandate in the list or use list[0]
-        const mandateFromQuery = queryMandateId ? list.find(m => String(m.id) === String(queryMandateId)) : null;
+        // If we have a queryMandateId or queryAssignmentId from URL/storage, find matching mandate in the list or use list[0]
+        const storedMandateId = sessionStorage.getItem(`enach_mandateId_${loanRequestId}`);
+        const effectiveMandateId = queryMandateId || storedMandateId;
+        const mandateFromQuery = effectiveMandateId ? list.find(m => String(m.id) === String(effectiveMandateId)) : null;
         const mandateFromAssignment = queryAssignmentId ? list.find(m => String(m.assignmentId || m.loanAssignmentId || m.id) === String(queryAssignmentId)) : null;
         const currentMandate = mandateFromQuery || mandateFromAssignment || list[0];
         setSelectedMandate(currentMandate);
         console.log("currentMandate", currentMandate);
+        
+        // Save resolved assignmentId for session persistence if missing in URL
+        const resolvedAssignmentId = queryAssignmentId || currentMandate?.assignmentId || currentMandate?.loanAssignmentId || currentMandate?.id;
+        if (resolvedAssignmentId) {
+          sessionStorage.setItem(`enach_assignmentId_${loanRequestId}`, resolvedAssignmentId);
+          sessionStorage.setItem("enach_assignmentId", resolvedAssignmentId);
+        }
         
         // If already success/active, jump to success step
         if (
@@ -75,7 +85,7 @@ const MarketplaceEnach = () => {
           currentMandate.mandateStatus === "ACTIVE"
         ) {
           setStep("success");
-        } else if (queryMandateId) {
+        } else if (effectiveMandateId) {
           // If returning from redirect with a mandateId, set step to "authorize" and start polling
           setStep("authorize");
           startPolling(currentMandate.id);
@@ -106,6 +116,15 @@ const MarketplaceEnach = () => {
     console.log('enach started..........')
 
     try {
+      const activeAssignmentId = queryAssignmentId || selectedMandate?.assignmentId || selectedMandate?.loanAssignmentId || selectedMandate?.id;
+      if (activeAssignmentId) {
+        sessionStorage.setItem(`enach_assignmentId_${loanRequestId}`, activeAssignmentId);
+        sessionStorage.setItem("enach_assignmentId", activeAssignmentId);
+      }
+      if (selectedMandate?.id) {
+        sessionStorage.setItem(`enach_mandateId_${loanRequestId}`, selectedMandate.id);
+      }
+
       const res = await startCashfreeEnachAuthorization(selectedMandate.mandateId);
       if (res?.data && res?.data?.subscriptionSessionId) {
         setAuthData(res.data);

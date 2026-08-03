@@ -155,6 +155,8 @@ const AdminProximityLoanOverview = () => {
         const raw = res.data || [];
         const list = Array.isArray(raw)
           ? raw
+          : Array.isArray(raw.files)
+          ? raw.files
           : Array.isArray(raw.data)
           ? raw.data
           : Array.isArray(raw.content)
@@ -197,14 +199,29 @@ const AdminProximityLoanOverview = () => {
     if (!walletSearchTerm) return walletUsersData;
     const term = walletSearchTerm.toLowerCase();
     return walletUsersData.filter((item) => {
-      return (
+      const matchFile =
+        String(item.cmsFileId || "").toLowerCase().includes(term) ||
+        String(item.fileName || "").toLowerCase().includes(term) ||
+        String(item.fileExecutionStatus || "").toLowerCase().includes(term) ||
+        String(item.fileType || "").toLowerCase().includes(term) ||
         String(item.loanId || item.loanRequestId || "").toLowerCase().includes(term) ||
         String(item.tableId || item.id || "").toLowerCase().includes(term) ||
         String(item.lenderId || "").toLowerCase().includes(term) ||
         String(item.lenderName || "").toLowerCase().includes(term) ||
         String(item.borrowerId || "").toLowerCase().includes(term) ||
-        String(item.borrowerName || "").toLowerCase().includes(term)
+        String(item.borrowerName || "").toLowerCase().includes(term);
+
+      const matchLoanDetails = (item.loanDetails || []).some(
+        (ld) =>
+          String(ld.loanId || "").toLowerCase().includes(term) ||
+          String(ld.tableId || "").toLowerCase().includes(term) ||
+          String(ld.borrowerName || "").toLowerCase().includes(term) ||
+          String(ld.borrowerId || "").toLowerCase().includes(term) ||
+          String(ld.lenderName || "").toLowerCase().includes(term) ||
+          String(ld.lenderId || "").toLowerCase().includes(term)
       );
+
+      return matchFile || matchLoanDetails;
     });
   }, [walletUsersData, walletSearchTerm]);
 
@@ -439,65 +456,186 @@ const AdminProximityLoanOverview = () => {
     );
   };
 
+  // Nested Expandable Row Render for generated files (loanDetails)
+  const walletFileLoanDetailsExpandedRender = (record) => {
+    const loanDetails = record.loanDetails || [];
+    if (loanDetails.length === 0) {
+      return (
+        <div className="p-3 bg-light text-center text-muted small border rounded">
+          No individual loan details attached to this generated file.
+        </div>
+      );
+    }
+
+    const detailColumns = [
+      {
+        title: "Table ID",
+        dataIndex: "tableId",
+        key: "tableId",
+        render: (v) => <span className="fw-bold">#{v || "N/A"}</span>,
+      },
+      {
+        title: "Loan ID",
+        dataIndex: "loanId",
+        key: "loanId",
+        render: (v) => <span className="fw-bold text-primary">#{v || "N/A"}</span>,
+      },
+      {
+        title: "Borrower Details",
+        dataIndex: "borrowerName",
+        key: "borrowerName",
+        render: (v, r) => (
+          <div>
+            <strong className="d-block text-dark">{v || `Borrower #${r.borrowerId}`}</strong>
+            <span className="text-muted small">ID: {r.borrowerId}</span>
+          </div>
+        ),
+      },
+      {
+        title: "Lender Details",
+        dataIndex: "lenderName",
+        key: "lenderName",
+        render: (v, r) => (
+          <div>
+            <strong className="d-block text-dark">{v || `Lender #${r.lenderId}`}</strong>
+            <span className="text-muted small">ID: {r.lenderId}</span>
+          </div>
+        ),
+      },
+      {
+        title: "Amounts",
+        key: "amounts",
+        render: (_, r) => (
+          <div>
+            <div className="text-success fw-bold">Credited: ₹ {fmtINR(r.creditedAmount)}</div>
+            <span className="text-muted small">
+              Interested: ₹ {fmtINR(r.lenderInterestedAmount)} | Fee: ₹ {fmtINR(r.processingFee)}
+            </span>
+          </div>
+        ),
+      },
+      {
+        title: "Wallet Status",
+        dataIndex: "walletStatus",
+        key: "walletStatus",
+        render: (v) => (
+          <Tag color={v === "DEBITED" ? "green" : v === "PENDING" ? "orange" : "default"}>
+            {v || "N/A"}
+          </Tag>
+        ),
+      },
+      {
+        title: "eSign Status",
+        key: "esign",
+        render: (_, r) => (
+          <div>
+            <span className={`badge ${r.lenderEsigned ? "bg-success" : "bg-secondary"} me-1`}>
+              Lender: {r.lenderEsigned ? "Done" : "Pending"}
+            </span>
+            <span className={`badge ${r.borrowerEsigned ? "bg-success" : "bg-secondary"}`}>
+              Borrower: {r.borrowerEsigned ? "Done" : "Pending"}
+            </span>
+          </div>
+        ),
+      },
+      {
+        title: "eNACH Status",
+        key: "enach",
+        render: (_, r) => (
+          <Tag color={r.enachStatus === "SUCCESS" || r.enachSuccess ? "green" : "orange"}>
+            {r.enachStatus || (r.enachSuccess ? "SUCCESS" : "PENDING")}
+          </Tag>
+        ),
+      },
+    ];
+
+    return (
+      <div className="p-3 bg-light rounded border">
+        <h6 className="fw-bold mb-3 text-dark">
+          <i className="fa-solid fa-list-check me-2 text-success"></i>
+          Loan Details Breakdown ({loanDetails.length})
+        </h6>
+        <Table
+          columns={detailColumns}
+          dataSource={loanDetails.map((item, idx) => ({ ...item, key: item.tableId || item.loanId || idx }))}
+          pagination={false}
+          size="small"
+        />
+      </div>
+    );
+  };
+
   // Columns for Wallet Deducted Users Table
   const walletUserColumns = [
     {
-      title: "Loan ID",
-      dataIndex: "loanId",
-      key: "loanId",
-      render: (v, r) => <span className="fw-bold text-primary">#{v || r.loanRequestId || "N/A"}</span>,
-    },
-    {
-      title: "Table ID",
-      dataIndex: "tableId",
-      key: "tableId",
-      render: (v, r) => <span className="fw-bold">#{v || r.id || "N/A"}</span>,
-    },
-    {
-      title: "Lender Details",
-      dataIndex: "lenderId",
-      key: "lenderId",
-      render: (v, r) => (
+      title: "CMS File ID / Name",
+      key: "cmsFile",
+      render: (_, r) => (
         <div>
-          <strong className="d-block text-dark">{r.lenderName || `Lender #${v}`}</strong>
-          <span className="text-muted small">ID: {v}</span>
+          <strong className="d-block text-primary">#{r.cmsFileId || r.loanId || r.loanRequestId || "N/A"}</strong>
+          {r.fileName && (
+            <span className="text-muted small text-truncate d-block" style={{ maxWidth: 220 }} title={r.fileName}>
+              {r.fileName}
+            </span>
+          )}
+          {r.fileType && <Tag color="blue" className="mt-1">{r.fileType}</Tag>}
         </div>
       ),
     },
     {
       title: "Borrower Details",
-      dataIndex: "borrowerId",
-      key: "borrowerId",
-      render: (v, r) => (
-        <div>
-          <strong className="d-block text-dark">{r.borrowerName || `Borrower #${v}`}</strong>
-          <span className="text-muted small">ID: {v}</span>
-        </div>
-      ),
-    },
-    {
-      title: "Amount",
-      dataIndex: "disbursementAmount",
-      key: "disbursementAmount",
-      render: (v, r) => {
-        const amt = v || r.amount || r.fundedAmount;
-        return amt ? <strong className="text-success">₹ {fmtINR(amt)}</strong> : <span className="text-muted">—</span>;
+      key: "borrowerDetails",
+      render: (_, r) => {
+        const name = r.borrowerName || r.loanDetails?.[0]?.borrowerName;
+        const bId = r.borrowerId || r.loanDetails?.[0]?.borrowerId;
+        return (
+          <div>
+            <strong className="d-block text-dark">{name || (bId ? `Borrower #${bId}` : "Multiple / N/A")}</strong>
+            {bId && <span className="text-muted small">ID: {bId}</span>}
+          </div>
+        );
       },
     },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (v) => <Tag color={getStatusTagColor(v || "SUCCESS")}>{v || "COMPLETED"}</Tag>,
+      title: "Lender Details",
+      key: "lenderDetails",
+      render: (_, r) => {
+        const name = r.lenderName || r.loanDetails?.[0]?.lenderName;
+        const lId = r.lenderId || r.loanDetails?.[0]?.lenderId;
+        return (
+          <div>
+            <strong className="d-block text-dark">{name || (lId ? `Lender #${lId}` : `${r.loanDetails?.length || 0} Lender(s)`)}</strong>
+            {lId && <span className="text-muted small">ID: {lId}</span>}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Total Amount",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      render: (v, r) => {
+        const amt = v || r.creditedAmount || r.disbursementAmount || r.amount || r.fundedAmount;
+        return amt ? <strong className="text-success fs-6">₹ {fmtINR(amt)}</strong> : <span className="text-muted">—</span>;
+      },
+    },
+    {
+      title: "File Execution Status",
+      key: "executionStatus",
+      render: (_, r) => {
+        const st = r.fileExecutionStatus || r.status || "MOVEDTOS3";
+        const color = st === "MOVEDTOS3" || st === "SUCCESS" || st === "COMPLETED" ? "green" : "orange";
+        return <Tag color={color}>{st}</Tag>;
+      },
     },
     {
       title: "Generated File",
       key: "file",
       render: (_, r) => {
-        const fileUrl = r.fileUrl || r.disbursementFile || r.filePath || r.agreementUrl;
+        const fileUrl = r.viewFileUrl || r.fileUrl || r.disbursementFile || r.filePath || r.agreementUrl;
         return fileUrl ? (
-          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary py-0 px-2">
-            <i className="fa-solid fa-file-pdf me-1"></i> View File
+          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-success py-1 px-2">
+            <i className="fa-solid fa-file-excel me-1"></i> View / Download File
           </a>
         ) : (
           <span className="badge bg-secondary">Generated</span>
@@ -505,10 +643,9 @@ const AdminProximityLoanOverview = () => {
       },
     },
     {
-      title: "Date",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (v, r) => <span className="small text-muted">{fmtDate(v || r.createdOn || r.disbursementDate)}</span>,
+      title: "Created On / Date",
+      key: "date",
+      render: (_, r) => <span className="small text-muted">{fmtDate(r.createdOn || r.paymentDate || r.createdAt)}</span>,
     },
   ];
 
@@ -709,17 +846,21 @@ const AdminProximityLoanOverview = () => {
                 columns={walletUserColumns}
                 dataSource={filteredWalletUsers.map((item, idx) => ({
                   ...item,
-                  key: item.id || item.tableId || idx,
+                  key: item.cmsFileId || item.id || item.tableId || idx,
                 }))}
+                expandable={{
+                  expandedRowRender: (record) => walletFileLoanDetailsExpandedRender(record),
+                  rowExpandable: (record) => Array.isArray(record.loanDetails) && record.loanDetails.length > 0,
+                }}
                 loading={walletUsersLoading}
                 pagination={{
                   pageSize: 10,
                   showSizeChanger: true,
                   pageSizeOptions: ["10", "25", "50", "100"],
                   showTotal: (total, range) =>
-                    `Showing ${range[0]}-${range[1]} of ${total} wallet deducted records`,
+                    `Showing ${range[0]}-${range[1]} of ${total} wallet deducted file records`,
                 }}
-                scroll={{ x: 800 }}
+                scroll={{ x: 900 }}
                 locale={{
                   emptyText: (
                     <div className="text-center py-5 text-muted">
@@ -838,6 +979,7 @@ const AdminProximityLoanOverview = () => {
                       </span>
                       <div className="d-flex align-items-center gap-2">
                         <Tag color={getStatusTagColor(reply.loanStatus)}>{reply.loanStatus}</Tag>
+                        {reply.loanStatus === "ACTIVE" && reply.walletStatus !== "DEBITED" && (
                         <Button
                           type="primary"
                           danger
@@ -848,6 +990,10 @@ const AdminProximityLoanOverview = () => {
                         >
                           Deduct Wallet
                         </Button>
+                        )}
+                        {reply.walletStatus === "DEBITED" && (
+                          <Tag color="success">Wallet Debited</Tag>
+                        )}
                       </div>
                     </div>
                     <div className="row g-2 text-muted small">

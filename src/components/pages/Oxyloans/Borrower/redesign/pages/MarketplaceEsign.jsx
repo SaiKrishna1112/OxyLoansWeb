@@ -62,7 +62,7 @@ const MarketplaceEsign = () => {
     console.log({ loanRequestId });
 
     const loanData = response?.data?.find(
-      (item) => Number(item.loanRequestId) === Number(loanRequestId)
+      (item) => Number(item.id) === Number(assignmentId)
     );
 
     if (!loanData) {
