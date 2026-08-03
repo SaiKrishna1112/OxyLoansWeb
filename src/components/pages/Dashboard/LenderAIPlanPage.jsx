@@ -121,7 +121,7 @@ export default function LenderAIPlanPage() {
     setError(null);
     try {
       const res = await axios.post(
-        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${plan}`,
+        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${plan}&source=WEB`,
         {},
         { headers: { accessToken: token } }
       );
