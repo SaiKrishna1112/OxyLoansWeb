@@ -162,7 +162,7 @@ export default function LenderUpgradePortal() {
     setPlanError(null);
     try {
       const res = await axios.post(
-        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${planKey}`,
+        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${planKey}&source=WEB`,
         {},
         { headers: { accessToken: token } }
       );
@@ -174,7 +174,7 @@ export default function LenderUpgradePortal() {
         return;
       }
 
-      const cashfree = window.Cashfree({ mode: ENV === "local" ? "sandbox" : "production" });
+      const cashfree = window.Cashfree({ mode: ENV === "production" ? "production" : "sandbox" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setPlanError(e?.response?.data?.error || e.message || "Payment initiation failed");

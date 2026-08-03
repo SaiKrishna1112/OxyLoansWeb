@@ -121,7 +121,7 @@ export default function LenderAIPlanPage() {
     setError(null);
     try {
       const res = await axios.post(
-        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${plan}`,
+        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${plan}&source=WEB`,
         {},
         { headers: { accessToken: token } }
       );
@@ -134,7 +134,7 @@ export default function LenderAIPlanPage() {
         return;
       }
 
-      const cashfree = window.Cashfree({ mode: ENV === "local" ? "sandbox" : "production" });
+      const cashfree = window.Cashfree({ mode: ENV === "production" ? "production" : "sandbox" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");
