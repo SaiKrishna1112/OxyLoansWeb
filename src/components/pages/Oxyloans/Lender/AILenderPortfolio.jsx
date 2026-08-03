@@ -1611,8 +1611,12 @@ const LenderPortfolioDashboard = () => {
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
 
-  // Use actual backend tier; lender can preview other tiers via pills; ?tier= URL override for testing
-  const effectiveTier = (tierOverride || previewTier || data?.membershipTier || 'FREE').toUpperCase();
+  // Tier from backend — preview cannot exceed actual paid tier
+  const TIER_RANK = { FREE: 0, SMART: 1, PRO: 2 };
+  const actualTier = (data?.membershipTier || 'FREE').toUpperCase();
+  const resolvedPreview = previewTier && (TIER_RANK[previewTier.toUpperCase()] <= TIER_RANK[actualTier])
+    ? previewTier.toUpperCase() : null;
+  const effectiveTier = (tierOverride || resolvedPreview || actualTier);
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
