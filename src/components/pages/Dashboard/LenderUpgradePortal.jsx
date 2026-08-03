@@ -160,7 +160,7 @@ export default function LenderUpgradePortal() {
     setPlanError(null);
     try {
       const res = await axios.post(
-        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${planKey}`,
+        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${planKey}&source=WEB`,
         {},
         { headers: { accessToken: token } }
       );
