@@ -1992,8 +1992,11 @@ export const getNewSessionTime = async () => {
   );
   sessionStorage.removeItem("accessToken");
   sessionStorage.removeItem("tokenTime");
-  const accessTokenFromHeader = response.headers["accesstoken"];
-  sessionStorage.setItem("accessToken", accessTokenFromHeader);
+  const accessTokenFromHeader = response.headers["accesstoken"] || response.headers["accessToken"];
+  if (accessTokenFromHeader) {
+    sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
+  }
   sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
   setTimeout(() => {
     window.location.reload();
@@ -4132,4 +4135,322 @@ export const getBorrowerSecureInfo = () => {
     headers: { accessToken: getToken() },
   });
 };
+export const getRadiusBasedFee = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getRadiusBasedfee`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const getBorrowerCibilScore = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerCibilScore`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const saveBorrowerReferenceDetails = (payload) =>
+  axios.patch(`${API_BASE_URL}borrowerReferenceDetails`, payload, {
+    headers: { accessToken: getToken(), "Content-Type": "application/json" },
+  });
+
+export const lenderBorrowerEsign = async (loanId, aadharNumber, assignmentId, redirectUrl) => {
+  const token = getToken();
+  const userId = getUserId();
+
+  let targetUrl = redirectUrl;
+  if (!targetUrl) {
+    targetUrl = assignmentId
+      ? `${window.location.origin}/lender_esign/${loanId}/${assignmentId}`
+      : `${window.location.origin}/lender_esign/${loanId}`;
+  }
+
+  const queryParams = [];
+  if (aadharNumber) queryParams.push(`aadharNumber=${encodeURIComponent(aadharNumber)}`);
+  if (assignmentId) queryParams.push(`assignmentId=${encodeURIComponent(assignmentId)}`);
+  queryParams.push(`url=${encodeURIComponent(targetUrl)}`);
+
+  const queryString = `?${queryParams.join("&")}`;
+
+  const body = {
+    url: targetUrl,
+  };
+  if (assignmentId) body.assignmentId = assignmentId;
+  if (aadharNumber) body.aadharNumber = aadharNumber;
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/${loanId}/lenderBorrowerEsign${queryString}`,
+    "POST",
+    token,
+    body
+  );
+  return response;
+};
+
+// Cashfree eSign + eNACH Frontend APIs
+export const startCashfreeEsign = async (loanRequestId, aadharNumber, assignmentId, redirectUrl) => {
+  const token = getToken();
+  const userId = getUserId();
+
+  let targetUrl = redirectUrl;
+  if (!targetUrl) {
+    targetUrl = assignmentId
+      ? `${window.location.origin}/esign/${loanRequestId}?assignmentId=${assignmentId}`
+      : `${window.location.origin}/esign/${loanRequestId}`;
+  }
+
+  const params = {};
+  if (aadharNumber) params.aadharNumber = aadharNumber;
+  if (assignmentId) params.assignmentId = assignmentId;
+  params.url = targetUrl;
+
+  const body = {
+    url: targetUrl,
+  };
+  if (assignmentId) body.assignmentId = assignmentId;
+  if (aadharNumber) body.aadharNumber = aadharNumber;
+
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/lenderBorrowerEsign`,
+    body,
+    {
+      params,
+      headers: {
+        "Content-Type": "application/json",
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const completeCashfreeEsign = async (loanRequestId, assignmentId) => {
+  const token = getToken();
+  const userId = getUserId();
+  const params = {};
+  if (assignmentId) params.assignmentId = assignmentId;
+
+  const body = {};
+  if (assignmentId) body.assignmentId = assignmentId;
+
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/uploadAgreementForLRAndBr`,
+    body,
+    {
+      params,
+      headers: {
+        "Content-Type": "application/json",
+        accessToken: token,
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const listBorrowerLoanEnachMandates = async (loanRequestId, assignmentId = null) => {
+  const token = getToken();
+  const userId = getUserId();
+  const queryParam = assignmentId ? `?assignmentId=${assignmentId}` : "";
+  return axios.get(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/borrowerLoanEnachMandates${queryParam}`,
+    {
+      headers: {
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const startCashfreeEnachAuthorization = async (mandateId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/${mandateId}/start`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const getCashfreeEnachStatus = async (mandateId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.get(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/${mandateId}/status`,
+    {
+      headers: {
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const raiseCashfreeEnachCharge = async (emiCardId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/emi/${emiCardId}/raiseCharge`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const cancelCashfreeEnach = async (mandateId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/${mandateId}/cancel`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const getenachStatus = async (loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.get(
+    `${API_BASE_URL}${userId}/loan/${loanRequestId}/borrowerLoanEnachStatus`,
+    {
+      headers: {
+        accesstoken: token,
+        accessToken: token,
+      },
+    }
+  );
+};
+
+export const adminReverseFalsePaidEmi = async (emiCardId, reason = "false paid without debit", force = "false") => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/emi/${emiCardId}/reverseFalsePaid`,
+    null,
+    {
+      params: { reason, force },
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+export const adminReconcilePaidEmis = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  return axios.post(
+    `${API_BASE_URL}${userId}/loan/borrowerLoanCashfreeEnach/reconcilePaidEmis`,
+    null,
+    {
+      headers: {
+        accesstoken: token,
+      },
+    }
+  );
+};
+
+// Borrower Loan EMI Cards API
+export const getBorrowerLoanEmiCards = async (loanRequestId) => {
+  const token = getToken();
+  const userId = getUserId();
+
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${userId}/loan/${loanRequestId}/loanEmiCards`,
+    "GET",
+    token
+  );
+};
+
+export const getLoanEmiCards = getBorrowerLoanEmiCards;
+export const borrowerLoanEmiCards = getBorrowerLoanEmiCards;
+
+// Admin Proximity Loan Overview API
+export const getAdminProximityLoanOverview = async (params = {}) => {
+  const token = getToken();
+  const userId = getUserId();
+
+  const queryParams = new URLSearchParams();
+  if (params.page !== undefined) queryParams.append("page", params.page);
+  if (params.size !== undefined) queryParams.append("size", params.size);
+  if (params.radiusKm !== undefined) queryParams.append("radiusKm", params.radiusKm);
+  if (params.status) queryParams.append("status", params.status);
+  if (params.city) queryParams.append("city", params.city);
+  if (params.pincode) queryParams.append("pincode", params.pincode);
+
+  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+
+  try {
+    return await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `admin/proximityLoanOverview${queryString}`,
+      "GET",
+      token
+    );
+  } catch (e) {
+    try {
+      return await axios.get(`${MARKETPLACE_URL}/v1/admin/proximityLoanOverview${queryString}`, {
+        headers: marketplaceHeaders(),
+      });
+    } catch (err) {
+      return await axios.get(`${API_BASE_URL}admin/proximityLoanOverview${queryString}`, {
+        headers: { accesstoken: token, accessToken: token },
+      });
+    }
+  }
+};
+
+export const getProximityLoanOverview = getAdminProximityLoanOverview;
+export const adminProximityLoanOverview = getAdminProximityLoanOverview;
+
+export const deductBorrowerLoanDisbursementWallet = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanDisbursementFile",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerLoanGeneratedFiles = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanGeneratedFiles",
+    "GET",
+    token
+  );
+  return response;
+};
+
+
+
+
 

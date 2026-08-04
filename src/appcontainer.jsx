@@ -840,7 +840,17 @@ export const newRouter = createBrowserRouter([
     errorElement: <Error404></Error404>,
   },
   {
+    path: "/esign/:loanRequestId/",
+    element: <MarketplaceEsign />,
+    errorElement: <Error404></Error404>,
+  },
+  {
     path: "/enach/:loanRequestId",
+    element: <MarketplaceEnach />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/enach/:loanRequestId/",
     element: <MarketplaceEnach />,
     errorElement: <Error404></Error404>,
   },

@@ -570,7 +570,9 @@ const AppRouter = () => {
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
         <Route path="/my-oxyscore" element={<PrivateRoute element={<MyOxyScore />} />} />
         <Route path="/esign/:loanRequestId" element={<PrivateRoute element={<MarketplaceEsign />} />} />
+        <Route path="/esign/:loanRequestId/" element={<PrivateRoute element={<MarketplaceEsign />} />} />
         <Route path="/enach/:loanRequestId" element={<PrivateRoute element={<MarketplaceEnach />} />} />
+        <Route path="/enach/:loanRequestId/" element={<PrivateRoute element={<MarketplaceEnach />} />} />
         <Route path="/marketplace-admin-dashboard" element={<PrivateRoute element={<MarketplaceAdminDashboard />} />} />
         <Route path="/smart-match" element={<PrivateRoute element={<SmartLoanMatch />} />} />
         <Route path="/notifications" element={<PrivateRoute element={<NotificationsPage />} />} />
