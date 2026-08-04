@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { goBackOrAdminAI, YEAR_WISE_REFERRALS_PATH } from "./adminAINavigation";
 import {
   FaRobot,
   FaUsers,
@@ -1579,6 +1580,11 @@ const InterestBreakupPanel = ({ rows, lenderId, roi, breakupOpenMap, onToggleBre
 
 const AdminAIDealsDashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkLenderId = pickNumber(searchParams.get("lenderId"));
+  const deepLinkView = String(searchParams.get("view") || "").trim().toLowerCase();
+  const deepLinkReturnTo = searchParams.get("returnTo") || "";
   const [totalLenders, setTotalLenders] = useState(0);
   const [lenders, setLenders] = useState([]);
   const [page, setPage] = useState(1);
@@ -2074,6 +2080,24 @@ const AdminAIDealsDashboard = () => {
     setView("profile");
   };
 
+  useEffect(() => {
+    if (!deepLinkLenderId) return;
+    if (deepLinkView && deepLinkView !== "profile" && deepLinkView !== "deals") return;
+    const fromState = location.state?.lender || {};
+    const seed = {
+      lenderId: deepLinkLenderId,
+      userCode: fromState.userCode || `LR${deepLinkLenderId}`,
+      name: fromState.name || "",
+      email: fromState.email || "",
+      mobileNumber: fromState.mobileNumber || "",
+    };
+    if (deepLinkView === "deals") {
+      openDeals(seed);
+    } else {
+      openProfile(seed);
+    }
+  }, [deepLinkLenderId, deepLinkView, location.state]);
+
   const renderReferralPortfolioDetails = () => {
     if (!profile) {
       return null;
@@ -2315,6 +2339,17 @@ const AdminAIDealsDashboard = () => {
   };
 
   const backToList = () => {
+    if (deepLinkReturnTo && deepLinkReturnTo.startsWith("/") && !deepLinkReturnTo.startsWith("//")) {
+      navigate(deepLinkReturnTo);
+      return;
+    }
+    if (deepLinkLenderId) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("lenderId");
+      next.delete("view");
+      next.delete("returnTo");
+      setSearchParams(next, { replace: true });
+    }
     setView("list");
     setSelectedLender(null);
     setProfile(null);
@@ -2328,6 +2363,8 @@ const AdminAIDealsDashboard = () => {
     setInterestLoadingDealId(null);
     setDealsError("");
   };
+
+  const backToListLabel = deepLinkReturnTo ? "Back to Portfolio" : "Back to Lenders";
 
   const toggleInterestDetails = async (deal) => {
     const dealId = deal.dealId;
@@ -2573,7 +2610,7 @@ const AdminAIDealsDashboard = () => {
                     <strong>{fmtNum(totalLenders || total)}</strong>
                   </div>
                 </div>
-                <button className="admin-ai-close-btn" type="button" onClick={() => navigate("/adminAIDashboard")}>
+                <button className="admin-ai-close-btn" type="button" onClick={() => goBackOrAdminAI(navigate)}>
                   Back to Dashboard
                 </button>
               </div>
@@ -2736,7 +2773,7 @@ const AdminAIDealsDashboard = () => {
                 </div>
                 <div className="admin-ai-panel-actions">
                   <button className="admin-ai-close-btn" type="button" onClick={backToList}>
-                    <FaArrowLeft /> Back to Lenders
+                    <FaArrowLeft /> {backToListLabel}
                   </button>
                   <button className="admin-ai-search-btn" type="button" onClick={() => openDeals(selectedLender)}>
                     <FaHandshake /> View Deals
@@ -3082,7 +3119,7 @@ const AdminAIDealsDashboard = () => {
                     <FaArrowLeft /> Back to Profile
                   </button>
                   <button className="admin-ai-close-btn" type="button" onClick={backToList}>
-                    Back to Lenders
+                    {backToListLabel}
                   </button>
                 </div>
               </div>
@@ -3102,7 +3139,7 @@ const AdminAIDealsDashboard = () => {
                 </div>
                 <div className="admin-ai-panel-actions">
                   <button className="admin-ai-close-btn" type="button" onClick={backToList}>
-                    <FaArrowLeft /> Back to Lenders
+                    <FaArrowLeft /> {backToListLabel}
                   </button>
                   <button className="admin-ai-search-btn" type="button" onClick={() => openProfile(selectedLender)}>
                     View Profile

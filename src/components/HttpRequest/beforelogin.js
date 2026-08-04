@@ -29,14 +29,16 @@ const handleApiRequestBeforeLogin = async (
   method,
   BASE_URL,
   End_Url,
-  POSTDATA
+  POSTDATA,
+  timeoutMs = 90000
 ) => {
   try {
     const response = await axios({
       method,
       url: `${BASE_URL}${End_Url}`,
       data: POSTDATA,
-      timeout: 20000,
+      // Local login can take 20–40s while the backend is warm; 20s was aborting valid logins.
+      timeout: timeoutMs,
       headers: {
         "Content-Type": "application/json",
       },
@@ -47,10 +49,19 @@ const handleApiRequestBeforeLogin = async (
     }
   } catch (error) {
     if (!error?.response) {
+      const endpoint = `${BASE_URL}${End_Url}`;
+      const timedOut =
+        error?.code === "ECONNABORTED" || /timeout/i.test(String(error?.message || ""));
       const netErr = new Error(
-        `Cannot reach API at ${BASE_URL}. Start backend on port 8181 (test profile), then restart npm start.`
+        timedOut
+          ? `Login timed out talking to ${endpoint}. Backend may still be warming up — wait a few seconds and try again.`
+          : `Cannot reach API endpoint ${endpoint}. Confirm backend is running on port 8181, then try again.`
       );
-      netErr.code = "ERR_NETWORK";
+      netErr.code = timedOut ? "ECONNABORTED" : "ERR_NETWORK";
+      netErr.response = {
+        status: 0,
+        data: { errorMessage: netErr.message },
+      };
       return netErr;
     }
     return error;

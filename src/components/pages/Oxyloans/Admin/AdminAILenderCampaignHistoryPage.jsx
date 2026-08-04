@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { goBackOrAdminAI, YEAR_WISE_REFERRALS_PATH } from "./adminAINavigation";
 import AdminAILenderCampaignHistoryPanel from "./AdminAILenderCampaignHistoryPanel";
 
 const AdminAILenderCampaignHistoryPage = () => {
@@ -14,7 +15,7 @@ const AdminAILenderCampaignHistoryPage = () => {
       <div className="admin-ai-dashboard-wrap">
         {!batchId ? (
           <div className="admin-ai-page-head">
-            <button type="button" className="admin-ai-reset-btn" onClick={() => navigate("/adminAIDashboard")}>
+            <button type="button" className="admin-ai-reset-btn" onClick={() => goBackOrAdminAI(navigate)}>
               Back to Dashboard
             </button>
           </div>
@@ -22,7 +23,7 @@ const AdminAILenderCampaignHistoryPage = () => {
         <AdminAILenderCampaignHistoryPanel
           segment={segment}
           segmentLabel={segmentLabel}
-          onClose={() => navigate("/adminAIDashboard")}
+          onClose={() => goBackOrAdminAI(navigate)}
         />
       </div>
     </div>

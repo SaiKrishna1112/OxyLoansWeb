@@ -546,13 +546,14 @@ const AdminAILenderAnalyticsPanel = () => {
     setReactivatedProfileError("");
   };
 
-  const closeInactiveReactivationPanel = () => {
-    setShowInactiveReactivationPanel(false);
-    closeSelectedDayPanel();
+  const openInactiveReactivationPanel = () => {
+    navigate("/adminAIInactiveReactivatedReport");
   };
 
-  const openInactiveReactivationPanel = () => {
-    setShowInactiveReactivationPanel(true);
+  const closeInactiveReactivationPanel = () => {
+    // Kept for compatibility; report now opens on its own page.
+    setShowInactiveReactivationPanel(false);
+    closeSelectedDayPanel();
   };
 
   const inactiveWeekFromDate = formatDisplayDate(
@@ -736,7 +737,7 @@ const AdminAILenderAnalyticsPanel = () => {
           <MetricCard label="Inactive 1+ Year" value={inactive.inactive1Year} purpose="No participation in last 1 year, but participated before" accent="orange" onView={() => openLendersPage("inactive1Year", "Inactive 1+ Year")} onExport={() => downloadSegmentExcel("inactive1Year", "Inactive 1+ Year")} exporting={exportingSegment === "inactive1Year"} onCampaign={(channel) => openCampaign("inactive1Year", "Inactive 1+ Year", inactive.inactive1Year, channel)} />
         </div>
 
-        <div className={`admin-ai-inactive-reactivated-box admin-ai-inactive-reactivated-box--analytics${showInactiveReactivationPanel ? " is-open" : " is-collapsed"}`}>
+        <div className={`admin-ai-inactive-reactivated-box admin-ai-inactive-reactivated-box--analytics is-collapsed`}>
           <div className="admin-ai-inactive-reactivation-hero">
             <div className="admin-ai-inactive-reactivation-hero-main">
               <span className="admin-ai-inactive-reactivated-icon admin-ai-inactive-reactivated-icon--hero" aria-hidden="true">
@@ -745,264 +746,29 @@ const AdminAILenderAnalyticsPanel = () => {
               <div className="admin-ai-inactive-reactivation-hero-copy">
                 <h4>Inactive 1+ Year — Participated Again</h4>
                 <p>Date-wise reactivation after 366+ days of inactivity</p>
-                {!showInactiveReactivationPanel ? (
-                  <div className="admin-ai-inactive-reactivation-hero-summary">
-                    <span className="admin-ai-count-pill admin-ai-inactive-week-total-pill">
-                      {inactiveWeekLoading ? "..." : `${fmtNum(inactiveWeekSummary?.totalUniqueCount)} unique lenders`}
-                    </span>
-                    <span className="admin-ai-inactive-reactivation-hero-range">
-                      {inactiveWeekFromDate} – {inactiveWeekToDate}
-                    </span>
-                  </div>
-                ) : null}
+                <div className="admin-ai-inactive-reactivation-hero-summary">
+                  <span className="admin-ai-count-pill admin-ai-inactive-week-total-pill">
+                    {inactiveWeekLoading ? "..." : `${fmtNum(inactiveWeekSummary?.totalUniqueCount)} unique lenders`}
+                  </span>
+                  <span className="admin-ai-inactive-reactivation-hero-range">
+                    {inactiveWeekFromDate} – {inactiveWeekToDate}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="admin-ai-inactive-reactivation-hero-actions">
-              {showInactiveReactivationPanel ? (
-                <button
-                  type="button"
-                  className="admin-ai-inactive-hero-toggle admin-ai-inactive-hero-toggle--close"
-                  onClick={closeInactiveReactivationPanel}
-                  title="Close reactivation report"
-                >
-                  <FaTimes aria-hidden="true" />
-                  Close report
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="admin-ai-inactive-hero-toggle admin-ai-inactive-hero-toggle--view"
-                  onClick={openInactiveReactivationPanel}
-                  title="View daily reactivation report from 30 Jun 2026"
-                >
-                  <FaEye aria-hidden="true" />
-                  View daily report
-                </button>
-              )}
+              <button
+                type="button"
+                className="admin-ai-inactive-hero-toggle admin-ai-inactive-hero-toggle--view"
+                onClick={openInactiveReactivationPanel}
+                title="Open daily reactivation report page"
+              >
+                <FaEye aria-hidden="true" />
+                View daily report
+              </button>
             </div>
           </div>
 
-          {showInactiveReactivationPanel ? (
-          <div className="admin-ai-inactive-reactivation-body">
-          <div className="admin-ai-inactive-reactivated-toolbar-row">
-            <label className="admin-ai-inactive-reactivated-date">
-              <FaCalendarAlt aria-hidden="true" />
-              <span>Selected date</span>
-              <input
-                type="date"
-                value={reactivationDate}
-                max={defaultParticipationDate()}
-                onChange={(e) => selectReactivationDay(e.target.value)}
-              />
-            </label>
-            <span className="admin-ai-count-pill admin-ai-inactive-date-pill">
-              {inactiveReactivatedLoading ? "..." : fmtNum(inactiveReactivatedCount)} on {formatDisplayDate(reactivationDate)}
-            </span>
-          </div>
-          <p className="admin-ai-analytics-hint admin-ai-inactive-reactivated-hint">
-            Daily report from 30 Jun 2026 through today. Past days stay in the table — each new day adds a row and the cumulative unique count grows.
-          </p>
-
-          <div className="admin-ai-inactive-week-summary admin-ai-inactive-week-summary--open">
-            <div className="admin-ai-inactive-week-summary-head">
-              <div>
-                <h6 className="admin-ai-inactive-week-title">Daily reactivation count (from 30 Jun 2026)</h6>
-                <div className="admin-ai-inactive-week-range-row">
-                  <span><strong>From:</strong> {inactiveWeekFromDate}</span>
-                  <span className="admin-ai-inactive-week-range-sep" aria-hidden="true">·</span>
-                  <span><strong>To:</strong> {inactiveWeekToDate}</span>
-                </div>
-              </div>
-              <span className="admin-ai-count-pill admin-ai-inactive-week-total-pill">
-                {inactiveWeekLoading ? "..." : `${fmtNum(inactiveWeekSummary?.totalUniqueCount)} unique lenders`}
-              </span>
-            </div>
-            {inactiveWeekError ? (
-              <div className="alert alert-warning mb-0 mt-2">{inactiveWeekError}</div>
-            ) : inactiveWeekLoading ? (
-              <div className="admin-ai-empty-state">Loading reactivation summary...</div>
-            ) : (
-              <div className="admin-ai-advanced-table-wrap admin-ai-inactive-week-table-wrap">
-                <table className="admin-ai-advanced-table admin-ai-inactive-week-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Date</th>
-                      <th>Day</th>
-                      <th>Lenders reactivated</th>
-                      <th>Cumulative unique</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(inactiveWeekSummary?.dailyBreakdown || []).map((day, index) => (
-                      <tr
-                        key={day.date}
-                        className={reactivationDate === day.date && showInactiveReactivatedList ? "active" : ""}
-                      >
-                        <td>{index + 1}</td>
-                        <td><strong>{formatDate(day.date)}</strong></td>
-                        <td>{formatWeekday(day.date)}</td>
-                        <td><strong>{fmtNum(day.count)}</strong></td>
-                        <td><strong>{fmtNum(day.cumulativeUniqueCount)}</strong></td>
-                        <td>
-                          <button
-                            type="button"
-                            className={`admin-ai-inactive-day-btn${reactivationDate === day.date && showInactiveReactivatedList ? " is-active" : ""}`}
-                            onClick={() => selectReactivationDay(day.date)}
-                          >
-                            {reactivationDate === day.date && showInactiveReactivatedList ? "Selected" : "View lenders"}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={3}><strong>Period unique total</strong></td>
-                      <td><strong>{fmtNum(inactiveWeekSummary?.totalDailySum)}</strong></td>
-                      <td><strong>{fmtNum(inactiveWeekSummary?.totalUniqueCount)}</strong></td>
-                      <td><small>{fmtNum(inactiveWeekSummary?.days)} days</small></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {showInactiveReactivatedList ? (
-          <div className="admin-ai-inactive-selected-day-panel">
-            <div className="admin-ai-inactive-selected-day-head">
-              <div className="admin-ai-inactive-selected-day-title">
-                <h6>Lenders on {formatDisplayDate(reactivationDate)}</h6>
-                <p>{fmtNum(inactiveReactivatedCount)} reactivated lender{inactiveReactivatedCount === 1 ? "" : "s"} on this day</p>
-              </div>
-              <div className="admin-ai-inactive-selected-day-actions">
-                <span className="admin-ai-count-pill admin-ai-inactive-selected-count-pill">
-                  {inactiveReactivatedLoading ? "..." : `${fmtNum(inactiveReactivatedCount)} lenders`}
-                </span>
-                <button
-                  type="button"
-                  className="admin-ai-icon-close-btn"
-                  onClick={closeSelectedDayPanel}
-                  title="Close lender list"
-                  aria-label="Close lender list"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-            </div>
-          {inactiveReactivatedError ? <div className="alert alert-warning mb-2">{inactiveReactivatedError}</div> : null}
-          {inactiveReactivatedLoading ? (
-            <div className="admin-ai-empty-state">Loading reactivated lenders...</div>
-          ) : inactiveReactivatedCount === 0 ? (
-            <div className="admin-ai-empty-state">No inactive 1+ year lenders participated on this date.</div>
-          ) : (
-            <div className="admin-ai-advanced-table-wrap">
-              <table className="admin-ai-advanced-table admin-ai-inactive-reactivated-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Mobile</th>
-                  <th>Deal (Selected Day)</th>
-                  <th>Amount</th>
-                  <th>Previous Deal</th>
-                  <th>Previous Last Active</th>
-                  <th>Gap (Days)</th>
-                  <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {inactiveReactivated.map((lender) => (
-                    <tr
-                      key={`${lender.lenderId}-${lender.dealId}`}
-                      className={selectedReactivatedProfile?.lenderId === lender.lenderId ? "active" : ""}
-                    >
-                      <td>
-                        <button
-                          type="button"
-                          className="admin-ai-link-btn admin-ai-lender-name-btn"
-                          onClick={() => openReactivatedProfile(lender)}
-                        >
-                          <strong>{valueOrDash(lender.userCode || (lender.lenderId ? `LR${lender.lenderId}` : "-"))}</strong>
-                        </button>
-                        <div className="admin-ai-top-lender-name">{valueOrDash(lender.name)}</div>
-                      </td>
-                      <td>{valueOrDash(lender.mobileNumber)}</td>
-                      <td>
-                        <strong>{lender.dealId ? `#${lender.dealId}` : "-"}</strong>
-                        <div className="admin-ai-top-lender-name">{valueOrDash(lender.dealName)}</div>
-                      </td>
-                      <td><strong>{fmtMoney(lender.participationAmount)}</strong></td>
-                      <td>
-                        <strong>{lender.previousDealId ? `#${lender.previousDealId}` : "-"}</strong>
-                        <div className="admin-ai-top-lender-name">{valueOrDash(lender.previousDealName)}</div>
-                        {lender.previousDealAmount ? (
-                          <div className="admin-ai-top-lender-name"><small>{fmtMoney(lender.previousDealAmount)}</small></div>
-                        ) : null}
-                      </td>
-                      <td>{formatDate(lender.previousLastActivityOn)}</td>
-                      <td>{participationGapDays(lender.previousLastActivityOn, reactivationDate) || "-"}</td>
-                      <td>
-                        <button className="admin-ai-link-btn" type="button" onClick={() => openReactivatedProfile(lender)}>
-                          View Profile
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          </div>
-          ) : null}
-          {selectedReactivatedProfile ? (
-            <div className="admin-ai-profile-box admin-ai-inactive-reactivated-profile">
-              <div className="admin-ai-panel-head">
-                <div>
-                  <h5>
-                    {valueOrDash(selectedReactivatedProfile.userCode || `LR${selectedReactivatedProfile.lenderId}`)}{" "}
-                    {valueOrDash(selectedReactivatedProfile.name)}
-                  </h5>
-                  <p>Reactivated after 1+ year on {formatDate(reactivationDate)}.</p>
-                </div>
-                <button
-                  className="admin-ai-icon-close-btn admin-ai-icon-close-btn--profile"
-                  type="button"
-                  onClick={() => {
-                    setSelectedReactivatedProfile(null);
-                    setReactivatedProfileDeals(null);
-                    setReactivatedProfileError("");
-                  }}
-                  title="Close profile"
-                  aria-label="Close profile"
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              {reactivatedProfileLoading ? (
-                <div className="admin-ai-empty-state">Loading lender profile...</div>
-              ) : null}
-              {reactivatedProfileError ? <div className="alert alert-danger">{reactivatedProfileError}</div> : null}
-              {!reactivatedProfileLoading && !reactivatedProfileError ? (
-                <div className="admin-ai-user-row">
-                  <div><small>EMAIL</small><strong>{valueOrDash(selectedReactivatedProfile.email)}</strong></div>
-                  <div><small>MOBILE</small><strong>{valueOrDash(selectedReactivatedProfile.mobileNumber)}</strong></div>
-                  <div><small>LOCATION</small><strong>{valueOrDash(selectedReactivatedProfile.city)}, {valueOrDash(selectedReactivatedProfile.state)}</strong></div>
-                  <div><small>WALLET</small><strong>{fmtMoney(selectedReactivatedProfile.walletAmount)}</strong></div>
-                  <div><small>DEALS</small><strong>{fmtNum(selectedReactivatedProfile.dealsCount)}</strong></div>
-                  <div><small>TOTAL INVESTMENT</small><strong>{fmtMoney(selectedReactivatedProfile.totalInvestment ?? selectedReactivatedProfile.totalParticipationAmount)}</strong></div>
-                </div>
-              ) : null}
-              {reactivatedProfileDeals ? (
-                <p className="admin-ai-analytics-hint mb-0">
-                  Active deals: {fmtNum(reactivatedProfileDeals.activeDeals?.length || 0)} · Closed deals: {fmtNum(reactivatedProfileDeals.closedDeals?.length || 0)}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-          </div>
-          ) : null}
         </div>
       </div>
 
