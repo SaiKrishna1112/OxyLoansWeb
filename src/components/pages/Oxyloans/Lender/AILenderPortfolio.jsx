@@ -2460,18 +2460,23 @@ const LenderPortfolioDashboard = () => {
                                 })()}
                               </span>
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
-                                {deal.daysTotal > 0
-                                  ? `${deal.daysPassed || 0} / ${deal.daysTotal} days`
-                                  : (deal.startDate || deal.endDate)
-                                    ? `${fmtDate(deal.startDate)} – ${fmtDate(deal.endDate)}`
-                                    : "Dates N/A"}
+                                {deal.daysTotal > 0 && deal.daysPassed === 0 && deal.startDate && new Date(deal.startDate) > new Date()
+                                  ? `Starts in ${Math.ceil((new Date(deal.startDate) - new Date()) / 86400000)}d (${fmtDate(deal.startDate)})`
+                                  : deal.daysTotal > 0
+                                    ? `${deal.daysPassed || 0} / ${deal.daysTotal} days`
+                                    : (deal.startDate || deal.endDate)
+                                      ? `${fmtDate(deal.startDate)} – ${fmtDate(deal.endDate)}`
+                                      : "Dates N/A"}
                               </span>
                             </div>
                             <ProgressBar pct={deal.progressPct} color={deal.progressPct >= 75 ? "#52c41a" : deal.progressPct >= 40 ? "#1890ff" : "#faad14"} />
                             <div className="d-flex justify-content-between mt-2">
                               <span style={{ fontSize: 12, color: "#52c41a" }}>Earned: ₹{fmt(deal.interestEarned)}</span>
                               <span style={{ fontSize: 12, color: deal.daysToMaturity > 0 && deal.daysToMaturity <= 30 ? "#ff4d4f" : "#8c8c8c" }}>
-                                {deal.daysToMaturity > 0 ? `${deal.daysToMaturity}d to maturity` : deal.endDate ? `Matures ${fmtDate(deal.endDate)}` : "Active"}
+                                {deal.startDate && new Date(deal.startDate) > new Date()
+                                  ? `Matures ${fmtDate(deal.endDate)}`
+                                  : deal.daysToMaturity > 0 ? `${deal.daysToMaturity}d to maturity`
+                                  : deal.endDate ? `Matures ${fmtDate(deal.endDate)}` : "Active"}
                               </span>
                             </div>
                             {/* Next payout: PRO only */}
