@@ -35,6 +35,10 @@ import {
   getdataVoterId,
   getdataAadhar,
   getdataBankStatement,
+  analyzeBorrowerBankStatement,
+  getBorrowerAnalysis,
+  getBorrowerStatementById,
+  getBorrowerReportPdfUser,
   getdatatenth,
   getdataintermediate,
   getdatagraduation,
@@ -527,8 +531,172 @@ const Profile = () => {
         }
       });
       setKycDocs(updatedDocs);
+      await fetchBorrowerAnalysisData();
     } catch (e) {
       console.error("KYC files status load failed", e);
+    }
+  };
+
+  // Bank Statement Analysis states & handlers
+  const [bankAnalysisData, setBankAnalysisData] = useState(null);
+  const [latestStatementId, setLatestStatementId] = useState(null);
+  const [analyzingBankStatement, setAnalyzingBankStatement] = useState(false);
+  const [downloadingBankReport, setDownloadingBankReport] = useState(false);
+
+  const fetchBorrowerAnalysisData = async () => {
+    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    if (!userId) return;
+    try {
+      const res = await getBorrowerAnalysis(userId);
+      const resData = res?.data?.data || res?.data || {};
+      const statementsList = resData?.statements || resData?.results || [];
+
+      if (Array.isArray(statementsList) && statementsList.length > 0) {
+        // Sort statements by uploadedAt descending or id descending to grab the LATEST statement!
+        const sortedStatements = [...statementsList].sort((a, b) => {
+          if (a.uploadedAt && b.uploadedAt) {
+            return new Date(b.uploadedAt) - new Date(a.uploadedAt);
+          }
+          return (b.id || 0) - (a.id || 0);
+        });
+
+        const latestStatement = sortedStatements[0];
+        if (latestStatement?.id) {
+          setLatestStatementId(latestStatement.id);
+
+          // Pass the latest statement's ID to /v1/user/:statementId/borrower to get statement details!
+          try {
+            const detailRes = await getBorrowerStatementById(latestStatement.id);
+            const detailData = detailRes?.data?.data || detailRes?.data || {};
+            setBankAnalysisData({
+              ...latestStatement,
+              ...detailData,
+            });
+          } catch (detailErr) {
+            console.log("Statement detail by ID notice:", detailErr);
+            setBankAnalysisData(latestStatement);
+          }
+        } else {
+          setBankAnalysisData(latestStatement);
+        }
+      } else if (resData) {
+        setBankAnalysisData(resData);
+      }
+    } catch (e) {
+      console.log("No previous bank statement analysis found yet.");
+    }
+  };
+
+  const handleTriggerBankAnalysis = async (customPass = null) => {
+    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    if (!userId) return;
+
+    let activePassword = customPass !== null ? customPass : (secureInfo?.bankStatementPassword || "");
+
+    // If password is not provided yet, prompt borrower to check if their bank statement PDF requires a password
+    if (!activePassword && customPass === null) {
+      const { value: enteredPassword, isConfirmed } = await Swal.fire({
+        title: "Bank Statement PDF Password",
+        text: "Is your Bank Statement PDF password-protected? Enter the password below (or leave blank if unencrypted).",
+        input: "password",
+        inputPlaceholder: "Enter PDF Password (e.g. DOB or Name)",
+        showCancelButton: true,
+        confirmButtonText: "Analyze Statement",
+        cancelButtonText: "Skip & Continue",
+        confirmButtonColor: "var(--oxy-primary)",
+      });
+
+      if (!isConfirmed && enteredPassword === undefined) {
+        return; // User closed modal
+      }
+      activePassword = enteredPassword || "";
+      if (activePassword) {
+        setSecureInfo((prev) => ({ ...prev, bankStatementPassword: activePassword }));
+      }
+    }
+
+    setAnalyzingBankStatement(true);
+    try {
+      const res = await analyzeBorrowerBankStatement(userId, activePassword);
+      if (res?.data || res?.status === 200) {
+        Swal.fire({
+          title: "Bank Statement Analyzed",
+          text: res?.data?.message || "Bank statement analysis completed successfully!",
+          icon: "success",
+          confirmButtonColor: "var(--oxy-primary)"
+        });
+        await fetchBorrowerAnalysisData();
+      }
+    } catch (e) {
+      const errMsg = e?.response?.data?.errorMessage || e?.message || "";
+      const isPasswordError =
+        errMsg.toLowerCase().includes("password") ||
+        errMsg.toLowerCase().includes("protected") ||
+        errMsg.toLowerCase().includes("encrypted") ||
+        errMsg.toLowerCase().includes("decrypt") ||
+        e?.response?.status === 400 ||
+        e?.response?.status === 422;
+
+      if (isPasswordError) {
+        const { value: retryPass, isConfirmed } = await Swal.fire({
+          title: "Password Required",
+          text: errMsg || "The uploaded bank statement PDF is encrypted or requires a password to analyze. Please enter password:",
+          input: "password",
+          inputPlaceholder: "Enter Bank Statement Password",
+          showCancelButton: true,
+          confirmButtonText: "Submit & Analyze",
+          confirmButtonColor: "var(--oxy-primary)",
+          inputValidator: (val) => {
+            if (!val) return "Password is required to decrypt the bank statement PDF!";
+          }
+        });
+
+        if (isConfirmed && retryPass) {
+          setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
+          try {
+            await borrowerSecureInfo({ ...secureInfo, bankStatementPassword: retryPass });
+          } catch (secErr) {
+            console.log("Saving secure info notice:", secErr);
+          }
+          setAnalyzingBankStatement(false);
+          return handleTriggerBankAnalysis(retryPass);
+        }
+      } else {
+        Swal.fire({
+          title: "Analysis Error",
+          text: errMsg || "Failed to analyze bank statement.",
+          icon: "error",
+          confirmButtonColor: "var(--oxy-error)"
+        });
+      }
+    } finally {
+      setAnalyzingBankStatement(false);
+    }
+  };
+
+  const handleDownloadBankReportPdf = async () => {
+    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    if (!userId) return;
+    setDownloadingBankReport(true);
+    try {
+      const targetId = latestStatementId || userId;
+      const res = await getBorrowerReportPdfUser(targetId);
+      if (res?.data) {
+        const blob = new Blob([res.data], { type: "application/pdf" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Bank_Statement_Analysis_Report_${targetId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        Swal.fire("Downloaded", "Bank statement PDF report downloaded successfully.", "success");
+      }
+    } catch (e) {
+      Swal.fire("Download Failed", e?.response?.data?.errorMessage || "Could not download PDF report.", "error");
+    } finally {
+      setDownloadingBankReport(false);
     }
   };
 
@@ -904,10 +1072,108 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
       return;
     }
 
+    const file = e.target.files?.[0];
+
+    if (e.target.name === "BANKSTATEMENT" && file) {
+      let pass = secureInfo?.bankStatementPassword || "";
+
+      // If no password set yet, check if statement is password protected
+      if (!pass) {
+        const { value: enteredPassword, isConfirmed } = await Swal.fire({
+          title: "Bank Statement Password",
+          text: "Is your Bank Statement PDF password-protected? Enter password if required, or leave blank to continue.",
+          input: "password",
+          inputPlaceholder: "Enter PDF Password (e.g. DOB or Name)",
+          showCancelButton: true,
+          confirmButtonText: "Upload & Analyze",
+          cancelButtonText: "Skip Password",
+          confirmButtonColor: "var(--oxy-primary)",
+        });
+
+        if (!isConfirmed && enteredPassword === undefined) {
+          return;
+        }
+        pass = enteredPassword || "";
+        if (pass) {
+          setSecureInfo((prev) => ({ ...prev, bankStatementPassword: pass }));
+        }
+      }
+
+      setAnalyzingBankStatement(true);
+      try {
+        const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+        // POST /v1/user/borrower/:borrowerId/analyze with form-data (file + password)
+        const analyzeRes = await analyzeBorrowerBankStatement(userId, file, pass);
+        
+        // Also call legacy uploadkyc for document storage compatibility
+        try { await uploadkyc(e); } catch (uErr) { console.log("Legacy upload notice:", uErr); }
+
+        Swal.fire(
+          "Upload & Analysis Successful",
+          analyzeRes?.data?.message || "Bank statement uploaded and analyzed successfully!",
+          "success"
+        );
+        await fetchKycFiles();
+        await fetchBorrowerAnalysisData();
+      } catch (err) {
+        const errMsg = err?.response?.data?.errorMessage || err?.message || "";
+        const isPasswordError =
+          errMsg.toLowerCase().includes("password") ||
+          errMsg.toLowerCase().includes("protected") ||
+          errMsg.toLowerCase().includes("encrypted") ||
+          errMsg.toLowerCase().includes("decrypt") ||
+          err?.response?.status === 400 ||
+          err?.response?.status === 422;
+
+        if (isPasswordError) {
+          const { value: retryPass, isConfirmed } = await Swal.fire({
+            title: "Password Required",
+            text: errMsg || "The uploaded bank statement PDF is password-protected. Please enter password:",
+            input: "password",
+            inputPlaceholder: "Enter Bank Statement Password",
+            showCancelButton: true,
+            confirmButtonText: "Submit & Analyze",
+            confirmButtonColor: "var(--oxy-primary)",
+            inputValidator: (val) => {
+              if (!val) return "Password is required to decrypt statement PDF!";
+            }
+          });
+
+          if (isConfirmed && retryPass) {
+            setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
+            try {
+              const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+              await analyzeBorrowerBankStatement(userId, file, retryPass);
+              try { await uploadkyc(e); } catch (uErr) {}
+              Swal.fire("Success", "Bank statement analyzed successfully!", "success");
+              await fetchKycFiles();
+              await fetchBorrowerAnalysisData();
+            } catch (retryErr) {
+              Swal.fire("Analysis Error", retryErr?.response?.data?.errorMessage || "Failed to analyze bank statement.", "error");
+            }
+          }
+        } else {
+          try {
+            const res = await uploadkyc(e);
+            if (res?.request?.status === 200) {
+              Swal.fire("Upload Successful", "Document uploaded successfully.", "success");
+              await fetchKycFiles();
+            } else {
+              Swal.fire("Upload Failed", res?.data?.errorMessage || "File cannot be uploaded.", "error");
+            }
+          } catch {
+            Swal.fire("Upload Failed", errMsg || "An error occurred during upload.", "error");
+          }
+        }
+      } finally {
+        setAnalyzingBankStatement(false);
+      }
+      return;
+    }
+
     try {
       const res = await uploadkyc(e);
       if (res?.request?.status === 200) {
-        // Swal.fire("Uploaded Successfully", `${e.target.name} has been processed.`, "success");
         Swal.fire(
           "Upload Successful",
           `${documentNames[e.target.name] || "Document"} has been uploaded and processed successfully.`,
@@ -2260,6 +2526,55 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                         value={secureInfo[doc.passwordField]} 
                         onChange={handleSecureInput} 
                       />
+                    </div>
+                  )}
+
+                  {doc.name === "BANKSTATEMENT" && (
+                    <div className="mt-2 pt-2 border-top">
+                      <div className="d-flex flex-wrap gap-2 mb-2">
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 py-1 px-2"
+                          style={{ fontSize: "11px" }}
+                          onClick={handleDownloadBankReportPdf}
+                          disabled={downloadingBankReport}
+                        >
+                          {downloadingBankReport ? (
+                            <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                          ) : (
+                            <i className="fa-solid fa-file-pdf text-danger me-1"></i>
+                          )}
+                          PDF Report
+                        </button>
+                      </div>
+
+                      {bankAnalysisData && (
+                        <div className="p-2 bg-white rounded border text-xs" style={{ fontSize: "11px" }}>
+                          <div className="d-flex justify-content-between mb-1">
+                            <span className="text-muted">Analysis Status:</span>
+                            <span className="fw-bold text-success">{bankAnalysisData.status || bankAnalysisData.analysisStatus || "Completed"}</span>
+                          </div>
+                          {(bankAnalysisData.averageMonthlyBalance != null || bankAnalysisData.avgMonthlyBalance != null) && (
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">Avg Monthly Bal:</span>
+                              <span className="fw-bold">₹ {Number(bankAnalysisData.averageMonthlyBalance || bankAnalysisData.avgMonthlyBalance || 0).toLocaleString("en-IN")}</span>
+                            </div>
+                          )}
+                          {(bankAnalysisData.totalTurnover != null || bankAnalysisData.turnover != null) && (
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">Total Turnover:</span>
+                              <span className="fw-bold">₹ {Number(bankAnalysisData.totalTurnover || bankAnalysisData.turnover || 0).toLocaleString("en-IN")}</span>
+                            </div>
+                          )}
+                          {bankAnalysisData.riskRating && (
+                            <div className="d-flex justify-content-between">
+                              <span className="text-muted">Risk Rating:</span>
+                              <span className="fw-bold text-primary">{bankAnalysisData.riskRating}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

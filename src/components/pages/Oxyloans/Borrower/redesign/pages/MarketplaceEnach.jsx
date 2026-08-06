@@ -33,8 +33,8 @@ const MarketplaceEnach = () => {
 
   useEffect(() => {
     // Preserve authentication state when returning from external eNACH redirect
-    const token = localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
-    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+    const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId");
     if (token) {
       sessionStorage.setItem("accessToken", token);
       localStorage.setItem("accessToken", token);
@@ -52,7 +52,16 @@ const MarketplaceEnach = () => {
     };
   }, [loanRequestId, queryMandateId, queryAssignmentId]);
 
-  const cashfree = window.Cashfree({ mode: "sandbox" });
+  const getCashfree = () => {
+    if (typeof window !== "undefined" && window.Cashfree) {
+      try {
+        return window.Cashfree({ mode: "sandbox" });
+      } catch (err) {
+        console.error("Cashfree initialization error:", err);
+      }
+    }
+    return null;
+  };
 
   const fetchMandates = async () => {
     setLoading(true);
@@ -66,7 +75,7 @@ const MarketplaceEnach = () => {
         // If we have a queryMandateId or queryAssignmentId from URL/storage, find matching mandate in the list or use list[0]
         const storedMandateId = sessionStorage.getItem(`enach_mandateId_${loanRequestId}`);
         const effectiveMandateId = queryMandateId || storedMandateId;
-        const mandateFromQuery = effectiveMandateId ? list.find(m => String(m.id) === String(effectiveMandateId)) : null;
+        const mandateFromQuery = effectiveMandateId ? list.find(m => String(m.id) === String(effectiveMandateId) || String(m.mandateId) === String(effectiveMandateId) || String(m.subscriptionId) === String(effectiveMandateId)) : null;
         const mandateFromAssignment = queryAssignmentId ? list.find(m => String(m.assignmentId || m.loanAssignmentId || m.id) === String(queryAssignmentId)) : null;
         const currentMandate = mandateFromQuery || mandateFromAssignment || list[0];
         setSelectedMandate(currentMandate);
@@ -80,9 +89,11 @@ const MarketplaceEnach = () => {
         }
         
         // If already success/active, jump to success step
+        const mStatus = (currentMandate.mandateStatus || currentMandate.subscription_status || "").toUpperCase();
         if (
-          currentMandate.mandateStatus === "SUCCESS" || 
-          currentMandate.mandateStatus === "ACTIVE"
+          mStatus === "SUCCESS" || 
+          mStatus === "ACTIVE" ||
+          mStatus === "COMPLETED"
         ) {
           setStep("success");
         } else if (effectiveMandateId) {
@@ -97,13 +108,15 @@ const MarketplaceEnach = () => {
         setError("No eNACH mandate found. Please ensure your eSign is completed successfully.");
       }
     } catch (e) {
-      Swal.fire({
-          title: "Failed",
-          text: e?.response?.data?.errorMessage || e?.message || "Error fetching mandates.",
-          icon: "error",
-          confirmButtonColor: "var(--oxy-error)"
-        })
-      setError("Failed to retrieve eNACH mandates. Please check back later.");
+      if (e?.response?.status !== 401) {
+        Swal.fire({
+            title: "Failed",
+            text: e?.response?.data?.errorMessage || e?.message || "Error fetching mandates.",
+            icon: "error",
+            confirmButtonColor: "var(--oxy-error)"
+          });
+        setError("Failed to retrieve eNACH mandates. Please check back later.");
+      }
     } finally {
       setLoading(false);
     }
@@ -113,7 +126,7 @@ const MarketplaceEnach = () => {
     if (!selectedMandate) return;
     setLoading(true);
     setError("");
-    console.log('enach started..........')
+    console.log('enach started..........');
 
     try {
       const activeAssignmentId = queryAssignmentId || selectedMandate?.assignmentId || selectedMandate?.loanAssignmentId || selectedMandate?.id;
@@ -130,31 +143,39 @@ const MarketplaceEnach = () => {
         setAuthData(res.data);
         setStep("authorize");
         
-        // Open the authorizationUrl in a new tab
-        // window.open(res.data.authorizationUrl, "_blank");
-        console.log(res.data)
-         // Start polling for status
         startPolling(selectedMandate.id);
         
-        cashfree.subscriptionsCheckout({
-          subsSessionId: res.data.subscriptionSessionId,
-          redirectTarget: "_self"
-        }).then(function (result) {
-          if (result && result.error) {
-            console.error(result.error.message || result.error);
-          }
-        });
+        const cashfree = getCashfree();
+        if (cashfree) {
+          cashfree.subscriptionsCheckout({
+            subsSessionId: res.data.subscriptionSessionId,
+            redirectTarget: "_self"
+          }).then(function (result) {
+            if (result && result.error) {
+              console.error(result.error.message || result.error);
+            }
+          }).catch(err => {
+            console.error("Cashfree subscriptions checkout error:", err);
+            if (res.data.authorizationUrl) {
+              window.location.href = res.data.authorizationUrl;
+            }
+          });
+        } else if (res.data.authorizationUrl) {
+          window.location.href = res.data.authorizationUrl;
+        }
       } else {
         setError(res?.data?.errorMessage || "Failed to initiate Cashfree eNACH authorization.");
       }
     } catch (e) {
-      Swal.fire({
-          title: "Failed",
-          text: e?.response?.data?.errorMessage || e?.message || "Error starting eNACH authorization.",
-          icon: "error",
-          confirmButtonColor: "var(--oxy-error)"
-        });
-      setError(e?.response?.data?.errorMessage || e?.message || "Error starting eNACH authorization.");
+      if (e?.response?.status !== 401) {
+        Swal.fire({
+            title: "Failed",
+            text: e?.response?.data?.errorMessage || e?.message || "Error starting eNACH authorization.",
+            icon: "error",
+            confirmButtonColor: "var(--oxy-error)"
+          });
+        setError(e?.response?.data?.errorMessage || e?.message || "Error starting eNACH authorization.");
+      }
     } finally {
       setLoading(false);
     }
@@ -182,20 +203,22 @@ const MarketplaceEnach = () => {
         const data = res.data;
         setStatusResponse(data);
         
-        if (data.subscription_status === "ACTIVE") {
+        const status = (data.subscription_status || data.mandateStatus || data.status || "").toUpperCase();
+        if (status === "ACTIVE" || status === "SUCCESS" || status === "COMPLETED") {
           stopPolling();
           setStep("success");
-          Swal.fire({
-            title: "Mandate Active",
-            text: "Your eNACH mandate has been successfully registered and is ACTIVE!",
-            icon: "success",
-            confirmButtonColor: "var(--oxy-primary)"
-          });
+          if (!isPoll) {
+            Swal.fire({
+              title: "Mandate Active",
+              text: "Your eNACH mandate has been successfully registered and is ACTIVE!",
+              icon: "success",
+              confirmButtonColor: "var(--oxy-primary)"
+            });
+          }
         }
       }
     } catch (e) {
-      // If manually checking, show error, otherwise ignore polling network hiccups
-      if (!isPoll) {
+      if (!isPoll && e?.response?.status !== 401) {
         setError("Could not update eNACH status. Please check your bank authorization.");
         Swal.fire({
           title: "Failed",

@@ -13,19 +13,64 @@ import {
 
 const PROJECT_TYPES = [
   { id: "oxyloans", label: "oxyloans (admin@oxyloans.com)", displayName: "OxyLoans" },
-  { id: "bmv", label: "bmv (Hi@BMV.money)", displayName: "BMV" },
+  { id: "bmv", label: "bmv (anil@askoxy.ai)", displayName: "BMV" },
   { id: "oxybricks", label: "oxybricks (radha@oxybricks.world)", displayName: "Oxybricks" },
-  { id: "erice", label: "erice (Hi@BMV.money)", displayName: "Erice" },
+  { id: "erice", label: "erice (ceo@oxyglobaltech.net)", displayName: "Erice" },
+  { id: "rotary", label: "rotary (Rotaryaihub@rotary3150.com)", displayName: "Rotary AI Hub" },
 ];
 
-const OXYLOANS_BRAND_LOGO = "https://oxyloans.com/wp-content/themes/oxyloan/oxyloan/_ui/images/logo4.png";
-const OXYLOANS_BRAND_LOGO_FALLBACK = `${process.env.PUBLIC_URL || ""}/assets/img/oxyloans-campaign-logo.png`;
+// Clean OxyLoans logo without the mark above the final S (local preview asset only).
+const OXYLOANS_UI_LOGO = `${process.env.PUBLIC_URL || ""}/assets/img/oxyloans-campaign-logo.png`;
+// Inbox-safe public HTTPS logo (S3/private/signed URLs break for email recipients).
+const OXYLOANS_EMAIL_LOGO =
+  "https://oxyloans.com/wp-content/themes/oxyloan/oxyloan/_ui/images/logo4.png";
 
 const DEFAULT_LOGOS = {
-  oxyloans: OXYLOANS_BRAND_LOGO,
+  oxyloans: OXYLOANS_UI_LOGO,
   bmv: "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/PAN_askoxylogoblack.56dbb158b7a0beaf4fbe.png",
   oxybricks: "https://oxyloanstestv1.s3.ap-south-1.amazonaws.com/BULKINVITE_logo%20(1).png",
   erice: "https://oxyloansv1.s3.ap-south-1.amazonaws.com/BULKINVITE_Oxyrice%20logo.png",
+  rotary: OXYLOANS_UI_LOGO,
+};
+
+const defaultLogoForProject = (projectId) =>
+  DEFAULT_LOGOS[projectId] || DEFAULT_LOGOS.oxyloans;
+
+const isPublicHttpUrl = (value) => /^https?:\/\//i.test(String(value || "").trim());
+
+const isFragileEmailLogoUrl = (value) => {
+  const url = String(value || "").trim().toLowerCase();
+  if (!url) return true;
+  const s3 = url.includes(".amazonaws.com/") || url.includes("s3.");
+  if (!s3) return false;
+  return (
+    url.includes("x-amz-") ||
+    url.includes("signature=") ||
+    url.includes("awsaccesskeyid=") ||
+    url.includes("oxyloansv1.s3.") ||
+    url.includes("oxyloanstestv1.s3.")
+  );
+};
+
+/** Inbox-safe logo URL: public HTTPS only (no localhost / relative / known-private S3 defaults). */
+const resolveDeliverableLogoUrl = (candidate, projectId) => {
+  const url = String(candidate || "").trim();
+  const projectDefault = defaultLogoForProject(projectId);
+  // Custom upload (not the project default asset)
+  if (
+    isPublicHttpUrl(url) &&
+    !/localhost|127\.0\.0\.1/i.test(url) &&
+    url !== projectDefault
+  ) {
+    return url;
+  }
+  if (projectId === "oxyloans" || projectId === "rotary") {
+    return OXYLOANS_EMAIL_LOGO;
+  }
+  if (isPublicHttpUrl(projectDefault) && !isFragileEmailLogoUrl(projectDefault)) {
+    return projectDefault;
+  }
+  return OXYLOANS_EMAIL_LOGO;
 };
 
 const TEST_PREVIEW_NAME = "Vijay Dasari";
@@ -70,43 +115,712 @@ const customTemplateStorageKey = (segmentKey, audience, activeChannel) =>
 const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-IN"));
 const DEFAULT_CAMPAIGN_SET_COUNT = 3;
 
+const CAMPAIGN_EMAIL_FOOTER = `Please reply to this email if you need assistance or log in to https://oxyloans.com/ to review your account.
+
+For assistance, please contact:
+Manikanta: +91 81061 77269
+Divya: +91 93479 67774
+
+We look forward to welcoming you as an active member of the OXYLOANS community.
+
+Warm regards,
+
+Radhakrishna Thatavarti
+Founder & CEO
+OXYLOANS`;
+
+const CAMPAIGN_WHATSAPP_FOOTER = `Reply for assistance or visit https://oxyloans.com/
+
+Help: Manikanta +91 81061 77269 | Divya +91 93479 67774
+
+Warm regards,
+Radhakrishna Thatavarti
+Founder & CEO
+OXYLOANS`;
+
 const LENDER_TEMPLATE_IDEAS = [
-  { title: "Registration Preference", subject: "Please Confirm Your OXYLOANS Registration Preference", focus: "Confirm whether you registered as a Lender or Borrower so we can share the most relevant opportunities." },
-  { title: "Lending Opportunities", subject: "Explore Current Lending Opportunities on OXYLOANS", focus: "Explore the latest lending opportunities available on OXYLOANS and take the next step from your account." },
-  { title: "Lender Account Activation", subject: "Activate Your OXYLOANS Lender Account", focus: "Review your lender registration, complete any pending account steps, and activate your participation." },
-  { title: "Attractive Returns", subject: "Earn Attractive Returns with OXYLOANS", focus: "Review current lending opportunities offering attractive returns through the OXYLOANS platform." },
-  { title: "Lender Portfolio Review", subject: "Review Your OXYLOANS Lender Portfolio", focus: "Log in to review your lender account, portfolio position, and opportunities relevant to you." },
-  { title: "New Deals Available", subject: "New Lending Opportunities Are Now Available", focus: "New opportunities are available. Visit OXYLOANS to review the details and participate based on your preference." },
-  { title: "Lender Re-engagement", subject: "Welcome Back to OXYLOANS Lending", focus: "Reconnect with OXYLOANS, review current lending opportunities, and continue your investment journey." },
-  { title: "RBI-Approved Platform", subject: "Lend Through a 10-Year-Old RBI-Approved P2P Platform", focus: "Discover lending opportunities on our 10-year-old RBI-approved P2P-NBFC platform." },
-  { title: "Lender Assistance", subject: "Assistance with Your OXYLOANS Lender Account", focus: "Our team is ready to help you understand your lender account, portfolio, and available opportunities." },
-  { title: "Participation Reminder", subject: "Reminder: Review Today’s OXYLOANS Lending Opportunities", focus: "Please log in today to review suitable lending opportunities and confirm your participation." },
+  {
+    title: "Registration Preference",
+    subject: "Please Confirm Your OXYLOANS Registration Preference",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Thank you for registering with OXYLOANS. We noticed that your account is active, but we would like to confirm whether you registered as a *Lender* or as a *Borrower* so we can share the most relevant opportunities with you.
+
+If you registered as a Lender, you can start earning attractive monthly returns by participating in verified lending opportunities on our RBI-approved P2P-NBFC platform. If you registered as a Borrower, our team can guide you through suitable loan options based on your requirement.
+
+Please reply to this email with your preference, or log in to https://oxyloans.com/ and update your profile so we can assist you with the right next step.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We would like to confirm whether you registered on OXYLOANS as a *Lender* or *Borrower*. This helps us share the right opportunities with you.
+
+Lenders can earn attractive returns by participating in verified deals. Borrowers can explore suitable loan options with our team's support.
+
+Please reply with your preference or visit https://oxyloans.com/ to update your profile.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Lending Opportunities",
+    subject: "Explore Current Lending Opportunities on OXYLOANS",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+OXYLOANS currently has active lending opportunities available for registered lenders. As a 10-year-old RBI-approved P2P-NBFC platform, we connect verified borrowers with lenders who wish to participate in structured lending deals.
+
+Our active lenders are currently earning returns in the range of 1.7% to 2.0% per month (approximately 18% to 23% per annum), depending on the deal structure and tenure. You can review deal details, borrower profiles, and participation terms directly from your lender dashboard.
+
+We encourage you to log in today, review the opportunities that match your preference, and take your first step toward active participation on the platform.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Active lending opportunities are now available on OXYLOANS for registered lenders. Review deal details, returns, and participation terms from your dashboard.
+
+Our lenders are earning approximately 1.7% to 2.0% per month on suitable deals. Log in today to explore and participate.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Lender Account Activation",
+    subject: "Activate Your OXYLOANS Lender Account",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Your OXYLOANS lender registration is on record, but your account still appears to be pending full activation for deal participation. To begin lending on the platform, please complete any remaining profile, verification, or wallet-related steps shown in your account.
+
+Once your lender account is fully activated, you will be able to browse live deals, review borrower information, and confirm your participation based on your lending preference. Our operations team is available to guide you through each step if anything is unclear.
+
+Please log in to https://oxyloans.com/ today and complete the pending activation steps so you do not miss current lending opportunities.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Your OXYLOANS lender account appears pending full activation. Please log in and complete any remaining profile or verification steps so you can start participating in live deals.
+
+Our team can guide you through activation if needed.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Attractive Returns",
+    subject: "Earn Attractive Returns with OXYLOANS",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Many lenders on OXYLOANS are currently earning attractive returns by participating in verified lending opportunities through our platform. Depending on the deal, lenders have been earning approximately 1.7% to 2.0% per month, which translates to roughly 18% to 23% per annum.
+
+OXYLOANS is a 10-year-old RBI-approved P2P-NBFC lending platform built to help lenders review opportunities transparently and participate with clarity on deal terms. You can compare available deals, review tenure and return structure, and choose what suits your lending preference.
+
+We invite you to log in, review the current opportunities, and consider participating in a deal that aligns with your goals.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Lenders on OXYLOANS are earning approximately *1.7% to 2.0% per month* on suitable deals. Review live opportunities, compare terms, and participate from your dashboard.
+
+Log in today to explore current lending options on our RBI-approved platform.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Lender Portfolio Review",
+    subject: "Review Your OXYLOANS Lender Portfolio",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We request you to take a few minutes to review your OXYLOANS lender account and portfolio position. Even if you have not yet participated in a deal, your dashboard provides a clear view of your registration status, wallet readiness, and currently available lending opportunities.
+
+Reviewing your account now will help you understand what is pending, what is ready, and which new deals may be suitable for your lending preference. This is the best way to move from registration to active participation.
+
+Please log in to https://oxyloans.com/ and review your lender portfolio and available opportunities at your convenience.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Please review your OXYLOANS lender account and portfolio position. Your dashboard shows registration status, wallet readiness, and available deals.
+
+Log in today to understand pending steps and explore suitable lending opportunities.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "New Deals Available",
+    subject: "New Lending Opportunities Are Now Available",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We are pleased to inform you that new lending opportunities have been listed on OXYLOANS. These deals are open for review by registered lenders and include details on tenure, return structure, and participation requirements.
+
+If you have been waiting for the right opportunity to begin or continue lending on the platform, this is a good time to log in and review the newly available deals. Early review helps you understand the options before participation slots fill up.
+
+Please visit https://oxyloans.com/, review the new deals in your lender dashboard, and confirm your participation based on your preference.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+*New lending opportunities* are now listed on OXYLOANS. Review tenure, returns, and participation details from your lender dashboard.
+
+Log in today and choose a deal that matches your preference.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Lender Re-engagement",
+    subject: "Welcome Back to OXYLOANS Lending",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We noticed that you registered with OXYLOANS as a lender but have not yet participated in a lending opportunity. We would be delighted to welcome you back and help you restart your lending journey on the platform.
+
+OXYLOANS continues to list verified deals for lenders who want to earn structured returns through an RBI-approved P2P-NBFC platform. Whether you paused due to timing, documentation, or account setup, our team can help you complete the next step.
+
+Please log in to review current opportunities, or reply to this email if you would like personal assistance in reactivating your lender participation.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We noticed you registered as a lender on OXYLOANS but have not yet participated. We would love to help you restart your lending journey.
+
+Log in to review current deals or reply if you need assistance completing the next step.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "RBI-Approved Platform",
+    subject: "Lend Through a 10-Year-Old RBI-Approved P2P Platform",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+OXYLOANS is a 10-year-old RBI-approved P2P-NBFC lending platform built to connect verified borrowers with registered lenders in a structured and transparent manner. If you are exploring a reliable platform for lending participation, OXYLOANS offers deal-level visibility, platform oversight, and operational support.
+
+As a registered lender, you can review borrower-linked opportunities, understand the deal terms clearly, and participate based on your comfort and lending preference. Many lenders choose OXYLOANS because of our long operating history and regulated platform framework.
+
+We invite you to log in, review how lending works on OXYLOANS, and explore the opportunities currently open for participation.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+OXYLOANS is a *10-year-old RBI-approved P2P-NBFC platform* connecting verified borrowers with registered lenders. Review deal terms transparently and participate based on your preference.
+
+Log in today to explore how lending works on OXYLOANS.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Lender Assistance",
+    subject: "Assistance with Your OXYLOANS Lender Account",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+If you need help understanding your OXYLOANS lender account, wallet setup, verification process, or available lending opportunities, our team is ready to assist you.
+
+Many lenders prefer a quick walkthrough before their first participation. We can help you understand how to review deals, what documents or steps may be pending, and how to complete participation from your dashboard.
+
+Please reply to this email with your question, or contact Manikanta at +91 81061 77269 or Divya at +91 93479 67774. You may also log in to https://oxyloans.com/ and review your account while our team supports you.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Need help with your OXYLOANS lender account, verification, wallet setup, or deal participation? Our team is ready to guide you.
+
+Reply here or contact Manikanta +91 81061 77269 | Divya +91 93479 67774.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Participation Reminder",
+    subject: "Reminder: Review Today’s OXYLOANS Lending Opportunities",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+This is a gentle reminder to review today's lending opportunities on OXYLOANS. Registered lenders who actively review new deals are better placed to choose opportunities that match their preferred tenure, return expectation, and participation capacity.
+
+Your lender dashboard provides access to current deals, account readiness, and participation options. Taking action today can help you move from registration to active lending on the platform.
+
+Please log in to https://oxyloans.com/ at your earliest convenience and confirm whether you would like to participate in any of the opportunities currently available.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Gentle reminder to review *today's lending opportunities* on OXYLOANS. Log in to your lender dashboard, check available deals, and confirm participation if suitable.
+
+We are here to help if you need assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
 ];
 
 const BORROWER_TEMPLATE_IDEAS = [
-  { title: "Borrower Registration", subject: "Complete Your OXYLOANS Borrower Registration", focus: "Complete your borrower registration so we can help you explore suitable loan opportunities." },
-  { title: "Loan Opportunities", subject: "Explore Loan Opportunities Available on OXYLOANS", focus: "Review the borrowing opportunities currently available through OXYLOANS." },
-  { title: "Application Completion", subject: "Complete Your Pending OXYLOANS Loan Application", focus: "Complete the pending information in your application so our team can review your loan requirement." },
-  { title: "Profile Verification", subject: "Action Required: Verify Your OXYLOANS Borrower Profile", focus: "Review and verify your borrower profile to continue with your loan application." },
-  { title: "Eligibility Review", subject: "Review Your Loan Eligibility on OXYLOANS", focus: "Log in to review your account and the next steps for your borrowing requirement." },
-  { title: "Document Reminder", subject: "Reminder: Complete Your Borrower Documents", focus: "Upload or confirm the required borrower information to avoid delays in processing." },
-  { title: "Borrower Re-engagement", subject: "Continue Your Loan Journey with OXYLOANS", focus: "Reconnect with OXYLOANS and continue the pending steps for your borrowing requirement." },
-  { title: "Trusted Platform", subject: "Borrow Through OXYLOANS — An RBI-Approved P2P Platform", focus: "Explore borrowing through our 10-year-old RBI-approved P2P-NBFC platform." },
-  { title: "Borrower Assistance", subject: "Need Help with Your OXYLOANS Loan Application?", focus: "Our team is ready to assist with your borrower account and application process." },
-  { title: "Application Reminder", subject: "Reminder: Review Your OXYLOANS Borrower Account", focus: "Please log in today to review your application status and complete the next required step." },
+  {
+    title: "Borrower Registration",
+    subject: "Complete Your OXYLOANS Borrower Registration",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Thank you for your interest in OXYLOANS. Your borrower registration is on record, but a few steps may still be pending before our team can review your loan requirement in detail.
+
+Please log in to https://oxyloans.com/ and complete your borrower profile, contact details, and any required information shown in your dashboard. Once completed, our team can guide you on suitable borrowing options available through the platform.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Please complete your OXYLOANS borrower registration and pending profile details so our team can review your loan requirement.
+
+Log in at https://oxyloans.com/ or reply if you need help.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Loan Opportunities",
+    subject: "Explore Loan Opportunities Available on OXYLOANS",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+OXYLOANS helps eligible borrowers explore structured loan opportunities through an RBI-approved P2P-NBFC platform. Based on your registration, you may now review borrowing options and understand the next steps for your requirement.
+
+Please log in to your borrower dashboard, review the information requested for your application, and connect with our team if you need help choosing the right path for your loan journey.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Explore loan opportunities on OXYLOANS and review the next steps for your borrowing requirement from your dashboard.
+
+Visit https://oxyloans.com/ or reply for assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Application Completion",
+    subject: "Complete Your Pending OXYLOANS Loan Application",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Your OXYLOANS loan application appears to be incomplete. To avoid delays in review, please log in and submit the pending details requested in your borrower account.
+
+Our team can only proceed once the required information and documents are complete. If you are unsure what is pending, reply to this email and we will guide you step by step.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Your OXYLOANS loan application is still pending completion. Please log in and submit the remaining details so our team can review your requirement.
+
+Reply if you need help identifying pending steps.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Profile Verification",
+    subject: "Action Required: Verify Your OXYLOANS Borrower Profile",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Action is required on your OXYLOANS borrower profile. Please review and verify the information in your account so we can continue processing your loan requirement without delay.
+
+Verified borrower details help us assess eligibility accurately and share the most suitable next steps. Log in today and complete any profile or document verification shown as pending.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Please verify your OXYLOANS borrower profile and complete any pending verification steps shown in your account.
+
+Log in today or reply for assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Eligibility Review",
+    subject: "Review Your Loan Eligibility on OXYLOANS",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We invite you to review your loan eligibility and application status on OXYLOANS. Your borrower dashboard shows what has been submitted, what is pending, and what our team needs to proceed.
+
+If you would like help understanding your eligibility or the documents required, our support team is available to assist you.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Review your loan eligibility and application status on OXYLOANS from your borrower dashboard.
+
+Reply if you need help understanding the next required step.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Document Reminder",
+    subject: "Reminder: Complete Your Borrower Documents",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+This is a reminder to upload or confirm the borrower documents and details still pending in your OXYLOANS account. Incomplete documentation is the most common reason for delay in loan application review.
+
+Please log in today, review the pending checklist, and submit the required information so our team can move your application forward.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Reminder: please complete pending borrower documents in your OXYLOANS account so your application can be reviewed without delay.
+
+Log in today or reply for help.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Borrower Re-engagement",
+    subject: "Continue Your Loan Journey with OXYLOANS",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We noticed that your borrowing journey on OXYLOANS was started but not yet completed. If you still require a loan or wish to continue your application, we would be happy to help you take the next step.
+
+Please log in to review your application status, complete pending actions, and reconnect with our team for guidance on suitable borrowing options.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Continue your loan journey on OXYLOANS by reviewing your application status and completing pending steps.
+
+Log in or reply if you would like our team's assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Trusted Platform",
+    subject: "Borrow Through OXYLOANS — An RBI-Approved P2P Platform",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+OXYLOANS is a 10-year-old RBI-approved P2P-NBFC platform that helps eligible borrowers explore loan opportunities in a structured and transparent environment.
+
+If you are evaluating a reliable platform for your borrowing requirement, we invite you to log in, review the application process, and connect with our team for any clarifications you may need.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Borrow through OXYLOANS, a *10-year-old RBI-approved P2P-NBFC platform*. Review the application process and next steps from your dashboard.
+
+Visit https://oxyloans.com/ or reply for assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Borrower Assistance",
+    subject: "Need Help with Your OXYLOANS Loan Application?",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+If you need help with your OXYLOANS borrower account, application status, eligibility, or document submission, our team is ready to support you.
+
+Please reply to this email with your question, or contact Manikanta at +91 81061 77269 or Divya at +91 93479 67774. You may also log in to https://oxyloans.com/ while our team guides you through the next step.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Need help with your OXYLOANS loan application? Reply here or contact Manikanta +91 81061 77269 | Divya +91 93479 67774.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Application Reminder",
+    subject: "Reminder: Review Your OXYLOANS Borrower Account",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+This is a reminder to review your OXYLOANS borrower account today. Your dashboard shows your current application status, pending actions, and the information required to move forward.
+
+Taking action now can help avoid delays and allow our team to review your loan requirement promptly.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Reminder to review your OXYLOANS borrower account today and complete any pending application steps.
+
+Log in or reply if you need assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
 ];
 
 const REFERRAL_TEMPLATE_IDEAS = [
-  { title: "Referral Account Update", subject: "Important Update on Your OXYLOANS Referral Account", focus: "Review your OXYLOANS referral account and the people you have introduced to our platform." },
-  { title: "Referral Activity", subject: "Review Your OXYLOANS Referral Activity", focus: "Log in to review your referral activity, registrations, and participation status." },
-  { title: "Referral Earnings", subject: "Review Your OXYLOANS Referral Earnings", focus: "Review your eligible referral earnings, paid amount, and any pending amount." },
-  { title: "Invite New Members", subject: "Invite More Members to the OXYLOANS Community", focus: "Introduce eligible lenders and borrowers to OXYLOANS and grow your referral network." },
-  { title: "Registered Referrals", subject: "Your Registered OXYLOANS Referrals — Next Steps", focus: "Encourage your registered referrals to complete their profile and participate on the platform." },
-  { title: "Participated Referrals", subject: "Update on Your Participated OXYLOANS Referrals", focus: "Review which referred members have participated and track their progress." },
-  { title: "Referral Re-engagement", subject: "Reconnect with Your OXYLOANS Referral Network", focus: "Reconnect with your referral network and help interested members take their next step." },
-  { title: "Referral Recognition", subject: "Thank You for Growing the OXYLOANS Community", focus: "Thank you for introducing new members and supporting the growth of the OXYLOANS community." },
-  { title: "Referral Assistance", subject: "Need Help with Your OXYLOANS Referrals?", focus: "Our team is ready to help you understand referral registrations, participation, and earnings." },
-  { title: "Referral Reminder", subject: "Reminder: Review Your OXYLOANS Referral Dashboard", focus: "Please log in today to review referral progress and follow up with interested members." },
+  {
+    title: "Referral Account Update",
+    subject: "Important Update on Your OXYLOANS Referral Account",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We request you to review your OXYLOANS referral account and the members you have introduced to our platform. Your dashboard provides visibility into registrations, participation status, and referral-linked activity.
+
+Please log in to https://oxyloans.com/ and review your referral summary so you can follow up with interested members and track progress accurately.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Please review your OXYLOANS referral account and the members you have introduced. Your dashboard shows registrations and participation status.
+
+Log in today or reply for assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Referral Activity",
+    subject: "Review Your OXYLOANS Referral Activity",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Your referral activity on OXYLOANS includes registrations, follow-up status, and participation progress for the members you have introduced. Reviewing this information regularly helps you support your network more effectively.
+
+Please log in today and review your referral dashboard for the latest activity update.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Review your latest OXYLOANS referral activity, including registrations and participation progress, from your referral dashboard.
+
+Visit https://oxyloans.com/ today.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Referral Earnings",
+    subject: "Review Your OXYLOANS Referral Earnings",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+You can review your eligible referral earnings, paid amount, and any pending referral-linked amount directly from your OXYLOANS referral dashboard.
+
+We encourage you to log in, verify your referral earnings summary, and contact our team if you need clarification on any referral payout or pending status.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Review your OXYLOANS referral earnings, paid amount, and pending referral status from your dashboard.
+
+Reply if you need clarification on any payout detail.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Invite New Members",
+    subject: "Invite More Members to the OXYLOANS Community",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+OXYLOANS values referrers who introduce eligible lenders and borrowers to our growing community. If you know members who may benefit from the platform, you can continue expanding your referral network and track their progress from your dashboard.
+
+Please log in to review your referral tools and invite suitable lenders or borrowers who may be interested in OXYLOANS.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Invite eligible lenders and borrowers to OXYLOANS and track their registration and participation from your referral dashboard.
+
+Log in today to continue growing your referral network.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Registered Referrals",
+    subject: "Your Registered OXYLOANS Referrals — Next Steps",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Some of your referred members have registered on OXYLOANS but may still need guidance to complete their profile and participate on the platform. Your follow-up can help them take the next step.
+
+Please log in, review your registered referrals, and encourage them to complete pending actions so they can become active members of the OXYLOANS community.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Some of your referred members have registered but may still need follow-up. Review your registered referrals and help them complete pending profile and participation steps.
+
+Log in to your referral dashboard today.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Participated Referrals",
+    subject: "Update on Your Participated OXYLOANS Referrals",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+We invite you to review which of your referred members have participated on OXYLOANS and track their progress from your referral dashboard.
+
+This update helps you understand referral outcomes, follow up where needed, and stay informed on the members you have introduced to the platform.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Review which of your referred members have participated on OXYLOANS and track their progress from your referral dashboard.
+
+Log in today for the latest update.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Referral Re-engagement",
+    subject: "Reconnect with Your OXYLOANS Referral Network",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+If you have referred members who registered but have not yet participated, this is a good time to reconnect with your referral network and help them take the next step on OXYLOANS.
+
+Please log in to review your referrals and follow up with members who may need assistance completing their profile or participation.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Reconnect with your OXYLOANS referral network and follow up with registered members who have not yet participated.
+
+Log in to review your referrals today.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Referral Recognition",
+    subject: "Thank You for Growing the OXYLOANS Community",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Thank you for introducing new members to OXYLOANS and supporting the growth of our community. Referrers like you play an important role in helping eligible lenders and borrowers discover the platform.
+
+We appreciate your continued support and invite you to log in to review your referral progress and identify further opportunities to grow your network.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Thank you for helping grow the OXYLOANS community through your referrals. Review your referral progress and continue supporting eligible members on the platform.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Referral Assistance",
+    subject: "Need Help with Your OXYLOANS Referrals?",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+If you need help understanding referral registrations, participation tracking, or referral-linked earnings on OXYLOANS, our team is ready to assist you.
+
+Please reply to this email with your question, or contact Manikanta at +91 81061 77269 or Divya at +91 93479 67774 for referral support.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Need help with your OXYLOANS referrals, earnings, or referral tracking? Reply here or contact Manikanta +91 81061 77269 | Divya +91 93479 67774.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
+  {
+    title: "Referral Reminder",
+    subject: "Reminder: Review Your OXYLOANS Referral Dashboard",
+    emailBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+This is a reminder to review your OXYLOANS referral dashboard today. Your latest registrations, participation status, and referral-linked activity are available in your account.
+
+Please log in at your earliest convenience and follow up with members who may need your guidance to complete the next step.
+
+${CAMPAIGN_EMAIL_FOOTER}`,
+    whatsappBody: `Dear $name,
+
+Greetings from Radhakrishna Thatavarti!
+
+Reminder to review your OXYLOANS referral dashboard today and follow up with members who need guidance to complete the next step.
+
+Log in or reply for assistance.
+
+${CAMPAIGN_WHATSAPP_FOOTER}`,
+  },
 ];
 
 const buildCampaignTemplates = ({ segmentLabel, audienceLabel, channel }) => {
@@ -118,29 +832,14 @@ const buildCampaignTemplates = ({ segmentLabel, audienceLabel, channel }) => {
     : isBorrowerAudience
       ? BORROWER_TEMPLATE_IDEAS
       : LENDER_TEMPLATE_IDEAS;
-  const opportunityText = isReferralAudience
-    ? "OXYLOANS values the referrers who introduce eligible lenders and borrowers to our growing community."
-    : isBorrowerAudience
-      ? "OXYLOANS helps eligible borrowers explore and apply for suitable loan opportunities through its platform."
-      : "Our lenders are currently earning attractive returns of 1.7% to 2.0% per month (approximately 18% to 23% per annum) by participating in lending opportunities through OXYLOANS.";
-  const actionText = isReferralAudience
-    ? "Please log in to review your referral dashboard, registered referrals, participation, and eligible earnings."
-    : isBorrowerAudience
-      ? "Please log in as a Borrower to review your application and suitable loan opportunities."
-      : "Please confirm your registration preference:\nLender - To earn returns by lending money.\nBorrower - To apply for a loan.";
-  const signature = "Warm regards,\n\nRadhakrishna Thatavarti\nFounder & CEO\nOXYLOANS";
 
-  return templateIdeas.map((idea, index) => {
-    const emailMessage = `Dear $name,\n\nGreetings from Radhakrishna Thatavarti!\n\n${idea.focus}\n\nOXYLOANS is a 10-year-old company and an RBI-approved P2P-NBFC Lending Platform. ${opportunityText}\n\n${actionText}\n\nPlease reply to this email if you need assistance or log in to https://oxyloans.com/ to review your account.\n\nFor assistance, please contact:\nManikanta: +91 81061 77269\nDivya: +91 93479 67774\n\nWe look forward to welcoming you as an active member of the OXYLOANS community.\n\n${signature}`;
-    const whatsappMessage = `Dear $name,\n\nGreetings from Radhakrishna Thatavarti!\n\n${idea.focus}\n\n${opportunityText}\n\n${actionText}\n\nReply for assistance or visit https://oxyloans.com/\n\nHelp: Manikanta +91 81061 77269 | Divya +91 93479 67774\n\n${signature}`;
-    return {
+  return templateIdeas.map((idea, index) => ({
       id: `template-${index + 1}`,
       number: index + 1,
       title: idea.title,
       subject: idea.subject,
-      message: channel === "whatsapp" ? whatsappMessage : emailMessage,
-    };
-  });
+    message: channel === "whatsapp" ? idea.whatsappBody : idea.emailBody,
+  }));
 };
 
 const escapeXml = (value) =>
@@ -263,9 +962,21 @@ const AdminAILenderCampaignModal = ({
   initialChannel = "email",
   campaignSetCount = 3,
   audienceType = "lenders",
+  targetLender = null,
+  customEmails = null,
 }) => {
   const navigate = useNavigate();
-  const audienceLabel = audienceType === "borrowers" ? "borrowers" : "lenders";
+  const excelEmailList = Array.isArray(customEmails)
+    ? [...new Set(customEmails.map((v) => String(v || "").trim().toLowerCase()).filter((v) => v.includes("@")))]
+    : [];
+  const isExcelCampaign = excelEmailList.length > 0 || segment === "excelUpload";
+  // Kept for compatibility with hot-reload / older modal paths (Excel no longer uses Send Test).
+  const excelTestEmail = excelEmailList[0] || "";
+  const audienceLabel = audienceType === "borrowers" ? "borrowers" : isExcelCampaign ? "Excel emails" : "lenders";
+  const isIndividualLender = Boolean(targetLender?.lenderId) && !isExcelCampaign;
+  const individualLabel = isIndividualLender
+    ? `LR${targetLender.lenderId}${targetLender.name ? ` — ${targetLender.name}` : ""}`
+    : "";
   const [channel, setChannel] = useState(initialChannel);
   const [projectType, setProjectType] = useState("oxyloans");
   const [messageMode, setMessageMode] = useState("templates");
@@ -282,6 +993,10 @@ const AdminAILenderCampaignModal = ({
   const [whatsappSubject, setWhatsappSubject] = useState("Update from OxyLoans");
   const [testEmail, setTestEmail] = useState("");
   const [testMobile, setTestMobile] = useState("");
+  const [mailDisplayName, setMailDisplayName] = useState("OxyLoans");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoFileName, setLogoFileName] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [imageFileName, setImageFileName] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -300,9 +1015,13 @@ const AdminAILenderCampaignModal = ({
   const [exportingFailed, setExportingFailed] = useState(false);
   const [liveRecipientCount, setLiveRecipientCount] = useState(0);
   const isWhatsapp = channel === "whatsapp";
-  const totalRecipients = Math.max(Number(recipientCount) || 0, Number(liveRecipientCount) || 0);
+  const totalRecipients = isIndividualLender
+    ? 1
+    : isExcelCampaign
+      ? excelEmailList.length
+      : Math.max(Number(recipientCount) || 0, Number(liveRecipientCount) || 0);
   const splitSetCount = Math.max(1, Number(campaignSetCount) || DEFAULT_CAMPAIGN_SET_COUNT);
-  const shouldSplitCampaign = channel === "email" && totalRecipients > 0;
+  const shouldSplitCampaign = !isIndividualLender && channel === "email" && totalRecipients > 0;
   const setSize = shouldSplitCampaign ? Math.ceil(totalRecipients / splitSetCount) : 0;
   const campaignSets = useMemo(() => {
     if (!shouldSplitCampaign) {
@@ -344,10 +1063,11 @@ const AdminAILenderCampaignModal = ({
     return stripSubjectFromPreview(withoutGreeting, whatsappSubject || mailSubject);
   }, [message, whatsappSubject, mailSubject]);
   const previewGreeting = `Dear ${TEST_PREVIEW_NAME},`;
-  const brandLogo = DEFAULT_LOGOS[projectType] || DEFAULT_LOGOS.oxyloans;
-  const whatsappPreviewImage = imageUrl || brandLogo;
-  const mailDisplayName = PROJECT_TYPES.find((option) => option.id === projectType)?.displayName || "OxyLoans";
-  const campaignFingerprint = `${channel}|${projectType}|${mailSubject}|${whatsappSubject}|${message}|${imageUrl}`;
+  const brandLogo = logoUrl || defaultLogoForProject(projectType);
+  const previewLogo = brandLogo;
+  const deliverableLogo = resolveDeliverableLogoUrl(brandLogo, projectType);
+  const whatsappPreviewImage = imageUrl || previewLogo;
+  const campaignFingerprint = `${channel}|${projectType}|${mailSubject}|${whatsappSubject}|${message}|${imageUrl}|${logoUrl}|${mailDisplayName}`;
   const schedulePreview = useMemo(
     () => formatSchedulePreview(scheduleDate, scheduleTime),
     [scheduleDate, scheduleTime]
@@ -462,8 +1182,11 @@ const AdminAILenderCampaignModal = ({
 
   useEffect(() => {
     if (!open) return;
-    setChannel(initialChannel);
+    setChannel(isExcelCampaign ? "email" : initialChannel);
     setProjectType("oxyloans");
+    setMailDisplayName(PROJECT_TYPES.find((option) => option.id === "oxyloans")?.displayName || "OxyLoans");
+    setLogoUrl("");
+    setLogoFileName("");
     setMessageMode("templates");
     setSelectedTemplateId("");
     setContentSource("manual");
@@ -475,14 +1198,22 @@ const AdminAILenderCampaignModal = ({
     setMessage("");
     setMailSubject("Update from OxyLoans");
     setWhatsappSubject("Update from OxyLoans");
-    setTestEmail("");
-    setTestMobile("");
+    if (isExcelCampaign) {
+      setTestEmail("");
+      setTestMobile("");
+    } else if (isIndividualLender) {
+      setTestEmail(String(targetLender?.email || "").trim());
+      setTestMobile(String(targetLender?.mobileNumber || "").replace(/\D/g, ""));
+    } else {
+      setTestEmail("");
+      setTestMobile("");
+    }
     setImageUrl("");
     setImageFileName("");
     setStatus("");
     setError("");
     setShowPreview(false);
-    setTestVerified(false);
+    setTestVerified(Boolean(isIndividualLender || isExcelCampaign));
     setScheduledTestQueued(false);
     setUseSchedule(false);
     setScheduleDate(defaultScheduleDate());
@@ -503,7 +1234,7 @@ const AdminAILenderCampaignModal = ({
     } catch {
       // ignore invalid session storage
     }
-  }, [open, initialChannel, segment, segmentLabel]);
+  }, [open, initialChannel, segment, segmentLabel, isIndividualLender, isExcelCampaign, targetLender?.lenderId, targetLender?.email, targetLender?.mobileNumber, targetLender?.name]);
 
   useEffect(() => {
     if (!open) return;
@@ -520,6 +1251,14 @@ const AdminAILenderCampaignModal = ({
   useEffect(() => {
     if (!open || !segment) {
       setLiveRecipientCount(0);
+      return;
+    }
+    if (isIndividualLender) {
+      setLiveRecipientCount(1);
+      return;
+    }
+    if (isExcelCampaign) {
+      setLiveRecipientCount(excelEmailList.length);
       return;
     }
     const initialCount = Number(recipientCount) || 0;
@@ -543,7 +1282,7 @@ const AdminAILenderCampaignModal = ({
     return () => {
       cancelled = true;
     };
-  }, [open, recipientCount, segment]);
+  }, [open, recipientCount, segment, isIndividualLender, isExcelCampaign, excelEmailList.length]);
 
   useEffect(() => {
     setTestVerified(false);
@@ -659,6 +1398,33 @@ const AdminAILenderCampaignModal = ({
     }
   };
 
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload a logo image file (PNG, JPG, etc.).");
+      return;
+    }
+    setUploadingLogo(true);
+    setError("");
+    setLogoFileName(file.name);
+    try {
+      const url = await uploadAdminAILenderCampaignImage(file);
+      if (!isPublicHttpUrl(url)) {
+        throw new Error("Upload did not return a public https logo URL.");
+      }
+      setLogoUrl(url);
+      setStatus("Custom campaign logo uploaded.");
+    } catch (err) {
+      setLogoUrl("");
+      setLogoFileName("");
+      setError(err?.response?.data?.message || err?.message || "Failed to upload logo.");
+    } finally {
+      setUploadingLogo(false);
+      event.target.value = "";
+    }
+  };
+
   const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -674,7 +1440,7 @@ const AdminAILenderCampaignModal = ({
       setImageFileName(file.name);
       setStatus(channel === "whatsapp"
         ? "Image uploaded. It will be sent as the WhatsApp campaign card."
-        : "Image uploaded. It will appear in the email campaign.");
+        : "Banner image uploaded. It will appear below the logo in the email.");
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Failed to upload image.");
     } finally {
@@ -697,14 +1463,22 @@ const AdminAILenderCampaignModal = ({
       setError("Email subject is required.");
       return;
     }
+    if (channel === "email" && !String(mailDisplayName || "").trim()) {
+      setError("Mail Display Name is required.");
+      return;
+    }
     if (dryRun && channel === "whatsapp" && useSchedule) {
       if (!scheduleDate || !scheduleTime) {
         setError("Select schedule date and time (24-hour IST) for the scheduled test.");
         return;
       }
     }
-    if (dryRun && channel === "email" && !String(testEmail || "").trim()) {
+    if (dryRun && channel === "email" && !isExcelCampaign && !String(testEmail || "").trim()) {
       setError("Enter a test email address for Send Test.");
+      return;
+    }
+    if (dryRun && isExcelCampaign) {
+      setError("Excel campaigns do not use Send Test. Choose content and send to all Excel emails.");
       return;
     }
     if (dryRun && channel === "whatsapp" && !String(testMobile || "").trim()) {
@@ -712,7 +1486,7 @@ const AdminAILenderCampaignModal = ({
       return;
     }
 
-    if (!dryRun && !testVerified) {
+    if (!dryRun && !testVerified && !isIndividualLender && !isExcelCampaign) {
       setError(
         useSchedule && channel === "whatsapp"
           ? "Schedule a test first, wait until it arrives at your chosen IST time, then confirm below before scheduling bulk."
@@ -721,7 +1495,7 @@ const AdminAILenderCampaignModal = ({
       return;
     }
 
-    if (!dryRun && channel === "whatsapp" && useSchedule) {
+    if (!dryRun && channel === "whatsapp" && useSchedule && !isIndividualLender) {
       if (!scheduleDate || !scheduleTime) {
         setError("Select schedule date and time (24-hour) for bulk send.");
         return;
@@ -736,7 +1510,11 @@ const AdminAILenderCampaignModal = ({
     const setText = !dryRun && activeSet && shouldSplitCampaign
       ? ` (${activeSet.label}: ${fmtNum(activeSet.start)}-${fmtNum(activeSet.end)})`
       : "";
-    const confirmText = dryRun
+    const confirmText = isIndividualLender && !dryRun
+      ? channel === "whatsapp"
+        ? `Send WhatsApp now to ${individualLabel} (${targetLender?.mobileNumber || "no mobile"})?`
+        : `Send email now to ${individualLabel} (${targetLender?.email || "no email"})?`
+      : dryRun
       ? channel === "email"
         ? `Send a test email to ${testEmail.trim()}?`
         : useSchedule
@@ -746,7 +1524,9 @@ const AdminAILenderCampaignModal = ({
         ? `Schedule bulk WhatsApp to ${fmtNum(totalRecipients)} ${audienceLabel} at ${schedulePreview || `${scheduleDate} ${scheduleTime}`} IST?\n\nNothing sends now — only at that time.`
         : channel === "whatsapp"
           ? `Send WhatsApp now to ${fmtNum(totalRecipients)} ${audienceLabel} in "${segmentLabel}"?`
-          : `Send email to ${fmtNum(totalRecipients)} ${audienceLabel} in "${segmentLabel}" now${setText}?`;
+          : isExcelCampaign
+            ? `Send email now to all ${fmtNum(totalRecipients)} Excel emails and track opens/clicks?`
+            : `Send email to ${fmtNum(totalRecipients)} ${audienceLabel} in "${segmentLabel}" now${setText}?`;
     if (!skipConfirm && !window.confirm(confirmText)) {
       return;
     }
@@ -754,21 +1534,25 @@ const AdminAILenderCampaignModal = ({
     setSendingAction(dryRun ? "test" : "bulk");
     setError("");
     setStatus("");
-    const isScheduledWhatsApp = channel === "whatsapp" && useSchedule;
+    const isScheduledWhatsApp = !isIndividualLender && channel === "whatsapp" && useSchedule;
     try {
       const data = await sendAdminAILenderSegmentCampaign({
-        segment,
-        segmentLabel,
+        segment: isExcelCampaign ? "excelUpload" : segment,
+        segmentLabel: isIndividualLender
+          ? `Individual Active Lender — ${individualLabel}`
+          : isExcelCampaign
+            ? (segmentLabel || `Excel Upload (${excelEmailList.length} emails)`)
+            : segmentLabel,
         channel,
         projectType,
-        mailDisplayName,
+        mailDisplayName: String(mailDisplayName || "").trim() || "OxyLoans",
         message: trimmedMessage,
         mailSubject,
         whatsappSubject,
         imageUrl: channel === "email" ? (imageUrl || undefined) : undefined,
-        logoUrl: brandLogo,
-        testEmail: dryRun && channel === "email" ? testEmail.trim() : undefined,
-        testMobile: channel === "whatsapp" && (dryRun || useSchedule) ? testMobile.trim() : undefined,
+        logoUrl: deliverableLogo || undefined,
+        testEmail: dryRun && channel === "email" && !isExcelCampaign ? testEmail.trim() : undefined,
+        testMobile: channel === "whatsapp" && (dryRun || isScheduledWhatsApp) ? testMobile.trim() : undefined,
         dryRun: dryRun && !isScheduledWhatsApp,
         scheduleSend: Boolean(isScheduledWhatsApp),
         scheduleTestOnly: Boolean(dryRun && isScheduledWhatsApp),
@@ -776,9 +1560,11 @@ const AdminAILenderCampaignModal = ({
         scheduleTime: isScheduledWhatsApp
           ? (scheduleTime ? scheduleTime.slice(0, 5) : undefined)
           : undefined,
-        recipientCount: isScheduledWhatsApp ? totalRecipients : undefined,
-        maxRecipients: !dryRun && activeSet && !activeSet.isAllUsers ? activeSet.maxRecipients : undefined,
-        recipientOffset: !dryRun && activeSet && !activeSet.isAllUsers ? activeSet.offset : undefined,
+        recipientCount: isScheduledWhatsApp || isIndividualLender || isExcelCampaign ? totalRecipients : undefined,
+        maxRecipients: !isIndividualLender && !dryRun && activeSet && !activeSet.isAllUsers ? activeSet.maxRecipients : undefined,
+        recipientOffset: !isIndividualLender && !dryRun && activeSet && !activeSet.isAllUsers ? activeSet.offset : undefined,
+        targetLenderId: isIndividualLender && !dryRun ? Number(targetLender.lenderId) : undefined,
+        customEmails: isExcelCampaign ? excelEmailList : undefined,
       });
       const deliveryError = Array.isArray(data?.deliveryResults)
         ? data.deliveryResults.find((row) => row?.errorMessage)?.errorMessage
@@ -786,6 +1572,7 @@ const AdminAILenderCampaignModal = ({
       const recipient = Array.isArray(data?.deliveryResults)
         ? data.deliveryResults[0]?.recipient || data.deliveryResults[0]?.email || data.deliveryResults[0]?.mobileNumber
         : "";
+      const notifySent = (payload) => onSent?.(payload, { dryRun });
       if (isScheduledWhatsApp) {
         if (data?.status === "SCHEDULED") {
           const isTestSchedule = Boolean(data?.scheduleTestOnly || dryRun);
@@ -798,46 +1585,57 @@ const AdminAILenderCampaignModal = ({
             } catch {
               // ignore quota errors
             }
+            setStatus(data?.message || `Test WhatsApp scheduled for ${data?.scheduledAtDisplay || schedulePreview}.`);
+            setTestVerified(true);
+            notifySent(data);
+            // Keep modal open after Schedule Test so user can proceed to bulk.
+          } else {
+            notifySent(data);
+            onClose?.();
           }
-          onSent?.(data);
-          onClose?.();
         } else if (data?.status === "SUCCESS" && (data?.sentCount || 0) > 0) {
           setError(
             `WhatsApp was sent immediately at ${new Date().toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" })} IST `
               + `instead of at ${schedulePreview || "your scheduled time"}. `
               + "Restart the backend, run migration v4, hard-refresh (Ctrl+Shift+R), then use Schedule Test again."
           );
-          onSent?.(data);
+          notifySent(data);
         } else {
           setError(
             data?.message
               || `Schedule failed (status: ${data?.status || "unknown"}). Enable the schedule checkbox and use Schedule Test — not Send Test.`
           );
-          onSent?.(data);
+          notifySent(data);
         }
       } else if (data?.status === "SCHEDULED") {
         const serverNow = data?.serverNowIst ? ` Server time now: ${data.serverNowIst}.` : "";
         setStatus((data?.message || `Scheduled for ${data?.scheduledAtDisplay || schedulePreview}.`) + serverNow);
-        onSent?.(data);
-        setTimeout(() => onClose?.(), 2500);
+        notifySent(data);
+        if (!dryRun) {
+          setTimeout(() => onClose?.(), 2500);
+        } else {
+          setTestVerified(true);
+        }
       } else if (!useSchedule && dryRun && data?.status === "SUCCESS" && (data?.sentCount || 0) > 0) {
         const summary = data?.message || `Test sent to ${recipient || "your number"}.`;
         setStatus(channel === "whatsapp"
           ? `${summary} — Check WhatsApp, then use the green button to send or schedule for all ${audienceLabel}.`
-          : summary);
+          : `${summary} — Check your inbox, then send to all ${audienceLabel} when ready.`);
         setTestVerified(true);
-        onSent?.(data);
+        notifySent(data);
       } else if (data?.status === "SUCCESS" && (data?.sentCount || 0) > 0 && (data?.failedCount || 0) === 0) {
         const summary = data?.message || `Sent: ${fmtNum(data?.sentCount || 0)} | Failed: ${fmtNum(data?.failedCount || 0)}`;
         const detail = dryRun && recipient ? `${summary} (to ${recipient})` : summary;
         setStatus(dryRun && channel === "whatsapp"
           ? `${detail} — Check WhatsApp: ONE message with OxyLoans image and your text as caption below (not two separate messages).`
-          : detail);
+          : dryRun
+            ? `${detail} — Check your inbox, then send to all ${audienceLabel} when ready.`
+            : detail);
         if (dryRun) {
           setTestVerified(true);
         }
         rememberSendResult(data, dryRun);
-        onSent?.(data);
+        notifySent(data);
         if (!dryRun && !keepOpen) {
           setTimeout(() => onClose?.(), 2000);
         }
@@ -845,12 +1643,12 @@ const AdminAILenderCampaignModal = ({
         const summary = data?.message || "Test send failed.";
         setError(deliveryError ? `${summary} — ${deliveryError}` : summary);
         setTestVerified(false);
-        onSent?.(data);
+        notifySent(data);
       } else {
         const summary = data?.message || `Sent: ${fmtNum(data?.sentCount || 0)} | Failed: ${fmtNum(data?.failedCount || 0)}`;
         setError(deliveryError ? `${summary} — ${deliveryError}` : summary || "Campaign send failed.");
         rememberSendResult(data, dryRun);
-        onSent?.(data);
+        notifySent(data);
       }
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || "Failed to send campaign.";
@@ -887,12 +1685,17 @@ const AdminAILenderCampaignModal = ({
       <section className="admin-ai-campaign-modal" onClick={(event) => event.stopPropagation()}>
         <div className="admin-ai-campaign-head">
           <div>
-            <h5>Campaign Automation</h5>
+            <h5>{isIndividualLender ? "Individual Active Lender Campaign" : "Campaign Automation"}</h5>
             <p>
-              {segmentLabel} &middot; {fmtNum(totalRecipients)} {audienceLabel} &middot;{" "}
-              {isWhatsapp && useSchedule
-                ? "Step 1: Schedule test · Step 2: Confirm test · Step 3: Schedule bulk"
-                : "Step 1: Send Test · Step 2: Send now or schedule"}
+              {isIndividualLender
+                ? `${individualLabel} · 1 lender · Email or WhatsApp to this lender only (no bulk / no auto schedule)`
+                : isExcelCampaign
+                  ? `${segmentLabel} · ${fmtNum(totalRecipients)} Excel emails · Compose and send (opens tracked)`
+                  : `${segmentLabel} · ${fmtNum(totalRecipients)} ${audienceLabel} · ${
+                      isWhatsapp && useSchedule
+                        ? "Step 1: Schedule test · Step 2: Confirm test · Step 3: Schedule bulk"
+                        : "Step 1: Send Test · Step 2: Send now or schedule"
+                    }`}
             </p>
           </div>
           <button type="button" className="admin-ai-close-btn" onClick={onClose}>
@@ -900,9 +1703,13 @@ const AdminAILenderCampaignModal = ({
           </button>
         </div>
 
-        <div className={`admin-ai-pro-note ${testVerified || scheduledTestQueued ? "admin-ai-campaign-test-ok" : ""}`}>
+        <div className={`admin-ai-pro-note ${isIndividualLender || isExcelCampaign || testVerified || scheduledTestQueued ? "admin-ai-campaign-test-ok" : ""}`}>
           <strong>
-            {isWhatsapp && useSchedule
+            {isIndividualLender
+              ? "Individual send mode"
+              : isExcelCampaign
+                ? "Excel send mode"
+              : isWhatsapp && useSchedule
               ? scheduledTestQueued
                 ? "Test scheduled — waiting for IST time."
                 : "Schedule mode — nothing sends on click."
@@ -910,7 +1717,11 @@ const AdminAILenderCampaignModal = ({
                 ? "Test passed."
                 : "Step 1: Send Test required."}
           </strong>{" "}
-          {isWhatsapp && useSchedule
+          {isIndividualLender
+            ? `Choose a template or AI content, then send Email/WhatsApp only to ${individualLabel}. Optional Send Test still goes to the address/number you enter below.`
+            : isExcelCampaign
+              ? `No Send Test. Choose content and send to all ${fmtNum(totalRecipients)} Excel emails. Opens and clicks are tracked.`
+            : isWhatsapp && useSchedule
             ? scheduledTestQueued
               ? `Test goes only to your number at ${schedulePreview || "your chosen time"} IST. After you receive it, check the box below, then schedule bulk.`
               : `Step 1: Schedule Test to your number at ${schedulePreview || "chosen time"} IST. Step 2: After test arrives, confirm and schedule bulk to all ${audienceLabel}.`
@@ -918,30 +1729,50 @@ const AdminAILenderCampaignModal = ({
               ? isWhatsapp
                 ? "Step 2: Send WhatsApp to all now, or enable schedule below."
                 : `You can now send the email campaign to all ${audienceLabel} in this segment.`
-              : "Send Test to your number first. Send-all stays disabled until test succeeds."}
+                : "Send Test to your number first. Send-all stays disabled until test succeeds."}
         </div>
 
         <div className="admin-ai-campaign-channel-tabs">
           <button type="button" className={channel === "email" ? "active" : ""} onClick={() => setChannel("email")}>
             <FaEnvelope /> Email
           </button>
-          <button type="button" className={channel === "whatsapp" ? "active" : ""} onClick={() => setChannel("whatsapp")}>
-            <FaWhatsapp /> WhatsApp
-          </button>
+          {!isExcelCampaign ? (
+            <button type="button" className={channel === "whatsapp" ? "active" : ""} onClick={() => setChannel("whatsapp")}>
+              <FaWhatsapp /> WhatsApp
+            </button>
+          ) : null}
         </div>
 
         <div className="admin-ai-campaign-grid">
           <label>
             Project Type *
-            <select value={projectType} onChange={(event) => setProjectType(event.target.value)}>
+            <select
+              value={projectType}
+              onChange={(event) => {
+                const next = event.target.value;
+                setProjectType(next);
+                const matched = PROJECT_TYPES.find((option) => option.id === next);
+                if (matched?.displayName) {
+                  setMailDisplayName(matched.displayName);
+                }
+                // Reset to that project's default logo (OxyLoans → OxyLoans logo).
+                setLogoUrl("");
+                setLogoFileName("");
+                setError("");
+              }}
+            >
               {PROJECT_TYPES.map((option) => (
                 <option key={option.id} value={option.id}>{option.label}</option>
               ))}
             </select>
           </label>
           <label>
-            Segment
-            <input value={segmentLabel} readOnly />
+            {isIndividualLender ? "Target Lender" : "Segment"}
+            <input
+              value={isIndividualLender ? individualLabel : segmentLabel}
+              readOnly
+              title={isIndividualLender ? individualLabel : segmentLabel}
+            />
           </label>
           {shouldSplitCampaign ? (
             <label>
@@ -966,21 +1797,28 @@ const AdminAILenderCampaignModal = ({
             </label>
           ) : null}
           <label>
-            Mail Display Name
-            <input value={mailDisplayName} readOnly />
-          </label>
-          <label>
-            Test Email {channel === "email" ? "*" : ""}
+            Mail Display Name *
             <input
-              type="email"
-              value={testEmail}
-              onChange={(event) => { setTestEmail(event.target.value); setError(""); }}
-              placeholder="your-email@gmail.com"
-              disabled={channel !== "email"}
+              value={mailDisplayName}
+              onChange={(event) => { setMailDisplayName(event.target.value); setError(""); }}
+              placeholder="Name shown in recipient inbox"
             />
           </label>
+          {!isExcelCampaign ? (
+            <label>
+              {isIndividualLender ? "Optional Test Email" : `Test Email ${channel === "email" ? "*" : ""}`}
+              <input
+                type="email"
+                value={testEmail}
+                onChange={(event) => { setTestEmail(event.target.value); setError(""); }}
+                placeholder="your-email@gmail.com"
+                disabled={channel !== "email"}
+              />
+            </label>
+          ) : null}
+          {!isExcelCampaign ? (
           <label>
-            Test WhatsApp {channel === "whatsapp" ? "*" : ""}
+            {isIndividualLender ? "Optional Test WhatsApp" : `Test WhatsApp ${channel === "whatsapp" ? "*" : ""}`}
             <input
               value={testMobile}
               onChange={(event) => { setTestMobile(event.target.value); setError(""); }}
@@ -988,7 +1826,8 @@ const AdminAILenderCampaignModal = ({
               disabled={channel !== "whatsapp"}
             />
           </label>
-          {isWhatsapp ? (
+          ) : null}
+          {isWhatsapp && !isIndividualLender ? (
             <div className="admin-ai-campaign-full admin-ai-campaign-schedule-block">
               <label className="admin-ai-campaign-schedule-check">
                 <input
@@ -1057,6 +1896,47 @@ const AdminAILenderCampaignModal = ({
             </div>
           ) : null}
           <label className="admin-ai-campaign-full">
+            Campaign Logo
+            <div className="admin-ai-campaign-image-row">
+              <label className="admin-ai-campaign-upload-btn">
+                <FaImage /> {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingLogo}
+                  onChange={handleLogoUpload}
+                  hidden
+                />
+              </label>
+              {logoFileName ? <small title={logoFileName}>{logoFileName}</small> : (
+                <small>
+                  {projectType === "oxyloans"
+                    ? "Default: OxyLoans logo. Upload only to use a different logo."
+                    : `Default: ${PROJECT_TYPES.find((p) => p.id === projectType)?.displayName || projectType} logo. Upload to override.`}
+                </small>
+              )}
+              {logoUrl ? (
+                <button
+                  type="button"
+                  className="admin-ai-reset-btn"
+                  onClick={() => {
+                    setLogoUrl("");
+                    setLogoFileName("");
+                  }}
+                >
+                  Use default logo
+                </button>
+              ) : null}
+            </div>
+            <div className="admin-ai-campaign-image-preview admin-ai-campaign-logo-preview">
+              <img
+                key={previewLogo}
+                src={previewLogo}
+                alt="Campaign logo"
+              />
+            </div>
+          </label>
+          <label className="admin-ai-campaign-full">
             Campaign Image (optional — email only)
             <div className="admin-ai-campaign-image-row">
               <label className={`admin-ai-campaign-upload-btn ${channel !== "email" ? "is-disabled" : ""}`}>
@@ -1072,8 +1952,8 @@ const AdminAILenderCampaignModal = ({
               {imageFileName ? <small>{imageFileName}</small> : (
                 <small>
                   {channel === "whatsapp"
-                    ? "WhatsApp uses the OxyLoans logo automatically. Your caption appears below the image."
-                    : "OxyLoans logo + date are added automatically in email."}
+                    ? "WhatsApp uses the campaign logo automatically. Your caption appears below the image."
+                    : "Optional banner below the logo. Logo + date are still added automatically."}
                 </small>
               )}
               {imageUrl && channel === "email" ? (
@@ -1256,9 +2136,9 @@ const AdminAILenderCampaignModal = ({
               <div className="admin-ai-campaign-email-preview">
                 <div className="admin-ai-campaign-email-preview-head">
                   <img
-                    src={brandLogo}
-                    alt="OxyLoans"
-                    onError={(event) => { event.currentTarget.src = OXYLOANS_BRAND_LOGO_FALLBACK; }}
+                    key={`email-preview-${previewLogo}`}
+                    src={previewLogo}
+                    alt="Campaign logo"
                   />
                   <span>Date: {new Date().toLocaleDateString("en-GB")}</span>
                 </div>
@@ -1271,10 +2151,10 @@ const AdminAILenderCampaignModal = ({
               <div className="admin-ai-campaign-whatsapp-preview">
                 <div className="admin-ai-campaign-whatsapp-preview-bubble admin-ai-campaign-whatsapp-card-style">
                   <img
+                    key={`wa-preview-${whatsappPreviewImage}`}
                     src={whatsappPreviewImage}
-                    alt="OxyLoans"
+                    alt="Campaign logo"
                     className="admin-ai-campaign-whatsapp-card-image admin-ai-campaign-whatsapp-logo-card"
-                    onError={(event) => { event.currentTarget.src = OXYLOANS_BRAND_LOGO_FALLBACK; }}
                   />
                   <div className="admin-ai-campaign-whatsapp-caption">
                     <p className="admin-ai-campaign-whatsapp-greeting"><strong>{previewGreeting}</strong></p>
@@ -1318,6 +2198,7 @@ const AdminAILenderCampaignModal = ({
           <button type="button" className="admin-ai-reset-btn" onClick={() => setShowPreview((value) => !value)}>
             {showPreview ? "Hide Preview" : "Preview"}
           </button>
+          {!isExcelCampaign ? (
           <button
             type="button"
             className="admin-ai-reset-btn"
@@ -1338,17 +2219,24 @@ const AdminAILenderCampaignModal = ({
                 ? "Schedule Test"
                 : "Send Test"}
           </button>
+          ) : null}
           <button
             type="button"
             className="admin-ai-search-btn"
             disabled={
               sendingAction !== null
-              || !testVerified
-              || (isWhatsapp && useSchedule && (!scheduleDate || !scheduleTime))
-              || (channel === "email" && !testVerified)
+              || (!isIndividualLender && !isExcelCampaign && !testVerified)
+              || (!isIndividualLender && isWhatsapp && useSchedule && (!scheduleDate || !scheduleTime))
+              || (isExcelCampaign && excelEmailList.length < 1)
             }
             title={
-              isWhatsapp && useSchedule
+              isIndividualLender
+                ? channel === "whatsapp"
+                  ? `Send WhatsApp to ${individualLabel}`
+                  : `Send email to ${individualLabel}`
+                : isExcelCampaign
+                  ? `Send email to all ${fmtNum(totalRecipients)} Excel emails (tracked)`
+                : isWhatsapp && useSchedule
                 ? testVerified
                   ? `Bulk to ${fmtNum(totalRecipients)} ${audienceLabel} at ${schedulePreview || "selected time"} IST only`
                   : "Schedule and confirm test first"
@@ -1363,7 +2251,13 @@ const AdminAILenderCampaignModal = ({
             onClick={() => handleSend(false)}
           >
             {sendingAction === "bulk"
-              ? "Scheduling..."
+              ? (isIndividualLender || isExcelCampaign ? "Sending..." : "Scheduling...")
+              : isIndividualLender
+                ? channel === "whatsapp"
+                  ? `Send WhatsApp to ${individualLabel}`
+                  : `Send Email to ${individualLabel}`
+              : isExcelCampaign
+                ? `Send Email to ${fmtNum(totalRecipients)} Excel emails`
               : isWhatsapp && useSchedule
                 ? `Schedule WhatsApp to ${fmtNum(totalRecipients)}`
                 : isWhatsapp
@@ -1372,13 +2266,24 @@ const AdminAILenderCampaignModal = ({
                     ? `Send ${selectedCampaignSet.label}`
                     : `Send Email to ${fmtNum(totalRecipients)}`}
           </button>
-          {shouldSplitCampaign ? (
+          {shouldSplitCampaign && !isExcelCampaign ? (
             <button
               type="button"
               className="admin-ai-search-btn"
               disabled={sendingAction !== null || !testVerified}
               onClick={handleSendAllSets}
               title="Send Set 1, Set 2 and Set 3 in order"
+            >
+              Send All Sets
+            </button>
+          ) : null}
+          {shouldSplitCampaign && isExcelCampaign ? (
+            <button
+              type="button"
+              className="admin-ai-search-btn"
+              disabled={sendingAction !== null || excelEmailList.length < 1}
+              onClick={handleSendAllSets}
+              title="Send Set 1, Set 2 and Set 3 in order to Excel emails"
             >
               Send All Sets
             </button>

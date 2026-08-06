@@ -249,7 +249,7 @@ const OfferCard = ({
               <i className="fa-solid fa-receipt me-1"></i> Repayment
             </Link>
           ) : */}
-          {borrowerStatus === "PROCESSING" &&  offer.borrowerAggrement && offer.lenderEsigned && (offer.borrowerEsigned === true || offer.borrowerEsignStatus === true) && showEnachBtn && offer.loanStatus === "AWAITING_ENACH" ? (
+          {(borrowerStatus === "PROCESSING" || borrowerStatus === "LOANACCEPTED") &&  offer.borrowerAggrement && offer.lenderEsigned && (offer.borrowerEsigned === true || offer.borrowerEsignStatus === true) && showEnachBtn && offer.loanStatus === "AWAITING_ENACH" ? (
             <Link 
               to={`/enach/${offer.loanRequestId}?assignmentId=${offer.id}`}
               className="oxy-btn-primary flex-fill btn-info text-white text-center d-flex align-items-center justify-content-center"

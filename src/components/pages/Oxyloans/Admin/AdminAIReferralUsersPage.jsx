@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaArrowLeft, FaUniversity, FaUserGraduate } from "react-icons/fa";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { goBackOrAdminAI, YEAR_WISE_REFERRALS_PATH } from "./adminAINavigation";
 import { getAdminAIReferralRegistrations } from "../../../HttpRequest/admin";
 import "./AdminAIDashboard.css";
 
@@ -90,7 +91,7 @@ const AdminAIReferralUsersPage = () => {
       <div className="admin-ai-dashboard-wrap admin-ai-referral-users-page">
         <header className="admin-ai-referral-users-header">
           <div>
-            <button type="button" className="admin-ai-referral-back" onClick={() => navigate("/adminAIDashboard?panel=yearWiseReferrals") }>
+            <button type="button" className="admin-ai-referral-back" onClick={() => goBackOrAdminAI(navigate, YEAR_WISE_REFERRALS_PATH) }>
               <FaArrowLeft /> Back to YearWise referrals
             </button>
             <h2>{year} Registered Referral Users</h2>

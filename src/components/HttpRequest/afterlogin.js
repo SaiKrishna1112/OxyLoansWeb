@@ -2017,14 +2017,17 @@ export const getNewSessionTime = async () => {
   const userId = getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}accessTokenGeneration`,
+    `${userId}USER/accessTokenGeneration`,
     "GET",
     token
   );
   sessionStorage.removeItem("accessToken");
   sessionStorage.removeItem("tokenTime");
-  const accessTokenFromHeader = response.headers["accesstoken"];
-  sessionStorage.setItem("accessToken", accessTokenFromHeader);
+  const accessTokenFromHeader = response.headers["accesstoken"] || response.headers["accessToken"];
+  if (accessTokenFromHeader) {
+    sessionStorage.setItem("accessToken", accessTokenFromHeader);
+    localStorage.setItem("accessToken", accessTokenFromHeader);
+  }
   sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
   setTimeout(() => {
     window.location.reload();
@@ -4310,6 +4313,7 @@ export const listBorrowerLoanEnachMandates = async (loanRequestId, assignmentId 
     {
       headers: {
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
@@ -4324,6 +4328,7 @@ export const startCashfreeEnachAuthorization = async (mandateId) => {
     {
       headers: {
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
@@ -4337,6 +4342,7 @@ export const getCashfreeEnachStatus = async (mandateId) => {
     {
       headers: {
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
@@ -4351,6 +4357,7 @@ export const raiseCashfreeEnachCharge = async (emiCardId) => {
     {
       headers: {
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
@@ -4365,6 +4372,7 @@ export const cancelCashfreeEnach = async (mandateId) => {
     {
       headers: {
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
@@ -4378,10 +4386,11 @@ export const getenachStatus = async (loanRequestId) => {
     {
       headers: {
         accesstoken: token,
+        accessToken: token,
       },
     }
   );
-}
+};
 
 export const adminReverseFalsePaidEmi = async (emiCardId, reason = "false paid without debit", force = "false") => {
   const token = getToken();
@@ -4487,6 +4496,159 @@ export const getBorrowerLoanGeneratedFiles = async () => {
     token
   );
   return response;
+};
+
+// ============================================================
+// BANK STATEMENT ANALYSIS & REPORT APIS
+// ============================================================
+
+/**
+ * Upload & Analyze Bank Statement for Borrower
+ * Endpoint: POST /v1/user/borrower/:borrowerId/analyze
+ * Supports form-data with 'file' and 'password' matching backend API requirements
+ */
+export const analyzeBorrowerBankStatement = async (borrowerId, fileOrPassword = "", password = "") => {
+  const token = getToken();
+  const userId = borrowerId || getUserId();
+  
+  let isFile = false;
+  let fileObj = null;
+  let passVal = "";
+
+  if (fileOrPassword && typeof fileOrPassword === "object" && (fileOrPassword instanceof File || fileOrPassword.name)) {
+    isFile = true;
+    fileObj = fileOrPassword;
+    passVal = password || "";
+  } else if (typeof fileOrPassword === "string") {
+    passVal = fileOrPassword || password || "";
+  }
+
+  let body = {};
+  let config = {
+    headers: {
+      accessToken: token,
+      accesstoken: token,
+      userId: userId,
+    },
+  };
+
+  if (isFile) {
+    const formData = new FormData();
+    formData.append("file", fileObj);
+    if (passVal) {
+      formData.append("password", passVal);
+    }
+    body = formData;
+  } else {
+    body = passVal ? { password: passVal, bankStatementPassword: passVal } : {};
+    config.params = passVal ? { password: passVal } : {};
+  }
+
+  try {
+    return await axios.post(
+      `${API_BASE_URL}borrower/${userId}/analyze`,
+      body,
+      config
+    );
+  } catch (e) {
+    return await axios.post(
+      `${MARKETPLACE_URL}/v1/user/borrower/${userId}/analyze`,
+      body,
+      config
+    );
+  }
+};
+
+/**
+ * Get Bank Statement Analysis Summary for Borrower
+ * Endpoint: GET /v1/user/borrower/:borrowerId
+ */
+export const getBorrowerAnalysis = async (borrowerId) => {
+  const token = getToken();
+  const userId = borrowerId || getUserId();
+  try {
+    return await axios.get(`${MARKETPLACE_URL}/v1/user/borrower/${userId}`, {
+      headers: {
+        accessToken: token,
+        accesstoken: token,
+        userId: userId,
+      },
+    });
+  } catch (e) {
+    return await axios.get(`${API_BASE_URL}borrower/${userId}`, {
+      headers: {
+        accessToken: token,
+        accesstoken: token,
+        userId: userId,
+      },
+    });
+  }
+};
+
+/**
+ * Get Specific Statement Details by Statement ID
+ * Endpoint: GET /v1/user/:statementId/borrower
+ */
+export const getBorrowerStatementById = async (statementId) => {
+  const token = getToken();
+  const userId = getUserId();
+  try {
+    return await axios.get(`${MARKETPLACE_URL}/v1/user/${statementId}/borrower`, {
+      headers: {
+        accessToken: token,
+        accesstoken: token,
+        userId: userId,
+      },
+    });
+  } catch (e) {
+    return await axios.get(`${API_BASE_URL}${statementId}/borrower`, {
+      headers: {
+        accessToken: token,
+        accesstoken: token,
+        userId: userId,
+      },
+    });
+  }
+};
+
+/**
+ * Download / View Bank Statement PDF Analysis Report
+ * Endpoint: GET /v1/user/:id/report/pdf/user
+ */
+export const getBorrowerReportPdfUser = async (id) => {
+  const token = getToken();
+  const userId = getUserId();
+  const targetId = id || userId;
+  try {
+    return await axios.get(`${MARKETPLACE_URL}/v1/user/${targetId}/report/pdf/user`, {
+      responseType: "blob",
+      headers: {
+        accessToken: token,
+        accesstoken: token,
+        userId: userId,
+      },
+    });
+  } catch (e) {
+    try {
+      return await axios.get(`${MARKETPLACE_URL}/v1/borrower/${targetId}/report/pdf/user`, {
+        responseType: "blob",
+        headers: {
+          accessToken: token,
+          accesstoken: token,
+          userId: userId,
+        },
+      });
+    } catch (err) {
+      return await axios.get(`${API_BASE_URL}${targetId}/report/pdf/user`, {
+        responseType: "blob",
+        headers: {
+          accessToken: token,
+          accesstoken: token,
+          userId: userId,
+        },
+      });
+    }
+  }
 };
 
 
