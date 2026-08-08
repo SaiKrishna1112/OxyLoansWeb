@@ -13,6 +13,7 @@ import { saveLoginSession } from "../../HttpRequest/aiAdminApi";
 import BASE_URL, { ENV, DEV_ADMIN_MOBILE, DEV_OTP } from "../../../config";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 
 const Loginotp = () => {
   const dispatch = useDispatch();
@@ -86,13 +87,13 @@ const Loginotp = () => {
         toastrSuccess("Login Success!");
 
         const role = retriveresponse.data.primaryType;
+        let defaultPath = "/borrowerDashboard";
         if (role === "LENDER") {
-          history("/ai/portfolio");
+          defaultPath = "/ai/portfolio";
         } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
-          history("/oxyloansadmindashboard");
-        } else {
-          history("/borrowerDashboard");
+          defaultPath = "/oxyloansadmindashboard";
         }
+        history(getPostLoginRedirectUrl(defaultPath, role));
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
         toastrWarning(message);

@@ -13,6 +13,7 @@ import {
   getUserDetails,
 } from "../../../HttpRequest/afterlogin";
 import FeeConfigInfo from "./FeeConfigInfo";
+import BorrowerConsentSection, { BORROWER_CONSENTS } from "./BorrowerConsentSection";
 
 const formatCurrency = (amount) => {
   const numericValue = Number(amount || 0);
@@ -29,6 +30,7 @@ const normalizeStatus = (status) => {
 const BorrowerLoanRequestCreate = () => {
   const navigate = useNavigate();
   const [requestAmount, setRequestAmount] = useState("");
+  const [consentItems, setConsentItems] = useState(new Array(BORROWER_CONSENTS.length).fill(false));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eligibleAmount, setEligibleAmount] = useState({
     amount: null,
@@ -269,13 +271,18 @@ const BorrowerLoanRequestCreate = () => {
     
   const hasEligibilityData =
     !isEligibleLoading && !eligibleErrorMessage && eligibleAmountValue !== null;
+  
+  const allConsentsChecked = consentItems.every(Boolean);
+
   const isSubmitDisabled =
     isSubmitting ||
     isEligibleLoading ||
     requestStatusInfo.loading ||
     !!eligibleErrorMessage ||
     !hasEligibilityData ||
-    isFormBlockedByStatus;
+    isFormBlockedByStatus ||
+    !allConsentsChecked;
+
   const submitButtonText = isSubmitting
     ? "Submitting..."
     : requestStatusInfo.loading
@@ -285,8 +292,6 @@ const BorrowerLoanRequestCreate = () => {
         : eligibleErrorMessage
           ? "Eligibility required"
           : "Submit Loan Request";
-
-
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -303,6 +308,14 @@ const BorrowerLoanRequestCreate = () => {
       WarningBackendApi(
         "Request Not Allowed",
         "You already have a loan request in progress. You can submit a new request only after it is closed.",
+      );
+      return;
+    }
+
+    if (!allConsentsChecked) {
+      WarningBackendApi(
+        "Consent Required",
+        "Please read and acknowledge all 8 consent items before submitting your loan request.",
       );
       return;
     }
@@ -666,11 +679,20 @@ const BorrowerLoanRequestCreate = () => {
                         </small>
                       </div>
 
+                      {/* 8-Point Borrower Consent Section */}
+                      <BorrowerConsentSection
+                        consentItems={consentItems}
+                        onChange={(updated) => setConsentItems(updated)}
+                      />
+
                       <div className="d-grid d-md-flex justify-content-md-end mt-4 gap-2">
                         <button
                           type="button"
                           className="btn btn-outline-secondary"
-                          onClick={() => setRequestAmount("")}
+                          onClick={() => {
+                            setRequestAmount("");
+                            setConsentItems(new Array(BORROWER_CONSENTS.length).fill(false));
+                          }}
                           disabled={isFormBlockedByStatus}
                         >
                           Reset

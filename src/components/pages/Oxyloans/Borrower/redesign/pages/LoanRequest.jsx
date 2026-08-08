@@ -13,13 +13,16 @@ import {
   getBorrowerRequestAmount,
   getUserDetails,
   getCibilBasedRoi,
+  getBorrowerCreditReport
 } from "../../../../../HttpRequest/afterlogin";
+import BorrowerConsentSection, { BORROWER_CONSENTS } from "../../BorrowerConsentSection";
 import FeeConfigInfo from "../../FeeConfigInfo";
 import "../redesign.css";
 
 const LoanRequest = () => {
   const navigate = useNavigate();
   const [requestAmount, setRequestAmount] = useState("");
+  const [consentItems, setConsentItems] = useState(new Array(BORROWER_CONSENTS.length).fill(false));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oxyscore, setOxyScore] = useState();
   const [selectedTenure, setSelectedTenure] = useState(3);
@@ -42,6 +45,8 @@ const LoanRequest = () => {
 
   const [cibilInfo, setCibilInfo] = useState({ loading: true, data: null });
 
+  const [borrowerCreditReport, setBorrowerCreditReport] = useState({ loading: true, data: null });
+
   const borrowerId = getUserId() || "";
 
   useEffect(() => {
@@ -61,6 +66,17 @@ const LoanRequest = () => {
         setCibilInfo({ loading: false, data: null });
       }
     };
+    const fetchBorrowerCreditReport = async (borrowerId) => {
+      if (!borrowerId) { setBorrowerCreditReport({ loading: false, data: null }); return; }
+      try {
+        const res = await getBorrowerCreditReport(borrowerId);
+        setBorrowerCreditReport({ loading: false, data: res?.status === 200 ? res.data : null });
+        console.log("Borrower Credit Report:", res?.data.creditReportAvailable);
+      } catch {
+        setBorrowerCreditReport({ loading: false, data: null });
+      }
+    };
+    fetchBorrowerCreditReport(borrowerId);
     fetchCibilRoi();
     getUserDetails().then(res=>{
       if (res?.data) {
@@ -109,6 +125,7 @@ const LoanRequest = () => {
           "Unable to fetch your eligible amount. Please try again.";
         setEligibleErrorMessage(apiErrorMsg);
       }
+      borrowerCreditReport.data?.creditReportAvailable === false && setEligibleErrorMessage("Your credit report was not verified by the admin. Please upload a valid credit report.");
       setIsEligibleLoading(false);
     };
 
@@ -200,12 +217,15 @@ const LoanRequest = () => {
     setRequestAmount(String(val));
   };
 
+  const allConsentsChecked = consentItems.every(Boolean);
+
   const isSubmitDisabled =
     isSubmitting ||
     isEligibleLoading ||
     requestStatusInfo.loading ||
     !!eligibleErrorMessage ||
-    isFormBlockedByStatus;
+    isFormBlockedByStatus ||
+    !allConsentsChecked;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -217,6 +237,11 @@ const LoanRequest = () => {
 
     if (isFormBlockedByStatus) {
       Swal.fire("Request Not Allowed", "You already have a loan request in progress.", "warning");
+      return;
+    }
+
+    if (!allConsentsChecked) {
+      Swal.fire("Consent Required", "Please read and acknowledge all 8 consent items before proceeding.", "warning");
       return;
     }
 
@@ -233,7 +258,7 @@ const LoanRequest = () => {
 
     const confirmation = await Swal.fire({
       title: "Confirm Your Loan Request",
-      text: `Are you sure you want to request a loan amount of ₹ ${normalizedAmount}?`,
+      text: `Are you sure you want to request a loan amount of ₹ ${normalizedAmount}? By proceeding, you confirm your consent to share this request with lenders and abide by OxyLoans P2P terms.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Confirm Request",
@@ -312,17 +337,17 @@ const LoanRequest = () => {
                 </h5>
               </div>
             </div> 
-            {/* <div className="col-md-3">
+            <div className="col-md-3">
               <div className="oxy-card mb-0 h-100 border-start border-warning border-3" style={{ padding: "16px 20px" }}>
                 <div className="d-flex justify-content-between align-items-center mb-1">
-                  <span className="text-muted small uppercase text-uppercase">Applicable Rate (ROI)</span>
+                  <span className="text-muted small uppercase text-uppercase">ROI (Example Only)</span>
                   <i className="fa-solid fa-percent text-warning opacity-50"></i>
                 </div>
                 <h5 className="fw-bold text-dark mb-0">
                   {cibilInfo.loading ? "..." : `${applicableRoi}% p.a.`}
                 </h5>
               </div>
-            </div>  */}
+            </div>
           </div>
 
           <div className="row justify-content-center">
@@ -408,21 +433,23 @@ const LoanRequest = () => {
                         <div className="mt-3">
                           <span className="text-muted small me-2 d-block d-sm-inline mb-2 mb-sm-0">Quick Presets:</span>
                           <div className="d-inline-flex flex-wrap gap-2">
-                            {[25, 50, 75, 100].map((pct) => {
-                              const val = Math.round((maxLimit * pct) / 100);
-                              const isSelected = Number(requestAmount) === val;
-                              return (
-                                <button
-                                  key={pct}
-                                  type="button"
-                                  className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
-                                  style={{ borderRadius: "20px", fontSize: "12px", padding: "4px 12px" }}
-                                  onClick={() => handlePresetClick(pct)}
-                                >
-                                  {pct === 100 ? `Max (${formatCurrency(val)})` : `${pct}% (${formatCurrency(val)})`}
-                                </button>
-                              );
-                            })}
+                            {[25, 50, 75, 100]
+                              .filter((pct) => Math.round((maxLimit * pct) / 100) >= 500)
+                              .map((pct) => {
+                                const val = Math.round((maxLimit * pct) / 100);
+                                const isSelected = Number(requestAmount) === val;
+                                return (
+                                  <button
+                                    key={pct}
+                                    type="button"
+                                    className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
+                                    style={{ borderRadius: "20px", fontSize: "12px", padding: "4px 12px" }}
+                                    onClick={() => handlePresetClick(pct)}
+                                  >
+                                    {pct === 100 ? `Max (${formatCurrency(val)})` : `${pct}% (${formatCurrency(val)})`}
+                                  </button>
+                                );
+                              })}
                           </div>
                         </div>
                       )}
@@ -449,7 +476,7 @@ const LoanRequest = () => {
                     {parsedAmount > 0 && (
                       <div className="p-3 mb-4 rounded-3 border bg-light">
                         <div className="d-flex justify-content-between align-items-center mb-3">
-                          <span className="fw-bold text-dark small"><i className="fa-solid fa-calculator text-primary me-2" />Estimated EMI Calculator</span>
+                          <span className="fw-bold text-dark small"><i className="fa-solid fa-calculator text-primary me-2" />Estimated EMI Calculator <span className="text-muted fw-normal" style={{ fontSize: "11px" }}>(ROI: {applicableRoi}% p.a. - Example Only)</span></span>
                           {/* Tenure Pills */}
                           <div className="btn-group btn-group-sm" role="group">
                             {[3, 6, 12].map((months) => (
@@ -483,11 +510,20 @@ const LoanRequest = () => {
                       </div>
                     )}
 
+                    {/* 8-Point Borrower Consent Section */}
+                    <BorrowerConsentSection
+                      consentItems={consentItems}
+                      onChange={(updated) => setConsentItems(updated)}
+                    />
+
                     <div className="d-flex justify-content-end gap-2 border-top pt-4">
                       <button 
                         type="button" 
                         className="oxy-btn-secondary" 
-                        onClick={() => setRequestAmount("")}
+                        onClick={() => {
+                          setRequestAmount("");
+                          setConsentItems(new Array(BORROWER_CONSENTS.length).fill(false));
+                        }}
                       >
                         Clear
                       </button>

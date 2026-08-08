@@ -1,6 +1,7 @@
 import React from "react";
 import WebPushBootstrap from "./components/WebPushBootstrap";
 import { BrowserRouter, Navigate, Route, Routes, useParams,useLocation } from "react-router-dom";
+import { saveLastVisitedUrl } from "./utils/redirectUtils";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
@@ -241,6 +242,7 @@ const NavigationTracker = () => {
         page_path: location.pathname + location.search,
       });
     }
+    saveLastVisitedUrl(location.pathname, location.search);
   }, [location]);
 
   return null;

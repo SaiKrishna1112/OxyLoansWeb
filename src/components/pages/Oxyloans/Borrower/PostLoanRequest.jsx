@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { postMarketplaceLoanRequest, calculateFees } from "../../../HttpRequest/afterlogin";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
+import BorrowerConsentSection, { BORROWER_CONSENTS } from "./BorrowerConsentSection";
 
 const LOAN_PURPOSES = ["Personal", "Medical", "Education", "Business", "Home Renovation", "Wedding", "Travel", "Other"];
 const DURATIONS = [3, 6, 12, 18, 24, 36, 48, 60];
@@ -123,7 +124,6 @@ function VoiceAgent({ onResult }) {
     </div>
   );
 }
-
 export default function PostLoanRequest() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -136,6 +136,7 @@ export default function PostLoanRequest() {
     repaymentMethod: "PI",
   });
   const [fees, setFees] = useState(null);
+  const [consentItems, setConsentItems] = useState(new Array(BORROWER_CONSENTS.length).fill(false));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -167,6 +168,8 @@ export default function PostLoanRequest() {
     setError("");
   };
 
+  const allConsentsChecked = consentItems.every(Boolean);
+
   const validate = () => {
     const amt = Number(form.loanAmount);
     if (!amt || amt < 10000 || amt > 5000000) return "Loan amount must be between ₹10,000 and ₹50,00,000";
@@ -175,6 +178,7 @@ export default function PostLoanRequest() {
     if (Number(form.preferredMinRate) < 10) return "Minimum rate must be at least 10%";
     if (Number(form.preferredMaxRate) > 36) return "Maximum rate cannot exceed 36%";
     if (Number(form.preferredMinRate) > Number(form.preferredMaxRate)) return "Min rate cannot be greater than max rate";
+    if (!allConsentsChecked) return "Please read and acknowledge all 8 consent items before proceeding.";
     return null;
   };
 
@@ -317,10 +321,19 @@ export default function PostLoanRequest() {
                   </div>
                 </div>
 
+                {/* 8-Point Borrower Consent Section */}
+                <BorrowerConsentSection
+                  consentItems={consentItems}
+                  onChange={(updated) => {
+                    setConsentItems(updated);
+                    setError("");
+                  }}
+                />
+
                 <button
                   className="btn btn-primary btn-lg w-100"
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !allConsentsChecked}
                 >
                   {loading ? "Posting..." : "Post Loan Request to Marketplace"}
                 </button>

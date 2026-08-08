@@ -9,6 +9,7 @@ import FeatherIcon from "feather-icons-react";
 import { Admlog, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 
 const Admlogin = () => {
   const dispatch = useDispatch();
@@ -77,7 +78,7 @@ const Admlogin = () => {
       sessionStorage.setItem("userId", "1");
       sessionStorage.setItem("tokenTime", new Date().toISOString());
       toastrSuccess("Login Success!");
-      history("/adminAIDashboard");
+      history(getPostLoginRedirectUrl("/adminAIDashboard", "ADMIN"));
       return;
     }
     if (!userid?.trim() || !password?.trim()) {
@@ -90,18 +91,18 @@ const Admlogin = () => {
         toastrSuccess("Login Success!");
         const role = retriveresponse.data.primaryType;
         localStorage.setItem("primaryType", role || "");
+        let defaultPath = "/borrowerDashboard";
         if (role === "LENDER") {
-          history("/dashboard");
+          defaultPath = "/dashboard";
         } else if (
           role === "ADMIN" ||
           role === "HELPDESKADMIN" ||
           role === "SUPERADMIN" ||
           role === "PRIMARYADMIN"
         ) {
-          history("/adminAIDashboard");
-        } else {
-          history("/borrowerDashboard");
+          defaultPath = "/adminAIDashboard";
         }
+        history(getPostLoginRedirectUrl(defaultPath, role));
       } else {
         const { message } = warnApiError(
           retriveresponse,

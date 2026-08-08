@@ -4651,7 +4651,17 @@ export const getBorrowerReportPdfUser = async (id) => {
   }
 };
 
-
+export const getBorrowerCreditReport = async (id) => {
+  const userId = getUserId();
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${id}/adminCreditReport`,
+    "GET",
+    token
+  );
+  return response;
+};
 
 
 

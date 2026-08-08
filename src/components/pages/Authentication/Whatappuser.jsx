@@ -3,6 +3,7 @@ import "./user.css";
 import { useNavigate } from "react-router-dom";
 import { handelapidata } from "../../HttpRequest/beforelogin";
 import { Link } from "react-router-dom";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 
 const Whatappuser = ({ data }) => {
   const [data1, setAppData] = useState(data);
@@ -30,11 +31,12 @@ const Whatappuser = ({ data }) => {
         sessionStorage.setItem("whatAppLoginMultipleUser", true);
         sessionStorage.setItem("whatsAppLoginUsers", JSON.stringify(data1));
 
-        if (data.primaryType === "LENDER" || data.primaryType === "ADMIN") {
-          history("/ai/portfolio");
-        } else if (data.primaryType === "BORROWER") {
-          history("/borrowerDashboard");
+        const pType = data.primaryType;
+        let defaultPath = "/borrowerDashboard";
+        if (pType === "LENDER" || pType === "ADMIN") {
+          defaultPath = "/ai/portfolio";
         }
+        history(getPostLoginRedirectUrl(defaultPath, pType));
       }
     } catch (error) {
       console.error("Error:", error);

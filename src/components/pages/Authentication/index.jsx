@@ -7,6 +7,7 @@ import { Admlog, userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 import { BsWhatsapp } from "react-icons/bs";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -94,16 +95,14 @@ const Login = () => {
         sessionStorage.setItem("email", retriveresponse.data.email);
         // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
         // alert(retriveresponse.data.accessToken)
-        if (retriveresponse.data.primaryType == "LENDER") {
-          history("/ai/portfolio");
-        } else if (retriveresponse.data.primaryType == "ADMIN") {
-          history("/oxyloansadmindashboard");
-        }else if (retriveresponse.data.primaryType == "HELPDESKADMIN") {
-          history("/oxyloansadmindashboard");
-        } 
-        else {
-          history("/borrowerDashboard");
+        const pType = retriveresponse.data.primaryType;
+        let defaultPath = "/borrowerDashboard";
+        if (pType === "LENDER") {
+          defaultPath = "/ai/portfolio";
+        } else if (pType === "ADMIN" || pType === "HELPDESKADMIN") {
+          defaultPath = "/oxyloansadmindashboard";
         }
+        history(getPostLoginRedirectUrl(defaultPath, pType));
       } else {
         setLoading(false)
         toastrWarning(retriveresponse.response.data.errorMessage);

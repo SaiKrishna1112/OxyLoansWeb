@@ -19,6 +19,7 @@ import {
   sendwhatappotp,
   verifywhatappotp,
 } from "../../HttpRequest/beforelogin";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import { toastrError, toastrSuccess } from "../Base UI Elements/Toast";
 import "./user.css";
 import Whatappuser from "./Whatappuser";
@@ -155,13 +156,11 @@ const Whatapplog = () => {
           sessionStorage.setItem("userId", data.data.id);
           sessionStorage.setItem("tokenTime", data.data.tokenGeneratedTime);
           if (accessToken != null) {
-            if (data.data.primaryType == "LENDER") {
-              history("/dashboard");
-            } else if (data.data.primaryType == "ADMIN") {
-              history("/dashboard");
-            }
-            else if (data.data.primaryType == "BORROWER") {
-              history("/borrowerDashboard");
+            const pType = data.data.primaryType;
+            if (pType === "LENDER" || pType === "ADMIN") {
+              history(getPostLoginRedirectUrl("/dashboard", pType));
+            } else if (pType === "BORROWER") {
+              history(getPostLoginRedirectUrl("/borrowerDashboard", pType));
             } else {
               toastrError("Try to Login of Lender Only");
             }
