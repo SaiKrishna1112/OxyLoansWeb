@@ -921,15 +921,17 @@ export const summaryFinancialEarnings = async (body) => {
   return response;
 };
 
-export const uploadkyc = async (event) => {
+export const uploadkyc = async (event, password) => {
   const token = getToken();
   const userId = getUserId();
   var fd = new FormData();
-  var files = event.target.files[0];
-  fd.append(event.target.name, files);
+  var files = event.target ? event.target.files[0] : event;
+  var fieldName = event.target ? event.target.name : "CREDITREPORT";
+  fd.append(fieldName, files);
+  const queryParam = password ? `?password=${encodeURIComponent(password)}` : "";
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/upload/kyc`,
+    `${userId}/upload/kyc${queryParam}`,
     "POST",
     token,
     fd,
@@ -4160,12 +4162,13 @@ export const getMyCollectionCases = () =>
 export const syncCollections = () =>
   axios.post(`${MARKETPLACE_URL}/v1/collections/sync`, {}, { headers: marketplaceHeaders() });
 
-export const getPCreditReportDoc = async () => {
+export const getPCreditReportDoc = async (password) => {
   const token = getToken();
   const userId = getUserId();
+  const queryParam = password ? `?password=${encodeURIComponent(password)}` : "";
   const res = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/download/CREDITREPORT`,
+    `${userId}/download/CREDITREPORT${queryParam}`,
     "GET",
     token
   );
@@ -4178,9 +4181,9 @@ export const borrowerSecureInfo = (payload) =>
   });
 
 export const getBorrowerSecureInfo = () => {
-  const userId = sessionStorage.getItem("userId");
+  const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || getUserId();
   return axios.get(`${API_BASE_URL}${userId}/borrower`, {
-    headers: { accessToken: getToken() },
+    headers: { accessToken: getToken(), accesstoken: getToken() },
   });
 };
 export const getRadiusBasedFee = async () => {

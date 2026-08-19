@@ -865,12 +865,30 @@ const ProximityLoans = () => {
   // ── Offer ────────────────────────────────────────────────────────
   const validateOffer = () => {
     const errors = {};
+    const amountVal = Number(offerData.amount);
+    const activeLoan = selectedBorrower?.loanDetails?.find(
+      (l) => l.requestAmount || l.loanRequestAmount || l.partiallyPendingAmount
+    );
+    const requestedAmount = Number(
+      activeLoan?.requestAmount ||
+        activeLoan?.loanRequestAmount ||
+        activeLoan?.partiallyPendingAmount ||
+        selectedBorrower?.requestAmount ||
+        0
+    );
+
     if (
       !offerData.amount ||
       isNaN(offerData.amount) ||
-      Number(offerData.amount) <= 0
-    )
+      amountVal <= 0
+    ) {
       errors.amount = "Enter a valid amount";
+    } else if (amountVal < 500) {
+      errors.amount = "Amount should not be less than 500";
+    } else if (requestedAmount > 0 && amountVal > requestedAmount) {
+      errors.amount = `Amount should not be greater than requested amount (${requestedAmount})`;
+    }
+
     if (
       !offerData.tenure ||
       isNaN(offerData.tenure) ||
@@ -889,6 +907,23 @@ const ProximityLoans = () => {
     const errors = validateOffer();
     if (Object.keys(errors).length) {
       setOfferErrors(errors);
+      setTimeout(() => {
+        let targetId = null;
+        if (errors.amount) targetId = "offerAmountInput";
+        else if (errors.tenure) targetId = "offerTenureField";
+        else if (errors.roi) targetId = "offerRoiInput";
+        else if (errors.consent) targetId = "offerConsentSection";
+
+        if (targetId) {
+          const el = document.getElementById(targetId);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (typeof el.focus === "function") {
+              el.focus();
+            }
+          }
+        }
+      }, 50);
       return;
     }
     setOfferLoading(true);
@@ -1138,6 +1173,7 @@ const ProximityLoans = () => {
                           <span className="text-danger">*</span>
                         </label>
                         <input
+                          id="offerAmountInput"
                           type="number"
                           className={`form-control ${offerErrors.amount ? "is-invalid" : ""}`}
                           placeholder="e.g. 50000"
@@ -1198,9 +1234,10 @@ const ProximityLoans = () => {
                           </div>
                         )}
                       </div> */}
-                      <div className="input-group">
+                      <div className="col-md-5 input-group">
                         {offerData.durationType === "Months" ? (
                           <select
+                            id="offerTenureField"
                             className={`form-select ${offerErrors.tenure ? "is-invalid" : ""}`}
                             value={offerData.tenure}
                             onChange={(e) => {
@@ -1219,6 +1256,7 @@ const ProximityLoans = () => {
                           </select>
                         ) : (
                           <input
+                            id="offerTenureField"
                             type="number"
                             className={`form-control ${offerErrors.tenure ? "is-invalid" : ""}`}
                             placeholder="e.g. 90"
@@ -1273,6 +1311,7 @@ const ProximityLoans = () => {
                           ROI (%) <span className="text-danger">*</span>
                         </label>
                         <input
+                          id="offerRoiInput"
                           type="number"
                           step="0.01"
                           className={`form-control ${offerErrors.roi ? "is-invalid" : ""}`}
@@ -1289,7 +1328,7 @@ const ProximityLoans = () => {
                           </div>
                         )}
                       </div>
-                      <div className="col-12 mt-3">
+                      <div className="col-md-5">
                         <label
                           className="form-label fw-semibold"
                           style={{ fontSize: 13 }}
@@ -1333,6 +1372,7 @@ const ProximityLoans = () => {
                       <div className="col-12">
                         {/* Lender Consent Section */}
                         <div
+                          id="offerConsentSection"
                           style={{
                             border: "1px solid #dee2e6",
                             borderRadius: 10,

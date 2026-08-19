@@ -11,6 +11,7 @@ import Swal from "sweetalert2";
 import { API_USER_URL } from "../../../config";
 import axios from "axios";
 import { referrerdata, isApiSuccess } from "../../HttpRequest/beforelogin";
+import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 export default function BorrowerRegister() {
   const inputRef = useRef();
@@ -331,6 +332,7 @@ export default function BorrowerRegister() {
   }, [registrationField.pancard]);
 
   useEffect(() => {
+    clearLastVisitedUrls();
     const searchParams = new URLSearchParams(window.location.search);
     const refParam = searchParams.get("ref");
 

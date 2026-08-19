@@ -1036,8 +1036,8 @@ export default function TestimonialVideos() {
           
           {/* Left Column: Video Poster or Iframe */}
           <div className="tv-left-column">
-            {isPlaying ? (
-              currentPath.startsWith("http") ? (
+            {/* {isPlaying ? ( */}
+            { currentPath.startsWith("http") ? (
                 <div className="tv-player-container">
 
                   <video
@@ -1134,8 +1134,8 @@ export default function TestimonialVideos() {
                     title={`Lender testimonial ${displayNum}`}
                   />
                 </div>
-              )
-            ) : (
+              )}
+            {/* ) : (
               <div
                 className="tv-poster-container"
                 onClick={() => setIsPlaying(true)}
@@ -1151,22 +1151,23 @@ export default function TestimonialVideos() {
                     />
                     <div className="tv-poster-overlay-shade" />
                   </>
-                ) : (
-                  <div className="tv-fallback-card">
-                    <div className="tv-fallback-content">
-                      <div className="tv-fallback-logo">OxyLoans</div>
-                      <div className="tv-fallback-title">LENDER TESTIMONIAL</div>
-                      <div className="tv-fallback-number">#{String(displayNum).padStart(2, "0")}</div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Play Button Overlay */}
+                ) :
+                // (
+                //   <div className="tv-fallback-card">
+                //     <div className="tv-fallback-content">
+                //       <div className="tv-fallback-logo">OxyLoans</div>
+                //       <div className="tv-fallback-title">LENDER TESTIMONIAL</div>
+                //       <div className="tv-fallback-number">#{String(displayNum).padStart(2, "0")}</div>
+                //     </div>
+                //   </div>
+                // )
+                null
+                }
                 <div className="tv-play-btn">
                   <PlayGlyph />
                 </div>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* Right Column: Profile details & navigation controls */}

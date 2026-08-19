@@ -1,5 +1,5 @@
 // Utility to handle redirecting users back to their last visited step/process upon login
-// Excludes public auth pages, home page, as well as eSign and eNACH steps.
+// Excludes public auth pages, registration screens, home page, as well as eSign and eNACH steps.
 // Prevents cross-role redirection (e.g. Borrower being redirected to Lender screen or vice versa).
 
 const LAST_VISITED_URL_KEY = "oxy_last_visited_url";
@@ -37,6 +37,79 @@ const removeItemSafely = (storageType, key) => {
 };
 
 /**
+ * Checks whether a given path is an authentication, registration, public, or excluded path.
+ * @param {string} pathname 
+ * @returns {boolean}
+ */
+export const isAuthOrExcludedPath = (pathname) => {
+  if (!pathname || typeof pathname !== "string") return true;
+
+  let clean = pathname.trim();
+  try {
+    if (clean.startsWith("http://") || clean.startsWith("https://")) {
+      clean = new URL(clean).pathname;
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  clean = clean.split("?")[0].split("#")[0].trim().toLowerCase();
+  clean = clean.replace(/\/+/g, "/");
+  if (clean.length > 1 && clean.endsWith("/")) {
+    clean = clean.slice(0, -1);
+  }
+
+  if (!clean || clean === "/" || clean === "") return true;
+
+  const excludedPrefixes = [
+    "/login",
+    "/loginotp",
+    "/admlogin",
+    "/partnerlogin",
+    "/whatsapplogin",
+    "/register",
+    "/borrower_register",
+    "/partnerregister",
+    "/register_active_proceed",
+    "/usertype",
+    "/oxyintro",
+    "/forgotpassword",
+    "/forgotpassword2",
+    "/forgotpassword3",
+    "/whatsappuser",
+    "/whatappuser",
+    "/testimonials",
+    "/top-lenders",
+    "/escrowdeals",
+    "/regularescrowdeals",
+  ];
+
+  if (
+    excludedPrefixes.some(
+      (p) => clean === p || clean.startsWith(p + "/") || clean.startsWith(p + "?")
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    clean.includes("login") ||
+    clean.includes("register") ||
+    clean.includes("usertype") ||
+    clean.includes("oxyintro") ||
+    clean.includes("forgotpassword") ||
+    clean.includes("whatsappuser") ||
+    clean.includes("whatappuser") ||
+    clean.includes("esign") ||
+    clean.includes("enach")
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
  * Normalizes a role string to a canonical role name ("BORROWER", "LENDER", "ADMIN", "PARTNER").
  * @param {string} role 
  * @returns {string|null} Canonical role or upper string
@@ -59,170 +132,161 @@ export const normalizeRole = (role) => {
 };
 
 /**
+ * Gets default home/dashboard path for a canonical role.
+ * @param {string} role 
+ * @returns {string}
+ */
+export const getDefaultDashboardForRole = (role) => {
+  const norm = normalizeRole(role);
+  if (norm === "ADMIN") return "/oxyloansadmindashboard";
+  if (norm === "LENDER") return "/ai/portfolio";
+  if (norm === "PARTNER") return "/patnerdashboard";
+  return "/borrowerDashboard";
+};
+
+/**
  * Identifies expected role for a given URL path.
  * @param {string} pathname 
  * @returns {string|null} Expected canonical role ("BORROWER", "LENDER", "ADMIN", "PARTNER") or null if generic/auth/public
  */
 export const getRoleFromPath = (pathname) => {
-  if (!pathname) return null;
-  const lower = pathname.toLowerCase();
+  if (!pathname || isAuthOrExcludedPath(pathname)) return null;
 
-  // Public/Auth/eSign/eNACH exclusions
-  const excludedPaths = [
-    "/",
-    "/login",
-    "/loginotp",
-    "/admlogin",
-    "/register",
-    "/usertype",
-    "/borrower_register",
-    "/register_active_proceed",
-    "/oxyintro",
-    "/forgotpassword",
-    "/forgotpassword2",
-    "/whatsappuser",
-    "/whatsapplogin",
-    "/whatappuser",
-    "/partnerregister",
-    "/partnerlogin",
-  ];
-
-  if (
-    excludedPaths.includes(lower) ||
-    lower.includes("esign") ||
-    lower.includes("enach")
-  ) {
-    return null;
+  let clean = pathname.trim();
+  try {
+    if (clean.startsWith("http://") || clean.startsWith("https://")) {
+      clean = new URL(clean).pathname;
+    }
+  } catch (e) {
+    // ignore
   }
+  clean = clean.split("?")[0].split("#")[0].trim().toLowerCase();
 
   // Admin routes
   if (
-    lower.includes("admin") ||
-    lower.startsWith("/emi") ||
-    lower.startsWith("/addborrower") ||
-    lower.startsWith("/cicreports") ||
-    lower.startsWith("/lenderqueries") ||
-    lower.startsWith("/borrowerqueries") ||
-    lower.startsWith("/resolvedlender") ||
-    lower.startsWith("/resolvedborrower") ||
-    lower.startsWith("/participatedsix") ||
-    lower.startsWith("/walletloadednot") ||
-    lower.startsWith("/notparticipated") ||
-    lower.startsWith("/onlyonce") ||
-    lower.startsWith("/onlytwice") ||
-    lower.startsWith("/morethan") ||
-    lower.startsWith("/emailwhatsapp") ||
-    lower.startsWith("/viewstudent") ||
-    lower.startsWith("/viewequity") ||
-    lower.startsWith("/viewescrows") ||
-    lower.startsWith("/viewtests") ||
-    lower.startsWith("/viewsalaried") ||
-    lower.startsWith("/lenderloanapplications") ||
-    lower.startsWith("/borrowerloanapplications") ||
-    lower.startsWith("/updateuserdetails") ||
-    lower.startsWith("/assignedusers") ||
-    lower.startsWith("/radhadashboard") ||
-    lower.startsWith("/usercommentdetails") ||
-    lower.startsWith("/mycalls") ||
-    lower.startsWith("/participatedamountinfo") ||
-    lower.startsWith("/uploadfile") ||
-    lower.startsWith("/monthlyinterest") ||
-    lower.startsWith("/interestdetailstable") ||
-    lower.startsWith("/participationlist") ||
-    lower.startsWith("/userparticipationlist") ||
-    lower.startsWith("/toplendersinfo") ||
-    lower.startsWith("/allreferredetails") ||
-    lower.startsWith("/monthlyreturnedinterest") ||
-    lower.startsWith("/activelendersparticipation") ||
-    lower.startsWith("/failedborrowers") ||
-    lower.startsWith("/dealsinfo") ||
-    lower.startsWith("/mainadmindashboard") ||
-    lower.startsWith("/borrowerdocuments") ||
-    lower.startsWith("/lendernearbyborrowers") ||
-    lower.startsWith("/borrowernearbylenders")
+    clean.includes("admin") ||
+    clean.startsWith("/emi") ||
+    clean.startsWith("/addborrower") ||
+    clean.startsWith("/cicreports") ||
+    clean.startsWith("/lenderqueries") ||
+    clean.startsWith("/borrowerqueries") ||
+    clean.startsWith("/resolvedlender") ||
+    clean.startsWith("/resolvedborrower") ||
+    clean.startsWith("/participatedsix") ||
+    clean.startsWith("/walletloadednot") ||
+    clean.startsWith("/notparticipated") ||
+    clean.startsWith("/onlyonce") ||
+    clean.startsWith("/onlytwice") ||
+    clean.startsWith("/morethan") ||
+    clean.startsWith("/emailwhatsapp") ||
+    clean.startsWith("/viewstudent") ||
+    clean.startsWith("/viewequity") ||
+    clean.startsWith("/viewescrows") ||
+    clean.startsWith("/viewtests") ||
+    clean.startsWith("/viewsalaried") ||
+    clean.startsWith("/lenderloanapplications") ||
+    clean.startsWith("/borrowerloanapplications") ||
+    clean.startsWith("/updateuserdetails") ||
+    clean.startsWith("/assignedusers") ||
+    clean.startsWith("/radhadashboard") ||
+    clean.startsWith("/usercommentdetails") ||
+    clean.startsWith("/mycalls") ||
+    clean.startsWith("/participatedamountinfo") ||
+    clean.startsWith("/uploadfile") ||
+    clean.startsWith("/monthlyinterest") ||
+    clean.startsWith("/interestdetailstable") ||
+    clean.startsWith("/participationlist") ||
+    clean.startsWith("/userparticipationlist") ||
+    clean.startsWith("/toplendersinfo") ||
+    clean.startsWith("/allreferredetails") ||
+    clean.startsWith("/monthlyreturnedinterest") ||
+    clean.startsWith("/activelendersparticipation") ||
+    clean.startsWith("/failedborrowers") ||
+    clean.startsWith("/dealsinfo") ||
+    clean.startsWith("/mainadmindashboard") ||
+    clean.startsWith("/borrowerdocuments") ||
+    clean.startsWith("/lendernearbyborrowers") ||
+    clean.startsWith("/borrowernearbylenders")
   ) {
     return "ADMIN";
   }
 
   // Partner routes
   if (
-    lower.includes("partner") ||
-    lower.includes("patner") ||
-    lower.startsWith("/getlistofborrowerdetails")
+    clean.includes("partner") ||
+    clean.includes("patner") ||
+    clean.startsWith("/getlistofborrowerdetails")
   ) {
     return "PARTNER";
   }
 
   // Borrower routes
   if (
-    lower.includes("borrower") ||
-    lower.startsWith("/loanrequest") ||
-    lower.startsWith("/updatekyc") ||
-    lower.startsWith("/post-loan-request") ||
-    lower.startsWith("/my-marketplace-loans") ||
-    lower.startsWith("/my-oxyscore") ||
-    lower.startsWith("/my-loans") ||
-    lower.startsWith("/nearbyleders") ||
-    lower.startsWith("/agreement")
+    clean.includes("borrower") ||
+    clean.startsWith("/loanrequest") ||
+    clean.startsWith("/updatekyc") ||
+    clean.startsWith("/post-loan-request") ||
+    clean.startsWith("/my-marketplace-loans") ||
+    clean.startsWith("/my-oxyscore") ||
+    clean.startsWith("/my-loans") ||
+    clean.startsWith("/nearbyleders") ||
+    clean.startsWith("/agreement")
   ) {
     return "BORROWER";
   }
 
   // Lender routes
   if (
-    lower.includes("lender") ||
-    lower === "/dashboard" ||
-    lower.startsWith("/ai/portfolio") ||
-    lower.startsWith("/ai/plans") ||
-    lower.startsWith("/lender-upgrade") ||
-    lower.startsWith("/oxai-upgrade") ||
-    lower.startsWith("/loadwale") ||
-    lower.startsWith("/loadwallet") ||
-    lower.startsWith("/withdraw") ||
-    lower.startsWith("/spining") ||
-    lower.startsWith("/transferwallet") ||
-    lower.startsWith("/mywithdrawal") ||
-    lower.startsWith("/participatedeal") ||
-    lower.startsWith("/todaydeal") ||
-    lower.startsWith("/testdeals") ||
-    lower.startsWith("/viewcurrentdaydeals") ||
-    lower.startsWith("/emicalculator") ||
-    lower.startsWith("/configautoinvest") ||
-    lower.startsWith("/membership") ||
-    lower.startsWith("/referalearings") ||
-    lower.startsWith("/viewautohistory") ||
-    lower.startsWith("/regularrunningdeal") ||
-    lower.startsWith("/myrunningdeals") ||
-    lower.startsWith("/mycloseddeals") ||
-    lower.startsWith("/myholdamount") ||
-    lower.startsWith("/mypartiallcloseddeal") ||
-    lower.startsWith("/tickethistory") ||
-    lower.startsWith("/fileconvension") ||
-    lower.startsWith("/myinterestearning") ||
-    lower.startsWith("/myhighvaluedeals") ||
-    lower.startsWith("/earningcertificate") ||
-    lower.startsWith("/myloansstatement") ||
-    lower.startsWith("/referafriend") ||
-    lower.startsWith("/myreferalstatus") ||
-    lower.startsWith("/wallettowallethistory") ||
-    lower.startsWith("/myearnings") ||
-    lower.startsWith("/loanlistings") ||
-    lower.startsWith("/proximityloans") ||
-    lower.startsWith("/offergivenlist") ||
-    lower.startsWith("/disbourseloans") ||
-    lower.startsWith("/disburseloans") ||
-    lower.startsWith("/wallettowallet") ||
-    lower.startsWith("/autoinvesthistory") ||
-    lower.startsWith("/dashboardtransactions") ||
-    lower.startsWith("/interestsdatewise") ||
-    lower.startsWith("/marketplace-loans") ||
-    lower.startsWith("/negotiation") ||
-    lower.startsWith("/nearby-borrowers") ||
-    lower.startsWith("/smart-match") ||
-    lower.startsWith("/smart-loan-match") ||
-    lower.startsWith("/escrowdeals") ||
-    lower.startsWith("/regularescrowdeals") ||
-    lower.startsWith("/top-lenders")
+    clean.includes("lender") ||
+    clean === "/dashboard" ||
+    clean.startsWith("/ai/portfolio") ||
+    clean.startsWith("/ai/plans") ||
+    clean.startsWith("/lender-upgrade") ||
+    clean.startsWith("/oxai-upgrade") ||
+    clean.startsWith("/loadwale") ||
+    clean.startsWith("/loadwallet") ||
+    clean.startsWith("/withdraw") ||
+    clean.startsWith("/spining") ||
+    clean.startsWith("/transferwallet") ||
+    clean.startsWith("/mywithdrawal") ||
+    clean.startsWith("/participatedeal") ||
+    clean.startsWith("/todaydeal") ||
+    clean.startsWith("/testdeals") ||
+    clean.startsWith("/viewcurrentdaydeals") ||
+    clean.startsWith("/emicalculator") ||
+    clean.startsWith("/configautoinvest") ||
+    clean.startsWith("/membership") ||
+    clean.startsWith("/referalearings") ||
+    clean.startsWith("/viewautohistory") ||
+    clean.startsWith("/regularrunningdeal") ||
+    clean.startsWith("/myrunningdeals") ||
+    clean.startsWith("/mycloseddeals") ||
+    clean.startsWith("/myholdamount") ||
+    clean.startsWith("/mypartiallcloseddeal") ||
+    clean.startsWith("/tickethistory") ||
+    clean.startsWith("/fileconvension") ||
+    clean.startsWith("/myinterestearning") ||
+    clean.startsWith("/myhighvaluedeals") ||
+    clean.startsWith("/earningcertificate") ||
+    clean.startsWith("/myloansstatement") ||
+    clean.startsWith("/referafriend") ||
+    clean.startsWith("/myreferalstatus") ||
+    clean.startsWith("/wallettowallethistory") ||
+    clean.startsWith("/myearnings") ||
+    clean.startsWith("/loanlistings") ||
+    clean.startsWith("/proximityloans") ||
+    clean.startsWith("/offergivenlist") ||
+    clean.startsWith("/disbourseloans") ||
+    clean.startsWith("/disburseloans") ||
+    clean.startsWith("/wallettowallet") ||
+    clean.startsWith("/autoinvesthistory") ||
+    clean.startsWith("/dashboardtransactions") ||
+    clean.startsWith("/interestsdatewise") ||
+    clean.startsWith("/marketplace-loans") ||
+    clean.startsWith("/negotiation") ||
+    clean.startsWith("/nearby-borrowers") ||
+    clean.startsWith("/smart-match") ||
+    clean.startsWith("/smart-loan-match")
   ) {
     return "LENDER";
   }
@@ -237,14 +301,33 @@ export const getRoleFromPath = (pathname) => {
  * @returns {boolean}
  */
 export const isUrlCompatibleWithRole = (savedUrl, userRole) => {
-  if (!savedUrl) return false;
+  if (!savedUrl || isAuthOrExcludedPath(savedUrl)) return false;
+  
   const pathRole = getRoleFromPath(savedUrl);
-  if (!pathRole) return true; // Generic page (e.g., /notifications), allowed for any role
+  if (!pathRole) {
+    // Generic protected page (e.g., /notifications, /profile)
+    return true;
+  }
 
   const normTarget = normalizeRole(userRole);
   if (!normTarget) return false;
 
   return pathRole === normTarget;
+};
+
+/**
+ * Clears all stored last-visited redirection keys.
+ */
+export const clearLastVisitedUrls = () => {
+  try {
+    removeItemSafely("localStorage", LAST_VISITED_URL_KEY);
+    removeItemSafely("localStorage", LAST_VISITED_ROLE_KEY);
+    ["BORROWER", "LENDER", "ADMIN", "PARTNER"].forEach((r) => {
+      removeItemSafely("localStorage", `${LAST_VISITED_URL_KEY}_${r}`);
+    });
+  } catch (e) {
+    // ignore
+  }
 };
 
 // Preserve last visited URL across localStorage.clear() calls (e.g. during logout)
@@ -269,19 +352,15 @@ if (typeof window !== "undefined" && window.localStorage) {
     originalClear.call(this);
 
     try {
-      if (savedGlobalUrl) {
-        const lower = savedGlobalUrl.toLowerCase();
-        if (!lower.includes("esign") && !lower.includes("enach") && !lower.includes("/login")) {
-          this.setItem(LAST_VISITED_URL_KEY, savedGlobalUrl);
-          if (savedGlobalRole) {
-            this.setItem(LAST_VISITED_ROLE_KEY, savedGlobalRole);
-          }
+      if (savedGlobalUrl && !isAuthOrExcludedPath(savedGlobalUrl)) {
+        this.setItem(LAST_VISITED_URL_KEY, savedGlobalUrl);
+        if (savedGlobalRole) {
+          this.setItem(LAST_VISITED_ROLE_KEY, savedGlobalRole);
         }
       }
       Object.keys(roleUrls).forEach((r) => {
-        const lower = roleUrls[r].toLowerCase();
-        if (!lower.includes("esign") && !lower.includes("enach") && !lower.includes("/login")) {
-          this.setItem(`${LAST_VISITED_URL_KEY}_${r}`, lower.includes("esign") || lower.includes("enach") ? "" : roleUrls[r]);
+        if (roleUrls[r] && !isAuthOrExcludedPath(roleUrls[r])) {
+          this.setItem(`${LAST_VISITED_URL_KEY}_${r}`, roleUrls[r]);
         }
       });
     } catch (e) {
@@ -296,35 +375,7 @@ if (typeof window !== "undefined" && window.localStorage) {
  * @param {string} search 
  */
 export const saveLastVisitedUrl = (pathname, search = "") => {
-  if (!pathname) return;
-
-  const lowerPath = pathname.toLowerCase();
-  const excludedPaths = [
-    "/",
-    "/login",
-    "/loginotp",
-    "/admlogin",
-    "/register",
-    "/usertype",
-    "/borrower_register",
-    "/register_active_proceed",
-    "/oxyintro",
-    "/forgotpassword",
-    "/forgotpassword2",
-    "/whatsappuser",
-    "/whatsapplogin",
-    "/whatappuser",
-    "/partnerregister",
-    "/partnerlogin",
-  ];
-
-  if (
-    excludedPaths.includes(lowerPath) ||
-    lowerPath.includes("esign") ||
-    lowerPath.includes("enach")
-  ) {
-    return;
-  }
+  if (!pathname || isAuthOrExcludedPath(pathname)) return;
 
   const fullUrl = pathname + (search || "");
   let activeRole =
@@ -378,28 +429,20 @@ export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", user
     }
 
     // 3. Clear stored redirect URLs so subsequent logins don't reuse old paths
-    if (activeRole) {
-      removeItemSafely("localStorage", `${LAST_VISITED_URL_KEY}_${activeRole}`);
-    }
-    removeItemSafely("localStorage", LAST_VISITED_URL_KEY);
-    removeItemSafely("localStorage", LAST_VISITED_ROLE_KEY);
+    clearLastVisitedUrls();
 
-    if (savedUrl) {
-      const lower = savedUrl.toLowerCase();
-      if (
-        !lower.includes("esign") &&
-        !lower.includes("enach") &&
-        !lower.includes("/login") &&
-        !lower.includes("/admlogin")
-      ) {
-        // Validate URL role compatibility
-        if (isUrlCompatibleWithRole(savedUrl, activeRole)) {
-          return savedUrl;
-        }
+    if (savedUrl && !isAuthOrExcludedPath(savedUrl)) {
+      if (isUrlCompatibleWithRole(savedUrl, activeRole)) {
+        return savedUrl;
       }
     }
   } catch (e) {
     console.error("Error retrieving last visited URL", e);
   }
-  return defaultPath;
+
+  if (defaultPath && !isAuthOrExcludedPath(defaultPath)) {
+    return defaultPath;
+  }
+
+  return getDefaultDashboardForRole(userRole);
 };

@@ -18,7 +18,6 @@ import {
   saveBorrowerReferenceDetails,
   uploadkyc,
   getuploadCredit,
-  getBorrowerSecureInfo,
   borrowerSecureInfo,
   getBorrowerRunningloans,
   getBorrowerLoanDetails,
@@ -246,6 +245,7 @@ const Profile = () => {
     cibilScore: "",
     comments: "",
     cibilPassword: "",
+    creditReportPassword: "",
     payslipsPassword: "",
     userId: "",
   });
@@ -286,6 +286,7 @@ const Profile = () => {
   const documentNames = {
   pan: "PAN Card",
   creditReport: "Credit Bureau Report",
+  CREDITREPORT: "Credit Bureau Report",
   CHEQUELEAF: "Cancelled Cheque Leaf",
   BANKSTATEMENT: "6-Month Bank Statement",
   AADHAR: "Aadhaar Card",
@@ -310,6 +311,7 @@ const Profile = () => {
 
   const loadAllProfileData = async () => {
     setLoading(true);
+    console.log("Loading all profile data...");
     const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId");
     
     try {
@@ -394,7 +396,7 @@ const Profile = () => {
           });
         }
       }
-
+        console.log("Loaded personal profile data:", userRes.data);
       // 2. Load Nominee details
       const nomineeRes = await loadlendernomineeDetails();
       if (nomineeRes?.request?.status === 200 && nomineeRes.data) {
@@ -411,29 +413,12 @@ const Profile = () => {
           nomineecity: nd.city || "",
         });
       }
-
+      console.log("Loaded nominee details:", nomineeRes.data);
       // 3. Load KYC Files status
       await fetchKycFiles();
 
-      // 4. Load Secure Info
-      const secureRes = await getBorrowerSecureInfo();
-      if (secureRes?.status === 200 && secureRes.data) {
-        const sd = secureRes.data;
-        setSecureInfo({
-          aadharPassword: sd.aadharPassword || "",
-          panPassword: sd.panPassword || "",
-          bankStatementPassword: sd.bankStatementPassword || "",
-          companyAddress: sd.companyAddress || "",
-          designation: sd.designation || "",
-          cibilScore: sd.cibilScore ? String(sd.cibilScore) : "",
-          comments: sd.comments || "",
-          cibilPassword: sd.cibilPassword || "",
-          payslipsPassword: sd.payslipsPassword || "",
-          userId: sd.userId || profileData.userId || userId,
-        });
-      }
-
       // 5. Check if borrower has active running loans via getBorrowerLoanDetails(userId)
+      console.log("Checking borrower running loans for userId:", userId);
       try {
         const loanDetailsRes = await getBorrowerLoanDetails(userId);
         if (loanDetailsRes?.status === 200 && loanDetailsRes.data) {
@@ -452,6 +437,7 @@ const Profile = () => {
               st === "LOANACCEPTED" ||
               st === "RUNNING" ||
               st === "REQUEST" ||
+              st === "PARTIALLYPROCESSING" ||
               Number(item.requestAmount || item.loanRequestAmount || item.amount || 0) > 0
             );
           });
@@ -467,6 +453,7 @@ const Profile = () => {
               setHasRunningLoans(runList.length > 0);
             }
           }
+          console.log("Borrower running loans check:", hasActiveDetails);
         } else {
           const runningRes = await getBorrowerRunningloans(1, 10);
           if (runningRes?.status === 200 && runningRes.data) {
@@ -475,6 +462,7 @@ const Profile = () => {
               : runningRes.data.results || runningRes.data.listOfApplications || runningRes.data.loans || [];
             setHasRunningLoans(runList.length > 0);
           }
+          console.log("Borrower running loans check: No active loans found in getBorrowerLoanDetails, fallback to getBorrowerRunningloans.");
         }
       } catch (activeErr) {
         console.log("Failed to check getBorrowerLoanDetails for profile edit lock", activeErr);
@@ -499,6 +487,7 @@ const Profile = () => {
 
   const fetchKycFiles = async () => {
     try {
+      const creditReportPass = secureInfo?.creditReportPassword || secureInfo?.cibilPassword || "";
       const res = await Promise.allSettled([
         getPanDoc(),
         getdataPassport(),
@@ -513,7 +502,7 @@ const Profile = () => {
         getdataofferletter(),
         getdatafeereceipt(),
         getdatapayslips(),
-        getPCreditReportDoc(),
+        getPCreditReportDoc(creditReportPass),
       ]);
 
       const docKeys = [
@@ -541,7 +530,22 @@ const Profile = () => {
   const [bankAnalysisData, setBankAnalysisData] = useState(null);
   const [latestStatementId, setLatestStatementId] = useState(null);
   const [analyzingBankStatement, setAnalyzingBankStatement] = useState(false);
+  const [processingDocument, setProcessingDocument] = useState({
+    bankStatement: false,
+    creditReport: false,
+  });
   const [downloadingBankReport, setDownloadingBankReport] = useState(false);
+  const [pdfPasswordModal, setPdfPasswordModal] = useState({
+    open: false,
+    title: "",
+    text: "",
+    placeholder: "",
+    confirmText: "Continue",
+    cancelText: "Skip",
+    password: "",
+    error: "",
+    resolver: null,
+  });
 
   const fetchBorrowerAnalysisData = async () => {
     const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
@@ -1062,7 +1066,86 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
 
   const handleSecureInput = (e) => {
     const { name, value } = e.target;
-    setSecureInfo((prev) => ({ ...prev, [name]: value }));
+    setSecureInfo((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === "cibilPassword") {
+        updated.creditReportPassword = value;
+      } else if (name === "creditReportPassword") {
+        updated.cibilPassword = value;
+      }
+      return updated;
+    });
+  };
+
+  const promptForPdfPassword = async ({
+    title,
+    text,
+    placeholder,
+    confirmText,
+    cancelText = "Skip",
+    validationMessage = "Password is required!",
+    initialPassword = "",
+  }) => {
+    return new Promise((resolve) => {
+      setPdfPasswordModal({
+        open: true,
+        title,
+        text,
+        placeholder,
+        confirmText,
+        cancelText,
+        password: initialPassword || "",
+        error: "",
+        resolver: resolve,
+      });
+    }).then((value) => {
+      if (value === undefined || value === null) return null;
+      return String(value).trim();
+    });
+  };
+
+  const handlePdfPasswordModalClose = () => {
+    const resolver = pdfPasswordModal.resolver;
+    setPdfPasswordModal({
+      open: false,
+      title: "",
+      text: "",
+      placeholder: "",
+      confirmText: "Continue",
+      cancelText: "Skip",
+      password: "",
+      error: "",
+      resolver: null,
+    });
+    if (resolver) {
+      resolver(null);
+    }
+  };
+
+  const handlePdfPasswordModalChange = (e) => {
+    const value = e.target.value;
+    setPdfPasswordModal((prev) => ({ ...prev, password: value, error: "" }));
+  };
+
+  const handlePdfPasswordModalSubmit = () => {
+    const password = (pdfPasswordModal.password || "").trim();
+
+    const resolver = pdfPasswordModal.resolver;
+    setPdfPasswordModal({
+      open: false,
+      title: "",
+      text: "",
+      placeholder: "",
+      confirmText: "Continue",
+      cancelText: "Skip",
+      password: "",
+      error: "",
+      resolver: null,
+    });
+
+    if (resolver) {
+      resolver(password);
+    }
   };
 
   // Upload File handler
@@ -1076,37 +1159,34 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
 
     if (e.target.name === "BANKSTATEMENT" && file) {
       let pass = secureInfo?.bankStatementPassword || "";
+      setProcessingDocument((prev) => ({ ...prev, bankStatement: true }));
 
-      // If no password set yet, check if statement is password protected
-      if (!pass) {
-        const { value: enteredPassword, isConfirmed } = await Swal.fire({
-          title: "Bank Statement Password",
-          text: "Is your Bank Statement PDF password-protected? Enter password if required, or leave blank to continue.",
-          input: "password",
-          inputPlaceholder: "Enter PDF Password (e.g. DOB or Name)",
-          showCancelButton: true,
-          confirmButtonText: "Upload & Analyze",
-          cancelButtonText: "Skip Password",
-          confirmButtonColor: "var(--oxy-primary)",
-        });
+      const enteredPass = await promptForPdfPassword({
+        title: "Bank Statement Password",
+        text: "Enter the password if this PDF is protected. Leave it blank if the document is not password protected.",
+        placeholder: "Enter PDF Password (optional)",
+        confirmText: "Verify & Upload",
+        cancelText: "Cancel",
+        validationMessage: "Password can be left blank if the file is not protected.",
+        initialPassword: pass,
+      });
 
-        if (!isConfirmed && enteredPassword === undefined) {
-          return;
-        }
-        pass = enteredPassword || "";
-        if (pass) {
-          setSecureInfo((prev) => ({ ...prev, bankStatementPassword: pass }));
-        }
+      if (enteredPass === null) {
+        setProcessingDocument((prev) => ({ ...prev, bankStatement: false }));
+        return;
+      }
+
+      pass = enteredPass || "";
+      if (pass) {
+        setSecureInfo((prev) => ({ ...prev, bankStatementPassword: pass }));
       }
 
       setAnalyzingBankStatement(true);
       try {
         const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
-        // POST /v1/user/borrower/:borrowerId/analyze with form-data (file + password)
         const analyzeRes = await analyzeBorrowerBankStatement(userId, file, pass);
-        
-        // Also call legacy uploadkyc for document storage compatibility
-        try { await uploadkyc(e); } catch (uErr) { console.log("Legacy upload notice:", uErr); }
+
+        try { await uploadkyc(e, pass); } catch (uErr) { console.log("Legacy upload notice:", uErr); }
 
         Swal.fire(
           "Upload & Analysis Successful",
@@ -1126,54 +1206,191 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
           err?.response?.status === 422;
 
         if (isPasswordError) {
-          const { value: retryPass, isConfirmed } = await Swal.fire({
+          const retryPass = await promptForPdfPassword({
             title: "Password Required",
             text: errMsg || "The uploaded bank statement PDF is password-protected. Please enter password:",
-            input: "password",
-            inputPlaceholder: "Enter Bank Statement Password",
-            showCancelButton: true,
-            confirmButtonText: "Submit & Analyze",
-            confirmButtonColor: "var(--oxy-primary)",
-            inputValidator: (val) => {
-              if (!val) return "Password is required to decrypt statement PDF!";
-            }
+            placeholder: "Enter Bank Statement Password",
+            confirmText: "Submit & Analyze",
+            cancelText: "Cancel",
+            validationMessage: "Password is required to decrypt statement PDF!",
           });
 
-          if (isConfirmed && retryPass) {
-            setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
-            try {
-              const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
-              await analyzeBorrowerBankStatement(userId, file, retryPass);
-              try { await uploadkyc(e); } catch (uErr) {}
-              Swal.fire("Success", "Bank statement analyzed successfully!", "success");
-              await fetchKycFiles();
-              await fetchBorrowerAnalysisData();
-            } catch (retryErr) {
-              Swal.fire("Analysis Error", retryErr?.response?.data?.errorMessage || "Failed to analyze bank statement.", "error");
-            }
+          if (retryPass === null) {
+            setProcessingDocument((prev) => ({ ...prev, bankStatement: false }));
+            return;
           }
-        } else {
+
+          setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
+
           try {
-            const res = await uploadkyc(e);
-            if (res?.request?.status === 200) {
-              Swal.fire("Upload Successful", "Document uploaded successfully.", "success");
-              await fetchKycFiles();
-            } else {
-              Swal.fire("Upload Failed", res?.data?.errorMessage || "File cannot be uploaded.", "error");
-            }
-          } catch {
-            Swal.fire("Upload Failed", errMsg || "An error occurred during upload.", "error");
+            const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+            await analyzeBorrowerBankStatement(userId, file, retryPass);
+            try { await uploadkyc(e, retryPass); } catch (uErr) {}
+            Swal.fire("Success", "Bank statement analyzed successfully!", "success");
+            await fetchKycFiles();
+            await fetchBorrowerAnalysisData();
+          } catch (retryErr) {
+            Swal.fire("Analysis Error", retryErr?.response?.data?.errorMessage || "Failed to analyze bank statement.", "error");
           }
+          return;
+        }
+
+        try {
+          const res = await uploadkyc(e, pass);
+          if (res?.request?.status === 200 || res?.status === 200) {
+            Swal.fire("Upload Successful", "Document uploaded successfully.", "success");
+            await fetchKycFiles();
+          } else {
+            Swal.fire("Upload Failed", res?.data?.errorMessage || "File cannot be uploaded.", "error");
+          }
+        } catch {
+          Swal.fire("Upload Failed", errMsg || "An error occurred during upload.", "error");
         }
       } finally {
         setAnalyzingBankStatement(false);
+        setProcessingDocument((prev) => ({ ...prev, bankStatement: false }));
       }
+      return;
+    }
+
+    if (
+      (e.target.name === "CREDITREPORT" || e.target.name === "creditReport") &&
+      file
+    ) {
+      setProcessingDocument((prev) => ({ ...prev, creditReport: true }));
+      let pass =
+        secureInfo?.creditReportPassword ||
+        secureInfo?.cibilPassword ||
+        "";
+
+      const enteredPass = await promptForPdfPassword({
+        title: "Credit Report Password",
+        text: "Enter the password if this report is protected. Leave blank if the PDF is not password protected.",
+        placeholder: "Enter Credit Report Password (optional)",
+        confirmText: "Verify & Upload",
+        cancelText: "Cancel",
+        validationMessage: "Password can be left blank if the file is not protected.",
+        initialPassword: pass,
+      });
+
+      if (enteredPass === null) {
+        setProcessingDocument((prev) => ({ ...prev, creditReport: false }));
+        return;
+      }
+
+      pass = enteredPass || "";
+      if (pass) {
+        setSecureInfo((prev) => ({
+          ...prev,
+          cibilPassword: pass,
+          creditReportPassword: pass,
+        }));
+      }
+
+      try {
+        const res = await uploadkyc(e, pass);
+
+        if (res?.request?.status === 200 || res?.status === 200) {
+          await Swal.fire({
+            title: "Upload Successful",
+            text: "Credit Bureau Report has been uploaded and processed successfully.",
+            icon: "success",
+          });
+
+          await fetchKycFiles();
+        } else {
+          await Swal.fire({
+            title: "Upload Failed",
+            text:
+              res?.data?.errorMessage ||
+              "Credit report cannot be uploaded.",
+            icon: "error",
+          });
+        }
+      } catch (err) {
+        const errMsg =
+          err?.response?.data?.errorMessage ||
+          err?.message ||
+          "";
+
+        const isPasswordError =
+          errMsg.toLowerCase().includes("password") ||
+          errMsg.toLowerCase().includes("protected") ||
+          errMsg.toLowerCase().includes("encrypted") ||
+          errMsg.toLowerCase().includes("decrypt") ||
+          err?.response?.status === 400 ||
+          err?.response?.status === 422;
+
+        if (isPasswordError) {
+          const retryPass = await promptForPdfPassword({
+            title: "Password Required",
+            text: errMsg || "The uploaded Credit Report PDF is password-protected.",
+            placeholder: "Enter Credit Report Password",
+            confirmText: "Submit & Upload",
+            cancelText: "Cancel",
+            validationMessage: "Password is required!",
+          });
+
+          if (retryPass === null) {
+            setProcessingDocument((prev) => ({ ...prev, creditReport: false }));
+            return;
+          }
+
+          setSecureInfo((prev) => ({
+            ...prev,
+            cibilPassword: retryPass,
+            creditReportPassword: retryPass,
+          }));
+
+          try {
+            const retryRes = await uploadkyc(e, retryPass);
+
+            if (
+              retryRes?.request?.status === 200 ||
+              retryRes?.status === 200
+            ) {
+              await Swal.fire({
+                title: "Upload Successful",
+                text: "Credit Bureau Report uploaded successfully.",
+                icon: "success",
+              });
+
+              await fetchKycFiles();
+            } else {
+              await Swal.fire({
+                title: "Upload Failed",
+                text:
+                  retryRes?.data?.errorMessage ||
+                  "Credit report cannot be uploaded.",
+                icon: "error",
+              });
+            }
+          } catch (retryErr) {
+            await Swal.fire({
+              title: "Upload Failed",
+              text:
+                retryErr?.response?.data?.errorMessage ||
+                "Failed to upload credit report.",
+              icon: "error",
+            });
+          }
+        } else {
+          await Swal.fire({
+            title: "Upload Failed",
+            text: errMsg || "An error occurred during upload.",
+            icon: "error",
+          });
+        }
+      } finally {
+        setProcessingDocument((prev) => ({ ...prev, creditReport: false }));
+      }
+
       return;
     }
 
     try {
       const res = await uploadkyc(e);
-      if (res?.request?.status === 200) {
+      if (res?.request?.status === 200 || res?.status === 200) {
         Swal.fire(
           "Upload Successful",
           `${documentNames[e.target.name] || "Document"} has been uploaded and processed successfully.`,
@@ -1603,24 +1820,6 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
       }
     } catch {
       Swal.fire("Save Failure", "Unable to update reference details.", "error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // Save Secure metadata
-  const saveSecureDetails = async () => {
-    setSubmitting(true);
-    try {
-      const res = await borrowerSecureInfo(secureInfo);
-      if (res?.status === 200 || res?.request?.status === 200) {
-        Swal.fire("Success", "Secure credentials and file passwords saved.", "success");
-        setEditSection(null);
-      } else {
-        Swal.fire("Save Failure", "Unable to save secure parameters.", "error");
-      }
-    } catch {
-      Swal.fire("Save Failure", "Unable to save secure parameters.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -2480,15 +2679,15 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         <Modal.Body className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
           <div className="row g-4">
           {[
-              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, },
-              { label: "Credit Bureau Report", name: "creditReport", value: kycDocs.creditReport, },
+              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, passwordField: "panPassword" },
+              { label: "Credit Bureau Report", name: "CREDITREPORT", value: kycDocs.creditReport, passwordField: "creditReportPassword" },
               { label: "Cancelled Cheque Leaf", name: "CHEQUELEAF", value: kycDocs.CHEQUELEAF },
-              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, },
-              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar,},
+              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, passwordField: "bankStatementPassword" },
+              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar, passwordField: "aadharPassword" },
               { label: "Driving Licence Scan", name: "DRIVINGLICENCE", value: kycDocs.DRIVINGLICENCE },
               { label: "Voter Identity Card", name: "VOTERID", value: kycDocs.VOTERID },
               { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport },
-              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, },
+              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword" },
 
               ...(category === "STUDENT"
                 ? [
@@ -2511,23 +2710,30 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                         <span className="text-muted small" style={{ fontSize: "11px" }}>No file uploaded</span>
                       )}
                     </div>
-                    <label className="btn btn-outline-primary btn-xs mb-0">
-                      <i className="fa-solid fa-cloud-arrow-up"></i>
-                      <input type="file" name={doc.name} onChange={handleFileUploadInput} style={{ display: "none" }} />
+                    <label className="btn btn-outline-primary btn-xs mb-0" style={{ minWidth: "46px" }}>
+                      {processingDocument[doc.name === "BANKSTATEMENT" ? "bankStatement" : doc.name === "CREDITREPORT" || doc.name === "creditReport" ? "creditReport" : ""] ? (
+                        <span className="spinner-border spinner-border-sm" role="status" aria-label="loading"></span>
+                      ) : (
+                        <>
+                          <i className="fa-solid fa-cloud-arrow-up"></i>
+                        </>
+                      )}
+                      <input type="file" name={doc.name} onChange={handleFileUploadInput} style={{ display: "none" }} disabled={processingDocument[doc.name === "BANKSTATEMENT" ? "bankStatement" : doc.name === "CREDITREPORT" || doc.name === "creditReport" ? "creditReport" : ""]} />
                     </label>
                   </div>
-                  {doc.passwordField && (
+                  {/* {doc.passwordField && (
                     <div className="mt-2 pt-2 border-top">
                       <label className="form-label text-muted text-xs mb-1" style={{ fontSize: "10px" }}>File Password</label>
                       <input 
                         type="text" 
                         className="form-control form-control-sm rounded-2 text-xs py-1" 
                         name={doc.passwordField}
-                        value={secureInfo[doc.passwordField]} 
+                        placeholder="Enter file password"
+                        value={secureInfo[doc.passwordField] || ""} 
                         onChange={handleSecureInput} 
                       />
                     </div>
-                  )}
+                  )} */}
 
                   {doc.name === "BANKSTATEMENT" && (
                     <div className="mt-2 pt-2 border-top">
@@ -2584,9 +2790,40 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         </Modal.Body>
         <Modal.Footer>
           <button className="oxy-btn-secondary" onClick={() => setEditSection(null)}>Cancel</button>
-          {/* <button className="oxy-btn-primary" onClick={saveSecureDetails} disabled={submitting}>
-            {submitting ? "Saving..." : "Save Credentials"}
-          </button> */}
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={pdfPasswordModal.open} onHide={handlePdfPasswordModalClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title className="fw-bold text-dark h5">{pdfPasswordModal.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <p className="text-muted small mb-3">{pdfPasswordModal.text}</p>
+          <input
+            type="password"
+            className="form-control rounded-3"
+            placeholder={pdfPasswordModal.placeholder}
+            value={pdfPasswordModal.password}
+            onChange={handlePdfPasswordModalChange}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handlePdfPasswordModalSubmit();
+              }
+            }}
+          />
+          {pdfPasswordModal.error && (
+            <div className="text-danger small mt-2">{pdfPasswordModal.error}</div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <button className="oxy-btn-secondary" onClick={handlePdfPasswordModalClose}>
+            {pdfPasswordModal.cancelText}
+          </button>
+          <button className="oxy-btn-primary" onClick={handlePdfPasswordModalSubmit}>
+            {pdfPasswordModal.confirmText}
+          </button>
         </Modal.Footer>
       </Modal>
 
@@ -2600,7 +2837,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
             className="phoneinputfiled form-control"
             value={whatsappVal}
             onChange={setWhatsappVal}
-            // defaultCountry="IN"
+            defaultCountry="IN"
             maxLength={15}
           />
           {!whatsappSubmitted && (

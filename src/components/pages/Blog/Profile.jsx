@@ -1741,30 +1741,15 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                     <div className="card">
                       <div className="card-body">
                         <h5 className="card-title">Bank Account Details</h5>
-                        <br />
+
+                          <div className="text-muted small mb-3">
+                            <strong>Note:</strong> Please verify your Account Number and IFSC first.
+                            Your remaining bank details will be filled automatically after verification.
+                          </div>
+                            <br />
                         <div className="row">
                           <div className="col-md-12 col-lg-12">
                             <div className="row">
-                              <div className="form-group col-12 col-md-4 local-forms">
-                                <label>
-                                  Name as Per Bank
-                                  <span className="login-danger">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder=" Enter your Name"
-                                  name="nameAtBank"
-                                  onKeyPress={handleKeyPress}
-                                  onChange={handlebankchange}
-                                  value={bankaccountprofile.nameAtBank}
-                                />
-                                {bankaccountprofile.nameAtBankerror && (
-                                  <div className="text-danger">
-                                    {bankaccountprofile.nameAtBankerror}
-                                  </div>
-                                )}
-                              </div>
                               <div className="form-group col-12 col-md-4 local-forms">
                                 <label>
                                   Account Number
@@ -1847,6 +1832,42 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </div>
                                 )}
                               </div>
+                            </div>
+                                  {dashboarddata.verifyotp && (
+                                  <>
+                                    <button
+                                      className="btn btn-warning form-group col-8 col-md-4 local-forms col-md-2 mx-2"
+                                      style={{ color: "white" }}
+                                      type="submit"
+                                      onClick={verifyBankAccountAndIfscapi}
+                                    >
+                                      {/* {dashboarddata.verifyotpText} */}
+                                      Verify IFSC
+                                    </button>
+                                  </>
+                                )}
+                        <div className="row">
+                              <div className="form-group col-12 col-md-4 local-forms">
+                                <label>
+                                  Name as Per Bank
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder=" Enter your Name"
+                                  name="nameAtBank"
+                                  onKeyPress={handleKeyPress}
+                                  onChange={handlebankchange}
+                                  value={bankaccountprofile.nameAtBank}
+                                  readOnly
+                                />
+                                {bankaccountprofile.nameAtBankerror && (
+                                  <div className="text-danger">
+                                    {bankaccountprofile.nameAtBankerror}
+                                  </div>
+                                )}
+                              </div>
 
                               <div className="form-group col-12 col-md-4 local-forms">
                                 <label>
@@ -1861,6 +1882,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   onKeyPress={handleKeyPress}
                                   placeholder=" Enter your Bank Name"
                                   value={bankaccountprofile.bankName}
+                                  readOnly
                                 />
                                 {bankaccountprofile.bankNameerror && (
                                   <div className="text-danger">
@@ -1882,6 +1904,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   onKeyPress={handleKeyPress}
                                   onChange={handlebankchange}
                                   value={bankaccountprofile.branchName}
+                                  readOnly
                                 />
                                 {bankaccountprofile.branchNameerror && (
                                   <div className="text-danger">
@@ -1903,6 +1926,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   onChange={handlebankchange}
                                   onKeyPress={handleKeyPress}
                                   value={bankaccountprofile.bankCity}
+                                  readOnly
                                 />
                                 {bankaccountprofile.bankCityerror && (
                                   <div className="text-danger">
@@ -1959,19 +1983,6 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
 
 
                               <div className="col-12 row">
-                                {dashboarddata.verifyotp && (
-                                  <>
-                                    <button
-                                      className="btn btn-warning col-md-2 mx-2"
-                                      style={{ color: "white" }}
-                                      type="submit"
-                                      onClick={verifyBankAccountAndIfscapi}
-                                    >
-                                      {/* {dashboarddata.verifyotpText} */}
-                                      Verify IFSC
-                                    </button>
-                                  </>
-                                )}
                                 {dashboarddata.sendotpbtn && (
                                   <button
                                     className="btn btn-secondary col-md-2 mx-2"

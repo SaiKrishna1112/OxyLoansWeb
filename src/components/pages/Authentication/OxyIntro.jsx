@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
+import { clearLastVisitedUrls } from '../../../utils/redirectUtils';
 // import 'antd/dist/antd.css'; // Import Ant Design styles
 
 function OxyIntro() {
@@ -14,6 +15,7 @@ function OxyIntro() {
   const [exitModalVisible, setExitModalVisible] = useState(false);
   const navigate = useNavigate();
   useEffect(() => {
+    clearLastVisitedUrls();
     const savedData = localStorage.getItem('userData');
     if (savedData) {
       setFormData(JSON.parse(savedData));

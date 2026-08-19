@@ -329,6 +329,7 @@ export const participatedapi = async (deal) => {
             }).then((result) => {
               if (result.isConfirmed) {
                 window.location.reload();
+                navigate("/myRunningDeals");
               }
             });
           } else {
@@ -452,7 +453,12 @@ export const participatedapi = async (deal) => {
                 cancelButtonText: "cancel",
                 showConfirmButton: true,
                 confirmButtonText: "OK",
-              });
+              }).then((result) => {
+              if (result.isConfirmed) {
+                window.location.reload();
+                navigate("/myRunningDeals");
+              }
+            });
             } else {
               console.log(data.response);
               //           if (data.response.status === 403) {

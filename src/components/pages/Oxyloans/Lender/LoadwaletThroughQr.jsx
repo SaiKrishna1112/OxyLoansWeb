@@ -9,6 +9,7 @@ import {
   HandleWithFooter,
   WarningAlertWalltTran,
 } from "../../Base UI Elements/SweetAlert";
+import Swal from "sweetalert2";
 import {
   LoadwalletThroughQrScan,
   checkqrcodetransaction,
@@ -97,9 +98,22 @@ const LoadwaletThroughQr = () => {
         qRStatusresponse.then((data) => {
           if (data.request.status == 200) {
             if (data.data.status == "SUCCESS") {
-              HandleWithFooter(
-                "Your Transaction was Sucessfull and loaded the same amount Your Wallet"
-              );
+              const message =  "Your Transaction was Sucessfull and loaded the same amount Your Wallet"
+              Swal.fire({
+                    icon: "success",
+                    title: "Congratulations",
+                    text: message,
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "var(--oxy-primary)",
+                    buttonsStyling: false,
+                    customClass: {
+                      confirmButton: "btn btn-primary",
+                    },
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      window.location.reload();
+                    }
+                  });
               clearInterval(intervalId);
               return false;
             }
