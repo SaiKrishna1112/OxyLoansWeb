@@ -1006,12 +1006,13 @@ export const getRegisteredUsersSummary = async () => {
 };
 
 /** OXYINSIGHTS login analytics — view: hourly | weekly | yearly; date: YYYY-MM-DD (day view) */
-export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date) => {
+export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date, year) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/oxyinsights/login-history`, {
     headers: adminRegisteredUsersHeaders(),
     params: {
       view,
       ...(date ? { date } : {}),
+      ...(year ? { year } : {}),
     },
     timeout: 60000,
   });
@@ -1022,6 +1023,7 @@ export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date) =
 export const getAdminAIOXYInsightsDetails = async ({
   view = "hourly",
   date,
+  year,
   metric = "uniqueUsers",
   bucketLabel = "",
   pageNo = 1,
@@ -1032,6 +1034,7 @@ export const getAdminAIOXYInsightsDetails = async ({
     params: {
       view,
       ...(date ? { date } : {}),
+      ...(year ? { year } : {}),
       metric,
       bucketLabel: bucketLabel || undefined,
       pageNo,
@@ -2133,6 +2136,56 @@ export const getAdminAICreatedDeals = async (pageNo = 1, pageSize = 20, dealView
       dealId: filters.dealId || undefined,
       dealName: filters.dealName || undefined,
     },
+  });
+  return response.data;
+};
+
+/** Year-wise deals summary (by received_on year). dealType: ALL|NORMAL|TEST|EQUITY|... — ALL excludes TEST. */
+export const getAdminAIDealsYearlySummary = async (fromYear = 2018, dealType = "ALL") => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/yearly-summary`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      fromYear,
+      dealType: dealType || "ALL",
+    },
+    timeout: 180000,
+  });
+  return response.data;
+};
+
+/** Year-wise deals list. Pass year=0 for all years. ALL dealType excludes TEST. */
+export const getAdminAIDealsYearWise = async (
+  year,
+  pageNo = 1,
+  pageSize = 20,
+  { dealType = "ALL", status = "ALL", dealId = "", dealName = "" } = {}
+) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/year-wise`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      year: year == null || Number(year) <= 0 ? 0 : year,
+      pageNo,
+      pageSize,
+      dealType: dealType || "ALL",
+      status: status && status !== "ALL" ? status : undefined,
+      dealId: dealId || undefined,
+      dealName: dealName || undefined,
+    },
+    timeout: 180000,
+  });
+  return response.data;
+};
+
+export const downloadAdminAIDealsYearWiseExcel = async (year, { dealType = "ALL", status = "ALL" } = {}) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/year-wise/export`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      year: year == null || Number(year) <= 0 ? 0 : year,
+      dealType: dealType || "ALL",
+      status: status && status !== "ALL" ? status : undefined,
+    },
+    responseType: "blob",
+    timeout: 300000,
   });
   return response.data;
 };

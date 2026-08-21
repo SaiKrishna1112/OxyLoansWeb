@@ -73,6 +73,7 @@ import AdminAIAutoEmailDraftModal from "./AdminAIAutoEmailDraftModal";
 import { OXYINSIGHTS_PATH } from "./adminAINavigation";
 import { exportTopReferrersLentTreePdf } from "./exportTopReferrersLentTreePdf";
 import { downloadTopPaidEarnedExcel } from "./AdminAITopPaidEarnedReferrersPage";
+import AdminAIYearWiseDealsPanel from "./AdminAIYearWiseDealsPanel";
 
 const ADMIN_AI_DASHBOARD_CACHE_KEY = "oxyloans.adminAIDashboard.bootstrap.v2";
 const ADMIN_AI_DASHBOARD_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -1149,6 +1150,7 @@ const AdminAIDashboard = () => {
   const [autoEmailModalState, setAutoEmailModalState] = useState(null);
   const [showReferralRegistrations, setShowReferralRegistrations] = useState(false);
   const [showYearWiseReferrals, setShowYearWiseReferrals] = useState(false);
+  const [showYearWiseDeals, setShowYearWiseDeals] = useState(false);
   const [referralDate, setReferralDate] = useState(() => defaultParticipationDate());
   const [referralYear, setReferralYear] = useState(null);
   const [referralYearStatus, setReferralYearStatus] = useState(null);
@@ -1701,6 +1703,7 @@ const AdminAIDashboard = () => {
     setInactiveReactivatedError("");
     setShowReferralRegistrations(false);
     setShowYearWiseReferrals(false);
+    setShowYearWiseDeals(false);
     setReferralRows([]);
     setReferralPage(1);
     setReferralTotal(0);
@@ -1923,10 +1926,20 @@ const AdminAIDashboard = () => {
     loadTopReferrers();
   };
 
+  const openYearWiseDeals = () => {
+    setSelectedQualityChipKey("");
+    resetPanels();
+    setSelectedCard({ key: "yearWiseDeals", label: "YearWise Deals" });
+    setShowYearWiseDeals(true);
+  };
+
   useEffect(() => {
     const requestedPanel = new URLSearchParams(window.location.search).get("panel");
     if (requestedPanel === "yearWiseReferrals") {
       openYearWiseReferrals();
+      navigate("/adminAIDashboard", { replace: true });
+    } else if (requestedPanel === "yearWiseDeals") {
+      openYearWiseDeals();
       navigate("/adminAIDashboard", { replace: true });
     }
   }, []);
@@ -2731,6 +2744,16 @@ const AdminAIDashboard = () => {
         clickable: true,
         navigateTo: "/adminAICreatedDeals?tab=test",
       },
+      {
+        key: "yearWiseDeals",
+        label: "YearWise Deals",
+        value: stats.allDeals,
+        icon: <FaChartLine />,
+        meta: "Year filter · returns · withdrawals · Excel",
+        accent: "indigo",
+        clickable: true,
+        openYearWise: true,
+      },
     ],
     [stats]
   );
@@ -3044,7 +3067,7 @@ const AdminAIDashboard = () => {
 
           {loading && <div className="admin-ai-empty-state">Loading Admin AI dashboard...</div>}
 
-          {!loading && !showActiveLenders && !showAdminUsers && !showReferralPanel && !showRegisteredUsersBreakdown && (
+          {!loading && !showActiveLenders && !showAdminUsers && !showReferralPanel && !showYearWiseDeals && !showRegisteredUsersBreakdown && (
             <>
               <section className="admin-ai-pro-section admin-ai-pro-section--oxyinsights-entry">
                 <button
@@ -3359,13 +3382,38 @@ const AdminAIDashboard = () => {
                     <FaFileExcel /> {exportingDeals ? "Exporting..." : "Download Excel"}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ywd-entry"
+                  onClick={openYearWiseDeals}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaChartLine />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>YearWise Deals</h2>
+                    <p>
+                      Year filter with lenders, deal amount, participation, principal return, partial return,
+                      withdrawals, tenure extension, closed status, and Excel download.
+                    </p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
                 <div className="admin-ai-pro-grid admin-ai-pro-grid-overview">
                   {dealCards.map((card) => (
                     <StatCard
                       key={card.key}
                       {...card}
                       active={selectedCard?.key === card.key}
-                      onClick={() => navigate(card.navigateTo)}
+                      onClick={() => {
+                        if (card.openYearWise) {
+                          openYearWiseDeals();
+                          return;
+                        }
+                        navigate(card.navigateTo);
+                      }}
                     />
                   ))}
                 </div>
@@ -3673,6 +3721,10 @@ const AdminAIDashboard = () => {
               }}
               exporting={Boolean(exportingCardKey)}
             />
+          )}
+
+          {showYearWiseDeals && (
+            <AdminAIYearWiseDealsPanel onClose={backToDashboard} />
           )}
 
           {showYearWiseReferrals && (
