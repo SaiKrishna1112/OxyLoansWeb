@@ -2158,7 +2158,7 @@ export const getAdminAIDealsYearWise = async (
   year,
   pageNo = 1,
   pageSize = 20,
-  { dealType = "ALL", status = "ALL", dealId = "", dealName = "" } = {}
+  { dealType = "ALL", status = "ALL", dealId = "", dealName = "", tenureCategory = "ALL" } = {}
 ) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/year-wise`, {
     headers: adminRegisteredUsersHeaders(),
@@ -2170,19 +2170,24 @@ export const getAdminAIDealsYearWise = async (
       status: status && status !== "ALL" ? status : undefined,
       dealId: dealId || undefined,
       dealName: dealName || undefined,
+      tenureCategory: tenureCategory && tenureCategory !== "ALL" ? tenureCategory : undefined,
     },
     timeout: 180000,
   });
   return response.data;
 };
 
-export const downloadAdminAIDealsYearWiseExcel = async (year, { dealType = "ALL", status = "ALL" } = {}) => {
+export const downloadAdminAIDealsYearWiseExcel = async (
+  year,
+  { dealType = "ALL", status = "ALL", tenureCategory = "ALL" } = {}
+) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/year-wise/export`, {
     headers: adminRegisteredUsersHeaders(),
     params: {
       year: year == null || Number(year) <= 0 ? 0 : year,
       dealType: dealType || "ALL",
       status: status && status !== "ALL" ? status : undefined,
+      tenureCategory: tenureCategory && tenureCategory !== "ALL" ? tenureCategory : undefined,
     },
     responseType: "blob",
     timeout: 300000,
