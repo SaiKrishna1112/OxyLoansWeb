@@ -22,7 +22,6 @@ import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Ad
 import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIYearWiseDealsListPage from "./components/pages/Oxyloans/Admin/AdminAIYearWiseDealsListPage";
 import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
-import DealLevelInterest from "./components/pages/Oxyloans/Admin/AdminInterestCalculationsPage";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -275,7 +274,6 @@ const AppRouter = () => {
         <Route path="/adminAlCampaignHistory" element={<AdminAIRouteAlias to="/adminAICampaignHistory" />} />
         <Route path="/adminAIYearWiseDealsList" element={<AdminAIYearWiseDealsListPage />} />
         <Route path="/adminAIReferrerRefereesDetail" element={<AdminAIReferrerRefereesDetailPage />} />
-        <Route path="/dealLevelInterest" element={<DealLevelInterest />} />
         <Route path="/configautoInvest" element={<ConfigautoInvest />} />
         <Route path="/membership" element={<Membership />} />
         <Route
