@@ -110,9 +110,9 @@ const Whatapplog = () => {
           sessionStorage.setItem("tokenTime", data.data.tokenGeneratedTime);
           if (accessToken != null) {
             if (data.data.primaryType == "LENDER") {
-              history("/dashboard");
+              history("/lenderAIDashboard/" + data.data.id);
             } else if (data.data.primaryType == "ADMIN") {
-              history("/dashboard");
+              history("/adminAIDashboard");
             }
             else if (data.data.primaryType == "BORROWER") {
               history("/borrowerDashboard");

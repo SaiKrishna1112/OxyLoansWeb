@@ -94,7 +94,7 @@ const Login = () => {
         // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
         // alert(retriveresponse.data.accessToken)
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
+          history("/lenderAIDashboard/" + retriveresponse.data.id);
         } else if (retriveresponse.data.primaryType == "ADMIN") {
           history("/oxyloansadmindashboard");
         }else if (retriveresponse.data.primaryType == "HELPDESKADMIN") {

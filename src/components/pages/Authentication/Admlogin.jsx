@@ -99,7 +99,7 @@ const Admlogin = () => {
         const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
         localStorage.setItem("primaryType", primaryType || "");
         if (primaryType === "LENDER") {
-          history("/dashboard");
+          history("/lenderAIDashboard/" + (retriveresponse.data?.id || userIdForApi));
         } else if (ADMIN_PRIMARY_TYPES.has(primaryType)) {
           history("/adminAIDashboard");
         } else {
