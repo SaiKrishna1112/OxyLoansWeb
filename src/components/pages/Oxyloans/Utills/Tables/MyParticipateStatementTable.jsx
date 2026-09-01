@@ -15,6 +15,9 @@ const fmtDate = (d) => {
   return `${parts[2]} ${months[m - 1]} ${parts[0]}`;
 };
 
+const labelStyle = { padding: "5px 8px", color: "#555", width: "60%" };
+const valStyle = { padding: "5px 8px", fontWeight: 500 };
+
 const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
   const {
     participatedDate,
@@ -36,8 +39,18 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
   if (!rawCalendarDays && !differenceInDaysForFirstParticipation) return null;
 
   const monthlyRate = roi ? (roi > 5 ? roi / 12 : roi) : null;
-  const monthlyInterest = singleDayInterestAmount ? singleDayInterestAmount * 30 : null;
+
+  // Use backend value if available; otherwise compute from principal × monthly ROI / 30
+  const computedDailyInterest =
+    singleDayInterestAmount != null
+      ? singleDayInterestAmount
+      : principal && monthlyRate
+      ? (principal * monthlyRate) / 100 / 30
+      : null;
+  const computedMonthlyInterest = computedDailyInterest != null ? computedDailyInterest * 30 : null;
+
   const calDays = rawCalendarDays ?? (differenceInDaysForFirstParticipation + 2);
+  const effectiveDays = differenceInDaysForFirstParticipation ?? (calDays - 2);
 
   return (
     <div
@@ -46,7 +59,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
         border: "1px solid #b8d4f0",
         borderRadius: 8,
         padding: "14px 18px",
-        marginTop: 12,
+        marginBottom: 12,
         fontSize: 13,
       }}
     >
@@ -78,7 +91,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
           </tr>
           <tr style={{ background: "#ddeeff" }}>
             <td style={{ ...labelStyle, fontWeight: 700 }}>Days for Calculation</td>
-            <td style={{ ...valStyle, fontWeight: 700 }}>{differenceInDaysForFirstParticipation}</td>
+            <td style={{ ...valStyle, fontWeight: 700 }}>{effectiveDays}</td>
           </tr>
           <tr>
             <td style={{ ...labelStyle, paddingTop: 10 }}>Your Participation Amount</td>
@@ -92,21 +105,21 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
               <td style={valStyle}>{monthlyRate.toFixed(4)}%</td>
             </tr>
           )}
-          {monthlyInterest != null && (
+          {computedMonthlyInterest != null && (
             <tr>
               <td style={labelStyle}>Monthly Interest (Amount × Monthly ROI)</td>
-              <td style={valStyle}>₹{fmt(monthlyInterest)}</td>
+              <td style={valStyle}>₹{fmt(computedMonthlyInterest)}</td>
             </tr>
           )}
-          {singleDayInterestAmount != null && (
+          {computedDailyInterest != null && (
             <tr>
               <td style={labelStyle}>Daily Interest (Monthly ÷ 30 days)</td>
-              <td style={valStyle}>₹{fmt(singleDayInterestAmount)}</td>
+              <td style={valStyle}>₹{fmt(computedDailyInterest)}</td>
             </tr>
           )}
           <tr style={{ background: "#d4edda", borderTop: "2px solid #28a745" }}>
             <td style={{ ...labelStyle, fontWeight: 700 }}>
-              Your First Month Interest ({differenceInDaysForFirstParticipation} days × ₹{fmt(singleDayInterestAmount)}/day)
+              Your First Month Interest ({effectiveDays} days × ₹{fmt(computedDailyInterest)}/day)
             </td>
             <td style={{ ...valStyle, fontWeight: 700, color: "#155724" }}>
               ₹{fmt(firstParticipationInterest)}
@@ -121,14 +134,10 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
   );
 };
 
-const labelStyle = { padding: "5px 8px", color: "#555", width: "60%" };
-const valStyle = { padding: "5px 8px", fontWeight: 500 };
-
 const MyParticipateStatementTable = ({ data, dealInfo }) => {
   const [content, setContent] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [showCalc, setShowCalc] = useState(false);
-  const [firstRowData, setFirstRowData] = useState(null);
 
   const handleBreakupClick = (participationData) => {
     setContent(participationData);
@@ -139,10 +148,6 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
   if (data?.data?.dealLevelLoanEmiCard) {
     data.data.dealLevelLoanEmiCard.forEach((dataItem, index) => {
       const isFirstRow = index === 0;
-
-      if (isFirstRow && firstRowData === null) {
-        setFirstRowData(dataItem);
-      }
 
       newData.push({
         key: index,
@@ -232,6 +237,7 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
 
   return (
     <div style={{ maxHeight: "85vh", overflowY: "auto" }}>
+      {showCalc && firstItem && <FirstMonthCalcBreakdown row={firstItem} dealInfo={dealInfo} />}
       <Table
         columns={columns}
         dataSource={newData}
@@ -239,7 +245,6 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
         scroll={{ x: true }}
         sticky
       />
-      {showCalc && firstItem && <FirstMonthCalcBreakdown row={firstItem} dealInfo={dealInfo} />}
       {!isCollapsed && expandedRowRender()}
     </div>
   );
