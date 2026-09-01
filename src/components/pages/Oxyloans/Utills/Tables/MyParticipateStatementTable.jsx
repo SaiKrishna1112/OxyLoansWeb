@@ -15,7 +15,7 @@ const fmtDate = (d) => {
   return `${parts[2]} ${months[m - 1]} ${parts[0]}`;
 };
 
-const FirstMonthCalcBreakdown = ({ row }) => {
+const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
   const {
     participatedDate,
     firstInterestDate,
@@ -27,14 +27,17 @@ const FirstMonthCalcBreakdown = ({ row }) => {
     firstParticipationInterest,
   } = row;
 
+  // Prefer dealInfo fields (from deal card) as they're always populated; fall back to EMI row fields
+  const principal = dealInfo?.paticipatedAmount ?? firstParticipationAmount;
+  const roi = dealInfo?.rateOfInterest ?? rateOfInterest;
+  const partDate = dealInfo?.registeredDate ?? participatedDate;
+  const firstEmiDate = dealInfo?.firstInterestDate ?? firstInterestDate;
+
   if (!rawCalendarDays && !differenceInDaysForFirstParticipation) return null;
 
-  const monthlyRate = rateOfInterest
-    ? (rateOfInterest > 5 ? rateOfInterest / 12 : rateOfInterest)
-    : null;
-  const monthlyInterest = singleDayInterestAmount
-    ? singleDayInterestAmount * 30
-    : null;
+  const monthlyRate = roi ? (roi > 5 ? roi / 12 : roi) : null;
+  const monthlyInterest = singleDayInterestAmount ? singleDayInterestAmount * 30 : null;
+  const calDays = rawCalendarDays ?? (differenceInDaysForFirstParticipation + 2);
 
   return (
     <div
@@ -49,20 +52,25 @@ const FirstMonthCalcBreakdown = ({ row }) => {
     >
       <div style={{ fontWeight: 600, marginBottom: 10, color: "#1a5f9e", fontSize: 14 }}>
         First Month Interest Calculation
+        {dealInfo?.dealName && (
+          <span style={{ fontWeight: 400, color: "#555", marginLeft: 8, fontSize: 12 }}>
+            — {dealInfo.dealName}
+          </span>
+        )}
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <tbody>
           <tr>
             <td style={labelStyle}>Participation Date</td>
-            <td style={valStyle}>{fmtDate(participatedDate)}</td>
+            <td style={valStyle}>{fmtDate(partDate)}</td>
           </tr>
           <tr>
             <td style={labelStyle}>First EMI Date</td>
-            <td style={valStyle}>{fmtDate(firstInterestDate)}</td>
+            <td style={valStyle}>{fmtDate(firstEmiDate)}</td>
           </tr>
           <tr>
             <td style={labelStyle}>Calendar Days (between dates)</td>
-            <td style={valStyle}>{rawCalendarDays ?? differenceInDaysForFirstParticipation + 2}</td>
+            <td style={valStyle}>{calDays}</td>
           </tr>
           <tr>
             <td style={labelStyle}>Less: Both dates excluded (−2)</td>
@@ -73,32 +81,32 @@ const FirstMonthCalcBreakdown = ({ row }) => {
             <td style={{ ...valStyle, fontWeight: 700 }}>{differenceInDaysForFirstParticipation}</td>
           </tr>
           <tr>
-            <td style={{ ...labelStyle, paddingTop: 10 }}>Principal Amount</td>
-            <td style={{ ...valStyle, paddingTop: 10 }}>₹{fmt(firstParticipationAmount)}</td>
+            <td style={{ ...labelStyle, paddingTop: 10 }}>Your Participation Amount</td>
+            <td style={{ ...valStyle, paddingTop: 10 }}>₹{fmt(principal)}</td>
           </tr>
           {monthlyRate && (
             <tr>
               <td style={labelStyle}>
-                Monthly ROI ({rateOfInterest > 5 ? `${rateOfInterest}% p.a. ÷ 12` : `${rateOfInterest}% monthly`})
+                Monthly ROI ({roi > 5 ? `${roi}% p.a. ÷ 12` : `${roi}% monthly`})
               </td>
               <td style={valStyle}>{monthlyRate.toFixed(4)}%</td>
             </tr>
           )}
           {monthlyInterest != null && (
             <tr>
-              <td style={labelStyle}>Monthly Interest (Principal × Monthly ROI)</td>
+              <td style={labelStyle}>Monthly Interest (Amount × Monthly ROI)</td>
               <td style={valStyle}>₹{fmt(monthlyInterest)}</td>
             </tr>
           )}
           {singleDayInterestAmount != null && (
             <tr>
-              <td style={labelStyle}>Daily Interest (Monthly ÷ 30)</td>
+              <td style={labelStyle}>Daily Interest (Monthly ÷ 30 days)</td>
               <td style={valStyle}>₹{fmt(singleDayInterestAmount)}</td>
             </tr>
           )}
           <tr style={{ background: "#d4edda", borderTop: "2px solid #28a745" }}>
             <td style={{ ...labelStyle, fontWeight: 700 }}>
-              First Month Interest ({differenceInDaysForFirstParticipation} days × ₹{fmt(singleDayInterestAmount)}/day)
+              Your First Month Interest ({differenceInDaysForFirstParticipation} days × ₹{fmt(singleDayInterestAmount)}/day)
             </td>
             <td style={{ ...valStyle, fontWeight: 700, color: "#155724" }}>
               ₹{fmt(firstParticipationInterest)}
@@ -107,7 +115,7 @@ const FirstMonthCalcBreakdown = ({ row }) => {
         </tbody>
       </table>
       <div style={{ marginTop: 8, color: "#666", fontSize: 11 }}>
-        * All months treated as 30 days. Both participation date and EMI date are excluded from the count.
+        * All months treated as 30 days. Both participation date and first EMI date are excluded from day count.
       </div>
     </div>
   );
@@ -116,7 +124,7 @@ const FirstMonthCalcBreakdown = ({ row }) => {
 const labelStyle = { padding: "5px 8px", color: "#555", width: "60%" };
 const valStyle = { padding: "5px 8px", fontWeight: 500 };
 
-const MyParticipateStatementTable = ({ data }) => {
+const MyParticipateStatementTable = ({ data, dealInfo }) => {
   const [content, setContent] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [showCalc, setShowCalc] = useState(false);
@@ -231,7 +239,7 @@ const MyParticipateStatementTable = ({ data }) => {
         scroll={{ x: true }}
         sticky
       />
-      {showCalc && firstItem && <FirstMonthCalcBreakdown row={firstItem} />}
+      {showCalc && firstItem && <FirstMonthCalcBreakdown row={firstItem} dealInfo={dealInfo} />}
       {!isCollapsed && expandedRowRender()}
     </div>
   );
