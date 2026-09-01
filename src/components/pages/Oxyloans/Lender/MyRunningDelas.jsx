@@ -770,7 +770,15 @@ const MyRunningDeals = () => {
                                     <span
                                       type="button"
                                       className="badge bg-primary-dark"
-                                      onClick={() => handlemodalopen(data.dealId)}
+                                      onClick={() => handlemodalopen(data.dealId, {
+                                        dealName: data.dealName,
+                                        dealId: data.dealId,
+                                        paticipatedAmount: data.paticipatedAmount,
+                                        rateOfInterest: data.rateOfInterest,
+                                        lederReturnType: data.lederReturnType,
+                                        firstInterestDate: data.firstInterestDate,
+                                        registeredDate: data.registeredDate,
+                                      })}
                                     >
                                       <i className="fa fa-eye"></i> Interest
                                       Statement

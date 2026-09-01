@@ -35,8 +35,10 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
   const roi = dealInfo?.rateOfInterest ?? rateOfInterest;
   const partDate = dealInfo?.registeredDate ?? participatedDate;
   const firstEmiDate = dealInfo?.firstInterestDate ?? firstInterestDate;
+  const returnType = dealInfo?.lederReturnType || "";
+  const isMonthly = !returnType || returnType === "MONTHLY";
 
-  if (!rawCalendarDays && !differenceInDaysForFirstParticipation) return null;
+  if (!differenceInDaysForFirstParticipation) return null;
 
   const monthlyRate = roi ? (roi > 5 ? roi / 12 : roi) : null;
 
@@ -49,8 +51,19 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
       : null;
   const computedMonthlyInterest = computedDailyInterest != null ? computedDailyInterest * 30 : null;
 
-  const calDays = rawCalendarDays ?? (differenceInDaysForFirstParticipation + 2);
-  const effectiveDays = differenceInDaysForFirstParticipation ?? (calDays - 2);
+  const effectiveDays = differenceInDaysForFirstParticipation;
+  // For MONTHLY: show calendarDays / -2 rows. For YEARLY/QUARTERLY/HALFYEARLY: backend uses
+  // its own convention (360-day year etc.), so -2 exclusion does not apply — show days directly.
+  const calDays = isMonthly ? (rawCalendarDays ?? (effectiveDays + 2)) : null;
+
+  const title = isMonthly ? "First Month Interest Calculation" : "Interest Calculation for Your Participation Period";
+  const paymentDateLabel = isMonthly ? "First EMI Date" : "Payment / Maturity Date";
+  const summaryLabel = isMonthly
+    ? `Your First Month Interest (${effectiveDays} days × ₹${fmt(computedDailyInterest)}/day)`
+    : `Your Interest for ${effectiveDays} days (₹${fmt(computedDailyInterest)}/day)`;
+  const footnote = isMonthly
+    ? "* All months treated as 30 days. Both participation date and first EMI date are excluded from day count."
+    : "* Interest computed using 30-day month convention for the period from your participation date to deal maturity.";
 
   return (
     <div
@@ -64,7 +77,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: 10, color: "#1a5f9e", fontSize: 14 }}>
-        First Month Interest Calculation
+        {title}
         {dealInfo?.dealName && (
           <span style={{ fontWeight: 400, color: "#555", marginLeft: 8, fontSize: 12 }}>
             — {dealInfo.dealName}
@@ -78,17 +91,21 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
             <td style={valStyle}>{fmtDate(partDate)}</td>
           </tr>
           <tr>
-            <td style={labelStyle}>First EMI Date</td>
+            <td style={labelStyle}>{paymentDateLabel}</td>
             <td style={valStyle}>{fmtDate(firstEmiDate)}</td>
           </tr>
-          <tr>
-            <td style={labelStyle}>Calendar Days (between dates)</td>
-            <td style={valStyle}>{calDays}</td>
-          </tr>
-          <tr>
-            <td style={labelStyle}>Less: Both dates excluded (−2)</td>
-            <td style={{ ...valStyle, color: "#c0392b" }}>−2</td>
-          </tr>
+          {isMonthly && calDays && (
+            <>
+              <tr>
+                <td style={labelStyle}>Calendar Days (between dates)</td>
+                <td style={valStyle}>{calDays}</td>
+              </tr>
+              <tr>
+                <td style={labelStyle}>Less: Both dates excluded (−2)</td>
+                <td style={{ ...valStyle, color: "#c0392b" }}>−2</td>
+              </tr>
+            </>
+          )}
           <tr style={{ background: "#ddeeff" }}>
             <td style={{ ...labelStyle, fontWeight: 700 }}>Days for Calculation</td>
             <td style={{ ...valStyle, fontWeight: 700 }}>{effectiveDays}</td>
@@ -119,7 +136,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
           )}
           <tr style={{ background: "#d4edda", borderTop: "2px solid #28a745" }}>
             <td style={{ ...labelStyle, fontWeight: 700 }}>
-              Your First Month Interest ({effectiveDays} days × ₹{fmt(computedDailyInterest)}/day)
+              {summaryLabel}
             </td>
             <td style={{ ...valStyle, fontWeight: 700, color: "#155724" }}>
               ₹{fmt(firstParticipationInterest)}
@@ -128,7 +145,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
         </tbody>
       </table>
       <div style={{ marginTop: 8, color: "#666", fontSize: 11 }}>
-        * All months treated as 30 days. Both participation date and first EMI date are excluded from day count.
+        {footnote}
       </div>
     </div>
   );
