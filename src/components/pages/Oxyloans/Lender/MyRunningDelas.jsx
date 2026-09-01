@@ -85,11 +85,12 @@ const MyRunningDeals = () => {
 
     withdrawriase();
   }, [])
-  const handlemodalopen = (dealId) => {
+  const handlemodalopen = (dealId, dealInfo) => {
     setrunningdeals(prev => ({
       ...prev,
       modelopen: !prev.modelopen,
       modalLoader: true,
+      selectedDealInfo: dealInfo || null,
     }));
     const response = viewdealamountemi(dealId);
     response.then((data) => {
@@ -331,6 +332,7 @@ const MyRunningDeals = () => {
                         open={runningdeals.modelopen}
                         hidefun={() => setrunningdeals(prev => ({...prev, modelopen: false}))}
                         loading={runningdeals.modalLoader}
+                        dealInfo={runningdeals.selectedDealInfo}
                       />
                     )}
 
@@ -517,7 +519,15 @@ const MyRunningDeals = () => {
                                   <span
                                     type="button"
                                     className="badge bg-primary-dark"
-                                    onClick={() => handlemodalopen(data.dealId)}
+                                    onClick={() => handlemodalopen(data.dealId, {
+                                      dealName: data.dealName,
+                                      dealId: data.dealId,
+                                      paticipatedAmount: data.paticipatedAmount,
+                                      rateOfInterest: data.rateOfInterest,
+                                      lederReturnType: data.lederReturnType,
+                                      firstInterestDate: data.firstInterestDate,
+                                      registeredDate: data.registeredDate,
+                                    })}
                                   >
                                     <i className="fa fa-eye"></i> Interest Statement
                                   </span>
