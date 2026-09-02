@@ -14,16 +14,27 @@ const fmtDate = (d) => {
   return `${parts[2]} ${months[m - 1]} ${parts[0]}`;
 };
 
-// Parse "DD-MM-YYYY HH:mm:ss" or "DD/MM/YYYY" into a Date object
+// Parse "DD-MM-YYYY HH:mm:ss" or "DD/MM/YYYY" into a Date object (keeps time)
 const parseDateTime = (s) => {
   if (!s) return null;
-  // "05-05-2026 05:42:13"
   const dtMatch = s.match(/^(\d{2})[-/](\d{2})[-/](\d{4})\s*(\d{2}:\d{2}:\d{2})?/);
   if (dtMatch) {
     const [, d, m, y, time] = dtMatch;
     return new Date(`${y}-${m}-${d}T${time || "00:00:00"}`);
   }
   return null;
+};
+
+// Format "DD-MM-YYYY HH:mm:ss" → "01 Apr 2026, 02:05 AM"
+const fmtDateTime = (s) => {
+  if (!s) return "—";
+  const dt = parseDateTime(s);
+  if (!dt || isNaN(dt)) return s;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const h = dt.getHours(), min = dt.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${String(dt.getDate()).padStart(2,"0")} ${months[dt.getMonth()]} ${dt.getFullYear()}, ${String(h12).padStart(2,"0")}:${String(min).padStart(2,"0")} ${ampm}`;
 };
 
 // Human-readable time difference: "3 days", "2 hours 15 minutes", "within minutes"
@@ -177,9 +188,9 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
   const firstPartDate = dealInfo?.firstParticipationDate;
   const lastPartDate = dealInfo?.lastParticipationDate;
 
-  // "You participated X after deal opened"
-  const dealOpenDt = parseDateTime(dealOpenDate ? dealOpenDate.split(" ")[0] : null);
-  const partDt = parseDateTime(firstPartDate ? firstPartDate.split(" ")[0] : null);
+  // "You participated X after deal opened" — use full datetime including time
+  const dealOpenDt = parseDateTime(dealOpenDate);
+  const partDt = parseDateTime(firstPartDate);
   const diff = timeDiff(dealOpenDt, partDt);
 
   const typeColors = {
@@ -239,7 +250,7 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
         {dealOpenDate && (
           <div>
             <div style={{ opacity: 0.7 }}>Deal Opened</div>
-            <div style={{ fontWeight: 600 }}>{fmtDate(dealOpenDate)}</div>
+            <div style={{ fontWeight: 600 }}>{fmtDateTime(dealOpenDate)}</div>
           </div>
         )}
         {dealStartDate && (
@@ -251,10 +262,10 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
         {firstPartDate && (
           <div>
             <div style={{ opacity: 0.7 }}>Your Participation</div>
-            <div style={{ fontWeight: 600 }}>{firstPartDate}</div>
+            <div style={{ fontWeight: 600 }}>{fmtDateTime(firstPartDate)}</div>
           </div>
         )}
-        {duration && (
+        {(duration > 0) && (
           <div>
             <div style={{ opacity: 0.7 }}>Duration</div>
             <div style={{ fontWeight: 600 }}>{duration} months · {displayRoi}</div>
