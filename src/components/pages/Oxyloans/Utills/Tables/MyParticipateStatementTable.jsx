@@ -114,7 +114,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
           {isMonthly && calDays && (
             <>
               <tr>
-                <td style={{ padding: "4px 8px", color: "#555" }}>Days (30/360 convention)</td>
+                <td style={{ padding: "4px 8px", color: "#555" }}>Days between dates</td>
                 <td style={{ padding: "4px 8px", fontWeight: 500 }}>{calDays}</td>
               </tr>
               <tr>
@@ -160,7 +160,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
         </tbody>
       </table>
       <div style={{ marginTop: 6, color: "#888", fontSize: 11 }}>
-        * All months treated as 30 days (30/360 convention). Both participation date and EMI date excluded.
+        * Every month is treated as 30 days. Both participation date and first EMI date are excluded from the count.
       </div>
     </div>
   );
