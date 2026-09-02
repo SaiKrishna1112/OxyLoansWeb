@@ -526,7 +526,8 @@ const MyRunningDeals = () => {
                                       rateOfInterest: data.rateOfInterest,
                                       lederReturnType: data.lederReturnType,
                                       firstInterestDate: data.firstInterestDate,
-                                      registeredDate: data.registeredDate,
+                                      firstParticipationDate: data.firstParticipationDate,
+                                      lastParticipationDate: data.lastParticipationDate,
                                     })}
                                   >
                                     <i className="fa fa-eye"></i> Interest Statement
@@ -777,7 +778,8 @@ const MyRunningDeals = () => {
                                         rateOfInterest: data.rateOfInterest,
                                         lederReturnType: data.lederReturnType,
                                         firstInterestDate: data.firstInterestDate,
-                                        registeredDate: data.registeredDate,
+                                        firstParticipationDate: data.firstParticipationDate,
+                                        lastParticipationDate: data.lastParticipationDate,
                                       })}
                                     >
                                       <i className="fa fa-eye"></i> Interest
