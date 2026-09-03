@@ -7,11 +7,16 @@ const fmt = (n) =>
 
 const fmtDate = (d) => {
   if (!d) return "—";
-  const parts = d.includes("-") ? d.split("-") : d.split("/").reverse();
+  const dateOnly = d.split(" ")[0];
+  const parts = dateOnly.includes("-") ? dateOnly.split("-") : dateOnly.split("/");
   if (parts.length !== 3) return d;
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const m = parseInt(parts[1], 10);
-  return `${parts[2]} ${months[m - 1]} ${parts[0]}`;
+  // Auto-detect: YYYY-MM-DD (parts[0].length===4) vs DD-MM-YYYY (parts[2].length===4)
+  const [day, month, year] = parts[0].length === 4
+    ? [parts[2], parts[1], parts[0]]
+    : [parts[0], parts[1], parts[2]];
+  const m = parseInt(month, 10);
+  return `${day} ${months[m - 1]} ${year}`;
 };
 
 // Parse "DD-MM-YYYY HH:mm:ss" or "DD/MM/YYYY" into a Date object (keeps time)
@@ -113,7 +118,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
           {partDate && (
             <tr>
               <td style={{ padding: "4px 8px", color: "#555", width: "60%" }}>Participation Date</td>
-              <td style={{ padding: "4px 8px", fontWeight: 500 }}>{fmtDate(partDate.split(" ")[0])}</td>
+              <td style={{ padding: "4px 8px", fontWeight: 500 }}>{fmtDate(partDate)}</td>
             </tr>
           )}
           {firstEmiDate && (
