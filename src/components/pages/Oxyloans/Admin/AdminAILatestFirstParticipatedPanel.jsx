@@ -85,9 +85,17 @@ const AdminAILatestFirstParticipatedPanel = ({ onOpenLender, onClose }) => {
       setRows(Array.isArray(data.rows) ? data.rows : []);
     } catch (requestError) {
       setRows([]);
+      const status = requestError?.response?.status;
+      const backendMessage = requestError?.response?.data?.message
+        || requestError?.response?.data?.errorMessage;
+      const isNetwork = !requestError?.response
+        && /network error/i.test(String(requestError?.message || ""));
       setError(
-        requestError?.response?.data?.message
-          || requestError?.response?.data?.errorMessage
+        backendMessage
+          || (status ? `Request failed (${status}).` : "")
+          || (isNetwork
+            ? "Network Error: backend may be down or not redeployed yet. Confirm test API /latest-first-participations is live, then Refresh."
+            : "")
           || requestError?.message
           || "Failed to load first-time participations."
       );

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { getUserId } from "../HttpRequest/afterlogin";
 
 import { Scrollbars } from "react-custom-scrollbars";
 import ReactGA from "react-ga";
@@ -175,8 +176,8 @@ const Sidebar = (props) => {
             <div id="sidebar-menu" className="sidebar-menu">
               {/* Main Menu */}
               <ul>
-                <li className={`${"/ai/portfolio" === pathName ? "active" : ""}`}>
-                  <Link to="/ai/portfolio">
+                <li className={`${pathName.startsWith("/lenderAIDashboard") ? "active" : ""}`}>
+                  <Link to={`/lenderAIDashboard/${getUserId()}`}>
                     <i className="fa-solid fa-brain"></i>
                     <span> AI Dashboard </span>
                     <span className="menu-arrow"></span>
