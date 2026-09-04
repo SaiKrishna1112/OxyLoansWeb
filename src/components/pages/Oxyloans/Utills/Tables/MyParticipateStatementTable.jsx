@@ -294,7 +294,7 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
           <span>
             You participated <strong>{diff}</strong> after this deal opened
             {lastPartDate && lastPartDate !== firstPartDate && (
-              <> · Last top-up: <strong>{lastPartDate}</strong></>
+              <> · Last participated on: <strong>{fmtDateTime(lastPartDate)}</strong></>
             )}
           </span>
         </div>
