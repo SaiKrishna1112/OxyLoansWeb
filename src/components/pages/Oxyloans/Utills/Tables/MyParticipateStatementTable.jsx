@@ -190,10 +190,11 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
   const roi = dealInfo?.rateOfInterest;
   const amount = dealInfo?.paticipatedAmount;
   const duration = apiData?.duration;
-  const firstPartDate = dealInfo?.firstParticipationDate;
+  // Use IST participation datetime from statement API (accurate); fall back to list API value
+  const firstPartDate = apiData?.firstParticipationDatetime || dealInfo?.firstParticipationDate;
   const lastPartDate = dealInfo?.lastParticipationDate;
 
-  // "You participated X after deal opened" — use full datetime including time
+  // "You participated X after deal opened" — both times now in IST from backend
   const dealOpenDt = parseDateTime(dealOpenDate);
   const partDt = parseDateTime(firstPartDate);
   const diff = timeDiff(dealOpenDt, partDt);
@@ -260,7 +261,7 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
         )}
         {dealStartDate && (
           <div>
-            <div style={{ opacity: 0.7 }}>Deal Active Date</div>
+            <div style={{ opacity: 0.7 }}>First Payment Date</div>
             <div style={{ fontWeight: 600 }}>{fmtDate(dealStartDate)}</div>
           </div>
         )}
