@@ -99,7 +99,13 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
       : null;
   const computedMonthlyInterest = computedDailyInterest != null ? computedDailyInterest * 30 : null;
   const effectiveDays = differenceInDaysForFirstParticipation;
-  const calDays = isMonthly ? (rawCalendarDays ?? (effectiveDays + 2)) : null;
+  const calDays = rawCalendarDays ?? (effectiveDays + 2);
+
+  const firstEmiLabel = isMonthly ? "First EMI Date"
+    : returnType === "YEARLY" ? "First Yearly Payment Date"
+    : returnType === "HALFYEARLY" ? "First Half-Yearly Payment Date"
+    : returnType === "QUARTERLY" ? "First Quarterly Payment Date"
+    : "First Payment Date";
 
   return (
     <div style={{
@@ -123,11 +129,11 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
           )}
           {firstEmiDate && (
             <tr>
-              <td style={{ padding: "4px 8px", color: "#555" }}>{isMonthly ? "First EMI Date" : "Payment / Maturity Date"}</td>
+              <td style={{ padding: "4px 8px", color: "#555" }}>{firstEmiLabel}</td>
               <td style={{ padding: "4px 8px", fontWeight: 500 }}>{fmtDate(firstEmiDate)}</td>
             </tr>
           )}
-          {isMonthly && calDays && (
+          {calDays && (
             <>
               <tr>
                 <td style={{ padding: "4px 8px", color: "#555" }}>Days between dates</td>
