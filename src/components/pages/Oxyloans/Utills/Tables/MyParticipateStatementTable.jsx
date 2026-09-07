@@ -306,7 +306,7 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
 const MyParticipateStatementTable = ({ data, dealInfo }) => {
   const [breakupRows, setBreakupRows] = useState([]);
   const [showBreakup, setShowBreakup] = useState(false);
-  const [showCalc, setShowCalc] = useState(true);
+  const [showCalc, setShowCalc] = useState(false);
 
   const apiData = data?.data;
   const emiCard = apiData?.dealLevelLoanEmiCard || [];
@@ -364,7 +364,7 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
       render: (v, rec) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", }}>
           <span style={{ fontWeight: 600 }}>₹{Number(v || 0).toLocaleString("en-IN")}</span>
-          {rec.isFirst && (
+          {rec.isFirst && rec.status !== "paid" &&  (
             <button
               className="btn btn-sm btn-info"
               style={{
