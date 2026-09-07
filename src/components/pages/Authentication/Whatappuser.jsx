@@ -31,12 +31,11 @@ const Whatappuser = ({ data }) => {
         sessionStorage.setItem("whatAppLoginMultipleUser", true);
         sessionStorage.setItem("whatsAppLoginUsers", JSON.stringify(data1));
 
-        const pType = data.primaryType;
-        let defaultPath = "/borrowerDashboard";
-        if (pType === "LENDER" || pType === "ADMIN") {
-          defaultPath = "/ai/portfolio";
+        if (data.primaryType === "LENDER" || data.primaryType === "ADMIN") {
+          history("/ai/portfolio");
+        } else if (data.primaryType === "BORROWER") {
+          history("/borrowerDashboard");
         }
-        history(getPostLoginRedirectUrl(defaultPath, pType));
       }
     } catch (error) {
       console.error("Error:", error);

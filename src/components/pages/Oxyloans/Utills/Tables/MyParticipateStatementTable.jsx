@@ -1,309 +1,499 @@
-// import React, { useState } from "react";
-// import { Table, Button, Popover } from "antd";
-// import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
-
-// const MyParticipateStatementTable = ({ data }) => {
-//   const [content, setContent] = useState([]);
-//   const [isCollapsed, setIsCollapsed] = useState(true); // Track the collapsed state
-
-//   const handleUploadData = (data) => {
-//     setContent(data);
-//     console.log(data);
-//   };
-
-//   const newData = [];
-
-//   if (data && data.data && data.data.dealLevelLoanEmiCard) {
-//     data.data.dealLevelLoanEmiCard.forEach((dataItem, index) => {
-//       newData.push({
-//         key: index,
-//         Sno: index + 1,
-//         ActualPaymentDate: dataItem.date,
-//         InterestPaidDate: dataItem.interestPaidDate ? dataItem.interestPaidDate : "Yet to be paid",
-//         InterestAmount: index === 0 ? (
-//           <>
-//             {dataItem.interestAmount}
-//             {console.log(data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo)}
-//             {console.log(data.data.dealLevelLoanEmiCard[0])}
-//             {/* {()=>handleUploadData(data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo)} */}
-
-//             <Popover
-//               placement="bottomRight"
-//               title={
-//                 <table className="table">
-//                   <thead>
-//                     <tr>
-//                       <th scope="col">Participation on</th>
-//                       <th scope="col">Amount</th>
-//                       <th scope="col">No Days</th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo ? (
-//                       <>
-//                         {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo.map((item, index) => (
-//                           <tr key={index}>
-//                             <th scope="row">{item.upatedDate}</th>
-//                             <td>{item.interestAmount}</td>
-//                             <td>{item.differenceInDays}</td>
-//                           </tr>
-//                         ))}
-//                         <tr>
-//                           <td colSpan="1">Total Amount</td>
-//                           <td>
-//                             {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo.reduce((total, item) => total + item.interestAmount, 0)}
-//                           </td>
-//                         </tr>
-//                       </>
-//                     ) : (
-//                       <tr>
-//                         <td colSpan="3">No data available</td>
-//                       </tr>
-//                     )}
-//                   </tbody>
-//                 </table>
-//               }
-//               okText="none"
-//               cancelText="none"
-//               overlayStyle={{ zIndex: 10000, width: "25%" }} // Apply zIndex here
-//             >
-//               {data.data.dealLevelLoanEmiCard[0].listOfPaticipatedInfo !== null && <p style={{ cursor: 'pointer', textDecoration: 'underline' }} >breakup view</p>}
-
-//             </Popover>
-//           </>
-//         ) : (
-//           dataItem.interestAmount
-//         ),
-//         Noofdays: dataItem.differenceInDaysForFirstParticipation,
-//         listOfPaticipatedInfo: dataItem.listOfPaticipatedInfo,
-//       });
-//     });
-//   }
-
-//   const columns = [
-//     {
-//       title: "S.No",
-//       dataIndex: "Sno",
-//       sorter: (a, b) => a.Sno - b.Sno,
-//     },
-//     {
-//       title: "Actual Payment Date",
-//       dataIndex: "ActualPaymentDate",
-//       sorter: (a, b) => new Date(a.ActualPaymentDate) - new Date(b.ActualPaymentDate),
-//     },
-//     {
-//       title: "Interest Paid Date",
-//       dataIndex: "InterestPaidDate",
-//       sorter: (a, b) => new Date(a.InterestPaidDate) - new Date(b.InterestPaidDate),
-//     },
-//     {
-//       title: "Interest Amount",
-//       dataIndex: "InterestAmount",
-//       sorter: (a, b) => a.InterestAmount - b.InterestAmount,
-//     },
-//     {
-//       title: "No of Days",
-//       dataIndex: "Noofdays",
-//       sorter: (a, b) => a.Noofdays - b.Noofdays,
-//     },
-//   ];
-
-//   const expandedRowRender = () => {
-//     if (content && content.length > 0) {
-//       const subColumns = [
-//         {
-//           title: "User ID",
-//           dataIndex: "userId",
-//           key: "userId",
-//         },
-//         {
-//           title: "ROI",
-//           dataIndex: "roi",
-//           key: "roi",
-//         },
-//         {
-//           title: "Amount",
-//           dataIndex: "amount",
-//           key: "amount",
-//         },
-//         {
-//           title: "Updated Date",
-//           dataIndex: "upatedDate",
-//           key: "upatedDate",
-//         },
-//         {
-//           title: "Difference in Days",
-//           dataIndex: "differenceInDays",
-//           key: "differenceInDays",
-//         },
-//         {
-//           title: "Interest Amount",
-//           dataIndex: "interestAmount",
-//           key: "interestAmount",
-//         },
-//       ];
-
-//       return (
-//         <Table
-//           columns={subColumns}
-//           dataSource={content}
-//           pagination={false}
-//           rowKey={(record) => record.userId}
-//         />
-//       );
-//     }
-//     return null;
-//   };
-
-//   return (
-//     <>
-//       <div className={`collapse ${isCollapsed ? '' : 'show'}`} id="collapseExample">
-//         {expandedRowRender()}
-//       </div>
-//       <Table
-//         columns={columns}
-//         dataSource={newData}
-//         pagination={false}
-//       />
-//     </>
-//   );
-// };
-
-// export default MyParticipateStatementTable;
-
-
 import React, { useState } from "react";
-import { Table } from "antd";
+import { Table, Tag } from "antd";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const MyParticipateStatementTable = ({ data }) => {
-  const [content, setContent] = useState([]);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+const fmt = (n) =>
+  n != null ? Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
 
-  const handleBreakupClick = (participationData) => {
-    setContent(participationData);
-    setIsCollapsed(false);
-  };
+const fmtDate = (d) => {
+  if (!d) return "—";
+  const dateOnly = d.split(" ")[0];
+  const parts = dateOnly.includes("-") ? dateOnly.split("-") : dateOnly.split("/");
+  if (parts.length !== 3) return d;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  // Auto-detect: YYYY-MM-DD (parts[0].length===4) vs DD-MM-YYYY (parts[2].length===4)
+  const [day, month, year] = parts[0].length === 4
+    ? [parts[2], parts[1], parts[0]]
+    : [parts[0], parts[1], parts[2]];
+  const m = parseInt(month, 10);
+  return `${day} ${months[m - 1]} ${year}`;
+};
 
-  const newData = [];
-  let breakupButtonShown = false;
-  if (data?.data?.dealLevelLoanEmiCard) {
-    data.data.dealLevelLoanEmiCard.forEach((dataItem, index) => {
-      const shouldShowBreakupButton =
-        index===0 && dataItem.listOfPaticipatedInfo !== null;
-
-      if (shouldShowBreakupButton) {
-        breakupButtonShown = true; // mark that we've shown the button
-      }
-
-      newData.push({
-        key: index,
-        Sno: index + 1,
-        ActualPaymentDate: dataItem.date,
-        InterestPaidDate: dataItem.interestPaidDate || "Yet to be paid",
-        InterestAmount: (
-          <>
-            {dataItem.interestAmount.toLocaleString("en-IN")}
-            {shouldShowBreakupButton && (
-              <button
-                className="btn btn-sm btn-outline-primary ms-2"
-                onClick={() =>
-                  handleBreakupClick(dataItem.listOfPaticipatedInfo)
-                }
-              >
-                Breakup View
-              </button>
-            )}
-          </>
-        ),
-        Noofdays: dataItem.differenceInDaysForFirstParticipation,
-      });
-    });
+// Parse "DD-MM-YYYY HH:mm:ss" or "DD/MM/YYYY" into a Date object (keeps time)
+const parseDateTime = (s) => {
+  if (!s) return null;
+  const dtMatch = s.match(/^(\d{2})[-/](\d{2})[-/](\d{4})\s*(\d{2}:\d{2}:\d{2})?/);
+  if (dtMatch) {
+    const [, d, m, y, time] = dtMatch;
+    return new Date(`${y}-${m}-${d}T${time || "00:00:00"}`);
   }
+  return null;
+};
+
+// Format "DD-MM-YYYY HH:mm:ss" → "01 Apr 2026, 02:05 AM"
+const fmtDateTime = (s) => {
+  if (!s) return "—";
+  const dt = parseDateTime(s);
+  if (!dt || isNaN(dt)) return s;
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const h = dt.getHours(), min = dt.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${String(dt.getDate()).padStart(2,"0")} ${months[dt.getMonth()]} ${dt.getFullYear()}, ${String(h12).padStart(2,"0")}:${String(min).padStart(2,"0")} ${ampm}`;
+};
+
+// Human-readable time difference: "3 days", "2 hours 15 minutes", "within minutes"
+const timeDiff = (from, to) => {
+  if (!from || !to) return null;
+  const ms = to - from;
+  if (ms < 0) return null;
+  const mins = Math.floor(ms / 60000);
+  const hours = Math.floor(mins / 60);
+  const days = Math.floor(hours / 24);
+  if (days >= 1) return `${days} day${days > 1 ? "s" : ""}`;
+  if (hours >= 1) return `${hours} hour${hours > 1 ? "s" : ""} ${mins % 60 > 0 ? `${mins % 60} min` : ""}`.trim();
+  if (mins >= 1) return `${mins} minute${mins > 1 ? "s" : ""}`;
+  return "within minutes";
+};
+
+const StatTile = ({ label, value, sub, color }) => (
+  <div style={{
+    background: "#fff",
+    border: `1.5px solid ${color || "#e0e0e0"}`,
+    borderRadius: 10,
+    padding: "12px 16px",
+    flex: 1,
+    minWidth: 120,
+  }}>
+    <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 18, fontWeight: 700, color: color || "#222" }}>{value}</div>
+    {sub && <div style={{ fontSize: 11, color: "#aaa", marginTop: 2 }}>{sub}</div>}
+  </div>
+);
+
+const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
+  const {
+    differenceInDaysForFirstParticipation,
+    firstParticipationAmount,
+    rateOfInterest,
+    singleDayInterestAmount,
+    firstParticipationInterest,
+    rawCalendarDays,
+  } = row;
+
+  const principal = dealInfo?.paticipatedAmount ?? firstParticipationAmount;
+  const roi = dealInfo?.rateOfInterest ?? rateOfInterest;
+  const partDate = dealInfo?.firstParticipationDate ?? dealInfo?.registeredDate;
+  const firstEmiDate = dealInfo?.firstInterestDate;
+  const returnType = dealInfo?.lederReturnType || "";
+  const isMonthly = !returnType || returnType === "MONTHLY";
+
+  if (!differenceInDaysForFirstParticipation) return null;
+
+  const monthlyRate = roi ? (roi > 5 ? roi / 12 : roi) : null;
+  const computedDailyInterest =
+    singleDayInterestAmount != null
+      ? singleDayInterestAmount
+      : principal && monthlyRate
+      ? (principal * monthlyRate) / 100 / 30
+      : null;
+  const computedMonthlyInterest = computedDailyInterest != null ? computedDailyInterest * 30 : null;
+  const effectiveDays = differenceInDaysForFirstParticipation;
+  const calDays = isMonthly ? (rawCalendarDays ?? (effectiveDays + 2)) : null;
+
+  return (
+    <div style={{
+      background: "#f0f7ff",
+      border: "1px solid #b8d4f0",
+      borderRadius: 8,
+      padding: "14px 18px",
+      marginBottom: 12,
+      fontSize: 13,
+    }}>
+      <div style={{ fontWeight: 600, marginBottom: 10, color: "#1a5f9e", fontSize: 13 }}>
+        {isMonthly ? "First Month Interest Calculation" : "Interest Calculation for Your Participation Period"}
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          {partDate && (
+            <tr>
+              <td style={{ padding: "4px 8px", color: "#555", width: "60%" }}>Participation Date</td>
+              <td style={{ padding: "4px 8px", fontWeight: 500 }}>{fmtDate(partDate)}</td>
+            </tr>
+          )}
+          {firstEmiDate && (
+            <tr>
+              <td style={{ padding: "4px 8px", color: "#555" }}>{isMonthly ? "First EMI Date" : "Payment / Maturity Date"}</td>
+              <td style={{ padding: "4px 8px", fontWeight: 500 }}>{fmtDate(firstEmiDate)}</td>
+            </tr>
+          )}
+          {isMonthly && calDays && (
+            <>
+              <tr>
+                <td style={{ padding: "4px 8px", color: "#555" }}>Days between dates</td>
+                <td style={{ padding: "4px 8px", fontWeight: 500 }}>{calDays}</td>
+              </tr>
+              <tr>
+                <td style={{ padding: "4px 8px", color: "#555" }}>Less: Both dates excluded (−2)</td>
+                <td style={{ padding: "4px 8px", fontWeight: 500, color: "#c0392b" }}>−2</td>
+              </tr>
+            </>
+          )}
+          <tr style={{ background: "#ddeeff" }}>
+            <td style={{ padding: "4px 8px", fontWeight: 700 }}>Days for Calculation</td>
+            <td style={{ padding: "4px 8px", fontWeight: 700 }}>{effectiveDays}</td>
+          </tr>
+          <tr>
+            <td style={{ padding: "4px 8px", paddingTop: 8, color: "#555" }}>Participation Amount</td>
+            <td style={{ padding: "4px 8px", paddingTop: 8, fontWeight: 500 }}>₹{fmt(principal)}</td>
+          </tr>
+          {monthlyRate && (
+            <tr>
+              <td style={{ padding: "4px 8px", color: "#555" }}>Monthly ROI ({roi > 5 ? `${roi}% p.a. ÷ 12` : `${roi}% monthly`})</td>
+              <td style={{ padding: "4px 8px", fontWeight: 500 }}>{monthlyRate.toFixed(4)}%</td>
+            </tr>
+          )}
+          {computedMonthlyInterest != null && (
+            <tr>
+              <td style={{ padding: "4px 8px", color: "#555" }}>Monthly Interest</td>
+              <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedMonthlyInterest)}</td>
+            </tr>
+          )}
+          {computedDailyInterest != null && (
+            <tr>
+              <td style={{ padding: "4px 8px", color: "#555" }}>Daily Interest (÷ 30)</td>
+              <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedDailyInterest)}</td>
+            </tr>
+          )}
+          <tr style={{ background: "#d4edda", borderTop: "2px solid #28a745" }}>
+            <td style={{ padding: "6px 8px", fontWeight: 700 }}>
+              {isMonthly
+                ? `First Month Interest (${effectiveDays} days × ₹${fmt(computedDailyInterest)}/day)`
+                : `Interest for ${effectiveDays} days`}
+            </td>
+            <td style={{ padding: "6px 8px", fontWeight: 700, color: "#155724" }}>₹{fmt(firstParticipationInterest)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style={{ marginTop: 6, color: "#888", fontSize: 11 }}>
+        * Every month is treated as 30 days. Both participation date and first EMI date are excluded from the count.
+      </div>
+    </div>
+  );
+};
+
+const DealSummaryCard = ({ dealInfo, apiData }) => {
+  const dealOpenDate = apiData?.dealOpenDate;
+  const dealStartDate = apiData?.dealStartDate;
+  const dealName = apiData?.dealName || dealInfo?.dealName;
+  const returnType = dealInfo?.lederReturnType || "";
+  const roi = dealInfo?.rateOfInterest;
+  const amount = dealInfo?.paticipatedAmount;
+  const duration = apiData?.duration;
+  // Use IST participation datetime from statement API (accurate); fall back to list API value
+  const firstPartDate = apiData?.firstParticipationDatetime || dealInfo?.firstParticipationDate;
+  const lastPartDate = dealInfo?.lastParticipationDate;
+
+  // "You participated X after deal opened" — both times now in IST from backend
+  const dealOpenDt = parseDateTime(dealOpenDate);
+  const partDt = parseDateTime(firstPartDate);
+  const diff = timeDiff(dealOpenDt, partDt);
+
+  const typeColors = {
+    MONTHLY: { bg: "#e8f4fd", color: "#1a5f9e", label: "Monthly" },
+    YEARLY: { bg: "#fef9e7", color: "#b7950b", label: "Yearly" },
+    QUARTERLY: { bg: "#e8f8f5", color: "#1a8a6f", label: "Quarterly" },
+    HALFYEARLY: { bg: "#fdf2f8", color: "#884ea0", label: "Half-Yearly" },
+  };
+  const typeStyle = typeColors[returnType] || { bg: "#f2f3f4", color: "#555", label: returnType };
+
+  const displayRoi = returnType === "YEARLY"
+    ? `${(roi * 12).toFixed(2)}% p.a.`
+    : returnType === "QUARTERLY"
+    ? `${(roi * 3).toFixed(2)}% p.q.`
+    : returnType === "HALFYEARLY"
+    ? `${(roi * 6).toFixed(2)}% p.h.`
+    : `${roi?.toFixed(2) || "—"}% p.m.`;
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, #1a3a5c 0%, #2471a3 100%)",
+      borderRadius: 12,
+      padding: "18px 20px",
+      color: "#fff",
+      marginBottom: 14,
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>{dealName || "Deal Statement"}</div>
+          <span style={{
+            background: typeStyle.bg,
+            color: typeStyle.color,
+            borderRadius: 20,
+            padding: "2px 10px",
+            fontSize: 11,
+            fontWeight: 600,
+          }}>{typeStyle.label}</span>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>₹{amount ? Number(amount).toLocaleString("en-IN") : "—"}</div>
+          <div style={{ fontSize: 11, opacity: 0.8 }}>Your Participation</div>
+        </div>
+      </div>
+
+      {/* Date grid */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "8px 16px",
+        background: "rgba(255,255,255,0.1)",
+        borderRadius: 8,
+        padding: "10px 14px",
+        marginBottom: 10,
+        fontSize: 12,
+      }}>
+        {dealOpenDate && (
+          <div>
+            <div style={{ opacity: 0.7 }}>Deal Opened</div>
+            <div style={{ fontWeight: 600 }}>{fmtDateTime(dealOpenDate)}</div>
+          </div>
+        )}
+        {dealStartDate && (
+          <div>
+            <div style={{ opacity: 0.7 }}>First Payment Date</div>
+            <div style={{ fontWeight: 600 }}>{fmtDate(dealStartDate)}</div>
+          </div>
+        )}
+        {firstPartDate && (
+          <div>
+            <div style={{ opacity: 0.7 }}>Your Participation</div>
+            <div style={{ fontWeight: 600 }}>{fmtDateTime(firstPartDate)}</div>
+          </div>
+        )}
+        {(duration > 0) && (
+          <div>
+            <div style={{ opacity: 0.7 }}>Duration</div>
+            <div style={{ fontWeight: 600 }}>{duration} months · {displayRoi}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Participation timing message */}
+      {diff && (
+        <div style={{
+          background: "rgba(255,255,255,0.15)",
+          borderRadius: 6,
+          padding: "6px 12px",
+          fontSize: 12,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}>
+          <span>⚡</span>
+          <span>
+            You participated <strong>{diff}</strong> after this deal opened
+            {lastPartDate && lastPartDate !== firstPartDate && (
+              <> · Last top-up: <strong>{lastPartDate}</strong></>
+            )}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MyParticipateStatementTable = ({ data, dealInfo }) => {
+  const [breakupRows, setBreakupRows] = useState([]);
+  const [showBreakup, setShowBreakup] = useState(false);
+  const [showCalc, setShowCalc] = useState(true);
+
+  const apiData = data?.data;
+  const emiCard = apiData?.dealLevelLoanEmiCard || [];
+
+  // Financial summary
+  const totalInterest = emiCard.reduce((s, r) => s + (r.interestAmount || 0), 0);
+  const paidInterest = emiCard.filter(r => r.interestPaidDate).reduce((s, r) => s + (r.interestAmount || 0), 0);
+  const paidCount = emiCard.filter(r => r.interestPaidDate).length;
+  const totalCount = emiCard.length;
+
+  const newData = emiCard.map((dataItem, index) => {
+    const isPaid = !!dataItem.interestPaidDate;
+    const isFirst = index === 0;
+    return {
+      key: index,
+      sno: index + 1,
+      scheduledDate: fmtDate(dataItem.date),
+      paidDate: isPaid ? fmtDate(dataItem.interestPaidDate) : null,
+      status: isPaid ? "paid" : "upcoming",
+      interestAmount: dataItem.interestAmount,
+      days: isFirst ? dataItem.differenceInDaysForFirstParticipation : 30,
+      _raw: dataItem,
+      isFirst,
+    };
+  });
 
   const columns = [
     {
-      title: "S.No",
-      dataIndex: "Sno",
-      sorter: (a, b) => a.Sno - b.Sno,
+      title: "#",
+      dataIndex: "sno",
+      width: 45,
+      render: (v) => <span style={{ color: "#888", fontSize: 12 }}>{v}</span>,
     },
     {
-      title: "Actual Payment Date",
-      dataIndex: "ActualPaymentDate",
-      sorter: (a, b) =>
-        new Date(a.ActualPaymentDate) - new Date(b.ActualPaymentDate),
+      title: "Scheduled Date",
+      dataIndex: "scheduledDate",
+      render: (v) => <span style={{ fontWeight: 500 }}>{v}</span>,
     },
     {
-      title: "Interest Paid Date",
-      dataIndex: "InterestPaidDate",
-      sorter: (a, b) =>
-        new Date(a.InterestPaidDate) - new Date(b.InterestPaidDate),
+      title: "Paid On",
+      dataIndex: "paidDate",
+      render: (v) => v ? <span style={{ color: "#27ae60", fontWeight: 500 }}>{v}</span> : <span style={{ color: "#aaa" }}>Pending</span>,
     },
     {
-      title: "Interest Amount",
-      dataIndex: "InterestAmount",
+      title: "Status",
+      dataIndex: "status",
+      width: 90,
+      render: (v) => v === "paid"
+        ? <Tag color="success" style={{ borderRadius: 20, fontSize: 11 }}>Paid</Tag>
+        : <Tag color="processing" style={{ borderRadius: 20, fontSize: 11 }}>Upcoming</Tag>,
     },
     {
-      title: "No of Days",
-      dataIndex: "Noofdays",
-      sorter: (a, b) => a.Noofdays - b.Noofdays,
+      title: "Interest (₹)",
+      dataIndex: "interestAmount",
+      render: (v, rec) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", }}>
+          <span style={{ fontWeight: 600 }}>₹{Number(v || 0).toLocaleString("en-IN")}</span>
+          {rec.isFirst && (
+            <button
+              className="btn btn-sm btn-info"
+              style={{
+                fontSize: 12,
+                padding: "2px 8px",
+                fontWeight: 700,
+                color: "#fff",
+                borderColor: "#138496",
+                boxShadow: "0 1px 3px rgba(19, 132, 150, 0.35)",
+                marginLeft: 30,
+              }}
+              title={showCalc
+                ? "Hide the first-month interest calculation"
+                : "View how the first-month interest is calculated"}
+              aria-label={showCalc
+                ? "Hide the first-month interest calculation"
+                : "View how the first-month interest is calculated"}
+              aria-expanded={showCalc}
+              onClick={() => setShowCalc(p => !p)}
+            >
+              {showCalc ? "Hide" : "How?"}
+            </button>
+          )}
+          {rec.isFirst && rec._raw.listOfPaticipatedInfo && (
+            <button
+              className="btn btn-sm btn-outline-primary"
+              style={{ fontSize: 10, padding: "2px 8px" }}
+              onClick={() => { setBreakupRows(rec._raw.listOfPaticipatedInfo); setShowBreakup(p => !p); }}
+            >
+              {showBreakup ? "Hide Breakup" : "Breakup"}
+            </button>
+          )}
+        </div>
+      ),
     },
   ];
 
-  const expandedRowRender = () => {
-    if (!content || content.length === 0) return null;
+  // Use the transformed table row so the controlled expansion has a valid key.
+  const firstItem = newData[0];
 
-    const totalAmount = content.reduce(
-      (acc, item) => acc + item.interestAmount,
-      0
-    );
+  const renderFirstMonthDetails = (record) => {
+    if (!record.isFirst) return null;
 
     return (
-      <div className="table-responsive mt-3">
-        <table className="table table-bordered table-striped">
-          <thead>
-            <tr>
-              <th>User ID</th>
-              <th>ROI</th>
-              <th>Amount</th>
-              <th>Updated Date</th>
-              <th>Difference in Days</th>
-              <th>Interest Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {content.map((item, index) => (
-              <tr key={index}>
-                <td>{item.userId}</td>
-                <td>{item.roi}</td>
-                <td>{item.amount}</td>
-                <td>{item.upatedDate}</td>
-                <td>{item.differenceInDays}</td>
-                <td>{item.interestAmount.toLocaleString("en-IN")}</td>
-              </tr>
-            ))}
-            <tr>
-              <td colSpan="5" className="text-end fw-bold">
-                Total Amount
-              </td>
-              <td className="fw-bold">{totalAmount.toLocaleString("en-IN")}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div style={{ padding: "4px 8px" }}>
+        {showCalc && <FirstMonthCalcBreakdown row={record._raw} dealInfo={dealInfo} />}
+
+        {showBreakup && breakupRows.length > 0 && (
+          <div style={{ background: "#f9f9f9", border: "1px solid #e0e0e0", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: "#333" }}>First Month Breakup (All Participations)</div>
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f0f0f0" }}>
+                  {["Date", "Amount (₹)", "Days", "ROI", "Interest (₹)"].map(h => (
+                    <th key={h} style={{ padding: "6px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #ddd" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {breakupRows.map((item, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                    <td style={{ padding: "6px 10px" }}>{item.upatedDate || "—"}</td>
+                    <td style={{ padding: "6px 10px" }}>₹{Number(item.amount || 0).toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "6px 10px" }}>{item.differenceInDays}</td>
+                    <td style={{ padding: "6px 10px" }}>{item.roi ? `${item.roi}%` : "—"}</td>
+                    <td style={{ padding: "6px 10px", fontWeight: 600 }}>₹{Math.round(item.interestAmount || 0).toLocaleString("en-IN")}</td>
+                  </tr>
+                ))}
+                <tr style={{ background: "#f0f7ff", fontWeight: 700 }}>
+                  <td colSpan={4} style={{ padding: "6px 10px", textAlign: "right" }}>Total</td>
+                  <td style={{ padding: "6px 10px" }}>₹{Math.round(breakupRows.reduce((s, r) => s + (r.interestAmount || 0), 0)).toLocaleString("en-IN")}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div style={{maxHeight: '80vh', overflowY: 'auto'}}>
-      <Table 
-        columns={columns} 
-        dataSource={newData} 
-        pagination={false}
-        scroll={{ x: true }}
-        sticky
-      />
-      {!isCollapsed && expandedRowRender()}
+    <div style={{ maxHeight: "90vh", overflowY: "auto", padding: "4px 2px" }}>
+
+      {/* Deal summary card */}
+      <DealSummaryCard dealInfo={dealInfo} apiData={apiData} />
+
+      {/* Financial snapshot tiles */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+        <StatTile
+          label="Your Principal"
+          value={`₹${Number(dealInfo?.paticipatedAmount || 0).toLocaleString("en-IN")}`}
+          color="#2471a3"
+        />
+        <StatTile
+          label="Interest Paid"
+          value={`₹${Math.round(paidInterest).toLocaleString("en-IN")}`}
+          sub={`${paidCount} of ${totalCount} EMIs`}
+          color="#27ae60"
+        />
+        <StatTile
+          label="Total Expected"
+          value={`₹${Math.round(totalInterest).toLocaleString("en-IN")}`}
+          sub="full term"
+          color="#8e44ad"
+        />
+      </div>
+
+      {/* EMI schedule table */}
+      <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #e8e8e8" }}>
+        <Table
+          columns={columns}
+          dataSource={newData}
+          pagination={false}
+          scroll={{ x: true }}
+          size="small"
+          expandable={{
+            expandedRowKeys: firstItem ? [firstItem.key] : [],
+            expandedRowRender: renderFirstMonthDetails,
+            expandIcon: () => null,
+          }}
+          rowClassName={(rec) => rec.status === "paid" ? "row-paid" : "row-upcoming"}
+          rowStyle={(rec) => rec.status === "paid" ? { background: "#f0fff4" } : {}}
+        />
+      </div>
+
+      <style>{`
+        .row-paid td { background: #f0fff4 !important; }
+        .row-upcoming td { background: #fff !important; }
+      `}</style>
     </div>
   );
 };

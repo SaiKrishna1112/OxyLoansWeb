@@ -3,7 +3,7 @@ import Modal from "react-bootstrap/Modal";
 import MyParticipateStatementTable from "../Tables/MyParticipateStatementTable";
 import { Spin, Tag } from "antd";
 
-const MyParticipatedStatement = ({ data, open, hidefun,loading }) => {
+const MyParticipatedStatement = ({ data, open, hidefun, loading, dealInfo }) => {
   const [lgShow, setLgShow] = useState(open);
 
   const hidingStatementModal = () => {
@@ -20,7 +20,7 @@ const MyParticipatedStatement = ({ data, open, hidefun,loading }) => {
     >
       <Modal.Header closeButton>
         <Modal.Title id="example-modal-sizes-title-lg">
-          Interest Info
+          Interest Statement{dealInfo?.dealName ? ` — ${dealInfo.dealName}` : ""}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
@@ -33,8 +33,8 @@ const MyParticipatedStatement = ({ data, open, hidefun,loading }) => {
                       ></Spin>
                     </div>
                         ) : (
-      <MyParticipateStatementTable data={data} />
-    )}      
+      <MyParticipateStatementTable data={data} dealInfo={dealInfo} />
+    )}
     </Modal.Body>
     </Modal>
   );

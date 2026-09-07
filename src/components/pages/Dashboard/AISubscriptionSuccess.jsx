@@ -42,7 +42,7 @@ export default function AISubscriptionSuccess() {
 
   useEffect(() => {
     if (status === "success") {
-      const t = setTimeout(() => navigate("/ai/portfolio"), 3000);
+      const t = setTimeout(() => navigate("/lenderAIDashboard/" + getUserId()), 3000);
       return () => clearTimeout(t);
     }
   }, [status]);
@@ -54,7 +54,7 @@ export default function AISubscriptionSuccess() {
         <h4 style={{ fontWeight: 700, marginBottom: 8 }}>{title}</h4>
         <p className="text-muted" style={{ marginBottom: 24 }}>{msg}</p>
         {status !== "verifying" && (
-          <button className="btn btn-primary" onClick={() => navigate("/ai/portfolio")} style={{ borderRadius: 8, fontWeight: 600 }}>
+          <button className="btn btn-primary" onClick={() => navigate("/lenderAIDashboard/" + getUserId())} style={{ borderRadius: 8, fontWeight: 600 }}>
             Go to AI Dashboard
           </button>
         )}

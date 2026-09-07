@@ -22,6 +22,19 @@ import { handleprincipalreturnaccounttype, membershipsuccess, membershipsuccessi
 import Swal from "sweetalert2";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
 
+const formatDisplayDate = (value) => {
+  if (!value) return "—";
+
+  const datePart = String(value).split(/[ T]/)[0];
+  const isoMatch = datePart.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+  if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1]}`;
+
+  const dayFirstMatch = datePart.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+  if (dayFirstMatch) return `${dayFirstMatch[1]}/${dayFirstMatch[2]}/${dayFirstMatch[3]}`;
+
+  return value;
+};
+
 
 const MyRunningDeals = () => {
   const [runningdeals, setrunningdeals] = useState({
@@ -85,11 +98,12 @@ const MyRunningDeals = () => {
 
     withdrawriase();
   }, [])
-  const handlemodalopen = (dealId) => {
+  const handlemodalopen = (dealId, dealInfo) => {
     setrunningdeals(prev => ({
       ...prev,
       modelopen: !prev.modelopen,
       modalLoader: true,
+      selectedDealInfo: dealInfo || null,
     }));
     const response = viewdealamountemi(dealId);
     response.then((data) => {
@@ -331,6 +345,7 @@ const MyRunningDeals = () => {
                         open={runningdeals.modelopen}
                         hidefun={() => setrunningdeals(prev => ({...prev, modelopen: false}))}
                         loading={runningdeals.modalLoader}
+                        dealInfo={runningdeals.selectedDealInfo}
                       />
                     )}
 
@@ -423,10 +438,10 @@ const MyRunningDeals = () => {
                             <div className="card-middle row">
                               <div className="col-sm-12 col-lg-6">
                                 <h6>Deal Type : {data.dealType}</h6>
-                                <h6>First Interest : {data.firstInterestDate}</h6>
+                                <h6>First Interest : {formatDisplayDate(data.firstInterestDate)}</h6>
                                 <h6>
                                   Participated Date :{" "}
-                                  {data.registeredDate}
+                                  {formatDisplayDate(data.registeredDate)}
                                 </h6>
                               </div>
                               <div className="col-sm-12 col-lg-6">
@@ -517,7 +532,16 @@ const MyRunningDeals = () => {
                                   <span
                                     type="button"
                                     className="badge bg-primary-dark"
-                                    onClick={() => handlemodalopen(data.dealId)}
+                                    onClick={() => handlemodalopen(data.dealId, {
+                                      dealName: data.dealName,
+                                      dealId: data.dealId,
+                                      paticipatedAmount: data.paticipatedAmount,
+                                      rateOfInterest: data.rateOfInterest,
+                                      lederReturnType: data.lederReturnType,
+                                      firstInterestDate: data.firstInterestDate,
+                                      firstParticipationDate: data.firstParticipationDate,
+                                      lastParticipationDate: data.lastParticipationDate,
+                                    })}
                                   >
                                     <i className="fa fa-eye"></i> Interest Statement
                                   </span>
@@ -664,10 +688,10 @@ const MyRunningDeals = () => {
                               <div className="card-middle row">
                                 <div className="col-sm-12 col-lg-6">
                                   <h6>Deal Type : {data.dealType}</h6>
-                                  <h6>First Interest : {data.firstInterestDate}</h6>
+                                  <h6>First Interest : {formatDisplayDate(data.firstInterestDate)}</h6>
                                   <h6>
                                     Participated Date :{" "}
-                                    {data.registeredDate}
+                                    {formatDisplayDate(data.registeredDate)}
                                   </h6>
                                 </div>
                                 <div className="col-sm-12 col-lg-6">
@@ -760,7 +784,16 @@ const MyRunningDeals = () => {
                                     <span
                                       type="button"
                                       className="badge bg-primary-dark"
-                                      onClick={() => handlemodalopen(data.dealId)}
+                                      onClick={() => handlemodalopen(data.dealId, {
+                                        dealName: data.dealName,
+                                        dealId: data.dealId,
+                                        paticipatedAmount: data.paticipatedAmount,
+                                        rateOfInterest: data.rateOfInterest,
+                                        lederReturnType: data.lederReturnType,
+                                        firstInterestDate: data.firstInterestDate,
+                                        firstParticipationDate: data.firstParticipationDate,
+                                        lastParticipationDate: data.lastParticipationDate,
+                                      })}
                                     >
                                       <i className="fa fa-eye"></i> Interest
                                       Statement
