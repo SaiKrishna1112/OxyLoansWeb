@@ -364,7 +364,7 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
       render: (v, rec) => (
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <span style={{ fontWeight: 600 }}>₹{Number(v || 0).toLocaleString("en-IN")}</span>
-          {rec.isFirst && (
+          {rec.isFirst && rec.status !== "paid" && (
             <button
               className="btn btn-sm btn-outline-info"
               style={{ fontSize: 10, padding: "1px 6px" }}
