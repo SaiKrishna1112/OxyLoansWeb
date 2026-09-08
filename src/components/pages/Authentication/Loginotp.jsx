@@ -7,6 +7,8 @@ import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import { BsWhatsapp } from "react-icons/bs";
+import { useGoogleLogin } from "@react-oauth/google";
+import axios from "axios";
 
 import { handlesenOtp, usersubmitotp, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { saveLoginSession } from "../../HttpRequest/aiAdminApi";
@@ -34,7 +36,88 @@ const Loginotp = () => {
     errormessage: "",
   });
 
-  const [isloading, setLoading] = useState(false)
+  const [isloading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleModal, setGoogleModal] = useState(null); // { status, email, accessToken }
+
+  const navigateToDashboard = (data) => {
+    const role = data?.primaryType;
+    if (role === "LENDER") history("/lenderAIDashboard/" + data.id);
+    else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
+    else history("/borrowerDashboard");
+  };
+
+  const handleGoogleSuccess = async (tokenResponse) => {
+    setGoogleLoading(true);
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/v1/user/checkGoogleEmail`,
+        { accessToken: tokenResponse.access_token },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const { phoneNumberRequiredOrNot: status, signInUrl: email } = res.data;
+      setGoogleModal({ status, email, accessToken: tokenResponse.access_token });
+    } catch (err) {
+      const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
+      WarningBackendApi("Google Login Failed", msg);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleAllow = async () => {
+    if (!googleModal) return;
+    setGoogleLoading(true);
+    try {
+      if (googleModal.status === "LINKED") {
+        const res = await axios.post(
+          `${BASE_URL}/v1/user/loginWithLinkedGoogle`,
+          { accessToken: googleModal.accessToken },
+          { headers: { "Content-Type": "application/json" } }
+        );
+        if (saveLoginSession(res)) {
+          toastrSuccess("Google login successful!");
+          navigateToDashboard(res.data);
+        }
+      } else {
+        // FOUND — existing user, not yet linked; user will complete OTP, then we link
+        setGoogleModal(prev => ({ ...prev, pendingLink: true }));
+        toastrSuccess("Please verify with mobile OTP to link your Google account.");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.errorMessage || "Google login failed. Please use mobile OTP.";
+      WarningBackendApi("Google Login Failed", msg);
+    } finally {
+      setGoogleLoading(false);
+      if (googleModal?.status === "LINKED") setGoogleModal(null);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => WarningBackendApi("Google Login Failed", "Google authentication was cancelled or failed."),
+  });
+
+  // After OTP login succeeds, link Google if user came through Google flow
+  const handleLoginSuccess = async (response) => {
+    if (!saveLoginSession(response)) return;
+    toastrSuccess("Login Success!");
+    if (googleModal?.pendingLink && googleModal?.accessToken) {
+      try {
+        const userId = response.data?.id;
+        await axios.post(
+          `${BASE_URL}/v1/user/${userId}/linkGoogleAccount`,
+          { accessToken: googleModal.accessToken },
+          { headers: { "Content-Type": "application/json", accessToken: sessionStorage.getItem("accessToken") } }
+        );
+        toastrSuccess("Google account linked! Next time you can login with Google directly.");
+      } catch (e) {
+        // linking failure is non-blocking
+      }
+      setGoogleModal(null);
+    }
+    navigateToDashboard(response.data);
+  };
 
   let inputRef = useRef();
   const showIcon = () => (
@@ -72,7 +155,7 @@ const Loginotp = () => {
       const retriveresponse = await usersubmitotp(email, password);
 
       if (isApiSuccess(retriveresponse)) {
-        if (!saveLoginSession(retriveresponse)) {
+        if (!retriveresponse.headers?.accesstoken && !retriveresponse.headers?.accessToken) {
           const { title, message } = warnApiError(
             retriveresponse,
             "Login failed",
@@ -81,16 +164,7 @@ const Loginotp = () => {
           WarningBackendApi(title, message);
           return;
         }
-        toastrSuccess("Login Success!");
-
-        const role = retriveresponse.data.primaryType;
-        if (role === "LENDER") {
-          history("/lenderAIDashboard/" + retriveresponse.data.id);
-        } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
-          history("/oxyloansadmindashboard");
-        } else {
-          history("/borrowerDashboard");
-        }
+        await handleLoginSuccess(retriveresponse);
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
         toastrWarning(message);
@@ -313,15 +387,63 @@ const Loginotp = () => {
                       <i className="fab fa-at" />
                     </Link>
                     <Link to="/whatsapplogin" className="bg-success text-white">
-                      <BsWhatsapp />{" "}
+                      <BsWhatsapp />
                     </Link>
-                    {/* <Link onClick={() => {}} to="#">
-                      <i className="fab fa-facebook-f" />
-                    </Link>
-                    <Link to="#">
-                      <i className="fab fa-twitter" />
-                    </Link> */}
+                    <button
+                      type="button"
+                      onClick={() => googleLogin()}
+                      disabled={googleLoading}
+                      style={{ background: "#fff", border: "1px solid #ddd", borderRadius: "50%", width: 38, height: 38, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                      title="Sign in with Google"
+                    >
+                      {googleLoading
+                        ? <span className="spinner-border spinner-border-sm text-danger" />
+                        : <i className="fab fa-google" style={{ color: "#DB4437", fontSize: 16 }} />}
+                    </button>
                   </div>
+
+                  {/* Google Login Confirmation Modal */}
+                  {googleModal && (
+                    <div style={{ marginTop: 16, padding: 16, border: "1px solid #e0e0e0", borderRadius: 8, background: "#f9f9f9" }}>
+                      {googleModal.status === "NOT_FOUND" ? (
+                        <>
+                          <p style={{ color: "#c0392b", fontWeight: 600, marginBottom: 8 }}>
+                            <i className="fas fa-times-circle" /> {googleModal.email} is not registered on OxyLoans.
+                          </p>
+                          <p style={{ fontSize: 13, marginBottom: 12 }}>Please login using mobile OTP or WhatsApp OTP.</p>
+                          <button className="btn btn-sm btn-outline-secondary mr-2" onClick={() => setGoogleModal(null)}>
+                            Use Mobile OTP
+                          </button>
+                          <Link to="/whatsapplogin" className="btn btn-sm btn-outline-success" onClick={() => setGoogleModal(null)}>
+                            Use WhatsApp OTP
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <p style={{ color: "#27ae60", fontWeight: 600, marginBottom: 8 }}>
+                            <i className="fas fa-check-circle" /> OxyLoans account found for {googleModal.email}
+                          </p>
+                          {googleModal.status === "LINKED"
+                            ? <p style={{ fontSize: 13, marginBottom: 12 }}>Your Google account is linked. Click below to login directly.</p>
+                            : <p style={{ fontSize: 13, marginBottom: 12 }}>First time Google login — verify with mobile OTP once to link your Google account.</p>
+                          }
+                          <button
+                            className="btn btn-sm btn-primary mr-2"
+                            onClick={handleGoogleAllow}
+                            disabled={googleLoading}
+                          >
+                            {googleModal.status === "LINKED" ? "Login with Google" : "Allow & Verify with OTP"}
+                          </button>
+                          <button className="btn btn-sm btn-outline-secondary mr-2" onClick={() => setGoogleModal(null)}>
+                            Use Mobile OTP
+                          </button>
+                          <Link to="/whatsapplogin" className="btn btn-sm btn-outline-success" onClick={() => setGoogleModal(null)}>
+                            WhatsApp OTP
+                          </Link>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

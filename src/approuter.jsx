@@ -1,4 +1,5 @@
 import React from "react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
@@ -184,8 +185,11 @@ const AdminAIRouteAlias = ({ to }) => {
   return <Navigate to={`${to}${location.search}${location.hash}`} replace />;
 };
 
+const GOOGLE_CLIENT_ID = "339023421446-dhn2ip5u0pit0r49j5u4jlrcs1p9q42a.apps.googleusercontent.com";
+
 const AppRouter = () => {
   return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Admlogin />} />
@@ -439,6 +443,7 @@ const AppRouter = () => {
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 };
 
