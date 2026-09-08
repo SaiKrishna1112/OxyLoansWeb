@@ -49,8 +49,8 @@ const Loginotp = () => {
         { accessToken: tokenResponse.access_token },
         { headers: { "Content-Type": "application/json" } }
       );
-      const { phoneNumberRequiredOrNot: status, signInUrl: email } = res.data;
-      setGoogleModal({ status, email, accessToken: tokenResponse.access_token });
+      const { phoneNumberRequiredOrNot: status, signInUrl: email, mobileNumber } = res.data;
+      setGoogleModal({ status, email, accessToken: tokenResponse.access_token, mobileNumber });
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
       WarningBackendApi("Google Login Failed", msg);
@@ -77,9 +77,23 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else {
-        // FOUND — existing user, not yet linked; user will complete OTP, then we link
+        // FOUND — pre-fill mobile and auto-send OTP
+        const mobile = googleModal.mobileNumber || "";
         setGoogleModal(prev => ({ ...prev, pendingLink: true }));
-        toastrSuccess("Please verify with mobile OTP to link your Google account.");
+        if (mobile) {
+          setUserLoginInfo(prev => ({ ...prev, email: mobile, emailerror: "" }));
+          // auto-send OTP with the registered mobile
+          try {
+            const otpRes = await handlesenOtp(mobile);
+            if (isApiSuccess(otpRes)) {
+              if (otpRes.data?.id) sessionStorage.setItem("userId", otpRes.data.id);
+              setUserLoginInfo(prev => ({ ...prev, email: mobile, sentotp: true, emailerror: "" }));
+              toastrSuccess("OTP sent to your registered mobile. Enter it below to link Google.");
+            }
+          } catch (e) { /* user can send OTP manually */ }
+        } else {
+          toastrSuccess("Please verify with mobile OTP to link your Google account.");
+        }
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || "Google login failed. Please use mobile OTP.";
