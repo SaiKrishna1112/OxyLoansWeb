@@ -91,6 +91,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
   if (!differenceInDaysForFirstParticipation) return null;
 
   const monthlyRate = roi ? (roi > 5 ? roi / 12 : roi) : null;
+  const annualRate = roi ? (roi > 5 ? roi : roi * 12) : null;
   const computedDailyInterest =
     singleDayInterestAmount != null
       ? singleDayInterestAmount
@@ -99,7 +100,13 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
       : null;
   const computedMonthlyInterest = computedDailyInterest != null ? computedDailyInterest * 30 : null;
   const effectiveDays = differenceInDaysForFirstParticipation;
-  const calDays = isMonthly ? (rawCalendarDays ?? (effectiveDays + 2)) : null;
+  const calDays = rawCalendarDays ?? (effectiveDays + 2);
+
+  const firstEmiLabel = isMonthly ? "First EMI Date"
+    : returnType === "YEARLY" ? "First Yearly Payment Date"
+    : returnType === "HALFYEARLY" ? "First Half-Yearly Payment Date"
+    : returnType === "QUARTERLY" ? "First Quarterly Payment Date"
+    : "First Payment Date";
 
   return (
     <div style={{
@@ -123,11 +130,11 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
           )}
           {firstEmiDate && (
             <tr>
-              <td style={{ padding: "4px 8px", color: "#555" }}>{isMonthly ? "First EMI Date" : "Payment / Maturity Date"}</td>
+              <td style={{ padding: "4px 8px", color: "#555" }}>{firstEmiLabel}</td>
               <td style={{ padding: "4px 8px", fontWeight: 500 }}>{fmtDate(firstEmiDate)}</td>
             </tr>
           )}
-          {isMonthly && calDays && (
+          {calDays && (
             <>
               <tr>
                 <td style={{ padding: "4px 8px", color: "#555" }}>Days between dates</td>
@@ -147,23 +154,42 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
             <td style={{ padding: "4px 8px", paddingTop: 8, color: "#555" }}>Participation Amount</td>
             <td style={{ padding: "4px 8px", paddingTop: 8, fontWeight: 500 }}>₹{fmt(principal)}</td>
           </tr>
-          {monthlyRate && (
-            <tr>
-              <td style={{ padding: "4px 8px", color: "#555" }}>Monthly ROI ({roi > 5 ? `${roi}% p.a. ÷ 12` : `${roi}% monthly`})</td>
-              <td style={{ padding: "4px 8px", fontWeight: 500 }}>{monthlyRate.toFixed(4)}%</td>
-            </tr>
-          )}
-          {computedMonthlyInterest != null && (
-            <tr>
-              <td style={{ padding: "4px 8px", color: "#555" }}>Monthly Interest</td>
-              <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedMonthlyInterest)}</td>
-            </tr>
-          )}
-          {computedDailyInterest != null && (
-            <tr>
-              <td style={{ padding: "4px 8px", color: "#555" }}>Daily Interest (÷ 30)</td>
-              <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedDailyInterest)}</td>
-            </tr>
+          {isMonthly ? (
+            <>
+              {monthlyRate && (
+                <tr>
+                  <td style={{ padding: "4px 8px", color: "#555" }}>Monthly ROI ({roi > 5 ? `${roi}% p.a. ÷ 12` : `${roi}% monthly`})</td>
+                  <td style={{ padding: "4px 8px", fontWeight: 500 }}>{monthlyRate.toFixed(4)}%</td>
+                </tr>
+              )}
+              {computedMonthlyInterest != null && (
+                <tr>
+                  <td style={{ padding: "4px 8px", color: "#555" }}>Monthly Interest</td>
+                  <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedMonthlyInterest)}</td>
+                </tr>
+              )}
+              {computedDailyInterest != null && (
+                <tr>
+                  <td style={{ padding: "4px 8px", color: "#555" }}>Daily Interest (÷ 30)</td>
+                  <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedDailyInterest)}</td>
+                </tr>
+              )}
+            </>
+          ) : (
+            <>
+              {annualRate && (
+                <tr>
+                  <td style={{ padding: "4px 8px", color: "#555" }}>Annual ROI</td>
+                  <td style={{ padding: "4px 8px", fontWeight: 500 }}>{annualRate.toFixed(2)}% p.a.</td>
+                </tr>
+              )}
+              {computedDailyInterest != null && (
+                <tr>
+                  <td style={{ padding: "4px 8px", color: "#555" }}>Daily Interest (annual rate ÷ 360)</td>
+                  <td style={{ padding: "4px 8px", fontWeight: 500 }}>₹{fmt(computedDailyInterest)}</td>
+                </tr>
+              )}
+            </>
           )}
           <tr style={{ background: "#d4edda", borderTop: "2px solid #28a745" }}>
             <td style={{ padding: "6px 8px", fontWeight: 700 }}>
@@ -176,7 +202,7 @@ const FirstMonthCalcBreakdown = ({ row, dealInfo }) => {
         </tbody>
       </table>
       <div style={{ marginTop: 6, color: "#888", fontSize: 11 }}>
-        * Every month is treated as 30 days. Both participation date and first EMI date are excluded from the count.
+        * Every month is treated as 30 days (360-day year). Both participation date and first payment date are excluded from the count.
       </div>
     </div>
   );
@@ -294,7 +320,7 @@ const DealSummaryCard = ({ dealInfo, apiData }) => {
           <span>
             You participated <strong>{diff}</strong> after this deal opened
             {lastPartDate && lastPartDate !== firstPartDate && (
-              <> · Last top-up: <strong>{lastPartDate}</strong></>
+              <> · Last participated on: <strong>{fmtDateTime(lastPartDate)}</strong></>
             )}
           </span>
         </div>
