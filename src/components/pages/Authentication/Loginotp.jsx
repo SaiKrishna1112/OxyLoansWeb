@@ -40,12 +40,6 @@ const Loginotp = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleModal, setGoogleModal] = useState(null); // { status, email, accessToken }
 
-  const navigateToDashboard = (data) => {
-    const role = data?.primaryType;
-    if (role === "LENDER") history("/lenderAIDashboard/" + data.id);
-    else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
-    else history("/borrowerDashboard");
-  };
 
   const handleGoogleSuccess = async (tokenResponse) => {
     setGoogleLoading(true);
@@ -77,7 +71,10 @@ const Loginotp = () => {
         );
         if (saveLoginSession(res)) {
           toastrSuccess("Google login successful!");
-          navigateToDashboard(res.data);
+          const role = res.data?.primaryType;
+          if (role === "LENDER") history("/lenderAIDashboard/" + res.data.id);
+          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
+          else history("/borrowerDashboard");
         }
       } else {
         // FOUND — existing user, not yet linked; user will complete OTP, then we link
@@ -97,27 +94,6 @@ const Loginotp = () => {
     onSuccess: handleGoogleSuccess,
     onError: () => WarningBackendApi("Google Login Failed", "Google authentication was cancelled or failed."),
   });
-
-  // After OTP login succeeds, link Google if user came through Google flow
-  const handleLoginSuccess = async (response) => {
-    if (!saveLoginSession(response)) return;
-    toastrSuccess("Login Success!");
-    if (googleModal?.pendingLink && googleModal?.accessToken) {
-      try {
-        const userId = response.data?.id;
-        await axios.post(
-          `${BASE_URL}/v1/user/${userId}/linkGoogleAccount`,
-          { accessToken: googleModal.accessToken },
-          { headers: { "Content-Type": "application/json", accessToken: sessionStorage.getItem("accessToken") } }
-        );
-        toastrSuccess("Google account linked! Next time you can login with Google directly.");
-      } catch (e) {
-        // linking failure is non-blocking
-      }
-      setGoogleModal(null);
-    }
-    navigateToDashboard(response.data);
-  };
 
   let inputRef = useRef();
   const showIcon = () => (
@@ -155,7 +131,7 @@ const Loginotp = () => {
       const retriveresponse = await usersubmitotp(email, password);
 
       if (isApiSuccess(retriveresponse)) {
-        if (!retriveresponse.headers?.accesstoken && !retriveresponse.headers?.accessToken) {
+        if (!saveLoginSession(retriveresponse)) {
           const { title, message } = warnApiError(
             retriveresponse,
             "Login failed",
@@ -164,7 +140,27 @@ const Loginotp = () => {
           WarningBackendApi(title, message);
           return;
         }
-        await handleLoginSuccess(retriveresponse);
+        toastrSuccess("Login Success!");
+        // Link Google account if user came via Google flow (non-blocking)
+        if (googleModal?.pendingLink && googleModal?.accessToken) {
+          try {
+            await axios.post(
+              `${BASE_URL}/v1/user/${retriveresponse.data?.id}/linkGoogleAccount`,
+              { accessToken: googleModal.accessToken },
+              { headers: { "Content-Type": "application/json", accessToken: sessionStorage.getItem("accessToken") } }
+            );
+            toastrSuccess("Google account linked! Next time you can login with Google directly.");
+          } catch (e) { /* non-blocking */ }
+          setGoogleModal(null);
+        }
+        const role = retriveresponse.data.primaryType;
+        if (role === "LENDER") {
+          history("/lenderAIDashboard/" + retriveresponse.data.id);
+        } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
+          history("/oxyloansadmindashboard");
+        } else {
+          history("/borrowerDashboard");
+        }
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
         toastrWarning(message);
