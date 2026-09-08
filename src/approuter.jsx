@@ -1,4 +1,5 @@
 import React from "react";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
@@ -22,7 +23,6 @@ import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Ad
 import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIYearWiseDealsListPage from "./components/pages/Oxyloans/Admin/AdminAIYearWiseDealsListPage";
 import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
-import DealLevelInterest from "./components/pages/Oxyloans/Admin/AdminInterestCalculationsPage";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -185,8 +185,11 @@ const AdminAIRouteAlias = ({ to }) => {
   return <Navigate to={`${to}${location.search}${location.hash}`} replace />;
 };
 
+const GOOGLE_CLIENT_ID = "339023421446-dhn2ip5u0pit0r49j5u4jlrcs1p9q42a.apps.googleusercontent.com";
+
 const AppRouter = () => {
   return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Admlogin />} />
@@ -275,7 +278,6 @@ const AppRouter = () => {
         <Route path="/adminAlCampaignHistory" element={<AdminAIRouteAlias to="/adminAICampaignHistory" />} />
         <Route path="/adminAIYearWiseDealsList" element={<AdminAIYearWiseDealsListPage />} />
         <Route path="/adminAIReferrerRefereesDetail" element={<AdminAIReferrerRefereesDetailPage />} />
-        <Route path="/dealLevelInterest" element={<DealLevelInterest />} />
         <Route path="/configautoInvest" element={<ConfigautoInvest />} />
         <Route path="/membership" element={<Membership />} />
         <Route
@@ -441,6 +443,7 @@ const AppRouter = () => {
         {/* ******************** AdminMODULE ROUTES END **************************  */}
       </Routes>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 };
 

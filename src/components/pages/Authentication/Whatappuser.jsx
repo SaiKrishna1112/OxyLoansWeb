@@ -30,8 +30,10 @@ const Whatappuser = ({ data }) => {
         sessionStorage.setItem("whatAppLoginMultipleUser", true);
         sessionStorage.setItem("whatsAppLoginUsers", JSON.stringify(data1));
 
-        if (data.primaryType === "LENDER" || data.primaryType === "ADMIN") {
-          history("/ai/portfolio");
+        if (data.primaryType === "LENDER") {
+          history("/lenderAIDashboard/" + data.id);
+        } else if (data.primaryType === "ADMIN" || data.primaryType === "SUPERADMIN" || data.primaryType === "HELPDESKADMIN") {
+          history("/adminAIDashboard");
         } else if (data.primaryType === "BORROWER") {
           history("/borrowerDashboard");
         }

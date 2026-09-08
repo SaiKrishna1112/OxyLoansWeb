@@ -17,8 +17,11 @@ function getNotificationRoute(n) {
   const msgMatch = n.message && n.message.match(/LRQ-[\w-]+/);
   const lrqId = refId || (msgMatch ? msgMatch[0] : null);
 
-  // Maturity reminders always go to the AI portfolio maturity section
-  if (type === "MATURITY_REMINDER") return "/ai/portfolio";
+  // Maturity reminders go to the AI lender dashboard
+  if (type === "MATURITY_REMINDER") {
+    const uid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+    return uid ? `/lenderAIDashboard/${uid}` : "/lenderAIDashboard";
+  }
 
   if (type.includes("OFFER")) {
     return isBorrower ? "/my-marketplace-loans" : "/my-offers";
