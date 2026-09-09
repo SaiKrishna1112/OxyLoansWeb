@@ -38,6 +38,7 @@ import Admlogin from "./components/pages/Authentication/Admlogin";
 import Membership from "./components/pages/Oxyloans/Lender/Membership";
 import Spining from "./components/pages/Oxyloans/Lender/Spining";
 import Loginotp from "./components/pages/Authentication/Loginotp";
+import GoogleSSOTest from "./components/pages/Authentication/GoogleSSOTest";
 import ConfigautoInvest from "./components/pages/Oxyloans/Lender/ConfigautoInvest";
 import EarningCertificate from "./components/pages/Oxyloans/Lender/EarningCertificate";
 import Emicalculator from "./components/pages/Oxyloans/Lender/Emicalculator";
@@ -196,6 +197,7 @@ const AppRouter = () => {
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/loadwaletThroughQr" element={<LoadwaletThroughQr />} />
         <Route path="/loginotp" element={<Loginotp />} />
+        <Route path="/glogin-test" element={<GoogleSSOTest />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<LenderRegister />} />
         <Route path="/userType" element={<UserType />} />

@@ -50,8 +50,8 @@ const Loginotp = () => {
         { headers: { "Content-Type": "application/json" } }
       );
       const { phoneNumberRequiredOrNot: status, signInUrl: email, mobileNumber } = res.data;
-      if (status === "LINKED") {
-        // Already linked — login directly, no card needed
+      if (status === "LINKED" || status === "FOUND") {
+        // Email found in OxyLoans — auto-link (if needed) and login directly
         const loginRes = await axios.post(
           `${BASE_URL}/v1/user/loginWithLinkedGoogle`,
           { accessToken: tokenResponse.access_token },
@@ -65,6 +65,7 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else {
+        // NOT_FOUND — show options to login with mobile/WhatsApp OTP
         setGoogleModal({ status, email, accessToken: tokenResponse.access_token, mobileNumber });
       }
     } catch (err) {
