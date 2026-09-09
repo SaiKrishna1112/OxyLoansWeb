@@ -50,7 +50,23 @@ const Loginotp = () => {
         { headers: { "Content-Type": "application/json" } }
       );
       const { phoneNumberRequiredOrNot: status, signInUrl: email, mobileNumber } = res.data;
-      setGoogleModal({ status, email, accessToken: tokenResponse.access_token, mobileNumber });
+      if (status === "LINKED") {
+        // Already linked — login directly, no card needed
+        const loginRes = await axios.post(
+          `${BASE_URL}/v1/user/loginWithLinkedGoogle`,
+          { accessToken: tokenResponse.access_token },
+          { headers: { "Content-Type": "application/json" } }
+        );
+        if (saveLoginSession(loginRes)) {
+          toastrSuccess("Google login successful!");
+          const role = loginRes.data?.primaryType;
+          if (role === "LENDER") history("/lenderAIDashboard/" + loginRes.data.id);
+          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
+          else history("/borrowerDashboard");
+        }
+      } else {
+        setGoogleModal({ status, email, accessToken: tokenResponse.access_token, mobileNumber });
+      }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
       WarningBackendApi("Google Login Failed", msg);
@@ -77,22 +93,19 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else {
-        // FOUND — pre-fill mobile and auto-send OTP
+        // FOUND — pre-fill mobile and auto-send OTP via SMS
         const mobile = googleModal.mobileNumber || "";
         setGoogleModal(prev => ({ ...prev, pendingLink: true }));
         if (mobile) {
           setUserLoginInfo(prev => ({ ...prev, email: mobile, emailerror: "" }));
-          // auto-send OTP with the registered mobile
           try {
             const otpRes = await handlesenOtp(mobile);
             if (isApiSuccess(otpRes)) {
               if (otpRes.data?.id) sessionStorage.setItem("userId", otpRes.data.id);
               setUserLoginInfo(prev => ({ ...prev, email: mobile, sentotp: true, emailerror: "" }));
-              toastrSuccess("OTP sent to your registered mobile. Enter it below to link Google.");
+              toastrSuccess("OTP sent! Enter it below to link your Google account.");
             }
           } catch (e) { /* user can send OTP manually */ }
-        } else {
-          toastrSuccess("Please verify with mobile OTP to link your Google account.");
         }
       }
     } catch (err) {
@@ -412,46 +425,64 @@ const Loginotp = () => {
                     </button>
                   </div>
 
-                  {/* Google Login Confirmation Modal */}
+                  {/* Google Login Modal Overlay */}
                   {googleModal && (
-                    <div style={{ marginTop: 16, padding: 16, border: "1px solid #e0e0e0", borderRadius: 8, background: "#f9f9f9" }}>
-                      {googleModal.status === "NOT_FOUND" ? (
-                        <>
-                          <p style={{ color: "#c0392b", fontWeight: 600, marginBottom: 8 }}>
-                            <i className="fas fa-times-circle" /> {googleModal.email} is not registered on OxyLoans.
-                          </p>
-                          <p style={{ fontSize: 13, marginBottom: 12 }}>Please login using mobile OTP or WhatsApp OTP.</p>
-                          <button className="btn btn-sm btn-outline-secondary mr-2" onClick={() => setGoogleModal(null)}>
-                            Use Mobile OTP
-                          </button>
-                          <Link to="/whatsapplogin" className="btn btn-sm btn-outline-success" onClick={() => setGoogleModal(null)}>
-                            Use WhatsApp OTP
-                          </Link>
-                        </>
-                      ) : (
-                        <>
-                          <p style={{ color: "#27ae60", fontWeight: 600, marginBottom: 8 }}>
-                            <i className="fas fa-check-circle" /> OxyLoans account found for {googleModal.email}
-                          </p>
-                          {googleModal.status === "LINKED"
-                            ? <p style={{ fontSize: 13, marginBottom: 12 }}>Your Google account is linked. Click below to login directly.</p>
-                            : <p style={{ fontSize: 13, marginBottom: 12 }}>First time Google login — verify with mobile OTP once to link your Google account.</p>
-                          }
-                          <button
-                            className="btn btn-sm btn-primary mr-2"
-                            onClick={handleGoogleAllow}
-                            disabled={googleLoading}
-                          >
-                            {googleModal.status === "LINKED" ? "Login with Google" : "Allow & Verify with OTP"}
-                          </button>
-                          <button className="btn btn-sm btn-outline-secondary mr-2" onClick={() => setGoogleModal(null)}>
-                            Use Mobile OTP
-                          </button>
-                          <Link to="/whatsapplogin" className="btn btn-sm btn-outline-success" onClick={() => setGoogleModal(null)}>
-                            WhatsApp OTP
-                          </Link>
-                        </>
-                      )}
+                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", maxWidth: 400, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", textAlign: "center" }}>
+                        {googleModal.status === "NOT_FOUND" ? (
+                          <>
+                            <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
+                            <h5 style={{ fontWeight: 700, marginBottom: 8 }}>Not Registered</h5>
+                            <p style={{ color: "#555", fontSize: 14, marginBottom: 20 }}>
+                              <strong>{googleModal.email}</strong> is not registered on OxyLoans. Please login with your registered mobile number.
+                            </p>
+                            <button className="btn btn-primary btn-block mb-2" onClick={() => setGoogleModal(null)}>
+                              Login with Mobile OTP
+                            </button>
+                            <Link to="/whatsapplogin" className="btn btn-outline-success btn-block" onClick={() => setGoogleModal(null)}>
+                              Login with WhatsApp OTP
+                            </Link>
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+                            <h5 style={{ fontWeight: 700, marginBottom: 4 }}>OxyLoans Account Found</h5>
+                            <p style={{ color: "#555", fontSize: 13, marginBottom: 4 }}>{googleModal.email}</p>
+                            {googleModal.mobileNumber && (
+                              <p style={{ fontSize: 14, marginBottom: 20 }}>
+                                Registered mobile: <strong>{googleModal.mobileNumber.slice(0, -4).replace(/\d/g, "X") + googleModal.mobileNumber.slice(-4)}</strong>
+                              </p>
+                            )}
+                            <button
+                              className="btn btn-primary btn-block mb-2"
+                              onClick={handleGoogleAllow}
+                              disabled={googleLoading}
+                            >
+                              {googleLoading ? <span className="spinner-border spinner-border-sm mr-2" /> : null}
+                              Send OTP via SMS
+                            </button>
+                            <Link
+                              to="/whatsapplogin"
+                              className="btn btn-outline-success btn-block mb-2"
+                              onClick={() => {
+                                if (googleModal.mobileNumber) sessionStorage.setItem("prefill_mobile", googleModal.mobileNumber);
+                                setGoogleModal(null);
+                              }}
+                            >
+                              Send OTP via WhatsApp
+                            </Link>
+                            <button className="btn btn-outline-secondary btn-block" onClick={() => {
+                              if (googleModal.mobileNumber) setUserLoginInfo(prev => ({ ...prev, email: googleModal.mobileNumber, emailerror: "" }));
+                              setGoogleModal(null);
+                            }}>
+                              Enter OTP Manually
+                            </button>
+                          </>
+                        )}
+                        <button style={{ marginTop: 14, background: "none", border: "none", color: "#999", fontSize: 13, cursor: "pointer" }} onClick={() => setGoogleModal(null)}>
+                          Cancel
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
