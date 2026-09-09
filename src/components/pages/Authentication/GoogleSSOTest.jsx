@@ -41,7 +41,7 @@ const GoogleSSOTest = () => {
           }, 1500);
         }
       } else {
-        window.location.href = "https://www.user.oxyloans.com/loginotp";
+        window.location.href = "https://www.user.oxyloans.com/";
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || err.message || "Unknown error";
