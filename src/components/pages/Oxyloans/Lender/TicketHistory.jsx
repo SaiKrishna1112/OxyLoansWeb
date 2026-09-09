@@ -1,291 +1,180 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import {
   TicketHistoryapi,
-  handelListOfQueriesHisoryapi,
+  allQueriesCount1,
   ticketcommentapi,
 } from "../../../HttpRequest/afterlogin";
-import "./InvoiceGrid.css";
 import Comment from "../Utills/Modals/Comment";
 import { handletocancelticket } from "../../Base UI Elements/SweetAlert";
+import "./TicketHistory.css";
 
 const TicketHistory = () => {
-  const [ticket, setticketdata] = useState({});
-  const [apires, setapires] = useState([]);
-  const [dataapi, setdataapi] = useState();
-  const [ticketcomment, setticketcommit] = useState(false);
+  const [tickets, setTickets] = useState([]);
+  const [comments, setComments] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [loadingCommentsId, setLoadingCommentsId] = useState(null);
+  const [cancellingTicketId, setCancellingTicketId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Statuses");
+  const [dateFilter, setDateFilter] = useState("All Dates");
+  const [queryCounts, setQueryCounts] = useState({
+    allQueriesCount: 0,
+    resolvedCount: 0,
+    cancelledCount: 0,
+    pendingCount: 0,
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const loadTickets = async (page = currentPage) => {
+    const response = await TicketHistoryapi(page, pageSize);
+    if (response?.request?.status === 200) {
+      setTickets(response.data?.listOfUserQueryDetailsResponseDto || []);
+    }
+  };
+
+  const loadQueryCounts = async () => {
+    const response = await allQueriesCount1();
+    if (response?.request?.status === 200) {
+      setQueryCounts({
+        allQueriesCount: response.data?.allQueriesCount || 0,
+        resolvedCount: response.data?.resolvedCount || 0,
+        cancelledCount: response.data?.cancelledCount || 0,
+        pendingCount: response.data?.pendingCount || 0,
+      });
+    }
+  };
 
   useEffect(() => {
-    handleWriteClick();
-    return () => { };
+    loadQueryCounts();
   }, []);
-  const handleWriteClick = async () => {
-    const response = TicketHistoryapi();
-    response.then((data) => {
-      if (data.request.status == 200) {
-        setticketdata(data);
-        // alert("success");
-        var queryDetailsArray = data.data.listOfUserQueryDetailsResponseDto;
 
-        // Initialize an array to store email addresses
-        var emailAddresses = [];
+  useEffect(() => {
+    loadTickets(currentPage);
+  }, [currentPage]);
 
-        // Loop through the array and extract the "email" property for each item
-        for (var i = 0; i < queryDetailsArray.length; i++) {
-          var email = queryDetailsArray[i];
-          emailAddresses.push(email);
-        }
-
-        setapires(queryDetailsArray);
-      } else {
-        alert("error");
-      }
-    });
+  const refreshAfterCancel = async () => {
+    await Promise.all([loadTickets(), loadQueryCounts()]);
   };
 
-  const handeticketcomment = async (id) => {
-    const response = ticketcommentapi(id);
-
-    response.then((data) => {
-      setdataapi(data);
-      setticketcommit(!ticketcomment);
-    });
+  const handleCancel = (id) => {
+    handletocancelticket(
+      id,
+      refreshAfterCancel,
+      () => setCancellingTicketId(id),
+      () => setCancellingTicketId(null)
+    );
   };
 
-
-  const handelListOfQueriesHisory = async (id) => {
-    const response = handelListOfQueriesHisoryapi(id);
-
-    response.then((data) => {
-      setdataapi(data);
-      setticketcommit(!ticketcomment);
+  const filteredTickets = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return tickets.filter((item) => {
+      const matchesSearch = !query || [item.ticketId, item.query, item.comments]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+      const matchesStatus = statusFilter === "All Statuses" || item.status === statusFilter;
+      const matchesDate = dateFilter === "All Dates" || String(item.receivedOn || "").includes(dateFilter);
+      return matchesSearch && matchesStatus && matchesDate;
     });
+  }, [dateFilter, search, statusFilter, tickets]);
+
+  const hasFilters = Boolean(search.trim() || statusFilter !== "All Statuses" || dateFilter !== "All Dates");
+  const totalPages = Math.max(1, Math.ceil((hasFilters ? filteredTickets.length : queryCounts.allQueriesCount) / pageSize));
+  const visibleTickets = filteredTickets;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, dateFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const openComments = async (item) => {
+    setSelectedTicket(item);
+    setLoadingCommentsId(item.id);
+    try {
+      setComments(await ticketcommentapi(item.id));
+    } finally {
+      setLoadingCommentsId(null);
+    }
   };
+
+  const exportCsv = () => {
+    const rows = filteredTickets.map((item, index) => [
+      index + 1, item.ticketId, item.receivedOn, item.query, item.status, item.comments || "",
+    ]);
+    const csv = [["S.No", "Ticket ID", "Received On", "Query", "Status", "Admin Comments"], ...rows]
+      .map((row) => row.map((value) => `"${String(value ?? "").replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ticket-history.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <>
-      <div className="main-wrapper">
-        {/* Header */}
-        <Header />
-
-        {/* Sidebar */}
-        <SideBar />
-
-        {/* Page Wrapper */}
-        <div className="page-wrapper">
-          <div className="content container-fluid">
-            <div className="page-header">
-              <div className="row">
-                <div className="col-sm-12">
-                  <div className="page-sub-header">
-                    <h3 className="page-title">Ticket History </h3>
-                    <ul className="breadcrumb">
-                      <li className="breadcrumb-item">
-                        <Link to="/students">Dashboard</Link>
-                      </li>
-                      <li className="breadcrumb-item active">Ticket History</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+    <div className="main-wrapper ticket-history-page">
+      <Header />
+      <SideBar />
+      <div className="page-wrapper">
+        <main className="content container-fluid ticket-shell">
+          <div className="ticket-breadcrumb">Dashboard <span>›</span> <strong>Ticket History</strong></div>
+          <div className="ticket-page-heading">
+            <div>
+              <h1>Ticket History</h1>
+              <p>Track, manage, and respond to your customer support queries and deal requests</p>
             </div>
-            <div className="card">
-              <div className="card-body">
-                <div className="row col-12">
-                  <div className="col-xl-12 d-flex">
-                    {/* Star Students */}
-                    <div className="card flex-fill student-space comman-shadow">
-                      {/* <div className="card-header d-flex align-items-center">
-                        <h5 className="card-title">Investment / Wallet</h5>
-                        <ul className="chart-list-out student-ellips">
-                          <li className="star-menus">
-                            <Link to="#">
-                              <i className="fas fa-ellipsis-v" />
-                            </Link>
-                          </li>
-                        </ul>
-                      </div> */}
-                      {/* {console.log(dataapi)} */}
-                      {ticketcomment && <Comment data={dataapi} />}
-                      <div className="card-body">
-                        <div className="table-responsive">
-                          <table className="table border-0 star-student  table-center mb-0">
-                            <thead>
-                              <tr>
-                                <th className=""> SNO</th>
-                                <th className="">
-                                  {/* Query Info */}
-                                  Ticket Id
-                                </th>
-                                {/* <th className="text-center"> Received On</th>
-                                <th className="text-center"> Status</th> */}
-                                <th className=""> Query</th>
-                                <th className="">Admin Comments</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {apires.map((item, index) => (
-                                <>
-                                  <tr
-                                    key={index}
-                                    className={`tablerow${index % 2 === 0 ? "event" : "odd"
-                                      }`}
-                                  >
-
-                                    <td>
-                                      {index + 1}
-                                    </td>
-                                    <td className="">
-                                      <div style={{ fontSize: '12px' }}>
-
-                                        <span className="spantext" >{item.ticketId}</span>
-
-                                      </div>
-                                      <div style={{ fontSize: '12px' }} >
-                                        <span>Received On :  </span>
-                                        <span className="spantext" >{item.receivedOn}</span>
-
-                                      </div>
-
-                                      <div
-                                        className={
-                                          item.status === "Completed"
-                                            ? "badge badge-success"
-                                            : "badge badge-danger"
-                                        }
-                                      >
-                                        {item.status}
-                                      </div>
-
-                                      <div>
-                                        {item.adminScreenshotUrl !== "" &&
-                                          <><a
-                                          href={item.adminScreenshotUrl}
-                                          style={{ fontSize: '14px' }}
-                                          download="screenshot.png"  // This triggers the download
-                                        >
-                                          <p>
-                                            <i className="fa-regular fa-image"></i>
-                                          {" "}  Download Screenshot
-                                          </p>
-                                        </a></>}
-                                      </div>
-                                    </td>
-                                    {/* <td className="text-center"></td>
-                                  <td className="text-center"></td> */}
-                                    <td
-                                      className=""
-                                      style={{
-                                        width: "4rem !important",
-                                        whiteSpace: "break-spaces",
-                                        fontSize: '12px'
-                                      }}
-                                    >
-                                      {item.query}
-
-                                      <br></br>
-                                      {item.status === "Pending" ? <></> : <><span><strong>Admin comments :</strong> {item.query && item.comments}</span></>}
-                                    </td>
-                                    <td
-                                      className=""
-
-                                    >
-
-                                      <div className="buttn">
-                                        <div className="badgedat11" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                          <button
-                                            className={`badge badge-success outline-none  ${item.status == "Completed" ? "disabled" : ""}`}
-
-                                            style={{ border: 'none' }}
-                                            typeof="badge"
-                                            onClick={() =>
-                                              handeticketcomment(item.id)
-                                            }
-                                          >
-                                            View Comments
-                                          </button>
-                                          <button
-                                            className={`badge bg-info ${item.status == "Completed" ? "disabled" : ""}`} accordionstyle={{ border: 'none' }}
-                                            typeof="button"
-                                            style={{ border: 'none', backgroundColor: 'rgb(16, 142, 233)' }}
-
-                                            onClick={() =>
-                                              handelListOfQueriesHisory(item.id)
-                                            }
-                                          >
-                                            View More
-                                          </button>
-                                        </div>
-                                        <div className="badgedat11" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                          {/* {item.status == "Completed" || "Completed" ? <></> : <> */}
-
-
-                                          <button
-
-                                            className="badge badge-warning" style={{ border: 'none', backgroundColor: '' }}
-
-                                          >
-                                            <Link
-                                              className="text-white"
-                                              to={item.status == "Completed" ? `/writetous?id=${item.id}&status=${item.status}` : `/writetous?id=${item.id}`}
-                                            >
-                                              {item.status == "Completed" ? "Reopen The Query" : "Write A Reply"}
-
-                                            </Link>
-                                          </button>
-                                          {/* </>}  */}
-
-                                          <button
-                                            className={`badge badge-danger  ${item.status == "Completed" ? "disabled" : ""}`} style={{ border: 'none' }}
-                                            disabled={item.status === "Cancelled" || "Completed" ? true : false}
-
-                                            onClick={() => handletocancelticket(item.id)}>
-                                            Cancel
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </td>
-
-                                    {/* <p className="d-inline-flex gap-1">
-                                      <a
-                                        className="btn btn-primary"
-                                        data-bs-toggle="collapse"
-                                        href="#collapseExample"
-                                        role="button"
-                                        aria-expanded="false"
-                                        aria-controls="collapseExample"
-                                      >
-                                        Link with href
-                                      </a>
-                                    </p> */}
-
-                                    {/* <div className="collapse" id="collapseExample">
-                                      <div className="card card-body">
-                                        Some placeholder content for the collapse component. This panel is hidden by default but revealed when the user activates the relevant trigger.
-                                      </div>
-                                    </div>      */}
-                                  </tr>
-
-                                </>
-                              ))}
-
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="ticket-heading-actions">
+              {/* <button className="ticket-btn ticket-btn-light" onClick={exportCsv} type="button"><i className="fa-solid fa-download" /> Export CSV</button> */}
+              <Link className="ticket-btn ticket-btn-primary" to="/writetous"><i className="fa-solid fa-plus" /> Create New Ticket</Link>
             </div>
           </div>
 
-          <Footer />
-        </div>
+          <section className="ticket-stats" aria-label="Ticket summary">
+            <div className="ticket-stat"><div><span>Total Tickets</span><strong>{queryCounts.allQueriesCount}</strong><small>All registered issues</small></div><i className="fa-solid fa-briefcase" /></div>
+            <div className="ticket-stat is-pending"><div><span>Pending Attention</span><strong>{queryCounts.pendingCount}</strong><small>Awaiting agent response</small></div><i className="fa-regular fa-clock" /></div>
+            <div className="ticket-stat is-progress"><div><span>Resolved</span><strong>{queryCounts.resolvedCount}</strong><small>Resolved tickets</small></div><i className="fa-solid fa-rotate" /></div>
+            <div className="ticket-stat is-closed"><div><span>Closed / Cancelled</span><strong>{queryCounts.cancelledCount}</strong><small>Cancelled tickets</small></div><i className="fa-regular fa-circle-xmark" /></div>
+          </section>
+
+          <section className="ticket-table-card">
+            <div className="ticket-toolbar">
+              <div className="ticket-search"><i className="fa-solid fa-magnifying-glass" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by Ticket ID, query keywords, or date..." /></div>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter by status"><option>All Statuses</option><option>Pending</option><option>Completed</option><option>Cancelled</option></select>
+              {/* <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} aria-label="Filter by date"><option>All Dates</option><option>2026-09-07</option><option>2026-09-06</option><option>2026-09-05</option></select> */}
+            </div>
+            <div className="ticket-table-wrap">
+              <table className="ticket-table">
+                <thead><tr><th>S.No</th><th>Ticket Details</th><th>Query &amp; Subject</th><th>Status</th><th>Admin Comments</th><th aria-label="Actions" /></tr></thead>
+                <tbody>
+                  {visibleTickets.map((item, index) => (
+                    <tr key={item.id || item.ticketId || index}>
+                      <td className="ticket-number">{(currentPage - 1) * pageSize + index + 1}</td>
+                      <td><strong className="ticket-id-chip">{item.ticketId}</strong><span className="ticket-received"><i className="fa-regular fa-calendar" /> Received:<br />{item.receivedOn}</span>{item.screenshotUrl && <a className="ticket-attachment-link" href={item.screenshotUrl} target="_blank" rel="noreferrer"><i className="fa-regular fa-image" /> View attachment</a>}</td>
+                      <td><strong className="ticket-subject">{item.subject || item.query}</strong></td>
+                      <td><span className={`ticket-status status-${String(item.status || "default").toLowerCase().replace(/\s+/g, "-")}`}><i />{item.status}</span></td>
+                      <td><span className="ticket-comment-preview">{item.comments || "Awaiting review from Support Executive..."}</span></td>
+                      <td><div className="ticket-row-actions"><button className="ticket-comment-btn" disabled={loadingCommentsId === item.id || cancellingTicketId !== null} onClick={() => openComments(item)} type="button">{loadingCommentsId === item.id ? <><i className="fa-solid fa-spinner fa-spin" /> Loading...</> : <><i className="fa-regular fa-message" /> Comments</>}</button><button className="ticket-cancel-btn" disabled={item.status === "Cancelled" || item.status === "Completed" || cancellingTicketId !== null || loadingCommentsId !== null} onClick={() => handleCancel(item.id)} type="button">{cancellingTicketId === item.id ? <><i className="fa-solid fa-spinner fa-spin" /> Cancelling...</> : <><i className="fa-regular fa-circle-xmark" /> Cancel</>}</button></div></td>
+                    </tr>
+                  ))}
+                  {!filteredTickets.length && <tr><td className="ticket-empty" colSpan="6">No tickets match your filters.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="ticket-table-footer"><span>Showing <strong>{filteredTickets.length ? (currentPage - 1) * pageSize + 1 : 0}</strong> to <strong>{Math.min((currentPage - 1) * pageSize + filteredTickets.length, hasFilters ? filteredTickets.length : queryCounts.allQueriesCount)}</strong> of <strong>{hasFilters ? filteredTickets.length : queryCounts.allQueriesCount}</strong> entries</span><div><button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => page - 1)}>Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => <button className={page === currentPage ? "is-current" : ""} type="button" key={page} onClick={() => setCurrentPage(page)}>{page}</button>)}<button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => page + 1)}>Next</button></div></div>
+          </section>
+          {comments && <Comment data={comments} ticket={selectedTicket} onClose={() => { setComments(null); setSelectedTicket(null); }} />}
+        </main>
+        <Footer />
       </div>
-    </>
+    </div>
   );
 };
 

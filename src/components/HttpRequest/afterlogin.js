@@ -8,6 +8,79 @@ const userisIn = "production"; //local or production
 import { MARKETPLACE_URL, API_USER_URL, AI_CHAT_URL } from "../../config";
 const API_BASE_URL = API_USER_URL;
 
+// axios.interceptors.response.use(
+//   (response) => response,
+//   (error) => {
+//     if (error?.response?.status === 401) {
+//       const hasToken = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+//       const path = window.location.pathname;
+//       const onAuthPage = path.includes("login") || path.includes("register") || path === "/";
+
+//       if (hasToken && !onAuthPage) {
+//         if (!window.isSessionAlertOpen) {
+//           window.isSessionAlertOpen = true;
+//           Swal.fire({
+//             title: "Session Expired",
+//             text: "Your session has expired. Do you want to regenerate token to continue or exit to home?",
+//             icon: "warning",
+//             showCancelButton: true,
+//             confirmButtonColor: "#3085d6",
+//             cancelButtonColor: "#d33",
+//             confirmButtonText: "Continue",
+//             cancelButtonText: "Exit",
+//             allowOutsideClick: false,
+//             allowEscapeKey: false,
+//           }).then(async (result) => {
+//             window.isSessionAlertOpen = false;
+//             if (result.isConfirmed) {
+//               try {
+//                 Swal.fire({
+//                   title: "Renewing Session...",
+//                   text: "Please wait while we regenerate your session.",
+//                   allowOutsideClick: false,
+//                   didOpen: () => {
+//                     Swal.showLoading();
+//                   }
+//                 });
+//                 await getNewSessionTime();
+//                 Swal.fire({
+//                   title: "Success",
+//                   text: "Session regenerated successfully. Reloading...",
+//                   icon: "success",
+//                   showConfirmButton: false,
+//                   // timer: 5000
+//                 });
+//               } catch (err) {
+//                 console.error("Failed to regenerate session token", err);
+//                 sessionStorage.removeItem("accessToken");
+//                 sessionStorage.removeItem("userId");
+//                 localStorage.removeItem("accessToken");
+//                 localStorage.removeItem("userId");
+//                 Swal.fire({
+//                   title: "Error",
+//                   text: "Failed to renew session. Redirecting to login...",
+//                   icon: "error",
+//                   timer: 5000,
+//                   showConfirmButton: false
+//                 }).then(() => {
+//                   window.location.href = "/";
+//                 });
+//               }
+//             } else {
+//               sessionStorage.removeItem("accessToken");
+//               sessionStorage.removeItem("userId");
+//               localStorage.removeItem("accessToken");
+//               localStorage.removeItem("userId");
+//               window.location.href = "/";
+//             }
+//           });
+//         }
+//       }
+//     }
+//     return Promise.reject(error);
+//   }
+// );
+
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -48,7 +121,7 @@ axios.interceptors.response.use(
                   text: "Session regenerated successfully. Reloading...",
                   icon: "success",
                   showConfirmButton: false,
-                  // timer: 5000
+                  timer: 2000
                 });
               } catch (err) {
                 console.error("Failed to regenerate session token", err);
@@ -60,7 +133,7 @@ axios.interceptors.response.use(
                   title: "Error",
                   text: "Failed to renew session. Redirecting to login...",
                   icon: "error",
-                  timer: 5000,
+                  timer: 2000,
                   showConfirmButton: false
                 }).then(() => {
                   window.location.href = "/";
@@ -80,7 +153,6 @@ axios.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 export const getToken = () => {
   return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
 };
@@ -1290,13 +1362,13 @@ export const handelnomeeclickapi = async (nomineeDetails) => {
 
   return response;
 };
-export const TicketHistoryapi = async () => {
+export const TicketHistoryapi = async (pageNo = 1, pageSize = 10, status = "") => {
   const token = getToken();
   const userId = getUserId();
   const data = {
-    pageNo: 1,
-    pageSize: 10,
-    status: "",
+    pageNo,
+    pageSize,
+    status,
     userId: userId,
   };
 
