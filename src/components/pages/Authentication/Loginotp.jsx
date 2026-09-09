@@ -66,7 +66,7 @@ const Loginotp = () => {
         }
       } else {
         // NOT_FOUND — redirect to main login page which has Register + OTP options
-        window.location.href = "https://www.user.oxyloans.com/loginotp";
+        window.location.href = "https://www.user.oxyloans.com/";
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
