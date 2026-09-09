@@ -14,6 +14,7 @@ import BASE_URL, { ENV, DEV_ADMIN_MOBILE, DEV_OTP } from "../../../config";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
+import Swal from "sweetalert2";
 
 const Loginotp = () => {
   const dispatch = useDispatch();
@@ -87,9 +88,14 @@ const Loginotp = () => {
         toastrSuccess("Login Success!");
 
         const role = retriveresponse.data.primaryType;
-        let defaultPath = "/borrowerDashboard";
+        Swal.fire({
+            title: "Login Success!",
+            text: `Welcome back, Valued ${role}! Your trust drives us to serve you better every day.`,
+            icon: "success",
+        });
+        let defaultPath = "/borrowerDashboard/admin$";
         if (role === "LENDER") {
-          history("/lenderAIDashboard/" + retriveresponse.data.id);
+          defaultPath = "/ai/portfolio";
         } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
           defaultPath = "/oxyloansadmindashboard";
         }
