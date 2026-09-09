@@ -65,8 +65,8 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else {
-        // NOT_FOUND — show options to login with mobile/WhatsApp OTP
-        setGoogleModal({ status, email, accessToken: tokenResponse.access_token, mobileNumber });
+        // NOT_FOUND — redirect to main login page which has Register + OTP options
+        window.location.href = "https://www.user.oxyloans.com/loginotp";
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";

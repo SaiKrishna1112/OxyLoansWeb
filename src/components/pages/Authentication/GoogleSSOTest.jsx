@@ -41,7 +41,8 @@ const GoogleSSOTest = () => {
           }, 1500);
         }
       } else {
-        setStatus(`NOT_FOUND — ${email} is not registered on OxyLoans`);
+        // NOT_FOUND — redirect to login page which has Register + OTP options
+        window.location.href = "https://www.user.oxyloans.com/loginotp";
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || err.message || "Unknown error";
