@@ -339,7 +339,7 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
 
   // Financial summary
   const totalInterest = emiCard.reduce((s, r) => s + (r.interestAmount || 0), 0);
-  const paidInterest = emiCard.filter(r => r.interestPaidDate).reduce((s, r) => s + (r.interestAmount || 0), 0);
+  const paidInterest = emiCard.filter(r => r.interestPaidDate).reduce((s, r) => s + (r.amountRecevied || r.interestAmount || 0), 0);
   const paidCount = emiCard.filter(r => r.interestPaidDate).length;
   const totalCount = emiCard.length;
 
@@ -352,7 +352,7 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
       scheduledDate: fmtDate(dataItem.date),
       paidDate: isPaid ? fmtDate(dataItem.interestPaidDate) : null,
       status: isPaid ? "paid" : "upcoming",
-      interestAmount: dataItem.interestAmount,
+      interestAmount: isPaid ? (dataItem.amountRecevied || dataItem.interestAmount) : dataItem.interestAmount,
       days: isFirst ? dataItem.differenceInDaysForFirstParticipation : 30,
       _raw: dataItem,
       isFirst,

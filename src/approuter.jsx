@@ -2,6 +2,7 @@ import React from "react";
 import WebPushBootstrap from "./components/WebPushBootstrap";
 import { BrowserRouter, Navigate, Route, Routes, useParams,useLocation } from "react-router-dom";
 import { saveLastVisitedUrl } from "./utils/redirectUtils";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
@@ -248,9 +249,11 @@ const NavigationTracker = () => {
 
   return null;
 };
+const GOOGLE_CLIENT_ID = "339023421446-dhn2ip5u0pit0r49j5u4jlrcs1p9q42a.apps.googleusercontent.com";
 
 const AppRouter = () => {
   return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <BrowserRouter>
       <NavigationTracker />
       <Routes>
@@ -589,6 +592,7 @@ const AppRouter = () => {
         <Route path="*" element={<CatchAll />} />
       </Routes>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 };
 
