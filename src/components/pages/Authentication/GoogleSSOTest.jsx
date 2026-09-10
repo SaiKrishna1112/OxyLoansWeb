@@ -41,7 +41,8 @@ const GoogleSSOTest = () => {
           }, 1500);
         }
       } else {
-        window.location.href = "https://www.user.oxyloans.com/";
+        // NOT_FOUND — show status; on the real login page a modal handles this
+        setStatus(`NOT_FOUND — ${email} is not registered on OxyLoans`);
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || err.message || "Unknown error";
