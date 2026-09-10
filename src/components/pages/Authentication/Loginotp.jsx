@@ -65,8 +65,8 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else {
-        // NOT_FOUND — redirect to home so user can register or login with mobile OTP
-        window.location.href = "https://www.user.oxyloans.com/";
+        // NOT_FOUND — stay on page and show message with the email that wasn't found
+        setGoogleModal({ status: "NOT_FOUND", email });
       }
     } catch (err) {
       const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
@@ -432,14 +432,18 @@ const Loginotp = () => {
                       <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", maxWidth: 400, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", textAlign: "center" }}>
                         {googleModal.status === "NOT_FOUND" ? (
                           <>
-                            <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
-                            <h5 style={{ fontWeight: 700, marginBottom: 8 }}>Not Registered</h5>
+                            <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
+                            <h5 style={{ fontWeight: 700, marginBottom: 8 }}>Gmail Not Registered</h5>
                             <p style={{ color: "#555", fontSize: 14, marginBottom: 20 }}>
-                              <strong>{googleModal.email}</strong> is not registered on OxyLoans. Please login with your registered mobile number.
+                              <strong style={{ color: "#1a1a2e" }}>{googleModal.email}</strong> is not found on OxyLoans.<br />
+                              Please login with your mobile number or sign up to create an account.
                             </p>
                             <button className="btn btn-primary btn-block mb-2" onClick={() => setGoogleModal(null)}>
                               Login with Mobile OTP
                             </button>
+                            <Link to="/register" className="btn btn-success btn-block mb-2" onClick={() => setGoogleModal(null)}>
+                              Sign Up
+                            </Link>
                             <Link to="/whatsapplogin" className="btn btn-outline-success btn-block" onClick={() => setGoogleModal(null)}>
                               Login with WhatsApp OTP
                             </Link>
