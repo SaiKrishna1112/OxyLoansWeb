@@ -41,6 +41,7 @@ const GoogleSSOTest = () => {
           }, 1500);
         }
       } else {
+        // NOT_FOUND — show status; on the real login page a modal handles this
         setStatus(`NOT_FOUND — ${email} is not registered on OxyLoans`);
       }
     } catch (err) {
