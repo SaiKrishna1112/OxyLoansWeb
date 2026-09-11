@@ -267,9 +267,13 @@ const DealReturnCalculator = ({ deal, onClose }) => {
               href={GUIDE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "linear-gradient(135deg,#1e3a8a,#1d4ed8)", color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 11, fontWeight: 700, marginBottom: 12 }}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "11px 14px", background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff", borderRadius: 10, textDecoration: "none", marginBottom: 12, boxShadow: "0 3px 10px rgba(217,119,6,0.35)" }}
             >
-              📄 Read Full First Interest Payment Guide &nbsp;↗
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 1 }}>📄 First Interest Payment Guide</div>
+                <div style={{ fontSize: 10, opacity: 0.9 }}>Full explanation with worked examples — tap to open PDF</div>
+              </div>
+              <div style={{ fontSize: 20, flexShrink: 0 }}>↗</div>
             </a>
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 14, lineHeight: 1.5, padding: "8px 10px", background: "#eff6ff", borderRadius: 8, borderLeft: "3px solid #1d4ed8" }}>
               OxyLoans uses the <strong style={{ color: "#1d4ed8" }}>30/360 day convention</strong> — every month = 30 days, year = 360 days. Your first payment covers the exact days between your participation date and the first payout date. This can be <strong>less than a full month</strong> (if you join close to the payout date) or <strong>more than a full month</strong> (if the gap spans over 30 days). From the 2nd month onwards, every payment is always a fixed full month's interest.
