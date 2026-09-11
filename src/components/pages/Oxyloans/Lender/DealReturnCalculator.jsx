@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const GUIDE_URL = "/first-interest-guide.html";
+const GUIDE_URL = "/OxyLoans_First_Interest_Payment_Guide.pdf";
 
 const fmt = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
 const fmtExact = (n) => {
@@ -61,13 +61,15 @@ const DealReturnCalculator = ({ deal, onClose }) => {
   const maxAmt = Number(deal.lenderPaticipationLimit) || 0;
   const rate = deal.rateOfInterest || 0;
   const duration = deal.duration || 12;
-  const defaultPaymentDate = toDateInput(deal.fundsAcceptanceEndDate) || today;
+  const dealStartDate = toDateInput(deal.fundsAcceptanceStartDate) || today;
+  const paymentDate = toDateInput(deal.fundsAcceptanceEndDate) || today;
 
   const [amount, setAmount] = useState(minAmt);
   const [customInput, setCustomInput] = useState(minAmt);
   const [activeTab, setActiveTab] = useState("min");
-  const [participationDate, setParticipationDate] = useState(today);
-  const [paymentDate, setPaymentDate] = useState(defaultPaymentDate);
+  const [participationDate, setParticipationDate] = useState(
+    dealStartDate > today ? dealStartDate : today
+  );
 
   useEffect(() => {
     if (activeTab === "min") setAmount(minAmt);
@@ -163,12 +165,23 @@ const DealReturnCalculator = ({ deal, onClose }) => {
             {/* Date inputs */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
               <div>
-                <label style={{ fontSize: 10, fontWeight: 800, color: "#64748b", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Participation Date</label>
-                <input type="date" value={participationDate} onChange={(e) => setParticipationDate(e.target.value)} style={{ width: "100%", padding: "7px 8px", border: "1.5px solid #e2e8f0", borderRadius: 7, fontSize: 12 }} />
+                <label style={{ fontSize: 10, fontWeight: 800, color: "#64748b", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Your Participation Date</label>
+                <input
+                  type="date"
+                  value={participationDate}
+                  min={dealStartDate}
+                  max={paymentDate}
+                  onChange={(e) => setParticipationDate(e.target.value)}
+                  style={{ width: "100%", padding: "7px 8px", border: "1.5px solid #1d4ed8", borderRadius: 7, fontSize: 12 }}
+                />
+                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Between {fmtDateLabel(dealStartDate)} – {fmtDateLabel(paymentDate)}</div>
               </div>
               <div>
                 <label style={{ fontSize: 10, fontWeight: 800, color: "#64748b", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>First Payment Date</label>
-                <input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} style={{ width: "100%", padding: "7px 8px", border: "1.5px solid #e2e8f0", borderRadius: 7, fontSize: 12 }} />
+                <div style={{ padding: "7px 10px", background: "#f1f5f9", border: "1.5px solid #e2e8f0", borderRadius: 7, fontSize: 12, fontWeight: 600, color: "#1d4ed8" }}>
+                  {fmtDateLabel(paymentDate)}
+                </div>
+                <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 2 }}>Fixed by deal — set by OxyLoans</div>
               </div>
             </div>
 
