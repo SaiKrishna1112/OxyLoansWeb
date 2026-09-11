@@ -10,6 +10,7 @@ import Swal from "sweetalert2";
 import { error } from "jquery";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
 import ActiveOfferPopup from "./ActiveOfferPopup";
+import DealReturnCalculator from "./DealReturnCalculator";
 
 const RegularRunningDeal = () => {
   const [regular_runningDeal, setRegularRunningDeal] = useState({
@@ -19,6 +20,7 @@ const RegularRunningDeal = () => {
     pageno: 1,
   });
   const [borrowerview, setborrowerview] = useState([]); const [borrowerfilelink, setborrowerfilelik] = useState("")
+  const [calcDeal, setCalcDeal] = useState(null);
 
 
   const [borrowermodelopen, setborrowermodelopen] = useState(false)
@@ -544,6 +546,24 @@ const RegularRunningDeal = () => {
                                   </Link>
                                 </div></>}
 
+                                <div className="col-auto">
+                                  <button
+                                    onClick={() => setCalcDeal(data)}
+                                    style={{
+                                      background: "#4f46e5",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: 6,
+                                      padding: "4px 14px",
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    🧮 Calculate Returns
+                                  </button>
+                                </div>
+
                               </div>
                             </div>
                           </div>
@@ -589,6 +609,9 @@ const RegularRunningDeal = () => {
         {/* /Page Wrapper */}
       </div>
       <ActiveOfferPopup />
+      {calcDeal && (
+        <DealReturnCalculator deal={calcDeal} onClose={() => setCalcDeal(null)} />
+      )}
       {/* /Main Wrapper */}
     </>
   );
