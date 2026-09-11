@@ -197,6 +197,7 @@ const AppRouter = () => {
         <Route path="/dashboard" element={<AdminDashboard />} />
         <Route path="/loadwaletThroughQr" element={<LoadwaletThroughQr />} />
         <Route path="/loginotp" element={<Loginotp />} />
+        <Route path="/otplogin" element={<Navigate to="/loginotp" replace />} />
         <Route path="/glogin-test" element={<GoogleSSOTest />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<LenderRegister />} />
