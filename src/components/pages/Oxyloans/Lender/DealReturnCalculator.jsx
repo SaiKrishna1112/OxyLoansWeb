@@ -249,7 +249,15 @@ const DealReturnCalculator = ({ deal, onClose }) => {
 
           {/* RIGHT: Theory / How it's calculated */}
           <div style={{ padding: "18px 20px 18px 18px", background: "#f8fafc", overflowY: "auto" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e40af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>📐 How your first payment is calculated</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#1e40af", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>📐 How your first payment is calculated</div>
+            <a
+              href={GUIDE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 12px", background: "linear-gradient(135deg,#1e3a8a,#1d4ed8)", color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 11, fontWeight: 700, marginBottom: 12 }}
+            >
+              📄 Read Full First Interest Payment Guide &nbsp;↗
+            </a>
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 14, lineHeight: 1.5, padding: "8px 10px", background: "#eff6ff", borderRadius: 8, borderLeft: "3px solid #1d4ed8" }}>
               OxyLoans uses the <strong style={{ color: "#1d4ed8" }}>30/360 day convention</strong> — every month = 30 days, year = 360 days. Your first payment covers the exact days between your participation date and the first payout date. This can be <strong>less than a full month</strong> (if you join close to the payout date) or <strong>more than a full month</strong> (if the gap spans over 30 days). From the 2nd month onwards, every payment is always a fixed full month's interest.
             </div>
@@ -315,14 +323,6 @@ const DealReturnCalculator = ({ deal, onClose }) => {
               </div>
             </div>
 
-            <a
-              href={GUIDE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", background: "linear-gradient(135deg,#1e3a8a,#1d4ed8)", color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 12, fontWeight: 700 }}
-            >
-              📄 Complete First Interest Payment Guide &nbsp;↗
-            </a>
           </div>
         </div>
       </div>
