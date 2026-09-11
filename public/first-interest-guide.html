@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>First Interest Payment Guide — OxyLoans</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+
+    .header { background: linear-gradient(135deg,#1a5276,#2e86c1); color: #fff; padding: 32px 24px 40px; text-align: center; }
+    .header .logo { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #93c6f0; margin-bottom: 12px; }
+    .header h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; }
+    .header p { font-size: 14px; color: #b8d9f0; max-width: 520px; margin: 0 auto; }
+
+    .container { max-width: 740px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .card { background: #fff; border-radius: 14px; padding: 28px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+    .card h2 { font-size: 17px; font-weight: 700; color: #1e40af; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .card h2 .icon { width: 30px; height: 30px; background: #dbeafe; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+    .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 0 10px 10px 0; padding: 14px 16px; margin-bottom: 16px; font-size: 14px; color: #1e40af; }
+    .info-box strong { display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .step-row { display: flex; gap: 14px; margin-bottom: 18px; }
+    .step-num { min-width: 32px; height: 32px; border-radius: 50%; background: #2563eb; color: #fff; font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .step-content h3 { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 4px; }
+    .step-content p { font-size: 13px; color: #6b7280; margin-bottom: 4px; }
+    .step-content .formula { font-family: monospace; background: #f1f5f9; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #1e293b; margin-top: 6px; line-height: 1.8; }
+    .step-content .result { font-size: 15px; font-weight: 700; color: #1d4ed8; margin-top: 6px; }
+
+    .example-box { background: linear-gradient(135deg,#f0fdf4,#dcfce7); border: 1.5px solid #86efac; border-radius: 12px; padding: 20px; margin-top: 8px; }
+    .example-box h3 { font-size: 14px; font-weight: 700; color: #065f46; margin-bottom: 12px; }
+    .example-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 5px 0; border-bottom: 1px solid #bbf7d0; }
+    .example-row:last-child { border-bottom: none; padding-top: 10px; }
+    .example-row .label { color: #374151; }
+    .example-row .value { font-weight: 700; color: #065f46; font-family: monospace; }
+
+    .highlight-box { background: #fef9c3; border: 1.5px solid #fde047; border-radius: 10px; padding: 14px 16px; margin-top: 16px; }
+    .highlight-box strong { color: #713f12; }
+    .highlight-box p { font-size: 13px; color: #78350f; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+    thead tr { background: #2563eb; color: #fff; }
+    th { padding: 10px 14px; text-align: left; font-weight: 600; }
+    td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr.last-row td { background: linear-gradient(90deg,#fef3c7,#fde68a); font-weight: 700; color: #92400e; }
+
+    .faq-item { margin-bottom: 16px; }
+    .faq-item h3 { font-size: 14px; font-weight: 700; color: #1e40af; margin-bottom: 6px; }
+    .faq-item p { font-size: 13px; color: #374151; }
+
+    .footer { background: #1e293b; color: #94a3b8; text-align: center; padding: 24px; font-size: 12px; margin-top: 20px; }
+    .footer a { color: #60a5fa; text-decoration: none; }
+
+    @media (max-width: 480px) {
+      .header h1 { font-size: 20px; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">OxyLoans — RBI Registered P2P Lending Platform</div>
+  <h1>Understanding Your First Interest Payment</h1>
+  <p>A complete guide to how your first EMI is calculated using the 30/360 day convention</p>
+</div>
+
+<div class="container">
+
+  <!-- What is the first payment -->
+  <div class="card">
+    <h2><span class="icon">💡</span> What is the First Interest Payment?</h2>
+    <p style="font-size:14px;color:#374151;margin-bottom:12px;">
+      When you participate in a P2P loan deal on OxyLoans, your first interest payment covers only the <strong>partial period</strong> from your participation date to the deal's first scheduled payment date.
+    </p>
+    <p style="font-size:14px;color:#374151;margin-bottom:12px;">
+      From the <strong>2nd month onwards</strong>, you receive a full month's interest every month until the deal closes, when your principal is also returned.
+    </p>
+    <div class="info-box">
+      <strong>Why is the first payment smaller?</strong>
+      Because you may join a deal mid-month. If the deal pays out on the 30th every month and you join on the 15th, you only get interest for the days you actually participated — not the full 30 days.
+    </div>
+  </div>
+
+  <!-- The 30/360 rule -->
+  <div class="card">
+    <h2><span class="icon">📐</span> The 30/360 Day Convention</h2>
+    <div class="info-box">
+      <strong>Industry Standard</strong>
+      OxyLoans uses the <strong>30/360 day count convention</strong> — every month is treated as exactly 30 days, and a full year as 360 days. This is the RBI-accepted standard for P2P lending in India.
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">
+      This means:
+    </p>
+    <ul style="font-size:13px;color:#374151;padding-left:20px;line-height:2;">
+      <li>January (31 days) → treated as 30 days</li>
+      <li>February (28 days) → treated as 30 days</li>
+      <li>Any day past 30 (e.g. 31st) → counted as the 30th</li>
+      <li>All months are equal — no advantage to investing in a short month</li>
+    </ul>
+  </div>
+
+  <!-- Step by step -->
+  <div class="card">
+    <h2><span class="icon">🔢</span> How Your First Payment is Calculated — Step by Step</h2>
+
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Cap each date's day at 30</h3>
+        <p>Under the 30/360 convention, no day goes past 30. If you joined on the 31st, it's treated as the 30th.</p>
+        <div class="formula">
+          partDay = min(your participation day, 30)<br>
+          emiDay = min(first payment day, 30)
+        </div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>Count the gross days between the two dates</h3>
+        <p>Apply the standard 30/360 formula across years, months, and days:</p>
+        <div class="formula">
+          grossDays = (emiYear − partYear) × 360<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (emiMonth − partMonth) × 30<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (emiDay − partDay)
+        </div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Subtract 2 days (standard P2P convention)</h3>
+        <p>By industry convention, both the participation day itself and the last day are excluded from the count.</p>
+        <div class="formula">firstDays = grossDays − 2</div>
+        <p style="margin-top:6px;font-size:12px;">This is consistent practice across all Indian P2P platforms.</p>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Calculate the daily interest rate</h3>
+        <div class="formula">
+          monthlyInterest = investedAmount × monthlyRate%<br>
+          dailyRate = monthlyInterest ÷ 30
+        </div>
+      </div>
+    </div>
+
+    <div class="step-row">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Multiply days × daily rate</h3>
+        <div class="formula">firstPayment = firstDays × dailyRate</div>
+        <p style="margin-top:6px;font-size:12px;color:#6b7280;">Shown to the paise in the calculator so that every date change shows a different result.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Worked Example -->
+  <div class="card">
+    <h2><span class="icon">✏️</span> Worked Example</h2>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">
+      Scenario: You invest <strong>₹50,000</strong> at <strong>1.75% per month</strong>. You join on <strong>11 Sep 2026</strong>. The first payment date is <strong>30 Sep 2026</strong>.
+    </p>
+
+    <div class="example-box">
+      <h3>Calculation</h3>
+      <div class="example-row">
+        <span class="label">Step 1 — Cap days at 30</span>
+        <span class="value">partDay = min(11, 30) = 11 &nbsp;|&nbsp; emiDay = min(30, 30) = 30</span>
+      </div>
+      <div class="example-row">
+        <span class="label">Step 2 — Gross days (same month)</span>
+        <span class="value">30 − 11 = 19 days</span>
+      </div>
+      <div class="example-row">
+        <span class="label">Step 3 — Subtract 2 grace days</span>
+        <span class="value">19 − 2 = <strong>17 days counted</strong></span>
+      </div>
+      <div class="example-row">
+        <span class="label">Step 4 — Monthly interest</span>
+        <span class="value">₹50,000 × 1.75% = ₹875.00/month</span>
+      </div>
+      <div class="example-row">
+        <span class="label">Step 4 — Daily rate</span>
+        <span class="value">₹875.00 ÷ 30 = ₹29.17/day</span>
+      </div>
+      <div class="example-row" style="background:#d1fae5;margin:0 -4px;padding:10px 4px;border-radius:6px;">
+        <span class="label" style="color:#065f46;font-weight:700;">Step 5 — First Payment</span>
+        <span class="value" style="color:#065f46;font-size:16px;">17 × ₹29.17 = ₹495.83</span>
+      </div>
+    </div>
+
+    <div class="highlight-box" style="margin-top:16px;">
+      <strong>From month 2 onwards:</strong>
+      <p>₹50,000 × 1.75% = ₹875.00 every month for the remaining duration. Principal returned in the last month.</p>
+    </div>
+  </div>
+
+  <!-- Rounding note -->
+  <div class="card">
+    <h2><span class="icon">🔍</span> About Rounding — Why the Same ₹ Amount for Different Dates?</h2>
+    <p style="font-size:14px;color:#374151;margin-bottom:12px;">
+      For very small investment amounts (e.g. the minimum ₹500), the daily interest rate is very small:
+    </p>
+    <div style="background:#f1f5f9;border-radius:10px;padding:14px;font-family:monospace;font-size:13px;margin-bottom:12px;line-height:1.8;">
+      ₹500 × 1.75% = ₹8.75/month<br>
+      ₹8.75 ÷ 30 = ₹0.2917/day<br>
+      <br>
+      17 days × ₹0.2917 = ₹4.9583 → shows as <strong>₹4.96</strong><br>
+      16 days × ₹0.2917 = ₹4.6667 → shows as <strong>₹4.67</strong><br>
+      15 days × ₹0.2917 = ₹4.3750 → shows as <strong>₹4.38</strong>
+    </div>
+    <p style="font-size:13px;color:#374151;margin-bottom:12px;">
+      <strong>The OxyLoans Return Calculator shows the first payment to the paise</strong> (₹4.96, not ₹5) so that different participation dates always produce visibly different results.
+    </p>
+    <div class="info-box">
+      <strong>What does OxyLoans actually credit?</strong>
+      The actual credit to your wallet may be rounded to the nearest rupee by the system. The paise-level display in the calculator is to help you compare dates — the final payout figure may differ slightly.
+    </div>
+
+    <p style="font-size:13px;color:#374151;margin-top:12px;">
+      For realistic investment amounts (₹10,000+), the difference between days is clearly visible even in whole rupees:
+    </p>
+    <table>
+      <thead>
+        <tr><th>Investment</th><th>Daily Rate</th><th>17 days</th><th>16 days</th><th>Difference</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>₹500</td><td>₹0.29/day</td><td>₹4.96</td><td>₹4.67</td><td>₹0.29</td></tr>
+        <tr><td>₹10,000</td><td>₹5.83/day</td><td>₹99.17</td><td>₹93.33</td><td>₹5.83</td></tr>
+        <tr><td>₹50,000</td><td>₹29.17/day</td><td>₹495.83</td><td>₹466.67</td><td>₹29.17</td></tr>
+        <tr><td>₹1,00,000</td><td>₹58.33/day</td><td>₹991.67</td><td>₹933.33</td><td>₹58.33</td></tr>
+        <tr class="last-row"><td>₹2,50,000</td><td>₹145.83/day</td><td>₹2,479.17</td><td>₹2,333.33</td><td>₹145.83</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12px;color:#9ca3af;margin-top:8px;">* All examples at 1.75% per month</p>
+  </div>
+
+  <!-- FAQ -->
+  <div class="card">
+    <h2><span class="icon">❓</span> Frequently Asked Questions</h2>
+
+    <div class="faq-item">
+      <h3>Why does OxyLoans use the 30/360 convention?</h3>
+      <p>It's the RBI-accepted standard for fixed-income instruments and makes calculations consistent across all months — no lender is advantaged or disadvantaged by which month they join.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>Why subtract 2 days?</h3>
+      <p>Both the first day of participation and the last day (payment date) are excluded from the interest count. This is a standard P2P lending convention and is applied consistently to all lenders in the same deal.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>When exactly do I receive payments?</h3>
+      <p>Payments are credited to your OxyLoans wallet on the deal's fixed payment date each month. You will receive an SMS and email notification for each credit.</p>
+    </div>
+
+    <div class="faq-item">
+      <h3>Is the principal safe?</h3>
+      <p>OxyLoans is an RBI-registered NBFC-P2P platform. As required by RBI regulations, no fund pool is maintained — lender funds are directly deployed to borrowers. Principal is subject to borrower repayment risk, which is mitigated through our credit assessment process.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>OxyLoans — RBI Registered NBFC-P2P Platform &nbsp;|&nbsp; <a href="https://www.oxyloans.com">www.oxyloans.com</a></p>
+  <p style="margin-top:6px;">For support: <a href="mailto:support@oxyloans.com">support@oxyloans.com</a></p>
+</div>
+
+</body>
+</html>
