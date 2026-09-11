@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const GUIDE_URL = "/OxyLoans_First_Interest_Payment_Guide.pdf";
+const GUIDE_URL = "/first-interest-guide.html";
 
 const fmt = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
 const fmtExact = (n) => {
