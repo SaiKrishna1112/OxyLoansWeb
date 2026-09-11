@@ -251,7 +251,7 @@ const DealReturnCalculator = ({ deal, onClose }) => {
           <div style={{ padding: "18px 20px 18px 18px", background: "#f8fafc", overflowY: "auto" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "#1e40af", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.8 }}>📐 How your first payment is calculated</div>
             <div style={{ fontSize: 11, color: "#475569", marginBottom: 14, lineHeight: 1.5, padding: "8px 10px", background: "#eff6ff", borderRadius: 8, borderLeft: "3px solid #1d4ed8" }}>
-              OxyLoans uses the <strong style={{ color: "#1d4ed8" }}>30/360 day convention</strong> — every month = 30 days, year = 360 days. Your first EMI covers only the days you actually participated before the first payment date. <em>Subsequent months are always a full month's interest.</em>
+              OxyLoans uses the <strong style={{ color: "#1d4ed8" }}>30/360 day convention</strong> — every month = 30 days, year = 360 days. Your first payment covers the exact days between your participation date and the first payout date. This can be <strong>less than a full month</strong> (if you join close to the payout date) or <strong>more than a full month</strong> (if the gap spans over 30 days). From the 2nd month onwards, every payment is always a fixed full month's interest.
             </div>
 
             <StepRow
