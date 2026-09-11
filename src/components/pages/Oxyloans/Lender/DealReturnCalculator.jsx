@@ -4,6 +4,10 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 const GUIDE_PDF = "/OxyLoans_First_Interest_Payment_Guide.pdf";
 
 const fmt = (n) => "₹" + Math.round(n).toLocaleString("en-IN");
+const fmtExact = (n) => {
+  const rounded = Math.round(n * 100) / 100;
+  return "₹" + rounded.toFixed(2);
+};
 
 function toDateInput(dateStr) {
   if (!dateStr) return "";
@@ -46,7 +50,8 @@ function calcFirst(participationDateStr, paymentDateStr, amount, monthlyRate) {
   const firstDays = rawDays > 0 ? rawDays - 2 : 0;
   const monthly = (amount * monthlyRate) / 100;
   const daily = monthly / 30;
-  return { days: firstDays, interest: Math.round(firstDays * daily), rawDays, daily, monthly, partDay, emiDay, partDayOrig, emiDayOrig, partMonth, emiMonth, partYear, emiYear };
+  const interestExact = firstDays * daily;
+  return { days: firstDays, interest: interestExact, interestRounded: Math.round(interestExact), rawDays, daily, monthly, partDay, emiDay, partDayOrig, emiDayOrig, partMonth, emiMonth, partYear, emiYear };
 }
 
 const today = new Date().toISOString().split("T")[0];
@@ -83,10 +88,10 @@ const DealReturnCalculator = ({ deal, onClose }) => {
   }, [activeTab, customInput, minAmt, maxAmt]);
 
   const calc = calcFirst(participationDate, paymentDate, amount, rate);
-  const { days: firstDays, interest: firstInterest, rawDays, daily, monthly: firstMonthly, partDay, emiDay, partDayOrig, emiDayOrig } = calc;
+  const { days: firstDays, interest: firstInterestExact, interestRounded: firstInterestRounded, rawDays, daily, monthly: firstMonthly, partDay, emiDay, partDayOrig, emiDayOrig } = calc;
   const monthly = Math.round((amount * rate) / 100);
   const remainingPayments = duration - 1;
-  const totalInterest = firstInterest + monthly * remainingPayments;
+  const totalInterest = firstInterestExact + monthly * remainingPayments;
   const totalReturns = amount + totalInterest;
 
   const tabBtn = (id, label) => (
@@ -123,13 +128,13 @@ const DealReturnCalculator = ({ deal, onClose }) => {
     >
       <div style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 580, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)" }}>
         {/* Header */}
-        <div style={{ background: "linear-gradient(135deg,#1a1a2e,#16213e)", borderRadius: "16px 16px 0 0", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ background: "linear-gradient(135deg,#4f46e5,#3730a3)", borderRadius: "16px 16px 0 0", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <div style={{ color: "#f0a500", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>Return Calculator</div>
+            <div style={{ color: "#c7d2fe", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 4 }}>Return Calculator</div>
             <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{deal.dealName}</div>
-            <div style={{ color: "#9ca3af", fontSize: 13, marginTop: 4 }}>{rate}% / month &nbsp;·&nbsp; {duration} months</div>
+            <div style={{ color: "#a5b4fc", fontSize: 13, marginTop: 4 }}>{rate}% / month &nbsp;·&nbsp; {duration} months</div>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", borderRadius: 8, width: 32, height: 32, fontSize: 16, cursor: "pointer", lineHeight: "32px" }}>×</button>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: 8, width: 32, height: 32, fontSize: 16, cursor: "pointer", lineHeight: "32px" }}>×</button>
         </div>
 
         <div style={{ padding: "20px 24px" }}>
@@ -172,9 +177,9 @@ const DealReturnCalculator = ({ deal, onClose }) => {
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #c7d2fe", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontSize: 12, color: "#374151", fontWeight: 600 }}>First Payment <span style={{ color: "#9ca3af", fontWeight: 400 }}>({firstDays} days counted)</span></div>
-                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{firstDays} days × ₹{daily.toFixed(2)}/day</div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{firstDays} days × ₹{daily.toFixed(4)}/day</div>
               </div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: "#4f46e5" }}>{fmt(firstInterest)}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: "#4f46e5" }}>{fmtExact(firstInterestExact)}</div>
             </div>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #c7d2fe", background: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
@@ -190,12 +195,12 @@ const DealReturnCalculator = ({ deal, onClose }) => {
               </div>
               <div style={{ fontSize: 22, fontWeight: 700, color: "#059669" }}>{fmt(totalInterest)}</div>
             </div>
-            <div style={{ padding: "18px 18px", background: "linear-gradient(135deg,#1a1a2e,#16213e)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: "18px 18px", background: "linear-gradient(135deg,#312e81,#3730a3)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 13, color: "#c7d2fe", fontWeight: 600 }}>Total Returns</div>
-                <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{fmt(amount)} principal + {fmt(totalInterest)} interest</div>
+                <div style={{ fontSize: 13, color: "#e0e7ff", fontWeight: 600 }}>Total Returns</div>
+                <div style={{ fontSize: 11, color: "#a5b4fc", marginTop: 2 }}>{fmt(amount)} principal + {fmtExact(totalInterest)} interest</div>
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#f0a500" }}>{fmt(totalReturns)}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#fcd34d" }}>{fmtExact(totalReturns)}</div>
             </div>
           </div>
 
@@ -257,9 +262,9 @@ const DealReturnCalculator = ({ deal, onClose }) => {
                   n={5}
                   label="Multiply counted days × daily rate = First Payment"
                   val={<>
-                    {firstDays} days × ₹{daily.toFixed(4)}/day = ₹{(firstDays * daily).toFixed(2)}<br/>
-                    <strong>≈ {fmt(firstInterest)} (rounded to nearest rupee)</strong>
+                    {firstDays} days × ₹{daily.toFixed(4)}/day = <strong>{fmtExact(firstInterestExact)}</strong>
                   </>}
+                  note="Shown to the paise — so changing your participation date always shows a different amount"
                 />
 
                 <div style={{ background: "#ede9fe", borderRadius: 8, padding: "12px 14px", marginTop: 4, marginBottom: 16 }}>
@@ -274,7 +279,7 @@ const DealReturnCalculator = ({ deal, onClose }) => {
                   href={GUIDE_PDF}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", background: "#1a1a2e", color: "#f0a500", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 700 }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 18px", background: "#4f46e5", color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 700 }}
                 >
                   📄 Read Full Guide — First Interest Payment Explained &nbsp;↗
                 </a>
