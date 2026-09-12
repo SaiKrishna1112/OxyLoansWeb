@@ -260,6 +260,10 @@ const AppRouter = () => {
         {/* ===== PUBLIC ROUTES ===== */}
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Loginotp />} />
+        {/* <Route path="/" element={<Login />} /> */}
+        {/* <Route path="/login" element={<Login />} /> */}
+        <Route path="/loginotp" element={<Loginotp />} />
+        <Route path="/otplogin" element={<Navigate to="/loginotp" replace />} />
         <Route path="/glogin-test" element={<GoogleSSOTest />} />
         <Route path="/admlogin" element={<Admlogin />} />
         <Route path="/register" element={<LenderRegister />} />

@@ -9,6 +9,7 @@ import { withdrawriaseapi11 } from "../../Base UI Elements/SweetAlert";
 import Swal from "sweetalert2";
 import { error } from "jquery";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
+import DealReturnCalculator from "./DealReturnCalculator";
 
 const RegularRunningDeal = () => {
   const [regular_runningDeal, setRegularRunningDeal] = useState({
@@ -18,6 +19,7 @@ const RegularRunningDeal = () => {
     pageno: 1,
   });
   const [borrowerview, setborrowerview] = useState([]); const [borrowerfilelink, setborrowerfilelik] = useState("")
+  const [calcDeal, setCalcDeal] = useState(null);
 
 
   const [borrowermodelopen, setborrowermodelopen] = useState(false)
@@ -543,6 +545,25 @@ const RegularRunningDeal = () => {
                                   </Link>
                                 </div></>}
 
+                                <div className="col-auto">
+                                  <button
+                                    onClick={() => setCalcDeal(data)}
+                                    style={{
+                                      background: "linear-gradient(135deg,#f59e0b,#d97706)",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: 6,
+                                      padding: "4px 14px",
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      cursor: "pointer",
+                                      boxShadow: "0 2px 6px rgba(217,119,6,0.35)",
+                                    }}
+                                  >
+                                    🧮 Calculate Returns
+                                  </button>
+                                </div>
+
                               </div>
                             </div>
                           </div>
@@ -587,6 +608,9 @@ const RegularRunningDeal = () => {
         </div>
         {/* /Page Wrapper */}
       </div>
+      {calcDeal && (
+        <DealReturnCalculator deal={calcDeal} onClose={() => setCalcDeal(null)} />
+      )}
       {/* /Main Wrapper */}
     </>
   );

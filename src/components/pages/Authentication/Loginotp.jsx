@@ -193,7 +193,7 @@ const Loginotp = () => {
         });
         let defaultPath = "/borrowerDashboard/admin$";
         if (role === "LENDER") {
-          defaultPath = "/ai/portfolio";
+          defaultPath = "/lenderAIDashboard/" + retriveresponse.data.id;
         } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
           defaultPath = "/oxyloansadmindashboard";
         }
