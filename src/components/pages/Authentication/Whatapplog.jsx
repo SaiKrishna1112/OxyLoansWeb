@@ -3,6 +3,7 @@ import "owl.carousel/dist/assets/owl.carousel.css";
 import "react-phone-number-input/style.css";
 import PhoneInput from "react-phone-number-input";
 import "owl.carousel/dist/assets/owl.theme.default.css";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 import {
   registerImage,
@@ -290,11 +291,11 @@ const Whatapplog = () => {
                             <span className="or-line" />
                             <span className="span-or">or</span>
                           </div>
+                          <div className="mb-3">
+                            <GoogleLoginButton />
+                          </div>
                           {/* Social Login */}
                           <div className="social-login">
-                            {/* <Link to="#">
-                          <i className="fab fa-google-plus-g" />
-                        </Link> */}
                             <Link
                               to="/login"
                               className="bg-success text-white"
@@ -304,12 +305,6 @@ const Whatapplog = () => {
                               <Link to="/" className="bg-success text-white">
                           <i class="fa-solid fa-phone"></i>{" "}
                         </Link>
-                            {/* <Link to="#">
-                          <i className="fab fa-facebook-f" />
-                        </Link>
-                        <Link to="#">
-                          <i className="fab fa-twitter" />
-                        </Link> */}
                           </div>
                         </div>
                       </>
