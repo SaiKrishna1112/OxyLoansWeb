@@ -1,5 +1,7 @@
 import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import PrivacyPolicy from "./components/pages/Static/PrivacyPolicy";
+import TermsOfService from "./components/pages/Static/TermsOfService";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
@@ -444,6 +446,10 @@ const AppRouter = () => {
         <Route path="/adminBorrowerCharges" element={<BorrowerCharges />} />
         <Route path="/adminProcessingFees" element={<ProcessingFees />} />
         {/* ******************** AdminMODULE ROUTES END **************************  */}
+
+        {/* Static pages */}
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
       </Routes>
     </BrowserRouter>
     </GoogleOAuthProvider>
