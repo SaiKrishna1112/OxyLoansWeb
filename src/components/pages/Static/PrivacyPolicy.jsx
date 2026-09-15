@@ -12,7 +12,7 @@ const PrivacyPolicy = () => {
       <p style={{ color: "#666", fontSize: 14, marginBottom: 32 }}>Last updated: September 2026 &nbsp;|&nbsp; OxyLoans Marketplace Pvt. Ltd.</p>
 
       <p>
-        OxyLoans Marketplace Pvt. Ltd. ("OxyLoans", "we", "us", or "our") is an RBI-registered NBFC-P2P platform operating under RBI Certificate of Registration. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you use our website at <strong>www.user.oxyloans.com</strong> and related services.
+        OxyLoans Marketplace Pvt. Ltd. ("OxyLoans", "we", "us", or "our") is an RBI-registered NBFC-P2P platform operating under RBI Certificate of Registration. This Privacy Policy explains how we collect, use, disclose, and safeguard your personal information when you use our website at <strong>www.oxyloans.com</strong> and related services.
       </p>
       <p>By using OxyLoans, you agree to the terms of this Privacy Policy.</p>
 
@@ -106,7 +106,7 @@ const PrivacyPolicy = () => {
       <address style={{ fontStyle: "normal", background: "#f5f5f5", padding: "16px 20px", borderRadius: 8, marginTop: 8 }}>
         <strong>OxyLoans Marketplace Pvt. Ltd.</strong><br />
         Email: <a href="mailto:support@oxyloans.com" style={{ color: "#0066cc" }}>support@oxyloans.com</a><br />
-        Website: <a href="https://www.user.oxyloans.com" style={{ color: "#0066cc" }}>www.user.oxyloans.com</a><br />
+        Website: <a href="https://www.oxyloans.com" style={{ color: "#0066cc" }}>www.user.oxyloans.com</a><br />
         RBI Certificate of Registration: NBFC-P2P
       </address>
 
