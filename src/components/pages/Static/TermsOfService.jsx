@@ -117,7 +117,7 @@ const TermsOfService = () => {
       <address style={{ fontStyle: "normal", background: "#f5f5f5", padding: "16px 20px", borderRadius: 8, marginTop: 8 }}>
         <strong>OxyLoans Marketplace Pvt. Ltd.</strong><br />
         Email: <a href="mailto:support@oxyloans.com" style={{ color: "#0066cc" }}>support@oxyloans.com</a><br />
-        Website: <a href="https://www.oxyloans.com" style={{ color: "#0066cc" }}>www.user.oxyloans.com</a><br />
+        Website: <a href="https://www.oxyloans.com" style={{ color: "#0066cc" }}>www.oxyloans.com</a><br />
         Grievance Officer: <a href="mailto:support@oxyloans.com" style={{ color: "#0066cc" }}>support@oxyloans.com</a>
       </address>
 
