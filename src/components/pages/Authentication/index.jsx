@@ -6,6 +6,7 @@ import FeatherIcon from "feather-icons-react";
 import { Admlog, userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -217,6 +218,9 @@ const Login = () => {
                   <div className="login-or">
                     <span className="or-line" />
                     <span className="span-or">or</span>
+                  </div>
+                  <div className="mb-3">
+                    <GoogleLoginButton />
                   </div>
 
                   <div className="social-login">
