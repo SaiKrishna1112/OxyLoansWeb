@@ -56,7 +56,7 @@ const Loginotp = () => {
         { accessToken: tokenResponse.access_token },
         { headers: { "Content-Type": "application/json" } }
       );
-      const { phoneNumberRequiredOrNot: status, signInUrl: email, mobileNumber } = res.data;
+      const { phoneNumberRequiredOrNot: status, signInUrl: email, mobileNumber, userId, registrationTime } = res.data;
       if (status === "LINKED" || status === "FOUND") {
         // Email found in OxyLoans — auto-link (if needed) and login directly
         const loginRes = await axios.post(
@@ -71,6 +71,9 @@ const Loginotp = () => {
           else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
           else history("/borrowerDashboard");
         }
+      } else if (status === "STEP2_PENDING") {
+        // Registration incomplete — redirect to step 2 with fresh timestamp
+        history(`/register_active_proceed?id=${userId}&time=${registrationTime}`);
       } else {
         // NOT_FOUND — stay on page and show message with the email that wasn't found
         setGoogleModal({ status: "NOT_FOUND", email });
