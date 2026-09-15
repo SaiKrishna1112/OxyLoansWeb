@@ -18,6 +18,13 @@ import { useDispatch } from "react-redux";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import Swal from "sweetalert2";
 
+const cleanGoogleLoginError = (msg) => {
+  if (msg && msg.includes("Registration step 2 is pending")) {
+    return "Your registration is incomplete. Please complete Step 2 (personal details) to activate your account.";
+  }
+  return msg;
+};
+
 const Loginotp = () => {
   const dispatch = useDispatch();
   const history = useNavigate();
@@ -73,8 +80,8 @@ const Loginotp = () => {
         setGoogleModal({ status: "NOT_FOUND", email });
       }
     } catch (err) {
-      const msg = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
-      WarningBackendApi("Google Login Failed", msg);
+      const raw = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
+      WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
     } finally {
       setGoogleLoading(false);
     }
@@ -114,8 +121,8 @@ const Loginotp = () => {
         }
       }
     } catch (err) {
-      const msg = err?.response?.data?.errorMessage || "Google login failed. Please use mobile OTP.";
-      WarningBackendApi("Google Login Failed", msg);
+      const raw = err?.response?.data?.errorMessage || "Google login failed. Please use mobile OTP.";
+      WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
     } finally {
       setGoogleLoading(false);
       if (googleModal?.status === "LINKED") setGoogleModal(null);
