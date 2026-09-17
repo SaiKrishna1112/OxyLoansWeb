@@ -22,6 +22,7 @@ import AdminAITopPaidEarnedReferrersPage from "./components/pages/Oxyloans/Admin
 import AdminAITopPaidEarnedHistoryPage from "./components/pages/Oxyloans/Admin/AdminAITopPaidEarnedHistoryPage";
 import AdminAILenderAnalyticsLendersPage from "./components/pages/Oxyloans/Admin/AdminAILenderAnalyticsLendersPage";
 import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Admin/AdminAIInactiveReactivatedReportPage";
+import AdminAILifetimeFeeWaiverPage from "./components/pages/Oxyloans/Admin/AdminAILifetimeFeeWaiverPage";
 import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIYearWiseDealsListPage from "./components/pages/Oxyloans/Admin/AdminAIYearWiseDealsListPage";
 import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
@@ -279,6 +280,7 @@ const AppRouter = () => {
         <Route path="/adminAITopPaidEarnedHistory" element={<AdminAITopPaidEarnedHistoryPage />} />
         <Route path="/adminAILenderAnalytics" element={<AdminAILenderAnalyticsLendersPage />} />
         <Route path="/adminAIInactiveReactivatedReport" element={<AdminAIInactiveReactivatedReportPage />} />
+        <Route path="/adminAILifetimeFeeWaiver" element={<AdminAILifetimeFeeWaiverPage />} />
         <Route path="/adminAICampaignHistory" element={<AdminAILenderCampaignHistoryPage />} />
         <Route path="/adminAlCampaignHistory" element={<AdminAIRouteAlias to="/adminAICampaignHistory" />} />
         <Route path="/adminAIYearWiseDealsList" element={<AdminAIYearWiseDealsListPage />} />

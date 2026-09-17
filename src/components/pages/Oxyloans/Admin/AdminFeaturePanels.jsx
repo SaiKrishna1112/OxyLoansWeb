@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import AdminActiveLendersPanel from "./AdminActiveLendersPanel";
 import {
   DEALS_DIRECTORY_PAGE_SIZE,
@@ -6,7 +7,9 @@ import {
   loadDealsDirectoryPage,
   loadDealsDirectorySummary,
 } from "../../../HttpRequest/aiAdminApi";
+import { getAdminAILenderMembershipDetails } from "../../../HttpRequest/admin";
 import { DataTable, LoadingBlock, money, number } from "./adminAIDashboardShared";
+import { ADMIN_AI_DASHBOARD_PATH, goToAdminAIDashboard } from "./adminAINavigation";
 import {
   DEAL_LIFECYCLE_ORDER,
   lifecycleStageMeta,
@@ -14,7 +17,7 @@ import {
 } from "./dealLifecycleHelpers";
 
 const formatDate = (v) => {
-  if (!v || v === " ") return "—";
+  if (!v || v === " ") return "â€”";
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? v : d.toLocaleDateString("en-IN");
 };
@@ -62,7 +65,7 @@ export const DealsDirectoryPanel = () => {
   const totalCount = page?.totalCount || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / DEALS_DIRECTORY_PAGE_SIZE));
 
-  if (loading && !page) return <LoadingBlock label="Loading deals…" />;
+  if (loading && !page) return <LoadingBlock label="Loading dealsâ€¦" />;
 
   return (
     <>
@@ -78,7 +81,7 @@ export const DealsDirectoryPanel = () => {
           >
             {stage.label}
             <span className="ai-deals-tab-count">
-              {summaryCountForStage(summary, stage.id) ?? "—"}
+              {summaryCountForStage(summary, stage.id) ?? "â€”"}
             </span>
           </button>
         ))}
@@ -167,7 +170,7 @@ export const ViewPaymentsPanel = () => {
   }, [daysAhead]);
 
   if (loading && !normalized) {
-    return <LoadingBlock label="Loading upcoming payments…" />;
+    return <LoadingBlock label="Loading upcoming paymentsâ€¦" />;
   }
 
   const groups = normalized?.groups || [];
@@ -231,7 +234,7 @@ export const ViewPaymentsPanel = () => {
             type="search"
             className="form-control form-control-sm"
             style={{ width: 200 }}
-            placeholder="Search deal / date…"
+            placeholder="Search deal / dateâ€¦"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             disabled={loading}
@@ -299,7 +302,7 @@ export const ViewPaymentsPanel = () => {
               {day.dayLabel && <span className="badge bg-info text-dark ms-2">{day.dayLabel}</span>}
             </div>
             <span className="text-muted small">
-              {number(day.dealCount)} deals · {money(day.totalAmount)}
+              {number(day.dealCount)} deals Â· {money(day.totalAmount)}
             </span>
           </div>
           <DataTable
@@ -311,7 +314,7 @@ export const ViewPaymentsPanel = () => {
               ["dealName", "Deal Name"],
               ["amount", "Interest", money],
               ["noOfLenders", "Lenders", number],
-              ["rateOfInterest", "ROI %", (v) => (v == null ? "—" : `${v}%`)],
+              ["rateOfInterest", "ROI %", (v) => (v == null ? "â€”" : `${v}%`)],
               ["dealStatus", "Deal Status"],
               ["paymentStatus", "Payment Status"],
             ]}
@@ -349,7 +352,7 @@ export const normalizeViewPaymentsData = (raw) => {
         totalDeals: raw.totalDeals ?? groups.reduce((s, g) => s + g.dealCount, 0),
         totalAmount: groups.reduce((s, g) => s + (g.totalAmount || 0), 0),
       },
-      windowLabel: raw.fromDate && raw.toDate ? `${raw.fromDate} – ${raw.toDate}` : `Next ${raw.daysAhead || 3} days`,
+      windowLabel: raw.fromDate && raw.toDate ? `${raw.fromDate} â€“ ${raw.toDate}` : `Next ${raw.daysAhead || 3} days`,
       source: raw.source || "static",
     };
   }
@@ -435,3 +438,164 @@ const groupPaymentDealsByDate = (flatDeals) => {
       return parse(a.paymentDate) - parse(b.paymentDate);
     });
 };
+
+const parseLenderUserId = (raw) => {
+  const text = String(raw || "").trim().toUpperCase().replace(/^LR/, "").replace(/^BR/, "");
+  const id = Number(text);
+  return Number.isInteger(id) && id > 0 ? id : 0;
+};
+
+const membershipRow = (label, value) => (
+  <div className="admin-ai-membership-row">
+    <small>{label}</small>
+    <strong>{value == null || value === "" ? "-" : String(value)}</strong>
+  </div>
+);
+
+export const MembershipLookupPanel = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [userIdInput, setUserIdInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [details, setDetails] = useState(null);
+  const cameFromPath = (() => {
+    const incoming = location.state?.from;
+    if (typeof incoming === "string" && incoming.startsWith("/") && !incoming.includes("membership-lookup")) {
+      return incoming;
+    }
+    try {
+      const stored = window.sessionStorage.getItem("oxy-ml-from") || "";
+      if (stored.startsWith("/") && !stored.includes("membership-lookup")) {
+        return stored;
+      }
+    } catch {
+      return ADMIN_AI_DASHBOARD_PATH;
+    }
+    return ADMIN_AI_DASHBOARD_PATH;
+  })();
+
+  useEffect(() => {
+    const incoming = location.state?.from;
+    if (typeof incoming === "string" && incoming.startsWith("/") && !incoming.includes("membership-lookup")) {
+      try {
+        window.sessionStorage.setItem("oxy-ml-from", incoming);
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  }, [location.state]);
+
+  const lookupMembership = async (event) => {
+    if (event) {
+      event.preventDefault();
+    }
+    const userId = parseLenderUserId(userIdInput);
+    if (!userId) {
+      setError("Enter a valid user ID, for example 41389 or LR41389.");
+      setDetails(null);
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const data = await getAdminAILenderMembershipDetails(userId);
+      if (!data || data.found === false) {
+        setDetails(null);
+        setError(data?.message || `No lender found for ID ${userId}.`);
+        return;
+      }
+      setDetails(data);
+    } catch (err) {
+      setDetails(null);
+      setError(err?.response?.data?.message || err?.message || "Failed to load membership details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="admin-ai-membership-lookup">
+      <div className="sba-nav-actions">
+        <button
+          type="button"
+          className="sba-back"
+          onClick={() => navigate(cameFromPath)}
+          title={`Back to ${cameFromPath === ADMIN_AI_DASHBOARD_PATH ? "Admin AI Dashboard" : "previous page"}`}
+        >
+          Back
+        </button>
+        <button type="button" className="sba-dash-btn" onClick={() => goToAdminAIDashboard(navigate)}>
+          Admin AI Dashboard
+        </button>
+      </div>
+
+      <section className="admin-ai-membership-card">
+        <div className="admin-ai-membership-card-head">
+          <span className="admin-ai-membership-icon" aria-hidden="true">ID</span>
+          <div>
+            <h4>Look up lender membership</h4>
+            <p>Enter LR ID or user ID to see MONTHLY, QUARTERLY, or LIFETIME plan, validity, and fee status.</p>
+          </div>
+        </div>
+        <form className="admin-ai-membership-form" onSubmit={lookupMembership}>
+          <label>
+            User ID
+            <input
+              value={userIdInput}
+              placeholder="Example: LR41389 or 41389"
+              onChange={(e) => setUserIdInput(e.target.value)}
+            />
+          </label>
+          <button className="admin-ai-membership-submit" type="submit" disabled={loading}>
+            {loading ? "Looking up..." : "Lookup membership"}
+          </button>
+        </form>
+      </section>
+
+      {error ? <div className="alert alert-danger">{error}</div> : null}
+
+      {details ? (
+        <div className="admin-ai-profile-box admin-ai-membership-result">
+          <div className="admin-ai-panel-head">
+            <div>
+              <h5>
+                {details.userCode || `LR${details.userId}`} {details.name || ""}
+              </h5>
+              <p>
+                {details.membershipActive
+                  ? "Membership is active. New mandatory deals should not ask a fee."
+                  : details.message}
+              </p>
+            </div>
+            <span className={`admin-ai-count-pill ${details.membershipActive ? "admin-ai-membership-active" : ""}`}>
+              {details.membershipActive ? "ACTIVE" : "EXPIRED / NONE"}
+            </span>
+          </div>
+          <div className="admin-ai-profile-table">
+            {membershipRow("User ID", details.userCode || details.userId)}
+            {membershipRow("Membership type", details.membershipType || "-")}
+            {membershipRow("Plan label", details.membershipPlanLabel || "-")}
+            {details.lastPaidMembershipType
+              && details.lastPaidMembershipType !== details.membershipType
+              ? membershipRow(
+                "Last paid plan",
+                `${details.lastPaidPlanLabel || details.lastPaidMembershipType} (not current validity)`
+              )
+              : null}
+            {membershipRow("Validity date", details.validityDate || details.validityDateLabel || "-")}
+            {membershipRow("Group", details.groupName || "-")}
+            {membershipRow("Wallet", details.walletAmount != null
+              ? `₹ ${Number(details.walletAmount).toLocaleString("en-IN")}`
+              : "-")}
+            {membershipRow("Mobile", details.mobileNumber || "-")}
+            {membershipRow("Email", details.email || "-")}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+export { SharedBankAccountsPanel } from "./SharedBankAccountsPanel";

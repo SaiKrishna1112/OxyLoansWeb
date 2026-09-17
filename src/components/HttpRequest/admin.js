@@ -1183,6 +1183,24 @@ export const getAdminAILenderAnalyticsSummary = async () => {
   return response.data;
 };
 
+export const getAdminAILifetimeFeeWaiver = async (
+  pageNo = 1,
+  pageSize = 20,
+  segment = "all",
+  summaryOnly = false
+) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/lifetime-fee-waiver`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { pageNo, pageSize, segment, summaryOnly },
+      timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
+  return response.data;
+};
+
 export const getAdminAIInactiveReactivatedLenders = async (
   participationDate,
   inactiveInterval = "1 year"
@@ -2038,6 +2056,32 @@ export const getAdminAIActiveLenderProfile = async (lenderId) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/active-lenders/${lenderId}/profile`, {
     headers: adminRegisteredUsersHeaders(),
   });
+  return response.data;
+};
+
+export const getAdminAILenderMembershipDetails = async (userId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lenders/${userId}/membership-details`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAISharedBankAccounts = async ({ userId, accountNumber } = {}) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lenders/shared-bank-accounts`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        ...(userId ? { userId } : {}),
+        ...(accountNumber ? { accountNumber } : {}),
+      },
+      timeout: 120000,
+    }
+  );
   return response.data;
 };
 
