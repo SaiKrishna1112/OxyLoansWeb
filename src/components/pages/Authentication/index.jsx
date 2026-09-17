@@ -126,7 +126,7 @@ const Login = () => {
               </div>
               <div className="login-right">
                 <div className="login-right-wrap">
-                  <h1>Welcome to Oxyloans</h1>
+                  <h1>Welcome to OxyLoans</h1>
 
                   <p className="account-subtitle">
                     Need an account? <Link to="/register">Sign Up</Link>
@@ -227,8 +227,25 @@ const Login = () => {
                     {/* <Link to="#">
                       <i className="fab fa-google-plus-g" />
                     </Link> */}
-                    <Link to="/whatsapplogin" className="bg-success text-white">
-                        <BsWhatsapp />{" "}
+                    <Link to="/whatsapplogin"
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 10,
+                        width: "100%",
+                        padding: "10px 16px",
+                        background: "#fff",
+                        border: "1.5px solid #ddd",
+                        borderRadius: 8,
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "#3c4043",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                        marginBottom: 4,
+                        height: "40px",
+                      }}>
+                        <BsWhatsapp style={{ color: "#25D366", fontSize: 20 }} /> Login with WhatsApp
                     </Link>
                     {/* <Link onClick={() => {}} to="#">
                       <i className="fab fa-facebook-f" />

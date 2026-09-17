@@ -419,6 +419,19 @@ export const getuserMembershipValidity = async () => {
   return response;
 };
 
+export const getMembershipDetails = async () => {
+  const token = getToken();
+  const userId = getUserId();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getMembership-details/${userId}`,
+    "GET",
+    token
+  );
+
+  return response;
+};
+
 export const bulkinvitegmailLink = async () => {
   const token = getToken();
   const userId = getUserId();
@@ -2091,7 +2104,7 @@ export const getNewSessionTime = async () => {
   const userId = getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}USER/accessTokenGeneration`,
+    `${userId}/USER/accessTokenGeneration`,
     "GET",
     token
   );

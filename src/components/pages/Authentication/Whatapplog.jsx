@@ -254,7 +254,7 @@ const Whatapplog = () => {
                     {handlewhatapp ? (
                       <>
                         <div className="login-right-wrap">
-                          <h1>Welcome to Oxyloans</h1>
+                          <h1>Welcome to OxyLoans</h1>
                           <p className="account-subtitle">
                             Need an account? <Link to="/register">Sign Up</Link>
                           </p>
@@ -295,23 +295,55 @@ const Whatapplog = () => {
                             <GoogleLoginButton />
                           </div>
                           {/* Social Login */}
-                          <div className="social-login">
+                          <Link to="/" 
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 15,
+                                  height: "40px",
+                                }}>
+                          <i class="fa-solid fa-mobile-screen-button" style={{ fontSize: 18, color: "#2563EB" }} /> Login with Mobile OTP
+                        </Link>
                             <Link
                               to="/login"
-                              className="bg-success text-white"
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 2,
+                                  height: "40px",
+                                }}
                             >
-                              <i class="fa-solid fa-at"></i>
+                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Email
                             </Link>
-                              <Link to="/" className="bg-success text-white">
-                          <i class="fa-solid fa-phone"></i>{" "}
-                        </Link>
+                              
                           </div>
-                        </div>
                       </>
                     ) : (
                       <>
                         <div className="login-right-wrap">
-                          <h1>Welcome to Oxyloans</h1>
+                          <h1>Welcome to OxyLoans</h1>
                           <p className="account-subtitle">
                             Need an account? <Link to="/register">Sign Up</Link>
                           </p>
@@ -365,17 +397,52 @@ const Whatapplog = () => {
                             <span className="span-or">or</span>
                           </div>
                           {/* Social Login */}
-                          <div className="social-login">
+                          <div className="mb-3">
+                            <GoogleLoginButton />
+                          </div>
+                          {/* Social Login */}
+                          <Link to="/" 
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 15,
+                                  height: "40px",
+                                }}>
+                          <i class="fa-solid fa-mobile-screen-button" style={{ fontSize: 20, color: "#2563EB" }} /> Login with Mobile OTP
+                        </Link>
                             <Link
                               to="/login"
-                              className="bg-success text-white"
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 2,
+                                  height: "40px",
+                                }}
                             >
-                              <i class="fa-solid fa-at"></i>
+                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Using Email
                             </Link>
-                            <Link to="/whatsapplogin" className="bg-success text-white">
-
-                          <BsWhatsapp />{" "}
-                        </Link>
 
                             {/* <Link to="#">
                           <i className="fab fa-facebook-f" />
@@ -384,7 +451,6 @@ const Whatapplog = () => {
                           <i className="fab fa-twitter" />
                         </Link> */}
                           </div>
-                        </div>
                       </>
                     )}
                   </div>

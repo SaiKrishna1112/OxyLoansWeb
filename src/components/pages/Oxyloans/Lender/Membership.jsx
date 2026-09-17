@@ -12,6 +12,7 @@ import {
   getpaymentorder,
   lenderfeeamountdetailsapi,
   handellenderFeePaymentsapi,
+  getMembershipDetails,
 } from "../../../HttpRequest/afterlogin";
 import {
   registersuccess,
@@ -38,6 +39,10 @@ const Membership = React.memo((pros) => {
   const [membershipdata, setmebershipdata] = useState({
     data: [],
     isLoading: true,
+  });
+  const [membershipStatus, setMembershipStatus] = useState({
+    isLoading: true,
+    isActive: false,
   });
   const [payment, setpaymentsession] = useState("");
   const queryString = window.location.search;
@@ -178,6 +183,30 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
 
     lenderfeeamountdetails();
   }, [lenderfeeamountdetailsapi]);
+
+  useEffect(() => {
+    const membershipDetails = async () => {
+      try {
+        const response = await getMembershipDetails();
+        const details = response?.data;
+
+        setMembershipStatus({
+          isLoading: false,
+          isActive: !details?.lenderValidityStatus === true,
+          plan: details?.membershipType || "",
+          endDate: details?.validityDate || "",
+        });
+      } catch (error) {
+        console.error(error);
+        setMembershipStatus({
+          isLoading: false,
+          isActive: false,
+        });
+      }
+    };
+
+    membershipDetails();
+  }, []);
   useEffect(() => {
     if (payment != null || payment != "") {
       let checkoutOptions = {
@@ -207,6 +236,9 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
 
   const buttonNumber = 0;
   const isButtonLoading = mywalletTowalletHistory[`loading${buttonNumber}`];
+  const hasLifetimeMembership =
+    membershipStatus.isActive &&
+    membershipStatus.plan?.toUpperCase() === "LIFETIME";
   if (membershipdata.isLoading) {
     return <div>Loading...</div>;
   }
@@ -279,6 +311,52 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
               <div className="col-sm-12">
                 <div className="card card-table">
                   <div className="card-body">
+                    <div
+                      className="d-flex align-items-center justify-content-between mb-2 px-2"
+                    >
+                      <h5
+                        className="mb-0 font-weight-bold text-dark"
+                        style={{ fontSize: "18px", whiteSpace: "nowrap" }}
+                      >
+                        Membership Status
+                      </h5>
+                      {!membershipStatus.isLoading && (
+                        <span
+                          className={`badge ${
+                            membershipStatus.isActive
+                              ? "badge-success"
+                              : "badge-warning"
+                          }`}
+                          style={{
+                            fontSize: "13px",
+                            padding: "7px 12px",
+                            minWidth: "60px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {membershipStatus.isActive ? "Active" : "Inactive"}
+                        </span>
+                      )}
+                    </div>
+                    <div 
+                      className="d-flex mb-4 px-2"
+                      style={{
+                        borderBottom: "1px solid #e9ecef",
+                        paddingBottom: "12px",
+                        gap: "20px",
+                        flexWrap: "wrap",
+                      }}>
+                        <h6
+                        className="mb-0 font-weight-bold "
+                        style={{ flex: "1 1 auto", fontSize: "16px",color: membershipStatus.isActive ? "#28a745" : "#dc3545" }}
+                      >
+                        {membershipStatus.isActive
+                          ? `You already have a membership for ${formatPlanName(
+                              membershipStatus?.plan || "this plan"
+                            )} plan till ${membershipStatus?.endDate || "the validity date"}`
+                          : "You do not have an active membership. Please consider renewing your membership."}
+                      </h6>
+                      </div>
                     <div className="row">
                       {console.log(membershipdata.data[6])}
 
@@ -293,7 +371,11 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                 key={index}
                               >
                                 <div
-                                  className="card shadow-lg border-0 rounded-lg text-center"
+                                  className={`card shadow-lg rounded-lg text-center ${
+                                    hasLifetimeMembership
+                                      ? "border border-warning"
+                                      : "border-0"
+                                  }`}
                                   style={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -301,7 +383,15 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     justifyContent: "space-between",
                                   }}
                                 >
-                                  <div className="card-header bg-primary text-white">
+                                  <div
+                                    className="card-header bg-primary text-white"
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
                                     <h3
                                       className="mb-0"
                                       style={{
@@ -385,19 +475,19 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                         <i className="text-danger mr-2">✔</i>
                                         <b>
                                           {data.lenderFeePayments === "LIFETIME"
-                                            ? "14 Years "
-                                            : ""}{" "}
+                                            ? " 14 Years "
+                                            : " 1 Month "}{" "}
                                           Membership
                                         </b>
                                       </li>
                                       <li className="list-group-item">
                                         <i className="text-danger mr-2">✔</i>{" "}
-                                        Unlimited Deals Participation
+                                          Unlimited Deals Participation
                                       </li>
                                     </ul>
                                   </div>
                                   <div className="card-footer bg-white">
-                                    {isButtonLoading ? (
+                                    {!hasLifetimeMembership && isButtonLoading ? (
                                       <button
                                         className="btn btn-success btn-block"
                                         disabled
@@ -405,7 +495,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                         <span className="spinner-border spinner-border-sm mr-2"></span>{" "}
                                         Processing...
                                       </button>
-                                    ) : (
+                                    ) : !hasLifetimeMembership ? (
                                       <button
                                         className={`btn btn-success bg-gradient btn-block text-white`}
                                         style={{
@@ -420,9 +510,11 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                           )
                                         }
                                       >
-                                        Subscribe Now
+                                        {membershipStatus.isActive
+                                          ? "Subscribe to extend subscription"
+                                          : "Subscribe Now"}
                                       </button>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>
@@ -437,7 +529,13 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                 key={index}
                               >
                                 <div
-                                  className="card text-center shadow-lg border-0 rounded-lg membership-border"
+                                  className={`card text-center shadow-lg rounded-lg membership-border ${
+                                    hasLifetimeMembership &&
+                                    data.lenderFeePayments?.toUpperCase() ===
+                                      "LIFETIME"
+                                      ? "border border-warning"
+                                      : "border-0"
+                                  }`}
                                   style={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -445,7 +543,15 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     justifyContent: "space-between",
                                   }}
                                 >
-                                  <div className="card-header bg-primary text-white">
+                                  <div
+                                    className="card-header bg-primary text-white"
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
                                     <h3
                                       className="card_heading mb-0"
                                       style={{
@@ -535,34 +641,36 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                       style={{ fontSize: "14px" }}
                                     >
                                       <li className="list-group-item">
-                                        <i className="text-danger mr-2">✔</i>
+                                        <i className="text-danger mr-2">✔ {" "}</i>
                                         <b
                                           className="paymembership_tenture"
                                           style={{ fontSize: "14px" }}
-                                        >
+                                        > 
+                                          {data.lenderFeePayments === 
+                                          "MONTHLY" && " 1 Month "}
                                           {data.lenderFeePayments ===
-                                            "QUARTERLY" && "3 Months "}
+                                            "QUARTERLY" && " 3 Months "}
                                           {data.lenderFeePayments ===
-                                            "HALFYEARLY" && "6 Months "}
+                                            "HALFYEARLY" && " 6 Months "}
                                           {data.lenderFeePayments ===
-                                            "PERYEAR" && "1 Year "}
+                                            "PERYEAR" && " 1 Year "}
                                           {data.lenderFeePayments ===
-                                            "FIVEYEARS" && "5 Years "}
+                                            "FIVEYEARS" && " 5 Years "}
                                           {data.lenderFeePayments ===
-                                            "TENYEARS" && "10 Years "}
+                                            "TENYEARS" && " 10 Years "}
                                           {data.lenderFeePayments ===
-                                            "LIFETIME" && "14 Years "}
+                                            "LIFETIME" && " 14 Years "}
                                         </b>
-                                        Membership
+                                          Membership
                                       </li>
                                       <li className="list-group-item">
-                                        <i className="text-danger mr-2">✔</i>{" "}
+                                        <i className="text-danger mr-2">✔</i>{"  "}
                                         Unlimited Deals Participation
                                       </li>
                                     </ul>
                                   </div>
                                   <div className="card-footer bg-white">
-                                    {isButtonLoading ? (
+                                    {!hasLifetimeMembership && isButtonLoading ? (
                                       <button
                                         className="btn btn-success btn-block"
                                         disabled
@@ -570,7 +678,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                         <span className="spinner-border spinner-border-sm mr-2"></span>{" "}
                                         Processing...
                                       </button>
-                                    ) : (
+                                    ) : !hasLifetimeMembership ? (
                                       <button
                                         type="button"
                                         className={`btn btn-success bg-gradient btn-block text-white`}
@@ -586,9 +694,11 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                           )
                                         }
                                       >
-                                        Subscribe
+                                        {membershipStatus.isActive
+                                          ? "Subscribe to extend subscription"
+                                          : "Subscribe"}
                                       </button>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>

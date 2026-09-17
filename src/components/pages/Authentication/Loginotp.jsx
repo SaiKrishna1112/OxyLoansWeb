@@ -333,7 +333,7 @@ const Loginotp = () => {
               </div>
               <div className="login-right">
                 <div className="login-right-wrap">
-                  <h1>Welcome to Oxyloans</h1>
+                  <h1>Welcome to OxyLoans</h1>
 
                   <p className="account-subtitle">
                     Need an account? <Link to="/register">Sign Up</Link>
@@ -483,26 +483,83 @@ const Loginotp = () => {
                     <span className="or-line" />
                     <span className="span-or">or</span>
                   </div>
+                          {/* Social Login */}
+                            <Link
+                              to="/login"
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 14,
+                                  height: "40px",
+                                }}
+                            >
+                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Email
+                            </Link>
 
-                  <div className="social-login">
-                    <Link to="/login" className="bg-success text-white">
-                      <i className="fab fa-at" />
-                    </Link>
-                    <Link to="/whatsapplogin" className="bg-success text-white">
-                      <BsWhatsapp />
-                    </Link>
                     <button
                       type="button"
                       onClick={() => googleLogin()}
                       disabled={googleLoading}
-                      style={{ background: "#fff", border: "1px solid #ddd", borderRadius: "50%", width: 38, height: 38, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                      style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 10,
+                          width: "100%",
+                          padding: "10px 16px",
+                          background: "#fff",
+                          border: "1.5px solid #ddd",
+                          borderRadius: 8,
+                          fontSize: 15,
+                          fontWeight: 600,
+                          color: "#3c4043",
+                          boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                          marginBottom: 14,
+                        }}
                       title="Sign in with Google"
                     >
                       {googleLoading
                         ? <span className="spinner-border spinner-border-sm text-danger" />
-                        : <i className="fab fa-google" style={{ color: "#DB4437", fontSize: 16 }} />}
+                        : <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.1 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5c11 0 20.5-8 20.5-19.5 0-1.3-.1-2.7-.5-4z"/>
+            <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.2 13 24 13c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/>
+            <path fill="#FBBC05" d="M24 43.5c5.8 0 10.8-1.9 14.5-5.2l-6.7-5.5C29.8 34.7 27 35.5 24 35.5c-6 0-10.7-3.9-11.7-9.1l-7 5.4C8.5 39.5 15.7 43.5 24 43.5z"/>
+            <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.7-2.2 4.9-4.4 6.4l6.7 5.5C41.8 36.7 44.5 30.8 44.5 24c0-1.3-.1-2.7-.5-4z"/>
+          </svg>
+          } Login with Google
                     </button>
-                  </div>
+
+                     <Link to="/whatsapplogin" 
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  // padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 4,
+                                  height: "40px",
+                                }}>
+                          <BsWhatsapp style={{ fontSize: 20, color: "#25D366" }} /> Login with WhatsApp OTP
+                        </Link>
 
                   {/* Google Login Modal Overlay */}
                   {googleModal && (
