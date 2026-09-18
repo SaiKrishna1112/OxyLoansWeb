@@ -5,6 +5,7 @@ import Header from "../../../Header/Header";
 import "./InvoiceGrid.css";
 import SideBar from "../../../SideBar/SideBar";
 import { Table, Pagination, Progress, Space } from "antd";
+import DealReturnCalculator from "./DealReturnCalculator";
 
 const ViewCurrentDayDeals = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const ViewCurrentDayDeals = () => {
     paginationCount: 1,
     pageno: 1,
   });
+  const [calcDeal, setCalcDeal] = useState(null);
 
   const dataSource = [];
 
@@ -247,6 +249,24 @@ const ViewCurrentDayDeals = () => {
                                     Documents
                                   </a>
                                 </div>
+
+                                <div className="col-auto">
+                                  <button
+                                    onClick={() => setCalcDeal(data)}
+                                    style={{
+                                      background: "#4f46e5",
+                                      color: "#fff",
+                                      border: "none",
+                                      borderRadius: 6,
+                                      padding: "4px 14px",
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    🧮 Calculate Returns
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -275,6 +295,9 @@ const ViewCurrentDayDeals = () => {
         {/* /Page Wrapper */}
       </div>
       {/* /Main Wrapper */}
+      {calcDeal && (
+        <DealReturnCalculator deal={calcDeal} onClose={() => setCalcDeal(null)} />
+      )}
     </>
   );
 };

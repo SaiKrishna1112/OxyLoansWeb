@@ -5,8 +5,10 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import "./InvoiceGrid.css";
 import { Table, Pagination, Tag } from "antd";
+import DealReturnCalculator from "./DealReturnCalculator";
 
 const RegularEscrowDeals = () => {
+  const [calcDeal, setCalcDeal] = useState(null);
   const [escrow_runningDeal, setRegularRunningDeal] = useState({
     apidata: "",
     dealtype: "HAPPENING",
@@ -287,6 +289,24 @@ const RegularEscrowDeals = () => {
                                       View Borrower Documents
                                     </a>
                                   </div>
+
+                                  <div className="col-auto">
+                                    <button
+                                      onClick={() => setCalcDeal(data)}
+                                      style={{
+                                        background: "#4f46e5",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: 6,
+                                        padding: "4px 14px",
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      🧮 Calculate Returns
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -319,6 +339,9 @@ const RegularEscrowDeals = () => {
         {/* /Page Wrapper */}
       </div>
       {/* /Main Wrapper */}
+      {calcDeal && (
+        <DealReturnCalculator deal={calcDeal} onClose={() => setCalcDeal(null)} />
+      )}
     </>
   );
 };

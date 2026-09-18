@@ -4,7 +4,7 @@ import axios from "axios";
 import Header from "../../Header/Header";
 import SideBar from "../../SideBar/SideBar";
 import Footer from "../../Footer/Footer";
-import { MARKETPLACE_URL } from "../../../config";
+import { MARKETPLACE_URL, ENV } from "../../../config";
 import { getToken, getUserId } from "../../HttpRequest/afterlogin";
 
 const PLANS = [
@@ -121,7 +121,7 @@ export default function LenderAIPlanPage() {
     setError(null);
     try {
       const res = await axios.post(
-        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${plan}`,
+        `${MARKETPLACE_URL}/v1/ai/lender/${userId}/subscribe?plan=${plan}&source=WEB`,
         {},
         { headers: { accessToken: token } }
       );
@@ -134,7 +134,7 @@ export default function LenderAIPlanPage() {
         return;
       }
 
-      const cashfree = window.Cashfree({ mode: "sandbox" });
+      const cashfree = window.Cashfree({ mode: ENV === "production" ? "production" : "sandbox" });
       cashfree.checkout({ paymentSessionId: sessionId, redirectTarget: "_self" });
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Payment initiation failed");

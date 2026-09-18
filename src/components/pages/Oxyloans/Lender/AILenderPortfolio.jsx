@@ -5,7 +5,8 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
-import { getToken, getUserId } from "../../../HttpRequest/afterlogin";
+import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
+import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
@@ -13,6 +14,20 @@ const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+
+// annualRate=true  → old deal (before 2021-10-04): roi stored as annual % → show p.a.
+// annualRate=false → new deal: roi stored as MONTHLY rate regardless of payout frequency
+const fmtRoi = (rateOfInterest, payoutFrequency, annualRate) => {
+  const roi = rateOfInterest || 0;
+  const freq = (payoutFrequency || "").toUpperCase();
+  if (annualRate)            return `${roi.toFixed(1)}% p.a.`;
+  if (freq === "MONTHLY")    return `${roi.toFixed(2)}% p.m.`;
+  if (freq === "QUARTERLY")  return `${(roi * 3).toFixed(2)}% p.q.`;
+  if (freq === "HALFYEARLY" || freq === "HALFLY") return `${(roi * 6).toFixed(2)}% p.h.`;
+  if (freq === "ENDOFDEAL")  return `${(roi * 12).toFixed(1)}% (end of deal)`;
+  if (freq === "YEARLY")     return `${(roi * 12).toFixed(1)}% p.a.`;
+  return roi < 5 ? `${(roi * 12).toFixed(1)}% p.a.` : `${roi.toFixed(1)}% p.a.`;
+};
 
 const churnColor = (level) => {
   if (!level) return "#8c8c8c";
@@ -85,7 +100,7 @@ const LockCard = ({ title, requiredTier }) => {
         </strong> — ₹{requiredTier === 'PRO' ? '1,000' : '500'}/year
       </div>
       <div
-        onClick={() => nav('/ai/plans')}
+        onClick={() => nav('/oxai-upgrade')}
         style={{ display: 'inline-block', background: requiredTier === 'PRO' ? 'linear-gradient(135deg, #4a148c, #6a1b9a)' : 'linear-gradient(135deg, #0050b3, #1890ff)', color: '#fff', borderRadius: 20, padding: '6px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
         Upgrade to OXY {requiredTier === 'PRO' ? 'Pro' : 'Smart'}
       </div>
@@ -541,7 +556,12 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
             Custom
           </button>
         </div>
-        {loading && <span style={{ fontSize: 12, color: "#1890ff", marginLeft: 8 }}>Updating…</span>}
+        {loading && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: "#1890ff", background: "#e6f4ff", border: "1px solid #91caff", borderRadius: 20, padding: "2px 10px", marginLeft: 8 }}>
+            <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+            Fetching data…
+          </span>
+        )}
       </div>
 
       {fyFilter.mode === "custom" && (
@@ -567,12 +587,62 @@ const FyFilterBar = ({ fyFilter, setFyFilter, loading }) => {
 };
 
 // ── EARNINGS PERIOD SUMMARY ────────────────────────────────────────────────
+const getFyDateRange = (fyFilter) => {
+  if (fyFilter.mode === "fy" && fyFilter.fyYear) {
+    const y = fyFilter.fyYear;
+    return { startDate: `${y}-04-01`, endDate: `${y + 1}-03-31` };
+  }
+  if (fyFilter.mode === "custom" && fyFilter.from && fyFilter.to) {
+    return { startDate: fyFilter.from, endDate: fyFilter.to };
+  }
+  return null;
+};
+
 const scrollTo = (id) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) => {
+const FY_LOAD_MSGS = [
+  "📊 Fetching your earnings for this period…",
+  "🔍 Scanning deals one by one…",
+  "💰 Tallying interest across your portfolio…",
+  "📅 Building month-wise timeline…",
+  "🔄 Cross-checking principal returns…",
+  "✅ Almost there — crunching final totals…",
+];
+
+const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyFilter, lenderId, lenderName }) => {
+  const [dlLoading, setDlLoading] = useState({ excel: false, monthly: false, pdf: false });
+  const [loadMsgIdx, setLoadMsgIdx] = useState(0);
+  // Prefetch fy-report when filter changes — all downloads reuse this cache
+  const [fyCache, setFyCache] = useState(null);
+  const [fyCacheKey, setFyCacheKey] = useState(null);
+  const [fyPrefetching, setFyPrefetching] = useState(false);
+
+  useEffect(() => {
+    if (!loading) { setLoadMsgIdx(0); return; }
+    const t = setInterval(() => setLoadMsgIdx(i => (i + 1) % FY_LOAD_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [loading]);
+
+  const showDownloads = fyFilter && (fyFilter.mode === "fy" || fyFilter.mode === "custom" || fyFilter.mode === "all");
+  const dateRange = fyFilter ? getFyDateRange(fyFilter) : null;
+  const cacheKey = dateRange ? `${dateRange.startDate}_${dateRange.endDate}` : (fyFilter?.mode === "all" ? "alltime" : null);
+
+  // Prefetch as soon as FY filter settles and earnings have loaded
+  useEffect(() => {
+    if (!showDownloads || !lenderId || loading || fyPrefetching) return;
+    if (fyCacheKey === cacheKey && fyCache) return; // already cached
+    setFyPrefetching(true);
+    const start = dateRange?.startDate || "";
+    const end   = dateRange?.endDate   || "";
+    getLenderFyReport(lenderId, start, end)
+      .then(res => { setFyCache(res?.data); setFyCacheKey(cacheKey); })
+      .catch(() => {})
+      .finally(() => setFyPrefetching(false));
+  }, [cacheKey, loading]); // eslint-disable-line
+
   if (!earningsData) return null;
   const interest  = earningsData.fyInterestEarned   || 0;
   const principal = earningsData.fyPrincipalReturned || 0;
@@ -580,18 +650,324 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick }) =
   const label     = earningsData.fyLabel             || "Period";
   const narrative = earningsData.narrative           || "";
 
+  const dlBtnStyle = (color, disabled) => ({
+    padding: "5px 11px", borderRadius: 8, border: `1px solid ${color}`,
+    background: disabled ? "#f5f5f5" : "#fff", color: disabled ? "#aaa" : color,
+    cursor: disabled ? "default" : "pointer", fontSize: 12, fontWeight: 600,
+    display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap",
+  });
+
+  const toCsv = (rows) => {
+    const csv = rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    return new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  };
+
+  // Use cached data if available, otherwise fetch (fallback)
+  const getFyData = async () => {
+    if (fyCache && fyCacheKey === cacheKey) return fyCache;
+    const start = dateRange?.startDate || "";
+    const end   = dateRange?.endDate   || "";
+    const res = await getLenderFyReport(lenderId, start, end);
+    const d = res?.data;
+    setFyCache(d); setFyCacheKey(cacheKey);
+    return d;
+  };
+
+  const downloadDealWise = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, excel: true }));
+    try {
+      const data = await getFyData();
+      if (!data?.deals?.length) { alert("No data for this period."); return; }
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn (Lender Exit)" : s === "CLOSED" ? "Closed" : "Active";
+      const rows = [
+        ["Deal ID", "Deal Name", "Participated Amt (Rs)", "Status", "Closed/Exit Date", "First Int Date", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)"],
+        ...data.deals.map(d => [
+          d.dealId, d.dealName,
+          Math.round(d.participatedAmount),
+          statusLabel(d.dealStatus),
+          d.closedDate || "",
+          d.loanActiveDate || "",
+          Math.round(d.interestEarned), Math.round(d.principalReturned), Math.round(d.totalReceived)
+        ]),
+        [],
+        ["", "", "", "", "TOTAL", "", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal)]
+      ];
+      saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_DealWise.csv`);
+    } catch (e) { console.error("Deal-wise download error", e); alert("Download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, excel: false })); }
+  };
+
+  const downloadMonthWise = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, monthly: true }));
+    try {
+      const data = await getFyData();
+      if (!data?.monthly?.length) { alert("No data for this period."); return; }
+      const rows = [
+        ["Month", "Interest Earned (Rs)", "Principal Returned (Rs)", "Total Received (Rs)", "Int. Deals", "Principal Deals"],
+        ...data.monthly.map(m => [
+          m.monthLabel, Math.round(m.interestAmount), Math.round(m.principalReturned), Math.round(m.totalReceived), m.dealCount || 0, m.principalDealCount || 0
+        ]),
+        [],
+        ["TOTAL", Math.round(data.totalInterest), Math.round(data.totalPrincipal), Math.round(data.grandTotal), "", ""]
+      ];
+      saveAs(toCsv(rows), `OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_MonthWise.csv`);
+    } catch (e) { console.error("MonthWise download error", e); alert("Download failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, monthly: false })); }
+  };
+
+  const downloadPdf = async () => {
+    if (!dateRange || !lenderId) return;
+    setDlLoading(s => ({ ...s, pdf: true }));
+    try {
+      const data = await getFyData();
+      if (!data?.deals?.length) { alert("No data for this period."); return; }
+
+      const { jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      // Landscape A4 — fits all 9 columns comfortably
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      const pageW  = doc.internal.pageSize.getWidth();  // 842pt
+      const pageH  = doc.internal.pageSize.getHeight(); // 595pt
+      const ML     = 36;
+      const MR     = 36;
+      const usableW = pageW - ML - MR;                  // 770pt
+      const today  = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+      // Brand colours
+      const NAVY   = [26,  35,  126];
+      const INDIGO = [57,  73,  171];
+      const BLUE   = [21, 101,  192];
+      const TEAL   = [0,  105,   92];
+      const LGTEAL = [224, 242, 241];
+      const LBLUE  = [227, 242, 253];
+      const LGOLD  = [255, 248, 225];
+      const WHITE  = [255, 255, 255];
+
+      // ── HEADER BAND ───────────────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, 0, pageW, 52, "F");
+
+      // Try loading logo into header
+      try {
+        const logoUrl = "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/CHEQUELEAF_JPG.jpg";
+        const imgData = await fetch(logoUrl).then(r => r.blob()).then(b => new Promise(res => {
+          const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b);
+        }));
+        doc.addImage(imgData, "JPEG", ML, 8, 72, 36);
+      } catch (_) { /* logo unavailable — skip */ }
+
+      doc.setTextColor(...WHITE);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+      doc.text("SRS FINTECHLABS PVT. LTD", pageW / 2, 24, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+      doc.text("RBI Registered P2P Lending Platform  |  www.oxyloans.com  |  support@oxyloans.com", pageW / 2, 38, { align: "center" });
+
+      // ── TITLE BAND ─────────────────────────────────────────────────────────
+      doc.setFillColor(...INDIGO);
+      doc.rect(0, 52, pageW, 26, "F");
+      doc.setTextColor(...WHITE);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+      doc.text("LENDER FINANCIAL STATEMENT", pageW / 2, 64, { align: "center" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+      doc.text(`Period: ${data.fyLabel}`, pageW / 2, 73, { align: "center" });
+
+      // ── LENDER INFO BAND ──────────────────────────────────────────────────
+      doc.setFillColor(...LBLUE);
+      doc.rect(0, 78, pageW, 34, "F");
+      doc.setTextColor(30, 30, 100);
+      doc.setFontSize(8.5);
+      const col2 = pageW / 2 + 20;
+      const lw   = 72;
+      const infoRow = (lbl, val, x, y) => {
+        doc.setFont("helvetica", "bold");  doc.text(lbl, x, y);
+        doc.setFont("helvetica", "normal"); doc.text(String(val), x + lw, y);
+      };
+      infoRow("Lender Name :",  lenderName || "-",   ML,    92);
+      infoRow("Lender ID :",    `LR ${lenderId}`,    col2,  92);
+      infoRow("Generated On :", today,                ML,    105);
+      infoRow("State / UT :",   "Telangana (36)",    col2,  105);
+
+      // ── HELPERS ───────────────────────────────────────────────────────────
+      const fmt2 = v => Number(v || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const statusLabel = s => s === "WITHDRAWN" ? "Withdrawn" : s === "CLOSED" ? "Closed" : "Active";
+
+      const sectionBanner = (txt, color, y) => {
+        doc.setFillColor(...color);
+        doc.rect(ML, y, usableW, 15, "F");
+        doc.setTextColor(...WHITE);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+        doc.text(txt, ML + 6, y + 10);
+        doc.setTextColor(0, 0, 0);
+      };
+
+      // ── DEAL-WISE TABLE ────────────────────────────────────────────────────
+      sectionBanner("Deal-wise Breakdown", BLUE, 118);
+
+      autoTable(doc, {
+        startY: 134,
+        margin: { left: ML, right: MR },
+        head: [["Deal ID", "Deal Name", "Participated (Rs)", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Status", "Closed / Exit Date", "First Int Date"]],
+        body: data.deals.map(d => [
+          d.dealId, d.dealName,
+          fmt2(d.participatedAmount),
+          fmt2(d.interestEarned),
+          fmt2(d.principalReturned),
+          fmt2(d.totalReceived),
+          statusLabel(d.dealStatus),
+          d.closedDate   || "-",
+          d.loanActiveDate || "-",
+        ]),
+        foot: [[
+          { content: "", styles: { halign: "center" } },
+          { content: "TOTAL", styles: { halign: "left" } },
+          { content: "", styles: {} },
+          { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
+          { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
+          { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "", styles: {} }, { content: "", styles: {} }, { content: "", styles: {} },
+        ]],
+        showFoot: "lastPage",
+        styles: { fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 }, valign: "middle" },
+        headStyles: { fillColor: BLUE, textColor: WHITE, fontStyle: "bold", fontSize: 7.5, halign: "center" },
+        footStyles: { fillColor: [200, 225, 255], textColor: [0, 0, 80], fontStyle: "bold", fontSize: 7.5, cellPadding: { top: 3.5, bottom: 3.5, left: 3, right: 3 } },
+        alternateRowStyles: { fillColor: [240, 246, 255] },
+        columnStyles: {
+          0: { cellWidth: 46,  halign: "center" },
+          1: { cellWidth: 200 },
+          2: { cellWidth: 82,  halign: "right" },
+          3: { cellWidth: 76,  halign: "right" },
+          4: { cellWidth: 76,  halign: "right" },
+          5: { cellWidth: 76,  halign: "right" },
+          6: { cellWidth: 58,  halign: "center" },
+          7: { cellWidth: 78,  halign: "center" },
+          8: { cellWidth: 76,  halign: "center" },
+        },
+        didParseCell: (h) => {
+          if (h.section === "body" && h.column.index === 6) {
+            const v = h.cell.raw;
+            if (v === "Closed")    { h.cell.styles.textColor = [27, 94, 32];   h.cell.styles.fillColor = [232, 245, 233]; }
+            if (v === "Active")    { h.cell.styles.textColor = [230, 81,  0];  h.cell.styles.fillColor = [255, 243, 224]; }
+            if (v === "Withdrawn") { h.cell.styles.textColor = [136, 14, 79];  h.cell.styles.fillColor = [252, 228, 236]; }
+          }
+        },
+      });
+
+      // ── MONTHLY TABLE ──────────────────────────────────────────────────────
+      const afterDeals = doc.lastAutoTable.finalY + 14;
+      sectionBanner("Month-wise Summary", TEAL, afterDeals);
+
+      autoTable(doc, {
+        startY: afterDeals + 16,
+        margin: { left: ML, right: MR },
+        tableWidth: 545,
+        head: [["Month", "Interest (Rs)", "Principal (Rs)", "Total (Rs)", "Int. Deals", "Princ. Deals"]],
+        body: data.monthly.map(m => [
+          m.monthLabel, fmt2(m.interestAmount), fmt2(m.principalReturned), fmt2(m.totalReceived), m.dealCount || 0, m.principalDealCount || 0,
+        ]),
+        foot: [[
+          { content: "TOTAL",                   styles: { halign: "left" } },
+          { content: fmt2(data.totalInterest),  styles: { halign: "right" } },
+          { content: fmt2(data.totalPrincipal), styles: { halign: "right" } },
+          { content: fmt2(data.grandTotal),     styles: { halign: "right" } },
+          { content: "",                        styles: { halign: "center" } },
+          { content: "",                        styles: { halign: "center" } },
+        ]],
+        showFoot: "lastPage",
+        styles: { fontSize: 8, cellPadding: 3.5, valign: "middle" },
+        headStyles: { fillColor: TEAL, textColor: WHITE, fontStyle: "bold", halign: "center" },
+        footStyles: { fillColor: LGTEAL, textColor: [0, 60, 50], fontStyle: "bold", cellPadding: 3.5 },
+        alternateRowStyles: { fillColor: [240, 250, 249] },
+        columnStyles: {
+          0: { cellWidth: 90 },
+          1: { cellWidth: 105, halign: "right" },
+          2: { cellWidth: 105, halign: "right" },
+          3: { cellWidth: 105, halign: "right" },
+          4: { cellWidth: 70,  halign: "center" },
+          5: { cellWidth: 70,  halign: "center" },
+        },
+      });
+
+      // ── DECLARATION + SIGNATURE ────────────────────────────────────────────
+      const afterMonthly = doc.lastAutoTable.finalY + 14;
+      doc.setFillColor(...LGOLD);
+      doc.rect(ML, afterMonthly, usableW, 46, "F");
+      doc.setDrawColor(200, 160, 0); doc.setLineWidth(0.5);
+      doc.rect(ML, afterMonthly, usableW, 46);
+
+      doc.setFontSize(7.5); doc.setFont("helvetica", "bold"); doc.setTextColor(100, 70, 0);
+      doc.text("Declaration:", ML + 6, afterMonthly + 11);
+      doc.setFont("helvetica", "normal"); doc.setTextColor(60, 40, 0);
+      doc.text("This statement is system generated and valid without signature. Interest and principal figures reflect amounts", ML + 6, afterMonthly + 22);
+      doc.text("received in the selected period as per OxyLoans platform records.  For queries: support@oxyloans.com", ML + 6, afterMonthly + 32);
+
+      doc.setFont("helvetica", "bold"); doc.setTextColor(...NAVY);
+      doc.text("Authorized Signatory", pageW - MR - 6, afterMonthly + 22, { align: "right" });
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7); doc.setTextColor(80, 80, 80);
+      doc.text("SRS Fintechlabs Pvt. Ltd. (OxyLoans)", pageW - MR - 6, afterMonthly + 33, { align: "right" });
+
+      // ── FOOTER BAR ─────────────────────────────────────────────────────────
+      doc.setFillColor(...NAVY);
+      doc.rect(0, pageH - 18, pageW, 18, "F");
+      doc.setTextColor(...WHITE); doc.setFontSize(7); doc.setFont("helvetica", "normal");
+      doc.text("OxyLoans — Confidential Financial Statement", ML, pageH - 6);
+      doc.text("Page 1", pageW / 2, pageH - 6, { align: "center" });
+      doc.text(today, pageW - MR, pageH - 6, { align: "right" });
+
+      doc.save(`OxyLoans_${data.fyLabel.replace(/[^a-zA-Z0-9]/g, "_")}_Statement.pdf`);
+    } catch (e) { console.error("PDF download error", e); alert("PDF generation failed. Please try again."); }
+    finally { setDlLoading(s => ({ ...s, pdf: false })); }
+  };
+
   return (
-    <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative" }}>
+    <div style={{ background: "linear-gradient(135deg, #f0f5ff, #f9f0ff)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, border: "1px solid #d6e4ff", position: "relative", overflow: "hidden" }}>
+
+      {/* Thin animated progress bar — stays at very top, never overlaps content */}
       {loading && (
-        <div style={{ position: "absolute", top: 12, right: 16, display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#1890ff" }}>
-          <div className="spinner-border spinner-border-sm" role="status" style={{ width: 14, height: 14, borderWidth: 2 }} />
-          Refreshing
+        <div className="progress" style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, borderRadius: 0, background: "transparent", margin: 0 }}>
+          <div className="progress-bar progress-bar-striped progress-bar-animated bg-primary" style={{ width: "100%" }} />
         </div>
       )}
-      <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e", marginBottom: 6 }}>
-        {label} Earnings Summary
+
+      {/* Header: title left, download buttons right — clean separation */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: "#1a237e" }}>
+          {label} Earnings Summary
+        </div>
+        {showDownloads && (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            {fyPrefetching && (
+              <span style={{ fontSize: 11, color: "#8c8c8c", display: "flex", alignItems: "center", gap: 4 }}>
+                <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5, color: "#8c8c8c" }} />
+                Preparing downloads…
+              </span>
+            )}
+            <button onClick={downloadDealWise} disabled={dlLoading.excel || loading || fyPrefetching} style={dlBtnStyle("#52c41a", dlLoading.excel || loading || fyPrefetching)}>
+              {dlLoading.excel ? "Preparing…" : "⬇ Deal-wise"}
+            </button>
+            <button onClick={downloadMonthWise} disabled={dlLoading.monthly || loading || fyPrefetching} style={dlBtnStyle("#faad14", dlLoading.monthly || loading || fyPrefetching)}>
+              {dlLoading.monthly ? "Preparing…" : "⬇ MonthWise"}
+            </button>
+            <button onClick={downloadPdf} disabled={dlLoading.pdf || loading || fyPrefetching} style={dlBtnStyle("#f5222d", dlLoading.pdf || loading || fyPrefetching)}>
+              {dlLoading.pdf ? "Generating…" : "⬇ PDF"}
+            </button>
+          </div>
+        )}
       </div>
-      <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
+
+      {/* Engaging loading message — own row, zero overlap */}
+      {loading ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "9px 14px", background: "rgba(24,144,255,0.07)", borderRadius: 8, border: "1px dashed rgba(24,144,255,0.3)" }}>
+          <div className="spinner-border spinner-border-sm" role="status" style={{ width: 15, height: 15, borderWidth: 2, color: "#1890ff", flexShrink: 0 }} />
+          <span style={{ fontSize: 12.5, color: "#1890ff", fontWeight: 500, fontStyle: "italic" }}>
+            {FY_LOAD_MSGS[loadMsgIdx]}
+          </span>
+        </div>
+      ) : (
+        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 12 }}>Click a tile to jump to active deals ↓</div>
+      )}
       <div className="row g-3 mb-3">
         {[
           { label: "Interest Earned",    value: `₹${fmt(interest)}`,  color: "#52c41a", bg: "#f6ffed" },
@@ -1050,8 +1426,12 @@ const TIER_INFO = {
   },
 };
 
-const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
+const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
   const [expanded, setExpanded] = useState(false);
+  const nav = useNavigate();
+  const tierInfo = TIER_INFO[actualTier] || TIER_INFO['FREE'];
+  const needsUpgrade = actualTier === 'FREE' || actualTier === 'SMART';
+  const isPaidPro = actualTier === 'PRO' && !onTrial;
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, overflow: "hidden" }}>
       {/* Top bar */}
@@ -1062,8 +1442,16 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>🎯</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>Experience All Plans</div>
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>Click a plan below to preview its features — your account is currently on <strong style={{ color: "#722ed1" }}>OXY Pro (trial)</strong></div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>OXY AI Plans</div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+              {isPaidPro
+                ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro</strong> — paid &amp; active</>
+                : onTrial
+                ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro (free trial)</strong> — <span style={{ color: "#cf1322", fontWeight: 600 }}>ends Aug 1st</span></>
+                : <>Your plan: <strong style={{ color: tierInfo.color }}>{tierInfo.icon} OXY {tierInfo.label}</strong>
+                    <span style={{ marginLeft: 8, color: "#722ed1" }}>— upgrade to unlock AI features</span></>
+              }
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1130,26 +1518,51 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
                         </div>
                       ))}
                     </div>
+                    {/* Show subscribe button for: paid upgrade tiers OR PRO card when on trial */}
+                    {t !== 'FREE' && (t !== actualTier || onTrial) && (
+                      <button
+                        onClick={e => { e.stopPropagation(); nav('/oxai-upgrade'); }}
+                        style={{
+                          width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                          background: info.color, color: "#fff",
+                          marginBottom: 6, transition: "all 0.15s",
+                        }}
+                      >
+                        {t === actualTier && onTrial
+                          ? `Subscribe to OXY ${info.label} — ${info.price}`
+                          : `Upgrade to OXY ${info.label} — ${info.price}`}
+                      </button>
+                    )}
                     <button
                       onClick={e => { e.stopPropagation(); onSelect(t); }}
                       style={{
-                        width: "100%", padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600,
+                        width: "100%", padding: "8px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600,
                         background: isActive ? info.color : info.bg,
                         color: isActive ? "#fff" : info.color,
                         border: `1px solid ${info.border}`,
                         transition: "all 0.15s",
                       }}
                     >
-                      {isActive ? "Currently Previewing" : `Preview ${info.label}`}
+                      {t === actualTier && !onTrial ? "✓ Your Plan" : isActive ? "Previewing" : `Preview ${info.label}`}
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
-          <div style={{ marginTop: 14, padding: "10px 14px", background: "#fffbe6", borderRadius: 8, border: "1px solid #ffe58f", fontSize: 12, color: "#614700" }}>
-            💡 <strong>Limited time trial:</strong> All lenders can experience OXY Pro features for free. Subscribe before the trial ends to keep your AI insights.
-          </div>
+          {needsUpgrade && (
+            <div style={{ marginTop: 14, padding: "12px 16px", background: "linear-gradient(135deg, #f9f0ff, #e6f7ff)", borderRadius: 8, border: "1px solid #d3adf7", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ fontSize: 13, color: "#262626" }}>
+                🚀 <strong>Unlock the full AI dashboard</strong> — AI narratives, earnings intelligence, maturity planner & more
+              </div>
+              <button
+                onClick={() => window.location.href = '/oxai-upgrade'}
+                style={{ background: "linear-gradient(135deg, #4a148c, #6a1b9a)", color: "#fff", border: "none", borderRadius: 20, padding: "8px 22px", fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}
+              >
+                Upgrade Now →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1159,9 +1572,11 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier }) => {
 // ── MAIN DASHBOARD ─────────────────────────────────────────────────────────
 const LenderPortfolioDashboard = () => {
   const { lenderId: paramLenderId } = useParams();
-  const ID_ALIASES = { "77221": "27127" };
+  const ID_ALIASES = { "72271": "27127" };
   const rawId = paramLenderId || getUserId();
   const resolvedLenderId = ID_ALIASES[rawId] || rawId;
+  // Store portfolio owner's ID so bell can read notifications for correct lender
+  if (resolvedLenderId) sessionStorage.setItem("activeLenderId", resolvedLenderId);
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
 
@@ -1196,8 +1611,12 @@ const LenderPortfolioDashboard = () => {
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
 
-  // Default PRO view; lender can switch via tier pills; ?tier= URL override for testing
-  const effectiveTier = (tierOverride || previewTier || 'PRO').toUpperCase();
+  // Tier from backend — preview cannot exceed actual paid tier
+  const TIER_RANK = { FREE: 0, SMART: 1, PRO: 2 };
+  const actualTier = (data?.membershipTier || 'FREE').toUpperCase();
+  const resolvedPreview = previewTier && (TIER_RANK[previewTier.toUpperCase()] <= TIER_RANK[actualTier])
+    ? previewTier.toUpperCase() : null;
+  const effectiveTier = (tierOverride || resolvedPreview || actualTier);
   const isPro   = effectiveTier === 'PRO';
   const isSmart = effectiveTier === 'PRO' || effectiveTier === 'SMART';
 
@@ -1209,9 +1628,9 @@ const LenderPortfolioDashboard = () => {
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/portfolio`, { headers: { accessToken: getToken() } })
       .then((res) => {
         const d = res.data;
-        if (process.env.REACT_APP_REFERENCE_DATE && (String(resolvedLenderId) === "77221" || String(resolvedLenderId) === "27127")) {
+        if (process.env.REACT_APP_REFERENCE_DATE && String(resolvedLenderId) === "27127") {
           d.lenderName = "Pradeep Chakravarthy";
-          d.email      = "pradeepch123@gmail.com";
+          d.email      = "pradeepchk@gmail.com";
         }
         setData(d);
       })
@@ -1240,17 +1659,24 @@ const LenderPortfolioDashboard = () => {
     }
     // Only show spinner after 600ms — fast Redis hits never show a loading indicator
     const spinnerTimer = setTimeout(() => setEarningsLoading(true), 600);
-    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`, { headers: { accessToken: getToken() } })
+    const url = `${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings${qs ? "?" + qs : ""}`;
+    axios.get(url, { headers: { accessToken: getToken() } })
       .then((res) => { earningsCache.current[cacheKey] = res.data; setEarningsData(res.data); })
       .catch(() => {})
       .finally(() => { clearTimeout(spinnerTimer); setEarningsLoading(false); });
   }, [resolvedLenderId, fyFilter]);
 
   // M-o-M: always fetch all-time earnings (no date filter) independently of fyFilter
+  // Uses the same earningsCache so a cached all-time result avoids a DB hit
   useEffect(() => {
     if (!resolvedLenderId) return;
+    const allTimeCacheKey = `${resolvedLenderId}:`;
+    if (earningsCache.current[allTimeCacheKey]) {
+      setMomData(earningsCache.current[allTimeCacheKey]);
+      return;
+    }
     axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/earnings`, { headers: { accessToken: getToken() } })
-      .then((res) => setMomData(res.data))
+      .then((res) => { earningsCache.current[allTimeCacheKey] = res.data; setMomData(res.data); })
       .catch(() => {});
   }, [resolvedLenderId]);
 
@@ -1320,10 +1746,84 @@ const LenderPortfolioDashboard = () => {
 
           {!loading && data && (
             <>
-              {/* ── 0. TIER PREVIEW BANNER ── */}
+              {/* ── 0a. TRIAL / UPGRADE BANNER ── */}
+              {data?.onTrial ? (
+                /* Free PRO trial — ends Aug 1 */
+                <div style={{
+                  background: "linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)",
+                  borderRadius: 14, padding: "18px 24px", marginBottom: 20,
+                  display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14
+                }}>
+                  <div>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
+                      🎁 Free PRO trial ends <strong>August 1st</strong> — Subscribe now to keep your access
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>
+                      OXY Smart ₹500/year &nbsp;|&nbsp; OXY Pro ₹1,000/year &nbsp;·&nbsp; Early subscribers get validity until <strong>August 1, 2027</strong>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.location.href = '/oxai-upgrade'}
+                    style={{ background: "#fff", color: "#4a148c", border: "none", borderRadius: 24, padding: "10px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}
+                  >
+                    Subscribe Now →
+                  </button>
+                </div>
+              ) : ['FREE', 'SMART'].includes((data?.membershipTier || 'FREE').toUpperCase()) && (
+                /* Post-trial: upgrade prompt */
+                <div style={{
+                  background: "linear-gradient(135deg, #4a148c 0%, #0050b3 100%)",
+                  borderRadius: 14, padding: "18px 24px", marginBottom: 20,
+                  display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14
+                }}>
+                  <div>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
+                      {(data?.membershipTier || 'FREE').toUpperCase() === 'FREE'
+                        ? '✦ Upgrade to OXY Smart or Pro to unlock AI insights'
+                        : '✦ Upgrade to OXY Pro for the full AI dashboard experience'}
+                    </div>
+                    <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
+                      {(data?.membershipTier || 'FREE').toUpperCase() === 'FREE'
+                        ? 'AI narratives, earnings intelligence, maturity planner & more — from ₹500/year'
+                        : 'FY filter, investment charts, smart maturity planner — ₹1,000/year'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.location.href = '/oxai-upgrade'}
+                    style={{ background: "#fff", color: "#4a148c", border: "none", borderRadius: 24, padding: "10px 28px", fontSize: 14, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
+                  >
+                    Upgrade Now →
+                  </button>
+                </div>
+              )}
+
+              {/* ── 0a-ii. PAID SUBSCRIPTION VALIDITY ── */}
+              {!data?.onTrial && data?.subscriptionValidUntil && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10, marginBottom: 16,
+                  background: (data?.membershipTier || '').toUpperCase() === 'PRO' ? "#f0e6ff" : "#e6f4ff",
+                  borderRadius: 10, padding: "10px 18px",
+                }}>
+                  <span style={{ fontSize: 18 }}>{(data?.membershipTier || '').toUpperCase() === 'PRO' ? '✦' : '★'}</span>
+                  <div>
+                    <span style={{
+                      fontWeight: 700, fontSize: 14,
+                      color: (data?.membershipTier || '').toUpperCase() === 'PRO' ? "#722ed1" : "#1890ff"
+                    }}>
+                      OXY {data.membershipTier} Subscription
+                    </span>
+                    <span style={{ fontSize: 13, color: "#595959", marginLeft: 10 }}>
+                      Valid until {new Date(data.subscriptionValidUntil).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* ── 0b. TIER PREVIEW BANNER ── */}
               <TierPreviewBanner
                 activeTier={effectiveTier}
-                actualTier={(data?.membershipTier || 'PRO').toUpperCase()}
+                actualTier={(data?.membershipTier || 'FREE').toUpperCase()}
+                onTrial={!!data?.onTrial}
                 onSelect={(t) => setPreviewTier(t)}
               />
 
@@ -1609,7 +2109,12 @@ const LenderPortfolioDashboard = () => {
                 <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                   <div className="card-header" style={{ background: "#fafafa", borderBottom: "1px solid #f0f0f0", borderRadius: "14px 14px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <h6 style={{ margin: 0, fontWeight: 700, color: "#262626" }}>{earningsData.fyLabel || "Current FY"} Earnings Summary</h6>
-                    {earningsLoading && <span style={{ fontSize: 12, color: "#1890ff" }}>Updating…</span>}
+                    {earningsLoading && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: "#1890ff", background: "#e6f4ff", border: "1px solid #91caff", borderRadius: 20, padding: "2px 10px" }}>
+                        <span className="spinner-border spinner-border-sm" style={{ width: 10, height: 10, borderWidth: 1.5 }} />
+                        Fetching data…
+                      </span>
+                    )}
                   </div>
                   <div className="card-body">
                     <div className="row g-3 mb-3">
@@ -1872,7 +2377,7 @@ const LenderPortfolioDashboard = () => {
                                           </td>
                                         )}
                                         {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#595959" }}>{fmtDate(d.startDate)}</td>}
-                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{d.rateOfInterest < 5 ? `${(d.rateOfInterest * 12).toFixed(1)}%` : `${d.rateOfInterest}%`} p.a.</td>}
+                                        {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#1d39c4", fontWeight: 600 }}>{fmtRoi(d.rateOfInterest, d.payoutFrequency, d.annualRate)}</td>}
                                       </tr>
                                     ))}
                                   </tbody>
@@ -1905,7 +2410,7 @@ const LenderPortfolioDashboard = () => {
                       defaultOpen={true}
                       summary={earningsData ? `₹${fmt(earningsData.fyInterestEarned || 0)} interest · ₹${fmt(earningsData.fyTotalReceived || 0)} total` : "Loading…"}
                     >
-                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} />
+                      <EarningsPeriodSummary earningsData={earningsData} loading={earningsLoading} onEarningsTileClick={() => { setDealHistoryFilter("ACTIVE"); setDealSectionOpen(true); }} fyFilter={fyFilter} lenderId={resolvedLenderId} lenderName={data?.lenderName} />
                     </SectionCard>
                   )}
 
@@ -1917,7 +2422,7 @@ const LenderPortfolioDashboard = () => {
               {!isPro && (
                 <LockCard title="Investment Analytics — ROI Charts, Deal Distribution &amp; Earnings Trends" requiredTier="PRO" />
               )}
-              {isPro && <div id="monthly-earnings-detail"><DealAnalyticsCharts data={data} earningsData={earningsData} collapsible defaultOpen={false} /></div>}
+              {isPro && <div id="monthly-earnings-detail"><DealAnalyticsCharts data={data} earningsData={momData || earningsData} collapsible defaultOpen={false} /></div>}
 
               {/* ── 5. ACTIVE DEALS ── */}
               {(data.activeDealsWithProgress || []).length > 0 && (() => {
@@ -1955,18 +2460,23 @@ const LenderPortfolioDashboard = () => {
                                 })()}
                               </span>
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
-                                {deal.daysTotal > 0
-                                  ? `${deal.daysPassed || 0} / ${deal.daysTotal} days`
-                                  : (deal.startDate || deal.endDate)
-                                    ? `${fmtDate(deal.startDate)} – ${fmtDate(deal.endDate)}`
-                                    : "Dates N/A"}
+                                {deal.daysTotal > 0 && deal.daysPassed === 0 && deal.startDate && new Date(deal.startDate) > new Date()
+                                  ? `Starts in ${Math.ceil((new Date(deal.startDate) - new Date()) / 86400000)}d (${fmtDate(deal.startDate)})`
+                                  : deal.daysTotal > 0
+                                    ? `${deal.daysPassed || 0} / ${deal.daysTotal} days`
+                                    : (deal.startDate || deal.endDate)
+                                      ? `${fmtDate(deal.startDate)} – ${fmtDate(deal.endDate)}`
+                                      : "Dates N/A"}
                               </span>
                             </div>
                             <ProgressBar pct={deal.progressPct} color={deal.progressPct >= 75 ? "#52c41a" : deal.progressPct >= 40 ? "#1890ff" : "#faad14"} />
                             <div className="d-flex justify-content-between mt-2">
                               <span style={{ fontSize: 12, color: "#52c41a" }}>Earned: ₹{fmt(deal.interestEarned)}</span>
                               <span style={{ fontSize: 12, color: deal.daysToMaturity > 0 && deal.daysToMaturity <= 30 ? "#ff4d4f" : "#8c8c8c" }}>
-                                {deal.daysToMaturity > 0 ? `${deal.daysToMaturity}d to maturity` : deal.endDate ? `Matures ${fmtDate(deal.endDate)}` : "Active"}
+                                {deal.startDate && new Date(deal.startDate) > new Date()
+                                  ? `Matures ${fmtDate(deal.endDate)}`
+                                  : deal.daysToMaturity > 0 ? `${deal.daysToMaturity}d to maturity`
+                                  : deal.endDate ? `Matures ${fmtDate(deal.endDate)}` : "Active"}
                               </span>
                             </div>
                             {/* Next payout: PRO only */}
@@ -2005,12 +2515,12 @@ const LenderPortfolioDashboard = () => {
                 const firstName = (data.lenderName || "").split(" ")[0];
                 const reinvestedCount = rd.reinvestedCount ?? rd.totalReturns ?? 0;
                 const totalReturns = rd.totalReturns ?? reinvestedCount;
-                const ratio = Math.round(rd.reinvestRatioPct || 0);
+                const ratio = parseFloat((rd.reinvestRatioPct || 0).toFixed(1));
                 const delay = rd.avgReinvestmentDelayDays || 0;
                 const tenure = rd.preferredTenure || "short-term";
                 const prob = rd.reinvestmentProbabilityPct || 0;
                 const avgSize = fmt(rd.avgInvestmentAmount || data.avgInvestmentAmount);
-                const summaryText = `${firstName} reinvests ${ratio}% of the time — ${reinvestedCount} out of ${totalReturns} returns were put back to work, typically within ${delay} day${delay === 1 ? "" : "s"}. ${rd.sameDayReinvestFlag ? "Same-day reinvestment detected. " : ""}Preferred deal tenure is ${tenure} with an average deal size of ₹${avgSize}.${isPro ? ` Probability of reinvesting next return: ${prob}%.` : ""}`;
+                const summaryText = `${firstName} reinvests ${ratio}% of the time — ${reinvestedCount} out of ${totalReturns} returns were put back to work, typically within ${delay} day${delay === 1 ? "" : "s"}. Preferred deal tenure is ${tenure} with an average deal size of ₹${avgSize}.${isPro ? ` Probability of reinvesting next return: ${prob}%.` : ""}`;
                 return (
                   <SectionCard title="Reinvestment Profile" badge={<StarRating rating={data.reinvestmentStarRating || rd.starRating} />} collapsible defaultOpen={false} summary={rd.classification || `${ratio}% reinvested`}>
                     <div style={{ background: "linear-gradient(135deg, #f9f0ff, #efdbff)", borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontSize: 14, color: "#391085", lineHeight: 1.7 }}>
@@ -2025,8 +2535,8 @@ const LenderPortfolioDashboard = () => {
                           { stars: "⭐", label: "1 star", desc: "New lender or no reinvestment yet" },
                           { stars: "⭐⭐", label: "2 stars", desc: "At least 1 reinvestment after a maturity" },
                           { stars: "⭐⭐⭐", label: "3 stars", desc: "40% of returned principal reinvested" },
-                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80% of returned principal reinvested" },
-                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "100% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐", label: "4 stars", desc: "80%–95% of returned principal reinvested" },
+                          { stars: "⭐⭐⭐⭐⭐", label: "5 stars", desc: "95%+ of returned principal reinvested" },
                         ].map((item) => {
                           const myCount = parseInt((data.reinvestmentStarRating || "1").split(" ")[0]) || 1;
                           const itemCount = item.stars.split("⭐").length - 1;
@@ -2165,10 +2675,18 @@ const LenderPortfolioDashboard = () => {
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
                     <div className="table-responsive">
-                      <table className="table table-sm mb-0">
+                      <table className="table table-sm mb-0" style={{ tableLayout: "fixed", minWidth: 620 }}>
+                        <colgroup>
+                          <col style={{ width: 70 }} />
+                          <col style={{ width: 110 }} />
+                          <col style={{ width: 100 }} />
+                          <col style={{ width: 90 }} />
+                          <col style={{ width: 190 }} />
+                          <col style={{ width: 120 }} />
+                        </colgroup>
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested at Same ROI</th><th>Reminder</th>
+                            <th>Deal</th><th>Maturity Date</th><th>Principal</th><th>Days Left</th><th>If Reinvested</th><th>Reminder</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2195,7 +2713,7 @@ const LenderPortfolioDashboard = () => {
                                 dealId: m.dealId,
                                 maturityDate: fmtDate(m.maturityDate),
                                 principal: fmt(m.principalAmount),
-                              }, { headers: { accessToken: getToken() } })
+                              }, { headers: { accessToken: getToken(), userId: resolvedLenderId || getUserId() } })
                                 .then(() => setRemindedDeals(prev => {
                                   const next = new Set(prev);
                                   next.delete(`sending-${m.dealId}`);
@@ -2211,26 +2729,25 @@ const LenderPortfolioDashboard = () => {
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td><strong>#{m.dealId}</strong></td>
-                                <td>{fmtDate(m.maturityDate)}</td>
-                                <td>₹{fmt(m.principalAmount)}</td>
-                                <td><span style={{ color: m.daysToMaturity <= 30 ? "#ff4d4f" : m.daysToMaturity <= 60 ? "#faad14" : "#52c41a", fontWeight: 600 }}>{m.daysToMaturity} days</span></td>
+                                <td style={{ overflow: "hidden" }}><strong>#{m.dealId}</strong></td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
+                                <td style={{ overflow: "hidden", fontSize: 12 }}>₹{fmt(m.principalAmount)}</td>
+                                <td style={{ overflow: "hidden" }}><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600, fontSize: 12 }}>{m.daysToMaturity}d</span></td>
                                 <td>
-                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c", marginBottom: 3 }}>This deal's ROI: {(annualRoi / 12).toFixed(2)}% p.m. · {annualRoi.toFixed(1)}% p.a.</div>}
-                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600, marginBottom: 2 }}>₹{fmt(m.projectedEarningIfReinvested)} / month</div>
-                                  <div style={{ fontSize: 11, color: "#8c8c8c" }}>₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))} / year</div>
+                                  <div style={{ fontSize: 13, color: "#722ed1", fontWeight: 600 }}>₹{fmt(m.projectedEarningIfReinvested)}<span style={{ fontWeight: 400, fontSize: 11 }}>/mo</span></div>
+                                  {annualRoi > 0 && <div style={{ fontSize: 10, color: "#8c8c8c" }}>{(annualRoi / 12).toFixed(2)}% p.m. · ₹{fmt(Math.round(m.projectedEarningIfReinvested * 12))}/yr</div>}
                                 </td>
                                 <td>
                                   {alreadyReminded ? (
                                     <span style={{ fontSize: 12, color: "#52c41a", fontWeight: 600 }}>🔔 Reminder sent</span>
                                   ) : isSending ? (
                                     <span style={{ fontSize: 12, color: "#d46b08" }}>Sending...</span>
-                                  ) : nudgeIsPast ? (
+                                  ) : m.daysToMaturity <= 30 ? (
                                     <button onClick={sendReminder} style={{ fontSize: 11, background: "#fff7e6", color: "#d46b08", border: "1px solid #ffa940", borderRadius: 4, padding: "3px 10px", cursor: "pointer", fontWeight: 600 }}>
                                       🔔 Remind Me
                                     </button>
                                   ) : (
-                                    <span style={{ fontSize: 12, color: "#8c8c8c" }}>{fmtDate(m.nudgeSendDate)}</span>
+                                    <span style={{ fontSize: 11, color: "#8c8c8c" }}>Auto-reminder:<br/>{fmtDate(m.nudgeSendDate)}</span>
                                   )}
                                 </td>
                               </tr>
@@ -2265,8 +2782,18 @@ const LenderPortfolioDashboard = () => {
                       const roi      = data.earningsForecast?.weightedAvgRoi || 0;
                       const active   = data.earningsForecast?.totalActiveAmount || 0;
                       const fyEnd    = data.earningsForecast?.financialYearEnd;
-                      const needed   = data.amountNeededForOneLakhTarget || data.earningsForecast?.amountNeededToReachOneLakh || 0;
-                      const monthsLeft = fyEnd ? Math.max(0, Math.round((new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30))) : 0;
+                      const monthsLeft = fyEnd ? Math.max(0, (new Date(fyEnd) - new Date()) / (1000 * 60 * 60 * 24 * 30.44)) : 0;
+                      const nextLakhTarget = Math.ceil((forecast + 1) / 100000) * 100000;
+                      const secondLakhTarget = nextLakhTarget + 100000;
+                      const gap1 = nextLakhTarget - forecast;
+                      const gap2 = secondLakhTarget - forecast;
+                      const additionalNeeded1 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap1 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const additionalNeeded2 = roi > 0 && monthsLeft > 0
+                        ? Math.round(gap2 / (roi / 100 * monthsLeft / 12))
+                        : 0;
+                      const monthsLeftDisplay = Math.round(monthsLeft);
                       return (
                         <div style={{ background: "linear-gradient(135deg, #e6f7ff, #bae7ff)", borderRadius: 12, padding: 20, height: "100%" }}>
                           <div style={{ fontSize: 13, color: "#0050b3", fontWeight: 700, marginBottom: 12 }}>
@@ -2275,16 +2802,24 @@ const LenderPortfolioDashboard = () => {
                           <div style={{ fontSize: 36, fontWeight: 800, color: "#1890ff", lineHeight: 1 }}>
                             ₹{fmt(forecast)}
                           </div>
-                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 6, marginBottom: 14 }}>
-                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeft} months remaining)
+                          <div style={{ fontSize: 11, color: "#0050b3", marginTop: 4, fontStyle: "italic" }}>
+                            interest earnings (not principal)
+                          </div>
+                          <div style={{ fontSize: 12, color: "#0050b3", marginTop: 4, marginBottom: 14 }}>
+                            Expected by {fyEnd ? fmtDate(fyEnd) : "31 Mar"} ({monthsLeftDisplay} months remaining)
                           </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             <div style={{ background: "rgba(24,144,255,0.1)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
                               <strong>₹{fmt(active)}</strong> actively deployed at avg <strong>{roi}% p.a.</strong> weighted ROI
                             </div>
-                            {needed > 0 && (
+                            {additionalNeeded1 > 0 && (
                               <div style={{ background: "rgba(24,144,255,0.08)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#0050b3" }}>
-                                To earn <strong>₹1 Lakh</strong> this FY: invest <strong>₹{fmt(needed)}</strong> more at your current avg ROI for the remaining {monthsLeft} months
+                                Invest <strong>₹{fmt(additionalNeeded1)}</strong> more to reach <strong>₹{fmt(nextLakhTarget)}</strong> this FY
+                              </div>
+                            )}
+                            {additionalNeeded2 > 0 && (
+                              <div style={{ background: "rgba(82,196,26,0.10)", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#135200" }}>
+                                Invest <strong>₹{fmt(additionalNeeded2)}</strong> more to reach <strong>₹{fmt(secondLakhTarget)}</strong> this FY
                               </div>
                             )}
                           </div>
@@ -2575,7 +3110,7 @@ const LenderPortfolioDashboard = () => {
                       <table className="table table-hover mb-0">
                         <thead className="thead-light">
                           <tr>
-                            <th>Deal ID</th><th>Amount</th><th>ROI (p.a.)</th><th>Status</th><th>Start Date</th><th>Maturity Date</th><th>Interest Earned</th>
+                            <th>Deal ID</th><th>Amount</th><th>ROI</th><th>Status</th><th>Start Date</th><th>Maturity Date</th><th>Interest Earned</th>
                             {isPro && <th>Est. Next Payout</th>}
                           </tr>
                         </thead>
@@ -2585,14 +3120,12 @@ const LenderPortfolioDashboard = () => {
                           )}
                           {visibleDeals.map((deal, idx) => {
                             const isActive = (deal.status || "").toUpperCase() === "ACTIVE";
-                            const annualRoi = deal.rateOfInterest < 5
-                              ? (deal.rateOfInterest * 12).toFixed(1)
-                              : deal.rateOfInterest;
+                            const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency, deal.annualRate);
                             return (
                               <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
                                 <td><strong>#{deal.dealId}</strong></td>
                                 <td>₹{fmt(deal.amount)}</td>
-                                <td>{annualRoi}%</td>
+                                <td>{annualRoi}</td>
                                 <td>
                                   <span style={{ color: isActive ? "#52c41a" : "#8c8c8c", fontWeight: 600, background: isActive ? "#f6ffed" : "#f5f5f5", borderRadius: 4, padding: "2px 8px", fontSize: 12 }}>
                                     {deal.status || "—"}

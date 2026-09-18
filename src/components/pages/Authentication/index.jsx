@@ -3,9 +3,10 @@ import { registerImage } from "../../imagepath";
 import ReactPasswordToggleIcon from "react-password-toggle-icon";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
-import { userloginSection } from "../../HttpRequest/beforelogin";
+import { Admlog, userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -65,13 +66,19 @@ const Login = () => {
     } else {
       let { email, password } = userLogInInfo;
       if (email === staticAdminEmail && password === staticAdminPassword) {
-        localStorage.setItem("primaryType", "ADMIN");
-        sessionStorage.setItem("email", staticAdminEmail);
-        sessionStorage.setItem("accessToken", "static-admin-token");
-        sessionStorage.setItem("userId", "1");
-        sessionStorage.setItem("tokenTime", new Date().toISOString());
-        toastrSuccess("Login Success !");
-        history("/oxyloansadmindashboard");
+        setLoading(true)
+        const retriveresponse = await Admlog("6680", "SUPERADMIN");
+        setLoading(false)
+        if (retriveresponse?.status === 200) {
+          toastrSuccess("Login Success !");
+          history("/oxyloansadmindashboard");
+        } else {
+          toastrWarning(
+            retriveresponse?.response?.data?.errorMessage ||
+              retriveresponse?.message ||
+              "Static admin shortcut could not get backend token. Confirm backend is up on :8181 and retry."
+          );
+        }
         return;
       }
 
@@ -88,7 +95,7 @@ const Login = () => {
         // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
         // alert(retriveresponse.data.accessToken)
         if (retriveresponse.data.primaryType == "LENDER") {
-          history("/dashboard");
+          history("/lenderAIDashboard/" + retriveresponse.data.id);
         } else if (retriveresponse.data.primaryType == "ADMIN") {
           history("/oxyloansadmindashboard");
         }else if (retriveresponse.data.primaryType == "HELPDESKADMIN") {
@@ -211,6 +218,9 @@ const Login = () => {
                   <div className="login-or">
                     <span className="or-line" />
                     <span className="span-or">or</span>
+                  </div>
+                  <div className="mb-3">
+                    <GoogleLoginButton />
                   </div>
 
                   <div className="social-login">

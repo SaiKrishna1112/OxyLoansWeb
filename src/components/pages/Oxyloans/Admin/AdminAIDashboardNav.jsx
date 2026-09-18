@@ -72,6 +72,8 @@ export const AI_NAV_SECTIONS = [
     items: [
       { path: "/adminAIDashboard/top-lenders", label: "Top Lenders", icon: "fas fa-trophy" },
       { path: "/adminAIDashboard/lender-directory", label: "Lender Directory", icon: "fas fa-address-book" },
+      { path: "/adminAIDashboard/membership-lookup", label: "Membership Lookup", icon: "fas fa-id-card", isNew: true, hint: "User ID → MONTHLY / QUARTERLY / LIFETIME" },
+      { path: "/adminAIDashboard/shared-bank-accounts", label: "Shared Bank Accounts", icon: "fas fa-university", isNew: true, hint: "Same bank account, referral name match, bank history" },
       { path: "/adminAIDashboard/risk-summary", label: "Risk Overview", icon: "fas fa-shield-halved" },
       { path: "/adminAIDashboard/operations-alerts", label: "Priority Alerts", icon: "fas fa-bell" },
     ],
@@ -112,6 +114,7 @@ const AdminAIDashboardNav = () => {
                 <li key={item.path}>
                   <Link
                     to={item.path}
+                    state={{ from: pathname }}
                     className={`ai-dash-nav-link ${active ? "ai-dash-nav-link--active" : ""}`}
                     title={item.hint || item.label}
                   >

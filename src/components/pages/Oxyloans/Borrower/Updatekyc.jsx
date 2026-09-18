@@ -16,6 +16,7 @@ import {
 // import Invaitemodel from "../../../Utills/Modals/Invaitemodel";
 import Invaitemodel from "../Utills/Modals/Invaitemodel";
 import { toastrSuccess } from "../../Base UI Elements/Toast";
+import { API_USER_URL } from "../../../../config";
 
 const Updatekyc = () => {
     const [formData, setFormData] = useState({
@@ -63,7 +64,7 @@ const Updatekyc = () => {
 
         try {
             // Define the API URL dynamically
-            const apiUrl = `http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/${formData.userId}/${formData.oxyScore}/${formData.commentId}/${formData.passwordLogin}/uploadCreditReport`;
+            const apiUrl = `${API_USER_URL}${formData.userId}/${formData.oxyScore}/${formData.commentId}/${formData.passwordLogin}/uploadCreditReport`;
 
             // Create FormData object
             const uploadFormData = new FormData();

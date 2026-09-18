@@ -10,6 +10,21 @@ import { Admlog, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogi
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
 
+const ADMIN_PRIMARY_TYPES = new Set([
+  "ADMIN",
+  "SUPERADMIN",
+  "MASTERADMIN",
+  "TESTADMIN",
+  "RADHAADMIN",
+  "HELPDESKADMIN",
+  "SUBBUADMIN",
+  "PARTNERADMIN",
+  "OXYWHEELSADMIN",
+  "PAYMENTSADMIN",
+  "BORROWERADMIN",
+  "STUDENTADMIN",
+]);
+
 const Admlogin = () => {
   const dispatch = useDispatch();
   const history = useNavigate();
@@ -70,34 +85,22 @@ const Admlogin = () => {
   const loginhandler = async () => {
     const { userid, password } = userLogInInfo;
 
-    if (userid === staticAdminEmail && password === staticAdminPassword) {
-      localStorage.setItem("primaryType", "ADMIN");
-      sessionStorage.setItem("email", staticAdminEmail);
-      sessionStorage.setItem("accessToken", "static-admin-token");
-      sessionStorage.setItem("userId", "1");
-      sessionStorage.setItem("tokenTime", new Date().toISOString());
-      toastrSuccess("Login Success!");
-      history("/adminAIDashboard");
-      return;
-    }
     if (!userid?.trim() || !password?.trim()) {
       toastrWarning("Enter user ID and password.");
       return;
     }
     try {
-      const retriveresponse = await Admlog(userid.trim(), password);
+      const isStaticAdminShortcut = userid === staticAdminEmail && password === staticAdminPassword;
+      const trimmedUserId = isStaticAdminShortcut ? "RA6680" : userid.trim();
+      const userIdForApi = /^RA/i.test(trimmedUserId) ? trimmedUserId.substring(2) : trimmedUserId;
+      const retriveresponse = await Admlog(userIdForApi, isStaticAdminShortcut ? "SUPERADMIN" : password);
       if (isApiSuccess(retriveresponse)) {
         toastrSuccess("Login Success!");
-        const role = retriveresponse.data.primaryType;
-        localStorage.setItem("primaryType", role || "");
-        if (role === "LENDER") {
-          history("/dashboard");
-        } else if (
-          role === "ADMIN" ||
-          role === "HELPDESKADMIN" ||
-          role === "SUPERADMIN" ||
-          role === "PRIMARYADMIN"
-        ) {
+        const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
+        localStorage.setItem("primaryType", primaryType || "");
+        if (primaryType === "LENDER") {
+          history("/lenderAIDashboard/" + (retriveresponse.data?.id || userIdForApi));
+        } else if (ADMIN_PRIMARY_TYPES.has(primaryType)) {
           history("/adminAIDashboard");
         } else {
           history("/borrowerDashboard");
@@ -106,7 +109,7 @@ const Admlogin = () => {
         const { message } = warnApiError(
           retriveresponse,
           "Login failed",
-          "Login failed. Use admin email + password, or user ID with SUPERADMIN."
+          "Login failed. On test server use User ID like RA6680 and Password SUPERADMIN."
         );
         const hint =
           retriveresponse?.code === "ERR_NETWORK" || String(message).toLowerCase().includes("network")
@@ -144,14 +147,13 @@ const Admlogin = () => {
                   </p>
                   <h2>Admin Login</h2>
                   <p className="account-subtitle small text-muted mb-3">
-                    Admin email + password, or user ID (LR55573) with access key SUPERADMIN.
-                    Backend: {process.env.NODE_ENV === "development" ? "see src/config.js ENV" : "configured server"}.
+                    Enter your admin credentials to continue.
                   </p>
 
                   <form className="needs-validation" noValidate>
                     <div className="form-group">
                       <label htmlFor="userid">
-                        Admin email or user ID (LR55573)
+                        Admin email or user ID
                         <span className="login-danger">*</span>
                       </label>
                       <input

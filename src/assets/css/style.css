@@ -77,6 +77,14 @@ input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0px 1000px white inset !important;
   box-shadow: 0 0 0px 1000px white inset !important;
+  -webkit-text-fill-color: #333 !important;
+  color: #333 !important;
+  caret-color: #333;
+}
+.login-wrapper .loginbox .login-right .form-control {
+  color: #333 !important;
+  -webkit-text-fill-color: #333;
+  background-color: #fff;
 }
 .form-control {
   border: 1px solid #ddd;

@@ -299,6 +299,10 @@ const MyOffers = React.lazy(() =>
   import("./components/pages/Oxyloans/Lender/MyOffers")
 );
 
+const ReactivationMyOffers = React.lazy(() =>
+  import("./components/pages/Oxyloans/Lender/ReactivationMyOffers")
+);
+
 const LenderMarketplaceConsent = React.lazy(() =>
   import("./components/pages/Oxyloans/Lender/LenderMarketplaceConsent")
 );
@@ -785,6 +789,11 @@ export const newRouter = createBrowserRouter([
   {
     path: "/my-offers",
     element: <MyOffers />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/my-reactivation-offers",
+    element: <ReactivationMyOffers />,
     errorElement: <Error404></Error404>,
   },
   {

@@ -1,0 +1,69 @@
+.offer-management-module .card {
+  transition: box-shadow 0.2s ease;
+  border-radius: 12px;
+}
+
+.offer-management-module .card:hover {
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.offer-management-module .table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.offer-management-module .min-vh-50 {
+  min-height: 50vh;
+}
+
+/* Keep generate form controls on one baseline */
+.offer-management-module .form-select,
+.offer-management-module .form-control,
+.offer-management-module .btn {
+  min-height: 38px;
+}
+
+.offer-management-module .card-header {
+  border-bottom: 1px solid #eef2f7;
+  font-weight: 600;
+}
+
+.offer-management-module .border-start.border-4 {
+  border-radius: 12px;
+}
+
+.offer-management-module .page-title,
+.offer-management-module h2 {
+  letter-spacing: -0.01em;
+}
+
+.offer-segment-bar-track {
+  height: 10px;
+  background: #eef2f7;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.offer-segment-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+.offer-ratio-stack {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #eef2f7;
+}
+
+.offer-ratio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
