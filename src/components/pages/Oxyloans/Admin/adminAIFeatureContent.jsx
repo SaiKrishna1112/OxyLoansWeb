@@ -27,6 +27,7 @@ import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import AdminWalletHubPanel from "./AdminWalletHubPanel";
 import {
   CmsPayoutsFullReport,
+  RoiBasedDealsFullReport,
   MonthlyPayoutFullReport,
   BorrowerAccountsFullReport,
   BorrowerFeesFullReport,
@@ -259,7 +260,9 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
     case "deals-directory":
     case "lender-directory":
     case "view-payments":
+    case "cms-payments":
     case "cms-lender-payouts":
+    case "roi-based-deals":
       return async () => ({ ready: true });
 
     case "fy-earners":
@@ -375,8 +378,12 @@ export const FeatureContent = ({
     case "operations-alerts":
       return <PriorityAlertsFullReport ctx={ctx} onOpenModule={onOpenModule} />;
 
+    case "cms-payments":
     case "cms-lender-payouts":
       return <CmsPayoutsFullReport />;
+
+    case "roi-based-deals":
+      return <RoiBasedDealsFullReport />;
 
     case "borrower-summary":
       return <BorrowerSummaryFullReport ctx={ctx} />;
@@ -656,10 +663,16 @@ export const getFeaturePreviewStats = (featureId, ctx, fy) => {
         { label: "Pending", value: money(reconciliation?.totalPending) },
         { label: "Status", value: reconciliation?.fullyReconciled ? "OK" : "Review" },
       ];
+    case "cms-payments":
     case "cms-lender-payouts":
       return [
         { label: "CMS", value: "Payouts" },
         { label: "Range", value: "Date filter" },
+      ];
+    case "roi-based-deals":
+      return [
+        { label: "ROI", value: "Deals" },
+        { label: "Lenders", value: "Active / Closed" },
       ];
     case "borrower-summary":
       return [

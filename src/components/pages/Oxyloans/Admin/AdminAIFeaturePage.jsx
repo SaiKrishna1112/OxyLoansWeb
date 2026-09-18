@@ -13,7 +13,9 @@ import {
 import "./AdminAIDashboard.css";
 
 const SELF_LOADING = new Set([
+  "cms-payments",
   "cms-lender-payouts",
+  "roi-based-deals",
   "deals-directory",
   "lender-directory",
   "view-payments",

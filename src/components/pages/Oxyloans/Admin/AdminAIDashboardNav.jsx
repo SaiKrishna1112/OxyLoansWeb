@@ -10,6 +10,18 @@ export const AI_NAV_SECTIONS = [
     ],
   },
   {
+    title: "CMS Payments",
+    items: [
+      {
+        path: "/adminAIDashboard/cms-payments",
+        label: "CMS Payments",
+        icon: "fas fa-money-check-alt",
+        isNew: true,
+        hint: "Paid and Pending by deal — Interest, Principal, Principal + Interest",
+      },
+    ],
+  },
+  {
     title: "CMS & Payouts",
     items: [
       {
@@ -18,6 +30,13 @@ export const AI_NAV_SECTIONS = [
         icon: "fas fa-money-check-alt",
         isNew: true,
         hint: "Credited vs not credited per deal",
+      },
+      {
+        path: "/adminAIDashboard/roi-based-deals",
+        label: "Lender ROI Portfolio",
+        icon: "fas fa-percent",
+        isNew: true,
+        hint: "Deals by ROI — lenders & participation amounts",
       },
       { path: "/adminAIDashboard/cms-reconciliation", label: "CMS Reconciliation", icon: "fas fa-scale-balanced", hint: "Initiated vs confirmed bank payouts" },
       { path: "/adminAIDashboard/view-payments", label: "Upcoming Payouts", icon: "fas fa-calendar-check", hint: "Interest due in next 3 days" },
