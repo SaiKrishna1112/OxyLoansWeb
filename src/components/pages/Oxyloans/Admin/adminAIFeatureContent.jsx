@@ -16,6 +16,8 @@ import { getAdminAIReconciliationSummary } from "../../../HttpRequest/afterlogin
 import {
   DealsDirectoryPanel,
   LenderDirectoryPanel,
+  MembershipLookupPanel,
+  SharedBankAccountsPanel,
   ViewPaymentsPanel,
 } from "./AdminFeaturePanels";
 import AdminPrioritiesPanel from "./AdminPrioritiesPanel";
@@ -355,6 +357,7 @@ export const FeatureContent = ({
   dealIntelligence,
   previewCtx,
   onOpenModule,
+  refreshNonce = 0,
 }) => {
   const ctx = previewCtx || {};
   const kpis = platform?.kpis || ctx.platform?.kpis || {};
@@ -368,6 +371,12 @@ export const FeatureContent = ({
 
     case "lender-directory":
       return <LenderDirectoryPanel />;
+
+    case "membership-lookup":
+      return <MembershipLookupPanel />;
+
+    case "shared-bank-accounts":
+      return <SharedBankAccountsPanel key={refreshNonce} />;
 
     case "view-payments":
       return <ViewPaymentsPanel />;

@@ -1228,12 +1228,13 @@ export const getRegisteredUsersSummary = async () => {
 };
 
 /** OXYINSIGHTS login analytics — view: hourly | weekly | yearly; date: YYYY-MM-DD (day view) */
-export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date) => {
+export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date, year) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/oxyinsights/login-history`, {
     headers: adminRegisteredUsersHeaders(),
     params: {
       view,
       ...(date ? { date } : {}),
+      ...(year ? { year } : {}),
     },
     timeout: 60000,
   });
@@ -1244,6 +1245,7 @@ export const getAdminAIOXYInsightsLoginHistory = async (view = "hourly", date) =
 export const getAdminAIOXYInsightsDetails = async ({
   view = "hourly",
   date,
+  year,
   metric = "uniqueUsers",
   bucketLabel = "",
   pageNo = 1,
@@ -1254,6 +1256,7 @@ export const getAdminAIOXYInsightsDetails = async ({
     params: {
       view,
       ...(date ? { date } : {}),
+      ...(year ? { year } : {}),
       metric,
       bucketLabel: bucketLabel || undefined,
       pageNo,
@@ -1399,6 +1402,24 @@ export const getAdminAILenderAnalyticsSummary = async () => {
     headers: adminRegisteredUsersHeaders(),
     timeout: 120000,
   });
+  return response.data;
+};
+
+export const getAdminAILifetimeFeeWaiver = async (
+  pageNo = 1,
+  pageSize = 20,
+  segment = "all",
+  summaryOnly = false
+) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lender-analytics/lifetime-fee-waiver`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: { pageNo, pageSize, segment, summaryOnly },
+      timeout: 120000,
+      validateStatus: (status) => status < 500,
+    }
+  );
   return response.data;
 };
 
@@ -2303,6 +2324,32 @@ export const getAdminAIActiveLenderProfile = async (lenderId) => {
   return response.data;
 };
 
+export const getAdminAILenderMembershipDetails = async (userId) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lenders/${userId}/membership-details`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      timeout: 60000,
+    }
+  );
+  return response.data;
+};
+
+export const getAdminAISharedBankAccounts = async ({ userId, accountNumber } = {}) => {
+  const response = await axios.get(
+    `${API_BASE_URL}admin/registered-users/lenders/shared-bank-accounts`,
+    {
+      headers: adminRegisteredUsersHeaders(),
+      params: {
+        ...(userId ? { userId } : {}),
+        ...(accountNumber ? { accountNumber } : {}),
+      },
+      timeout: 120000,
+    }
+  );
+  return response.data;
+};
+
 export const getAdminAIActiveLenderFullDetails = async (lenderId) => {
   const response = await axios.get(`${API_BASE_URL}admin/registered-users/active-lenders/${lenderId}/full-details`, {
     headers: adminRegisteredUsersHeaders(),
@@ -2398,6 +2445,61 @@ export const getAdminAICreatedDeals = async (pageNo = 1, pageSize = 20, dealView
       dealId: filters.dealId || undefined,
       dealName: filters.dealName || undefined,
     },
+  });
+  return response.data;
+};
+
+/** Year-wise deals summary (by received_on year). dealType: ALL|NORMAL|TEST|EQUITY|... — ALL excludes TEST. */
+export const getAdminAIDealsYearlySummary = async (fromYear = 2018, dealType = "ALL") => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/yearly-summary`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      fromYear,
+      dealType: dealType || "ALL",
+    },
+    timeout: 180000,
+  });
+  return response.data;
+};
+
+/** Year-wise deals list. Pass year=0 for all years. ALL dealType excludes TEST. */
+export const getAdminAIDealsYearWise = async (
+  year,
+  pageNo = 1,
+  pageSize = 20,
+  { dealType = "ALL", status = "ALL", dealId = "", dealName = "", tenureCategory = "ALL" } = {}
+) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/year-wise`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      year: year == null || Number(year) <= 0 ? 0 : year,
+      pageNo,
+      pageSize,
+      dealType: dealType || "ALL",
+      status: status && status !== "ALL" ? status : undefined,
+      dealId: dealId || undefined,
+      dealName: dealName || undefined,
+      tenureCategory: tenureCategory && tenureCategory !== "ALL" ? tenureCategory : undefined,
+    },
+    timeout: 180000,
+  });
+  return response.data;
+};
+
+export const downloadAdminAIDealsYearWiseExcel = async (
+  year,
+  { dealType = "ALL", status = "ALL", tenureCategory = "ALL" } = {}
+) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/deals/year-wise/export`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: {
+      year: year == null || Number(year) <= 0 ? 0 : year,
+      dealType: dealType || "ALL",
+      status: status && status !== "ALL" ? status : undefined,
+      tenureCategory: tenureCategory && tenureCategory !== "ALL" ? tenureCategory : undefined,
+    },
+    responseType: "blob",
+    timeout: 300000,
   });
   return response.data;
 };

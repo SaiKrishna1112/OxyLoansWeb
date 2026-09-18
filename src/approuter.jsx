@@ -3,6 +3,8 @@ import WebPushBootstrap from "./components/WebPushBootstrap";
 import { BrowserRouter, Navigate, Route, Routes, useParams,useLocation } from "react-router-dom";
 import { saveLastVisitedUrl } from "./utils/redirectUtils";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import PrivacyPolicy from "./components/pages/Static/PrivacyPolicy";
+import TermsOfService from "./components/pages/Static/TermsOfService";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
@@ -25,6 +27,8 @@ import AdminAILentReferralTreeMapPage from "./components/pages/Oxyloans/Admin/Ad
 import AdminAILentUsersDetailPage from "./components/pages/Oxyloans/Admin/AdminAILentUsersDetailPage";
 import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
 import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Admin/AdminAIInactiveReactivatedReportPage";
+import AdminAILifetimeFeeWaiverPage from "./components/pages/Oxyloans/Admin/AdminAILifetimeFeeWaiverPage";
+import AdminAIYearWiseDealsListPage from "./components/pages/Oxyloans/Admin/AdminAIYearWiseDealsListPage";
 import AdminAIOXYInsightsPage from "./components/pages/Oxyloans/Admin/AdminAIOXYInsightsPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 
@@ -335,6 +339,8 @@ const AppRouter = () => {
         <Route path="/adminAILentReferralTreeMap" element={<AdminAILentReferralTreeMapPage />} />
         <Route path="/adminAILentUsersDetail" element={<AdminAILentUsersDetailPage />} />
         <Route path="/adminAIInactiveReactivatedReport" element={<AdminAIInactiveReactivatedReportPage />} />
+        <Route path="/adminAILifetimeFeeWaiver" element={<AdminAILifetimeFeeWaiverPage />} />
+        <Route path="/adminAIYearWiseDealsList" element={<AdminAIYearWiseDealsListPage />} />
         <Route path="/adminAIOXYInsights" element={<AdminAIOXYInsightsPage />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
 
@@ -594,6 +600,10 @@ const AppRouter = () => {
         <Route path="/ai/test-admin" element={<PrivateRoute element={<AITestAdmin />} />} />
         <Route path="/ai/borrower-insights" element={<PrivateRoute element={<BorrowerInsightsDashboard />} />} />
         <Route path="*" element={<CatchAll />} />
+
+        {/* Static pages */}
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
       </Routes>
     </BrowserRouter>
     </GoogleOAuthProvider>
