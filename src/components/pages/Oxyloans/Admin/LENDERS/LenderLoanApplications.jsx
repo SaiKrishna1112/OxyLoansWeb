@@ -35,6 +35,7 @@ import {
 } from "../../../../HttpRequest/admin";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import AdminWriteToUs from "./AdminWriteToUs";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -72,13 +73,15 @@ const LenderLoanApplications = () => {
   const [dobModal, setDobModal] = useState(false);
   const [userDob, setUserDob] = useState("");
   const [actualDob, setActualDob] = useState("");
+  const [writeToUsModal, setWriteToUsModal] = useState(false);
 
   const handleClose = () => {
     setShow(false);
     setChangeToTest(false),
       setInterestStatus(false),
       setShowComments(false),
-      setDobModal(false);
+        setDobModal(false);
+      setWriteToUsModal(false);
   };
 
   const accessToken = sessionStorage.getItem("accessToken");
@@ -744,6 +747,17 @@ const getCommentsfun=async(record)=>{
           <Button size="small" onClick={() => updatedob(record)}>
             Update the DOB
           </Button>
+          <Button 
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => {
+              setSelectedRecord(record);
+              setWriteToUsModal(true);
+            }}
+          >
+            Write to us
+          </Button>
         </Space>
       ),
     },
@@ -1112,6 +1126,11 @@ const getCommentsfun=async(record)=>{
             </Button>
           </Modal.Footer>
         </Modal>
+        <AdminWriteToUs
+          show={writeToUsModal}
+          onHide={() => setWriteToUsModal(false)}
+          lender={selectedRecord}
+        />
       </div>
     </div>
   );

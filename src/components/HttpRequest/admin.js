@@ -1723,6 +1723,49 @@ export const uploadAdminAILenderCampaignImage = async (file) => {
   return url;
 };
 
+export const getAdminLenderQueriesCount = async (lenderId) => {
+  const token = getToken();
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${lenderId}/allQueriesCount`,
+    "GET",
+    token
+  );
+};
+
+export const uploadAdminLenderQueryImage = async (lenderId, file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("USERQUERYSCREENSHOT", file);
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${lenderId}/userQueryScreenshot`,
+    "POST",
+    token,
+    formData,
+    { "Content-Type": "multipart/form-data" }
+  );
+};
+
+export const writeAdminLenderQuery = async (lenderId, queryData) => {
+  const token = getToken();
+  const profiledata = queryData?.profiledata || {};
+  const payload = {
+    query: `${queryData?.query || ""}${queryData?.urlquery || ""}`,
+    documentId: queryData?.documentId || 0,
+    email: profiledata.email,
+    mobileNumber: profiledata.mobileNumber,
+  };
+
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${lenderId}/readingQueriesFromUsers`,
+    "POST",
+    token,
+    payload
+  );
+};
+
 export const parseAdminAICampaignExcelRecipients = async (file) => {
   const formData = new FormData();
   formData.append("EXCEL", file);
