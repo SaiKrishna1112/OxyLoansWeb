@@ -12,9 +12,31 @@ export const goBackOrAdminAI = (navigate, fallback = "/adminAIDashboard") => {
 
 export const ADMIN_AI_DASHBOARD_PATH = "/adminAIDashboard";
 export const YEAR_WISE_REFERRALS_PATH = "/adminAIDashboard?panel=yearWiseReferrals";
+export const YEAR_WISE_DEALS_PATH = "/adminAIDashboard?panel=yearWiseDeals";
 export const OXYINSIGHTS_PATH = "/adminAIOXYInsights";
 
-/** Always open main Admin AI Dashboard (avoids history back to nested pages). */
+export const buildYearWiseDealsListPath = ({
+  year = 0,
+  dealType = "ALL",
+  tenureCategory = "ALL",
+  section = "regular",
+} = {}) => {
+  const params = new URLSearchParams();
+  params.set("year", String(year == null || Number(year) <= 0 ? 0 : year));
+  params.set("dealType", dealType || "ALL");
+  if (tenureCategory && tenureCategory !== "ALL") {
+    params.set("tenureCategory", tenureCategory);
+  }
+  params.set("section", section || "regular");
+  return `/adminAIYearWiseDealsList?${params.toString()}`;
+};
+
+/** Open YearWise Deals summary (not main dashboard home). */
+export const goToYearWiseDeals = (navigate) => {
+  navigate(YEAR_WISE_DEALS_PATH);
+};
+
+/** Always open main Admin AI Dashboard home. */
 export const goToAdminAIDashboard = (navigate) => {
   navigate(ADMIN_AI_DASHBOARD_PATH);
 };

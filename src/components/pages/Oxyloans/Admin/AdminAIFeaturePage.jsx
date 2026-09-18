@@ -16,12 +16,15 @@ const SELF_LOADING = new Set([
   "cms-lender-payouts",
   "deals-directory",
   "lender-directory",
+  "membership-lookup",
+  "shared-bank-accounts",
   "view-payments",
 ]);
 
 const AdminAIFeaturePageInner = ({ feature }) => {
   const navigate = useNavigate();
   const [fy, setFy] = useState(currentFy());
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   const loadFn = useMemo(() => buildFeatureLoader(feature, fy, {}), [feature, fy]);
   const { loading, error, payload, reload } = useFeatureLoader(loadFn, [feature.id, fy]);
@@ -32,6 +35,8 @@ const AdminAIFeaturePageInner = ({ feature }) => {
   const dealIntelligence = payload?.dealIntelligence || previewCtx.dealIntelligence;
   const selfLoading = SELF_LOADING.has(feature.id);
   const showContent = selfLoading || (!loading && !error);
+
+  const compactChrome = feature.id === "shared-bank-accounts" || feature.id === "membership-lookup";
 
   return (
     <PageShell
@@ -48,30 +53,40 @@ const AdminAIFeaturePageInner = ({ feature }) => {
         feature.usesFy ? (
           <FyControls fy={fy} onFyChange={setFy} onRefresh={reload} loading={loading} />
         ) : (
-          <button type="button" className="btn btn-success btn-sm" onClick={reload} disabled={loading}>
+          <button
+            type="button"
+            className="btn btn-success btn-sm"
+            onClick={() => {
+              reload();
+              setRefreshNonce((current) => current + 1);
+            }}
+            disabled={loading}
+          >
             <i className={`fas fa-sync-alt me-1 ${loading ? "fa-spin" : ""}`} />
             {loading ? "Loading…" : "Refresh"}
           </button>
         )
       }
     >
-      <BackToHub />
+      {compactChrome ? null : <BackToHub />}
 
-      <header className="ai-feature-intro">
-        <span className="ai-feature-intro-icon" style={{ background: feature.color }}>
-          <i className={feature.icon} />
-        </span>
-        <div className="ai-feature-intro-text">
-          <p className="mb-0">{feature.description}</p>
-        </div>
-      </header>
+      {compactChrome ? null : (
+        <header className="ai-feature-intro">
+          <span className="ai-feature-intro-icon" style={{ background: feature.color }}>
+            <i className={feature.icon} />
+          </span>
+          <div className="ai-feature-intro-text">
+            <p className="mb-0">{feature.description}</p>
+          </div>
+        </header>
+      )}
 
       {!selfLoading && loading && <LoadingBlock label={`Loading ${feature.title}…`} />}
 
       {!selfLoading && !loading && error && <div className="alert alert-danger">{error}</div>}
 
       {showContent && (
-        <div className="ai-detail-card ai-report-page-card">
+        <div className={compactChrome ? "sba-feature-wrap" : "ai-detail-card ai-report-page-card"}>
           <FeatureContent
             featureId={feature.id}
             fy={fy}
@@ -82,6 +97,7 @@ const AdminAIFeaturePageInner = ({ feature }) => {
             dealIntelligence={dealIntelligence}
             previewCtx={{ ...previewCtx, ...payload }}
             onOpenModule={(id) => navigate(`/adminAIDashboard/${id}`)}
+            refreshNonce={refreshNonce}
           />
         </div>
       )}
