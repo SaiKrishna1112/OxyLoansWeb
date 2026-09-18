@@ -14,6 +14,7 @@ import {
   PriorityTier,
 } from "./adminReportKit";
 import AdminCmsPaymentsPanel from "./AdminCmsPaymentsPanel";
+import AdminRoiDealsPanel from "./AdminRoiDealsPanel";
 import AdminBorrowerOverview from "./AdminBorrowerOverview";
 import AdminFdStatistics from "./AdminFdStatistics";
 import AdminBorrowerFdHubPanel from "./AdminBorrowerFdHubPanel";
@@ -50,6 +51,10 @@ const statusBadge = (status) => {
 
 export const CmsPayoutsFullReport = () => (
   <AdminCmsPaymentsPanel fullPage />
+);
+
+export const RoiBasedDealsFullReport = () => (
+  <AdminRoiDealsPanel fullPage />
 );
 
 export const MonthlyPayoutFullReport = ({ platform, fy }) => {

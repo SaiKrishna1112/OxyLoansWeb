@@ -266,6 +266,19 @@ const authHeaders = () => {
   return { accessToken: token };
 };
 
+
+const backendConnectionHint = (err) => {
+  const msg = String(err?.message || "");
+  if (
+    !err?.response ||
+    err?.code === "ECONNREFUSED" ||
+    err?.code === "ECONNABORTED" ||
+    /proxy|network error|504|502/i.test(msg)
+  ) {
+    return "Backend is not reachable on port 8181. Start it from oxyloans-rest (see scripts/start-backend-local.ps1), then refresh.";
+  }
+  return null;
+};
 const extractApiError = (err) => {
   const data = err?.response?.data;
   if (typeof data === "string" && data.trim()) return data;
@@ -2089,9 +2102,8 @@ export const loadCmsInterestPaymentsToday = async () => {
     if (err?.code === "ECONNABORTED") {
       throw new Error("CMS today request timed out. Check backend on port 8181.");
     }
-    if (!err?.response) {
-      throw new Error("Cannot reach backend (network error). Is the server running on port 8181?");
-    }
+    const connHint = backendConnectionHint(err);
+    if (connHint) throw new Error(connHint);
     throw new Error(serverErr || extractApiError(err) || "CMS today load failed");
   }
 };
@@ -2148,3 +2160,46 @@ export const loadDealCmsInterestPaymentHistory = async (dealId) => {
   return res.data?.data ?? res.data ?? [];
 };
 export { AI_DASHBOARD_USE_STATIC } from "../../config";
+
+/** ROI-based deals � GET /v1/ai/admin/roi-deals */
+export const loadRoiDeals = async ({
+  roi = null,
+  dealStatus = "ALL",
+  lenderStatus = "ALL",
+  includeDeals = false,
+  includeLenders = false,
+} = {}) => {
+  const headers = requireAuth();
+  const params = new URLSearchParams();
+  if (roi != null && roi !== "") params.set("roi", String(roi));
+  if (dealStatus) params.set("dealStatus", dealStatus);
+  if (lenderStatus) params.set("lenderStatus", lenderStatus);
+  if (includeDeals) params.set("includeDeals", "true");
+  if (includeLenders) params.set("includeLenders", "true");
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  try {
+    const res = await axios.get(`${AI_BASE_URL}admin/roi-deals${qs}`, { headers, timeout: 300000 });
+    return res.data?.data ?? res.data;
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status === 504 || err?.code === "ECONNABORTED") {
+      throw new Error(
+        "Report timed out. Rebuild backend (mvn install -pl oxyloans-service,oxyloans-rest -am) and restart on port 8181."
+      );
+    }
+    const connHint = backendConnectionHint(err);
+    if (connHint) throw new Error(connHint);
+    throw new Error(err?.response?.data?.error || err?.message || "ROI deals load failed");
+  }
+};
+
+/** Deal lenders for ROI page � GET /v1/ai/admin/deals/{dealId}/roi-lenders */
+export const loadDealRoiLenders = async (dealId, status = "ALL") => {
+  const headers = requireAuth();
+  const qs = status && status !== "ALL" ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await axios.get(`${AI_BASE_URL}admin/deals/${dealId}/roi-lenders${qs}`, {
+    headers,
+    timeout: 120000,
+  });
+  return res.data?.data ?? res.data ?? [];
+};
