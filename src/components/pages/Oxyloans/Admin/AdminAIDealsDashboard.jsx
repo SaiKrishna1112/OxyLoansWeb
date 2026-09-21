@@ -2364,7 +2364,9 @@ const AdminAIDealsDashboard = () => {
     setDealsError("");
   };
 
-  const backToListLabel = deepLinkReturnTo ? "Back to Portfolio" : "Back to Lenders";
+  const backToListLabel = deepLinkReturnTo
+    ? (deepLinkReturnTo.includes("shared-bank-accounts") ? "Back to Lenders" : "Back to Portfolio")
+    : "Back to Lenders";
 
   const toggleInterestDetails = async (deal) => {
     const dealId = deal.dealId;
@@ -3313,7 +3315,7 @@ const AdminAIDealsDashboard = () => {
                                     {interestData ? (
                                       <>
                                         <div className="admin-ai-interest-details-head">
-                                          <strong><FaPercent /> Interest & Return Details</strong>
+                                          <strong><FaPercent /> Interest Calculations</strong>
                                           <div className="admin-ai-interest-source-badges">
                                             <span className={`admin-ai-payout-type-badge ${(interestData.payoutType || "").includes("YEAR") ? "yearly" : "monthly"}`}>
                                               Payout Type: {interestData.payoutTypeLabel || formatPayoutTypeLabel(interestData.payoutType, interestData.lenderReturnsType || deal.lenderReturnsType)}

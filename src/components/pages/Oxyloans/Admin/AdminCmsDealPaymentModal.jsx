@@ -37,6 +37,7 @@ const AdminCmsDealPaymentModal = ({
   initialPaymentDate,
   initialCmsPaymentId,
   initialReturnsType,
+  asPage = false,
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -135,8 +136,9 @@ const AdminCmsDealPaymentModal = ({
   }, [dealId, onSummaryLoaded, initialPaymentDate, initialCmsPaymentId, initialReturnsType, pickInitialCycle]);
 
   useEffect(() => {
+    if (asPage) return undefined;
     const onKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onClose?.();
     };
     document.body.classList.add("ai-modal-open");
     window.addEventListener("keydown", onKeyDown);
@@ -144,7 +146,7 @@ const AdminCmsDealPaymentModal = ({
       document.body.classList.remove("ai-modal-open");
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [onClose]);
+  }, [asPage, onClose]);
 
   const lenders = data?.lenders || [];
   const returnsType = data?.lenderReturnsType || "";
@@ -206,78 +208,103 @@ const AdminCmsDealPaymentModal = ({
   if (!dealId) return null;
   const hasPayment = Boolean(data) && (data?.lenders?.length > 0 || data?.cmsPaymentId || isPrincipalType);
 
-  return createPortal(
-    <div className="ai-modal-backdrop" onClick={onClose} role="presentation">
-      <div
-        className="ai-modal-dialog ai-modal-dialog--cms"
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="ai-modal-header">
-          <div className="ai-modal-title-wrap">
-            <div className="ai-modal-icon" style={{ background: "#059669" }}>
-              <i className="fas fa-money-check-alt" />
-            </div>
-            <div>
-              <h5 className="ai-modal-title mb-0">
-                {typeLabel} — {dealName || `Deal #${dealId}`}
-              </h5>
-              <p className="ai-modal-subtitle mb-0">
-                {data?.paymentDate || "—"}
-                {data?.lenderReturnsType ? (
-                  <>
-                    {" "}
-                    · <CmsTypeBadge type={data.lenderReturnsType} />
-                  </>
-                ) : null}
-              </p>
-            </div>
+  const content = (
+    <div className={asPage ? "ai-cms-lenders-view" : "ai-modal-dialog ai-modal-dialog--cms"}>
+      <div className={asPage ? "ai-cms-lenders-head" : "ai-modal-header"}>
+        <div className="ai-modal-title-wrap">
+          <div className="ai-modal-icon" style={{ background: "#059669" }}>
+            <i className="fas fa-money-check-alt" />
           </div>
-          <div className="ai-modal-actions">
-            {history.length > 1 && (
-              <select
-                className="form-select form-select-sm ai-cms-date-select"
-                value={selectedCycleKey}
-                onChange={(e) => {
-                  const match = history.find((h) => cycleKey(h) === e.target.value);
-                  setView("all");
-                  if (match) {
-                    setData(match);
-                    setSelectedCycleKey(cycleKey(match));
-                  } else {
-                    loadCycle({ paymentDate: e.target.value });
-                  }
-                }}
-                disabled={loading}
-              >
-                {history.map((h) => (
-                  <option key={cycleKey(h)} value={cycleKey(h)}>
-                    {h.paymentDate} · {cmsReturnsTypeLabel(h.lenderReturnsType)} · {money(h.totalAmount)}
-                  </option>
-                ))}
-              </select>
-            )}
+          <div>
+            <h5 className="ai-modal-title mb-0">
+              {typeLabel} — {dealName || data?.dealName || `Deal #${dealId}`}
+            </h5>
+            <p className="ai-modal-subtitle mb-0">
+              {data?.paymentDate || initialPaymentDate || "—"}
+              {data?.lenderReturnsType || initialReturnsType ? (
+                <>
+                  {" "}
+                  · <CmsTypeBadge type={data?.lenderReturnsType || initialReturnsType} />
+                </>
+              ) : null}
+              {data?.fileName ? (
+                <>
+                  {" "}
+                  · {data.fileName}
+                </>
+              ) : null}
+            </p>
+          </div>
+        </div>
+        <div className="ai-modal-actions">
+          {history.length > 1 && (
+            <select
+              className="form-select form-select-sm ai-cms-date-select"
+              value={selectedCycleKey}
+              onChange={(e) => {
+                const match = history.find((h) => cycleKey(h) === e.target.value);
+                setView("all");
+                if (match) {
+                  setData(match);
+                  setSelectedCycleKey(cycleKey(match));
+                } else {
+                  loadCycle({ paymentDate: e.target.value });
+                }
+              }}
+              disabled={loading}
+            >
+              {history.map((h) => (
+                <option key={cycleKey(h)} value={cycleKey(h)}>
+                  {h.paymentDate} · {cmsReturnsTypeLabel(h.lenderReturnsType)} · {money(h.totalAmount)}
+                </option>
+              ))}
+            </select>
+          )}
+          {!asPage && (
             <button type="button" className="btn btn-light btn-sm" onClick={onClose}>
               <i className="fas fa-times" />
             </button>
-          </div>
-        </div>
-
-        <div className="ai-modal-body">
-          {loading && <LoadingBlock label="Loading lender payments…" />}
-          {!loading && error && (
-            <div className="alert alert-danger mb-0">
-              {error}
-              {String(error).toLowerCase().includes("login") && (
-                <Link to="/admlogin" className="btn btn-sm btn-primary mt-2 d-block">
-                  Admin Login
-                </Link>
-              )}
-            </div>
           )}
-          {!loading && !error && hasPayment && (
-            <>
+        </div>
+      </div>
+
+      <div className={asPage ? "ai-cms-lenders-body" : "ai-modal-body"}>
+        {loading && <LoadingBlock label="Loading lender payments…" />}
+        {!loading && error && (
+          <div className="alert alert-danger mb-0">
+            {error}
+            {String(error).toLowerCase().includes("login") && (
+              <Link to="/admlogin" className="btn btn-sm btn-primary mt-2 d-block">
+                Admin Login
+              </Link>
+            )}
+          </div>
+        )}
+        {!loading && !error && hasPayment && (
+          <>
+            {asPage ? (
+              <div className="ai-cms-lender-kpis">
+                <div className="ai-cms-lender-kpi">
+                  <span className="ai-cms-lender-kpi-lbl">Lenders</span>
+                  <strong>{number(totalLenders)}</strong>
+                </div>
+                <div className="ai-cms-lender-kpi ai-cms-lender-kpi--paid">
+                  <span className="ai-cms-lender-kpi-lbl">Paid</span>
+                  <strong>{number(paidCount)}</strong>
+                  <em>{money(dealPaidAmount(data))}</em>
+                </div>
+                <div className="ai-cms-lender-kpi ai-cms-lender-kpi--pending">
+                  <span className="ai-cms-lender-kpi-lbl">Not paid</span>
+                  <strong>{number(notPaidCount)}</strong>
+                  <em>{money(dealNotPaidAmount(data))}</em>
+                </div>
+                <div className="ai-cms-lender-kpi">
+                  <span className="ai-cms-lender-kpi-lbl">Paid %</span>
+                  <strong>{pct}%</strong>
+                  <CmsPaidProgress deal={data} />
+                </div>
+              </div>
+            ) : (
               <div className="ai-cms-payout-summary">
                 <div className="ai-cms-payout-summary-head">
                   <div>
@@ -305,7 +332,7 @@ const AdminCmsDealPaymentModal = ({
                     <>
                       {" "}
                       — paid when <strong>{returnsType === "LENDERPRINCIPAL" ? "principal_status" : "interest_status"}</strong>{" "}
-                      is <strong>EXECUTED</strong> (ICICI success file read for deal {dealId} + lender).
+                      is <strong>EXECUTED</strong>.
                     </>
                   ) : (
                     <>
@@ -315,61 +342,100 @@ const AdminCmsDealPaymentModal = ({
                   )}
                 </p>
               </div>
+            )}
 
-              {notPaidRows.length > 0 && (
-                <div className="ai-cms-regen-block">
-                  <div className="ai-cms-regen-head">
-                    <strong>{number(notPaidRows.length)} lenders not paid — regenerate file</strong>
-                    <div className="ai-cms-regen-actions">
-                      <button type="button" className="btn btn-outline-secondary btn-sm" onClick={copyNotPaidIds}>
-                        Copy IDs
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline-success btn-sm"
-                        onClick={() =>
-                          exportRowsToCsv(notPaidRows, regenCols, `not-paid-${dealId}-${data.paymentDate}.csv`)
-                        }
-                      >
-                        Export CSV
-                      </button>
-                    </div>
+            {notPaidRows.length > 0 && (
+              <div className="ai-cms-regen-block">
+                <div className="ai-cms-regen-head">
+                  <strong>{number(notPaidRows.length)} lenders not paid — regenerate file</strong>
+                  <div className="ai-cms-regen-actions">
+                    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={copyNotPaidIds}>
+                      Copy IDs
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-success btn-sm"
+                      onClick={() =>
+                        exportRowsToCsv(notPaidRows, regenCols, `not-paid-${dealId}-${data.paymentDate}.csv`)
+                      }
+                    >
+                      Export unpaid CSV
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-success btn-sm"
+                      onClick={() =>
+                        exportRowsToCsv(lenders, lenderCols, `cms-lenders-${dealId}-${data.paymentDate}.csv`)
+                      }
+                    >
+                      Export all lenders
+                    </button>
                   </div>
-                  {copyMsg && <p className="text-success small mb-1">{copyMsg}</p>}
                 </div>
-              )}
+                {copyMsg && <p className="text-success small mb-1">{copyMsg}</p>}
+              </div>
+            )}
 
-              <div className="ai-cms-lender-tabs">
+            {notPaidRows.length === 0 && lenders.length > 0 && (
+              <div className="ai-cms-regen-actions mb-3">
                 <button
                   type="button"
-                  className={`ai-cms-lender-tab ${view === "all" ? "ai-cms-lender-tab--active" : ""}`}
-                  onClick={() => setView("all")}
+                  className="btn btn-success btn-sm"
+                  onClick={() =>
+                    exportRowsToCsv(lenders, lenderCols, `cms-lenders-${dealId}-${data.paymentDate}.csv`)
+                  }
                 >
-                  All ({number(totalLenders)})
-                </button>
-                <button
-                  type="button"
-                  className={`ai-cms-lender-tab ${view === "paid" ? "ai-cms-lender-tab--active" : ""}`}
-                  onClick={() => setView("paid")}
-                >
-                  Paid ({number(paidCount)})
-                </button>
-                <button
-                  type="button"
-                  className={`ai-cms-lender-tab ${view === "notpaid" ? "ai-cms-lender-tab--active" : ""}`}
-                  onClick={() => setView("notpaid")}
-                >
-                  Not paid ({number(notPaidCount)})
+                  Export all lenders
                 </button>
               </div>
+            )}
 
-              <DataTable rows={visibleRows} initialLimit={30} columns={lenderCols} emptyText="No lenders." />
-            </>
-          )}
-          {!loading && !error && !hasPayment && (
-            <p className="text-muted mb-0">No CMS payment for this deal and type yet.</p>
-          )}
-        </div>
+            <div className="ai-cms-lender-tabs">
+              <button
+                type="button"
+                className={`ai-cms-lender-tab ${view === "all" ? "ai-cms-lender-tab--active" : ""}`}
+                onClick={() => setView("all")}
+              >
+                All ({number(totalLenders)})
+              </button>
+              <button
+                type="button"
+                className={`ai-cms-lender-tab ${view === "paid" ? "ai-cms-lender-tab--active" : ""}`}
+                onClick={() => setView("paid")}
+              >
+                Paid ({number(paidCount)})
+              </button>
+              <button
+                type="button"
+                className={`ai-cms-lender-tab ${view === "notpaid" ? "ai-cms-lender-tab--active" : ""}`}
+                onClick={() => setView("notpaid")}
+              >
+                Not paid ({number(notPaidCount)})
+              </button>
+            </div>
+
+            <DataTable
+              className="ai-cms-lenders-table"
+              rows={visibleRows}
+              initialLimit={asPage ? 100 : 30}
+              columns={lenderCols}
+              emptyText="No lenders."
+            />
+          </>
+        )}
+        {!loading && !error && !hasPayment && (
+          <p className="text-muted mb-0">No CMS payment for this deal and type yet.</p>
+        )}
+      </div>
+    </div>
+  );
+
+  if (asPage) return content;
+
+  return createPortal(
+    <div className="ai-modal-backdrop" onClick={onClose} role="presentation">
+      <div onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        {content}
       </div>
     </div>,
     document.body

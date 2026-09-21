@@ -19,6 +19,9 @@ import {
   FaUserSlash,
   FaFilter,
   FaUserCheck,
+  FaUniversity,
+  FaMoneyCheckAlt,
+  FaPercent,
   FaUserPlus,
   FaEnvelope,
   FaWhatsapp,
@@ -67,6 +70,7 @@ import { BASE_URL } from "../../../../config";
 import "./AdminAIDashboard.css";
 import AdminAIUserGeographyPanel from "./AdminAIUserGeographyPanel";
 import AdminAILenderAnalyticsPanel from "./AdminAILenderAnalyticsPanel";
+import AdminAILifetimeFeeWaiverPanel from "./AdminAILifetimeFeeWaiverPanel";
 import AdminAILatestFirstParticipatedPanel from "./AdminAILatestFirstParticipatedPanel";
 import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
 import AdminAIAutoEmailDraftModal from "./AdminAIAutoEmailDraftModal";
@@ -3252,6 +3256,70 @@ const AdminAIDashboard = () => {
                     <span className="admin-ai-yearwise-header-open">Open →</span>
                   </span>
                 </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry"
+                  onClick={() => navigate("/adminAIDashboard/membership-lookup", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaUserCheck />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Membership Lookup</h2>
+                    <p>Enter a lender user ID to see MONTHLY / QUARTERLY / LIFETIME plan and validity.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry"
+                  onClick={() => navigate("/adminAIDashboard/shared-bank-accounts", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaUniversity />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Shared Bank Accounts</h2>
+                    <p>Find active lenders using the same bank account, matching referral names, or changed bank details.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-cms-entry"
+                  onClick={() => navigate("/adminAIDashboard/cms-payments", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--cms">
+                    <FaMoneyCheckAlt />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>CMS Payments</h2>
+                    <p>Paid and pending by deal — Interest, Principal, Principal + Interest. Click to open the CMS payout screen.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-roi-entry"
+                  onClick={() => navigate("/adminAIDashboard/roi-based-deals", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--roi">
+                    <FaPercent />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Lender ROI Portfolio</h2>
+                    <p>Search deals by monthly lender ROI, then open a deal for users and participation amounts.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
               </section>
 
               <section className="admin-ai-pro-section admin-ai-pro-section--high-participation">
@@ -3420,6 +3488,8 @@ const AdminAIDashboard = () => {
               </section>
 
               <AdminAILenderAnalyticsPanel onOpenLender={openTopLenderDetail} />
+
+              <AdminAILifetimeFeeWaiverPanel />
 
               <AdminAILatestFirstParticipatedPanel onOpenLender={openTopLenderDetail} />
 

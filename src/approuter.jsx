@@ -9,6 +9,7 @@ import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfo
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import AdminAIFeaturePage from "./components/pages/Oxyloans/Admin/AdminAIFeaturePage";
+import AdminCmsDealLendersPage from "./components/pages/Oxyloans/Admin/AdminCmsDealLendersPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
 import AdminAIOXYInsightsPage from "./components/pages/Oxyloans/Admin/AdminAIOXYInsightsPage";
@@ -22,6 +23,7 @@ import AdminAITopPaidEarnedReferrersPage from "./components/pages/Oxyloans/Admin
 import AdminAITopPaidEarnedHistoryPage from "./components/pages/Oxyloans/Admin/AdminAITopPaidEarnedHistoryPage";
 import AdminAILenderAnalyticsLendersPage from "./components/pages/Oxyloans/Admin/AdminAILenderAnalyticsLendersPage";
 import AdminAIInactiveReactivatedReportPage from "./components/pages/Oxyloans/Admin/AdminAIInactiveReactivatedReportPage";
+import AdminAILifetimeFeeWaiverPage from "./components/pages/Oxyloans/Admin/AdminAILifetimeFeeWaiverPage";
 import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIYearWiseDealsListPage from "./components/pages/Oxyloans/Admin/AdminAIYearWiseDealsListPage";
 import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
@@ -262,6 +264,7 @@ const AppRouter = () => {
         <Route path="/emicalculator" element={<Emicalculator />} />
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
+        <Route path="/adminAIDashboard/cms-payments/lenders/:dealId" element={<AdminCmsDealLendersPage />} />
         <Route path="/adminAIDashboard/:featureId" element={<AdminAIFeaturePage />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
@@ -279,6 +282,7 @@ const AppRouter = () => {
         <Route path="/adminAITopPaidEarnedHistory" element={<AdminAITopPaidEarnedHistoryPage />} />
         <Route path="/adminAILenderAnalytics" element={<AdminAILenderAnalyticsLendersPage />} />
         <Route path="/adminAIInactiveReactivatedReport" element={<AdminAIInactiveReactivatedReportPage />} />
+        <Route path="/adminAILifetimeFeeWaiver" element={<AdminAILifetimeFeeWaiverPage />} />
         <Route path="/adminAICampaignHistory" element={<AdminAILenderCampaignHistoryPage />} />
         <Route path="/adminAlCampaignHistory" element={<AdminAIRouteAlias to="/adminAICampaignHistory" />} />
         <Route path="/adminAIYearWiseDealsList" element={<AdminAIYearWiseDealsListPage />} />
