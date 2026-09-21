@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
-import { completeEsign } from "../../../HttpRequest/afterlogin";
+import { lenderBorrowerEsign } from "../../../HttpRequest/afterlogin";
 
 const MarketplaceEsign = () => {
   const { loanRequestId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const assignmentId = searchParams.get("assignmentId") || searchParams.get("assignment_id") || searchParams.get("id");
 
   const [step, setStep] = useState("review"); // review | otp | success
   const [otp, setOtp] = useState("");
@@ -33,7 +35,7 @@ const MarketplaceEsign = () => {
     }
     setLoading(true);
     setError("");
-    completeEsign(loanRequestId)
+    lenderBorrowerEsign(loanRequestId, null, assignmentId)
       .then(() => {
         setStep("success");
       })

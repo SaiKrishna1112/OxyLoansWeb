@@ -19,7 +19,8 @@ export default function NearbyBorrowers() {
   const [location, setLocation] = useState({ lat: null, lng: null });
   const [locationError, setLocationError] = useState("");
   const [radiusKm, setRadiusKm] = useState(50);
-  const [searched, setSearched] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(500);
+  const PAGE_FETCH_SIZE = 1000;
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -40,8 +41,17 @@ export default function NearbyBorrowers() {
     setLoading(true);
     setError("");
     try {
-      const res = await getNearbyBorrowers(location.lat, location.lng, radiusKm);
-      setBorrowers(res?.data || []);
+      const all = [];
+      let page = 1;
+      while (true) {
+        const res = await getNearbyBorrowers(location.lat, location.lng, radiusKm, page - 1, PAGE_FETCH_SIZE);
+        const batch = res?.data || [];
+        all.push(...batch);
+        if (batch.length < PAGE_FETCH_SIZE) break;
+        page++;
+      }
+      setBorrowers(all);
+      setVisibleCount(100);
       setSearched(true);
     } catch (e) {
       setError("Failed to fetch nearby borrowers.");
@@ -180,8 +190,9 @@ export default function NearbyBorrowers() {
                     </div>
                   </div>
                 ) : (
+                  <>
                   <div className="row g-3">
-                    {borrowers.map((b) => (
+                    {borrowers.slice(0, visibleCount).map((b) => (
                       <div key={b.userId} className="col-md-4 col-lg-3">
                         <div className="card h-100 border-0 shadow-sm">
                           <div className="card-body">
@@ -222,6 +233,17 @@ export default function NearbyBorrowers() {
                       </div>
                     ))}
                   </div>
+                  {visibleCount < borrowers.length && (
+                    <div className="text-center mt-4">
+                      <button
+                        className="btn btn-outline-primary px-5"
+                        onClick={() => setVisibleCount((prev) => prev + 100)}
+                      >
+                        Load More ({borrowers.length - visibleCount} remaining)
+                      </button>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             )}

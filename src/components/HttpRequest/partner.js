@@ -72,11 +72,40 @@ const handleApiRequestAfterLoginService = async (
         ...headers,
       },
     });
+
+    if (response && response.data) {
+      const resData = response.data;
+      if (
+        resData.errorCode === "100" ||
+        resData.errorCode === 100 ||
+        (resData.errorMessage &&
+          resData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+        return response;
+      }
+    }
+
     // Add your common logic here
     if (response.status == 200) {
       return response;
     }
   } catch (error) {
+    if (error && error.response && error.response.data) {
+      const errData = error.response.data;
+      if (
+        errData.errorCode === "100" ||
+        errData.errorCode === 100 ||
+        (errData.errorMessage &&
+          errData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
     return error;
   }
 };

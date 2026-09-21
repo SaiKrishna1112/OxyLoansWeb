@@ -9,7 +9,6 @@ import { withdrawriaseapi11 } from "../../Base UI Elements/SweetAlert";
 import Swal from "sweetalert2";
 import { error } from "jquery";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
-import ActiveOfferPopup from "./ActiveOfferPopup";
 import DealReturnCalculator from "./DealReturnCalculator";
 
 const RegularRunningDeal = () => {
@@ -609,7 +608,6 @@ const RegularRunningDeal = () => {
         </div>
         {/* /Page Wrapper */}
       </div>
-      <ActiveOfferPopup />
       {calcDeal && (
         <DealReturnCalculator deal={calcDeal} onClose={() => setCalcDeal(null)} />
       )}

@@ -1,0 +1,420 @@
+/* Redesign Styles for OxyLoans Borrower Portal */
+:root {
+  --oxy-primary: #0040e0;
+  --oxy-primary-container: #2e5bff;
+  --oxy-secondary: #565e74;
+  --oxy-tertiary: #006242;
+  --oxy-tertiary-container: #007d55;
+  --oxy-on-surface: #0b1c30;
+  --oxy-background: #f8f9ff;
+  --oxy-surface: #ffffff;
+  --oxy-surface-low: #eff4ff;
+  --oxy-surface-high: #dce9ff;
+  --oxy-outline-variant: #c4c5d9;
+  --oxy-outline: #747688;
+  --oxy-error: #ba1a1a;
+  --oxy-error-container: #ffdad6;
+  --oxy-success-light: rgba(0, 98, 66, 0.1);
+  --oxy-font-family: 'Inter', sans-serif;
+  --oxy-radius-sm: 8px;
+  --oxy-radius-md: 16px;
+  --oxy-radius-lg: 24px;
+}
+
+body.oxy-redesign-active {
+  background-color: var(--oxy-background) !important;
+  font-family: var(--oxy-font-family) !important;
+  color: var(--oxy-on-surface) !important;
+}
+
+/* Card Styling */
+.oxy-card {
+  background: var(--oxy-surface);
+  border: 1px solid var(--oxy-outline-variant);
+  border-radius: var(--oxy-radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  padding: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  margin-bottom: 24px;
+}
+
+.oxy-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 40, 224, 0.06);
+  border-color: var(--oxy-primary-container);
+}
+
+.oxy-card-lg {
+  border-radius: var(--oxy-radius-lg);
+  padding: 32px;
+}
+
+/* Hero / Welcome Panel */
+.oxy-hero-card {
+  background: linear-gradient(135deg, var(--oxy-primary) 0%, var(--oxy-primary-container) 100%);
+  color: #ffffff;
+  border-radius: var(--oxy-radius-lg);
+  padding: 32px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 64, 224, 0.2);
+  margin-bottom: 24px;
+}
+
+.oxy-hero-card::after {
+  content: '';
+  position: absolute;
+  right: -50px;
+  bottom: -50px;
+  width: 250px;
+  height: 250px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* Glassmorphism elements */
+.oxy-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+/* Custom Alert Badges */
+.oxy-badge-status {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.oxy-badge-primary {
+  background-color: var(--oxy-surface-low);
+  color: var(--oxy-primary);
+}
+
+.oxy-badge-success {
+  background-color: var(--oxy-success-light);
+  color: var(--oxy-tertiary);
+}
+
+.oxy-badge-warning {
+  background-color: #fff9db;
+  color: #f59e0b;
+}
+
+.oxy-badge-danger {
+  background-color: var(--oxy-error-container);
+  color: var(--oxy-error);
+}
+
+/* Progress stepper */
+.oxy-stepper-container {
+  background: var(--oxy-surface);
+  border: 1px solid var(--oxy-outline-variant);
+  border-radius: var(--oxy-radius-lg);
+  padding: 24px 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  margin-bottom: 24px;
+}
+
+.oxy-stepper-line-horizontal {
+  height: 3px;
+  background-color: #e2e8f0;
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  z-index: 1;
+}
+
+.oxy-stepper-line-active {
+  height: 100%;
+  background-color: var(--oxy-primary);
+  transition: width 0.4s ease;
+}
+
+.oxy-step-item {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  flex: 1;
+  text-decoration: none !important;
+  color: inherit;
+}
+
+.oxy-step-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  border: 3px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--oxy-outline);
+  transition: all 0.3s ease;
+}
+
+.oxy-step-item.completed .oxy-step-circle {
+  background-color: var(--oxy-tertiary);
+  border-color: var(--oxy-tertiary);
+  color: #ffffff;
+}
+
+.oxy-step-item.active .oxy-step-circle {
+  background-color: var(--oxy-primary);
+  border-color: var(--oxy-surface-high);
+  color: #ffffff;
+  box-shadow: 0 0 0 4px var(--oxy-surface-high);
+}
+
+.oxy-step-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.oxy-step-item.active .oxy-step-title {
+  color: var(--oxy-primary);
+}
+
+.oxy-step-desc {
+  font-size: 11px;
+  color: var(--oxy-outline);
+}
+
+/* Skeleton Loading Animation */
+.oxy-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: oxy-loading-skeleton 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes oxy-loading-skeleton {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Document Checklist */
+.doc-checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: var(--oxy-radius-sm);
+  background: var(--oxy-background);
+  border: 1px solid var(--oxy-outline-variant);
+  margin-bottom: 12px;
+  transition: border-color 0.2s ease;
+}
+
+.doc-checklist-item.ready {
+  border-left: 4px solid var(--oxy-tertiary);
+}
+
+.doc-checklist-item.pending {
+  border-left: 4px solid #f59e0b;
+}
+
+/* Buttons */
+.oxy-btn-primary {
+  background-color: var(--oxy-primary);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: var(--oxy-radius-sm);
+  border: none;
+  padding: 10px 24px;
+  transition: all 0.2s ease;
+}
+
+.oxy-btn-primary:hover:not(:disabled) {
+  background-color: #0036bd;
+  box-shadow: 0 4px 12px rgba(0, 64, 224, 0.15);
+}
+
+.oxy-btn-secondary {
+  background-color: var(--oxy-surface-low);
+  color: var(--oxy-primary);
+  font-weight: 600;
+  border-radius: var(--oxy-radius-sm);
+  border: 1px solid var(--oxy-outline-variant);
+  padding: 10px 24px;
+  transition: all 0.2s ease;
+}
+
+.oxy-btn-secondary:hover:not(:disabled) {
+  background-color: var(--oxy-surface-high);
+}
+
+/* Info Item Row */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.info-row:last-child {
+  border-bottom: none;
+}
+.info-label {
+  color: var(--oxy-outline);
+  font-size: 13px;
+}
+.info-value {
+  font-weight: 600;
+  color: var(--oxy-on-surface);
+  font-size: 13px;
+}
+
+/* Custom Table cards */
+.table-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  padding: 14px 0;
+}
+.table-card-row:last-child {
+  border-bottom: none;
+}
+
+/* Pixel-Perfect Profile Layout Rules matching Screenshots */
+.profile-banner {
+  background: #0f0c3d !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  color: #ffffff !important;
+  margin-bottom: 24px;
+}
+
+.profile-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5568;
+  font-size: 24px;
+}
+
+.edit-profile-btn {
+  background: #ffffff !important;
+  color: #3b5998 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+  font-size: 14px;
+  padding: 8px 20px !important;
+  transition: all 0.2s ease;
+}
+
+.edit-profile-btn:hover {
+  background: #f7fafc !important;
+}
+
+.personal-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1.5px solid #edf2f7;
+}
+
+.personal-info-row:last-child {
+  border-bottom: none;
+}
+
+.personal-info-label {
+  color: #718096;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.personal-info-value {
+  color: #1a202c;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.bank-details-box {
+  background: #f0f3ff;
+  border: 1px solid #dbe2ff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 8px;
+}
+
+.shortcut-box {
+  background: #f0f3ff;
+  border: 1px solid #dbe2ff;
+  border-radius: 8px;
+  padding: 16px;
+  text-decoration: none !important;
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shortcut-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 64, 224, 0.05);
+}
+
+.security-badge-yes {
+  background-color: #38b000 !important;
+  color: #ffffff !important;
+  font-size: 11px;
+  padding: 4px 14px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+.security-badge-no {
+  background-color: #ffd60a !important;
+  color: #1e1e1e !important;
+  font-size: 11px;
+  padding: 4px 14px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+/* Premium summary cards matching profile banner style */
+.oxy-metrics-banner {
+  background: linear-gradient(135deg, #0f0c3d 0%, #17125c 100%) !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  border: none !important;
+  padding: 24px !important;
+  box-shadow: 0 4px 15px rgba(15, 12, 61, 0.1) !important;
+}
+
+.oxy-metrics-banner h2 {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.oxy-metrics-banner .badge {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+

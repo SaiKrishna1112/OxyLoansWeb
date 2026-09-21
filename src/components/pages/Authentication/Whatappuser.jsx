@@ -3,6 +3,7 @@ import "./user.css";
 import { useNavigate } from "react-router-dom";
 import { handelapidata } from "../../HttpRequest/beforelogin";
 import { Link } from "react-router-dom";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 
 const Whatappuser = ({ data }) => {
   const [data1, setAppData] = useState(data);

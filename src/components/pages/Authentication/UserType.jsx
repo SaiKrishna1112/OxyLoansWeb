@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import logo from '../../../assets/img/oxylogodashboard.png';
 import './UserType.css';
 import { Link } from 'react-router-dom';
+import { clearLastVisitedUrls } from '../../../utils/redirectUtils';
 
 const UserType = () => {
+  useEffect(() => {
+    clearLastVisitedUrls();
+  }, []);
   const handleMouseOver = (e) => {
     e.target.style.backgroundColor = "#0056b3";
   };

@@ -339,11 +339,11 @@ const BorrowerMarketplaceConsent = React.lazy(() =>
 );
 
 const MarketplaceEsign = React.lazy(() =>
-  import("./components/pages/Oxyloans/Borrower/MarketplaceEsign")
+  import("./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEsign")
 );
 
 const MarketplaceEnach = React.lazy(() =>
-  import("./components/pages/Oxyloans/Borrower/MarketplaceEnach")
+  import("./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEnach")
 );
 
 const MyOxyScore = React.lazy(() =>
@@ -848,7 +848,17 @@ export const newRouter = createBrowserRouter([
     errorElement: <Error404></Error404>,
   },
   {
+    path: "/esign/:loanRequestId/",
+    element: <MarketplaceEsign />,
+    errorElement: <Error404></Error404>,
+  },
+  {
     path: "/enach/:loanRequestId",
+    element: <MarketplaceEnach />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/enach/:loanRequestId/",
     element: <MarketplaceEnach />,
     errorElement: <Error404></Error404>,
   },

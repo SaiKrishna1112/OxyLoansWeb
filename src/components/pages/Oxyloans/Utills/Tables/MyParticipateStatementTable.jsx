@@ -388,12 +388,27 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
       title: "Interest (₹)",
       dataIndex: "interestAmount",
       render: (v, rec) => (
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", }}>
           <span style={{ fontWeight: 600 }}>₹{Number(v || 0).toLocaleString("en-IN")}</span>
-          {rec.isFirst && rec.status !== "paid" && (
+          {rec.isFirst && rec.status !== "paid" &&  (
             <button
-              className="btn btn-sm btn-outline-info"
-              style={{ fontSize: 10, padding: "1px 6px" }}
+              className="btn btn-sm btn-info"
+              style={{
+                fontSize: 12,
+                padding: "2px 8px",
+                fontWeight: 700,
+                color: "#fff",
+                borderColor: "#138496",
+                boxShadow: "0 1px 3px rgba(19, 132, 150, 0.35)",
+                marginLeft: 30,
+              }}
+              title={showCalc
+                ? "Hide the first-month interest calculation"
+                : "View how the first-month interest is calculated"}
+              aria-label={showCalc
+                ? "Hide the first-month interest calculation"
+                : "View how the first-month interest is calculated"}
+              aria-expanded={showCalc}
               onClick={() => setShowCalc(p => !p)}
             >
               {showCalc ? "Hide" : "How?"}
@@ -402,7 +417,7 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
           {rec.isFirst && rec._raw.listOfPaticipatedInfo && (
             <button
               className="btn btn-sm btn-outline-primary"
-              style={{ fontSize: 10, padding: "1px 6px" }}
+              style={{ fontSize: 10, padding: "2px 8px" }}
               onClick={() => { setBreakupRows(rec._raw.listOfPaticipatedInfo); setShowBreakup(p => !p); }}
             >
               {showBreakup ? "Hide Breakup" : "Breakup"}
@@ -413,7 +428,48 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
     },
   ];
 
-  const firstItem = emiCard[0];
+  // Use the transformed table row so the controlled expansion has a valid key.
+  const firstItem = newData[0];
+
+  const renderFirstMonthDetails = (record) => {
+    if (!record.isFirst) return null;
+
+    return (
+      <div style={{ padding: "4px 8px" }}>
+        {showCalc && <FirstMonthCalcBreakdown row={record._raw} dealInfo={dealInfo} />}
+
+        {showBreakup && breakupRows.length > 0 && (
+          <div style={{ background: "#f9f9f9", border: "1px solid #e0e0e0", borderRadius: 8, padding: "12px 14px", marginBottom: 8 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: "#333" }}>First Month Breakup (All Participations)</div>
+            <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "#f0f0f0" }}>
+                  {["Date", "Amount (₹)", "Days", "ROI", "Interest (₹)"].map(h => (
+                    <th key={h} style={{ padding: "6px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #ddd" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {breakupRows.map((item, i) => (
+                  <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
+                    <td style={{ padding: "6px 10px" }}>{item.upatedDate || "—"}</td>
+                    <td style={{ padding: "6px 10px" }}>₹{Number(item.amount || 0).toLocaleString("en-IN")}</td>
+                    <td style={{ padding: "6px 10px" }}>{item.differenceInDays}</td>
+                    <td style={{ padding: "6px 10px" }}>{item.roi ? `${item.roi}%` : "—"}</td>
+                    <td style={{ padding: "6px 10px", fontWeight: 600 }}>₹{Math.round(item.interestAmount || 0).toLocaleString("en-IN")}</td>
+                  </tr>
+                ))}
+                <tr style={{ background: "#f0f7ff", fontWeight: 700 }}>
+                  <td colSpan={4} style={{ padding: "6px 10px", textAlign: "right" }}>Total</td>
+                  <td style={{ padding: "6px 10px" }}>₹{Math.round(breakupRows.reduce((s, r) => s + (r.interestAmount || 0), 0)).toLocaleString("en-IN")}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={{ maxHeight: "90vh", overflowY: "auto", padding: "4px 2px" }}>
@@ -442,40 +498,6 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
         />
       </div>
 
-      {/* First month calc */}
-      {showCalc && firstItem && <FirstMonthCalcBreakdown row={firstItem} dealInfo={dealInfo} />}
-
-      {/* Breakup view */}
-      {showBreakup && breakupRows.length > 0 && (
-        <div style={{ background: "#f9f9f9", border: "1px solid #e0e0e0", borderRadius: 8, padding: "12px 14px", marginBottom: 12 }}>
-          <div style={{ fontWeight: 600, marginBottom: 8, fontSize: 13, color: "#333" }}>First Month Breakup (All Participations)</div>
-          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f0f0f0" }}>
-                {["Date", "Amount (₹)", "Days", "ROI", "Interest (₹)"].map(h => (
-                  <th key={h} style={{ padding: "6px 10px", textAlign: "left", fontWeight: 600, borderBottom: "1px solid #ddd" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {breakupRows.map((item, i) => (
-                <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
-                  <td style={{ padding: "6px 10px" }}>{item.upatedDate || "—"}</td>
-                  <td style={{ padding: "6px 10px" }}>₹{Number(item.amount || 0).toLocaleString("en-IN")}</td>
-                  <td style={{ padding: "6px 10px" }}>{item.differenceInDays}</td>
-                  <td style={{ padding: "6px 10px" }}>{item.roi ? `${item.roi}%` : "—"}</td>
-                  <td style={{ padding: "6px 10px", fontWeight: 600 }}>₹{Math.round(item.interestAmount || 0).toLocaleString("en-IN")}</td>
-                </tr>
-              ))}
-              <tr style={{ background: "#f0f7ff", fontWeight: 700 }}>
-                <td colSpan={4} style={{ padding: "6px 10px", textAlign: "right" }}>Total</td>
-                <td style={{ padding: "6px 10px" }}>₹{Math.round(breakupRows.reduce((s, r) => s + (r.interestAmount || 0), 0)).toLocaleString("en-IN")}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {/* EMI schedule table */}
       <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid #e8e8e8" }}>
         <Table
@@ -484,6 +506,11 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
           pagination={false}
           scroll={{ x: true }}
           size="small"
+          expandable={{
+            expandedRowKeys: firstItem ? [firstItem.key] : [],
+            expandedRowRender: renderFirstMonthDetails,
+            expandIcon: () => null,
+          }}
           rowClassName={(rec) => rec.status === "paid" ? "row-paid" : "row-upcoming"}
           rowStyle={(rec) => rec.status === "paid" ? { background: "#f0fff4" } : {}}
         />

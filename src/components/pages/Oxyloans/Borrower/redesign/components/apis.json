@@ -1,0 +1,229 @@
+{
+  "title": "Cashfree eSign + eNACH Frontend API Catalog",
+  "version": "1.0.0",
+  "baseUrl": "{{host}}/oxyloans/v1/user",
+  "auth": {
+    "type": "Bearer",
+    "header": "Authorization",
+    "example": "Bearer {{accessToken}}"
+  },
+  "notes": [
+    "Use Cashfree eNACH APIs only when borrower.loan.enach.provider=CASHFREE.",
+    "Do not use Paynimo /borrowerLoanEnach/{mandateId} for Cashfree path.",
+    "emiCardId = loan_emi_card.id for one unpaid month EMI, not loanRequestId.",
+    "Normal EMI debit is done by backend scheduler; raiseCharge is optional/manual."
+  ],
+  "returnPages": {
+    "cashfreeEnachResponse": "https://www.user.oxyloans.com/new/cashfreeEnachResponse",
+    "cashfreeEsignResponse": "https://www.user.oxyloans.com/new/cashfreeEsignResponse"
+  },
+  "flow": [
+    "POST lenderBorrowerEsign",
+    "Open redirect_url (Cashfree Aadhaar eSign)",
+    "POST uploadAgreementForLRAndBr",
+    "GET borrowerLoanEnachMandates → mandateId",
+    "POST borrowerLoanCashfreeEnach/{mandateId}/start",
+    "Open authorizationUrl (bank eNACH)",
+    "GET borrowerLoanCashfreeEnach/{mandateId}/status until ACTIVE",
+    "EMI auto-debit by scheduler"
+  ],
+  "apis": [
+    {
+      "apiKey": "CASHFREE_ESIGN_START",
+      "step": 1,
+      "name": "Start Cashfree eSign",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/{loanRequestId}/lenderBorrowerEsign",
+      "queryParams": {
+        "aadharNumber": "1234"
+      },
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}",
+        "Content-Type": "application/json"
+      },
+      "requestBody": {
+        "eSignType": "CASHFREE"
+      },
+      "responseFields": ["id", "referenceId", "redirect_url", "message"],
+      "frontendAction": "Open response.redirect_url in browser/WebView"
+    },
+    {
+      "apiKey": "CASHFREE_ESIGN_COMPLETE",
+      "step": 2,
+      "name": "Complete Cashfree eSign",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/{loanRequestId}/uploadAgreementForLRAndBr",
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}",
+        "Content-Type": "application/json"
+      },
+      "requestBody": {
+        "eSignType": "CASHFREE",
+        "status": "SUCCESS"
+      },
+      "responseFields": ["userId", "loanRequestId"],
+      "frontendAction": "On success navigate to eNACH setup screen",
+      "backendSideEffects": [
+        "Creates EMI cards",
+        "Creates eNACH mandate INITIATED",
+        "May set loan_status=AWAITING_ENACH"
+      ]
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_LIST_MANDATES",
+      "step": 3,
+      "name": "List borrower loan eNACH mandates",
+      "method": "GET",
+      "url": "/oxyloans/v1/user/{userId}/loan/{loanRequestId}/borrowerLoanEnachMandates",
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}"
+      },
+      "requestBody": null,
+      "responseFields": [
+        "id",
+        "mandateTransactionId",
+        "mandateType",
+        "mandateStatus",
+        "maxAmount",
+        "borrowerLoanId"
+      ],
+      "frontendAction": "Use list[0].id as mandateId (or first CASHFREE INITIATED/SUCCESS)"
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_START",
+      "step": 4,
+      "name": "Start Cashfree eNACH authorization",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/borrowerLoanCashfreeEnach/{mandateId}/start",
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}"
+      },
+      "requestBody": null,
+      "responseFields": [
+        "mandateId",
+        "subscriptionId",
+        "authorizationUrl",
+        "subscriptionStatus",
+        "returnUrl",
+        "message"
+      ],
+      "frontendAction": "Open authorizationUrl; after bank auth Cashfree redirects to returnUrl"
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_STATUS",
+      "step": 5,
+      "name": "Sync Cashfree eNACH status",
+      "method": "GET",
+      "url": "/oxyloans/v1/user/{userId}/loan/borrowerLoanCashfreeEnach/{mandateId}/status",
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}"
+      },
+      "requestBody": null,
+      "responseFields": [
+        "subscription_id",
+        "subscription_status",
+        "authorization_url",
+        "status",
+        "message"
+      ],
+      "frontendAction": "Poll until subscription_status === ACTIVE then show success"
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_RAISE_CHARGE",
+      "step": 6,
+      "name": "Manual raise EMI debit (optional)",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/borrowerLoanCashfreeEnach/emi/{emiCardId}/raiseCharge",
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}"
+      },
+      "requestBody": null,
+      "pathParams": {
+        "emiCardId": "loan_emi_card.id of unpaid EMI for that month"
+      },
+      "responseFields": [
+        "payment_id",
+        "cf_payment_id",
+        "payment_status",
+        "status",
+        "message"
+      ],
+      "frontendAction": "Show PENDING/SUCCESS/FAILED; settlement confirmed by backend webhook/verify"
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_CANCEL",
+      "step": 7,
+      "name": "Request cancel eNACH (always denied for borrower)",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/borrowerLoanCashfreeEnach/{mandateId}/cancel",
+      "headers": {
+        "Authorization": "Bearer {{accessToken}}"
+      },
+      "requestBody": null,
+      "responseFields": ["allowed", "loanStillDue", "message", "mandateStatus"],
+      "frontendAction": "Show message that cancel is not allowed from app"
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_ADMIN_REVERSE_FALSE_PAID",
+      "step": 8,
+      "name": "Admin reverse false paid EMI",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{adminUserId}/loan/borrowerLoanCashfreeEnach/emi/{emiCardId}/reverseFalsePaid",
+      "queryParams": {
+        "reason": "false paid without debit",
+        "force": "false"
+      },
+      "headers": {
+        "Authorization": "Bearer {{adminAccessToken}}"
+      },
+      "requestBody": null,
+      "adminOnly": true,
+      "responseFields": ["reversed", "message", "emiCardId", "emiStatus", "enachStatus"]
+    },
+    {
+      "apiKey": "CASHFREE_ENACH_ADMIN_RECONCILE",
+      "step": 9,
+      "name": "Admin run paid-vs-Cashfree reconcile",
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{adminUserId}/loan/borrowerLoanCashfreeEnach/reconcilePaidEmis",
+      "headers": {
+        "Authorization": "Bearer {{adminAccessToken}}"
+      },
+      "requestBody": null,
+      "adminOnly": true,
+      "responseFields": ["checked", "confirmed", "reversed", "pending", "failed"]
+    }
+  ],
+  "doNotUseForCashfree": [
+    {
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/borrowerLoanEnach/{mandateId}",
+      "reason": "Paynimo legacy"
+    },
+    {
+      "method": "POST",
+      "url": "/oxyloans/v1/user/{userId}/loan/borrowerLoanEnach/response",
+      "reason": "Paynimo callback"
+    }
+  ],
+  "statusGuide": {
+    "mandateStatus": {
+      "INITIATED": "Created, bank auth pending",
+      "SUCCESS": "eNACH ACTIVE",
+      "FAILED": "Failed or cancelled at bank"
+    },
+    "loanStatus": {
+      "AWAITING_ENACH": "eSign done, waiting eNACH ACTIVE",
+      "ACTIVE": "Ready after eNACH (or if gate disabled)"
+    },
+    "emi": {
+      "enachstatus=PENDING": "Debit in flight",
+      "status=COMPLETED": "Paid (Cashfree confirmed)",
+      "enachstatus=FAILED": "Bounce / failed debit"
+    },
+    "subscription_status": {
+      "BANK_APPROVAL_PENDING": "User must complete bank auth",
+      "ACTIVE": "Mandate ready for auto-debit"
+    }
+  }
+}

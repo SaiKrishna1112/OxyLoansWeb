@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import PhoneInput from "react-phone-number-input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Success, WarningBackendApi } from "../../Base UI Elements/SweetAlert";
 import {
   notifications1,
@@ -36,6 +36,9 @@ import {
   verifyWhatsappOtpapi,
   getuploadCredit,
   getdataBankStatement,
+  analyzeBorrowerBankStatement,
+  getBorrowerAnalysis,
+  getBorrowerReportPdfUser,
   getdatatenth,
   getdataintermediate,
   getdatagraduation,
@@ -45,13 +48,20 @@ import {
   getPCreditReportDoc,
   borrowerSecureInfo,
   getBorrowerSecureInfo,
+  saveBorrowerReferenceDetails,
   base_url,
-
 } from "../../../HttpRequest/afterlogin";
 
 import { useSelector } from "react-redux";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
+import {
+  validateBorrowerPersonalDetails,
+  validateBankAccountNumber,
+  validateIfscCode,
+  isBankNameMatching,
+  validateMobileNumber,
+} from "../../../../../utils/borrowerValidation";
 import { error } from "jquery";
 
 const BorrowerProfile = () => {
@@ -80,6 +90,19 @@ const BorrowerProfile = () => {
     otperror: "",
   });
 
+
+  const [referenceDetails, setReferenceDetails] = useState({
+    reference1: "",
+    reference2: "",
+    reference3: "",
+    reference4: "",
+    reference5: "",
+    reference6: "",
+    reference7: "",
+    reference8: "",
+    loading: false,
+    errors: {}
+  });
 
   const [value, setValue] = useState("");
 
@@ -124,10 +147,37 @@ const BorrowerProfile = () => {
     emailerror: "",
     studentOrNot: "",
   });
+
+  const profileCompletionPct = useMemo(() => {
+    if (!userProfile) return 0;
+    const fields = [
+      userProfile.firstName,
+      userProfile.lastName,
+      userProfile.panNumber,
+      userProfile.aadharNumber,
+      userProfile.city,
+      userProfile.state,
+      userProfile.address || userProfile.residenceAddress,
+      userProfile.whatsAppNumber || userProfile.mobileNumber,
+    ];
+    const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
+    return Math.round((filledFields.length / fields.length) * 100);
+  }, [userProfile]);
   const [localityOptions, setLocalityOptions] = useState([]);
+  const [cityOptions, setCityOptions] = useState([]);
+
+  const displayCityOptions = useMemo(() => {
+    return Array.from(
+      new Set([
+        ...(userProfile.city ? [userProfile.city] : []),
+        ...(cityOptions || []),
+      ])
+    ).filter(Boolean);
+  }, [userProfile.city, cityOptions]);
   const [isVerifyingPan, setIsVerifyingPan] = useState(false);
   const [isPanVerified, setIsPanVerified] = useState(false);
   const [panVerificationStatus, setPanVerificationStatus] = useState("");
+  const [addressGeoStatus, setAddressGeoStatus] = useState({ loading: false, lat: null, lng: null, message: "", valid: null });
   const [bankaccountprofile, setBankaccountProfile] = useState({
     sendMobileOtp: "",
     moblieNumber: "",
@@ -292,6 +342,96 @@ const BorrowerProfile = () => {
         "warning",
         response?.response?.data?.errorMessage || "Unable to save secure info."
       );
+    }
+  };
+
+  const handleReferenceChange = (e) => {
+    const { name, value } = e.target;
+    if (value !== "" && (!/^\d+$/.test(value) || value.length > 10)) {
+      return;
+    }
+    setReferenceDetails(prev => ({
+      ...prev,
+      [name]: value,
+      errors: { ...prev.errors, [name]: "" }
+    }));
+  };
+
+  const handleReferenceSave = async (e) => {
+    e.preventDefault();
+    
+    const newErrors = {};
+    const refKeys = [
+      { key: "reference1", label: "Father Mobile Number" },
+      { key: "reference2", label: "Mother Mobile Number" },
+      { key: "reference3", label: "Brother Mobile Number" },
+      { key: "reference4", label: "Sister Mobile Number" },
+      { key: "reference5", label: "Wife Mobile Number" },
+      { key: "reference6", label: "First Friend Mobile Number" },
+      { key: "reference7", label: "Second Friend Mobile Number" },
+      { key: "reference8", label: "Third Friend Mobile Number" }
+    ];
+
+    refKeys.forEach(ref => {
+      const val = referenceDetails[ref.key];
+      if (!val || val.trim() === "") {
+        newErrors[ref.key] = `${ref.label} is required`;
+      } else if (val.length !== 10) {
+        newErrors[ref.key] = `${ref.label} must be exactly 10 digits`;
+      }
+    });
+
+    if (Object.keys(newErrors).length > 0) {
+      setReferenceDetails(prev => ({ ...prev, errors: newErrors }));
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: "Please enter valid 10-digit mobile numbers for all references.",
+        confirmButtonColor: "#3d5ee1"
+      });
+      return;
+    }
+
+    setReferenceDetails(prev => ({ ...prev, loading: true }));
+    try {
+      const payload = {
+        reference1: referenceDetails.reference1,
+        reference2: referenceDetails.reference2,
+        reference3: referenceDetails.reference3,
+        reference4: referenceDetails.reference4,
+        reference5: referenceDetails.reference5,
+        reference6: referenceDetails.reference6,
+        reference7: referenceDetails.reference7,
+        reference8: referenceDetails.reference8,
+        userId: sessionStorage.getItem("userId")
+      };
+
+      const res = await saveBorrowerReferenceDetails(payload);
+      if (res.status === 200) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Given Details Saved Successfully",
+          confirmButtonColor: "#3d5ee1"
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: res.data?.errorMessage || "Failed to save details. Please try again.",
+          confirmButtonColor: "#3d5ee1"
+        });
+      }
+    } catch (error) {
+      console.error("Error saving reference details:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: error.response?.data?.errorMessage || "Failed to save details. Please try again.",
+        confirmButtonColor: "#3d5ee1"
+      });
+    } finally {
+      setReferenceDetails(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -491,12 +631,34 @@ const BorrowerProfile = () => {
     bankaccountprofile.confirmAccountNumber,
   ]);
   const savebankdetailsProfile = () => {
+    const accCheck = validateBankAccountNumber(bankaccountprofile.accountNumber);
+    if (!accCheck.valid) {
+      WarningBackendApi("warning", accCheck.message);
+      return;
+    }
+
+    if (bankaccountprofile.accountNumber !== bankaccountprofile.confirmAccountNumber) {
+      WarningBackendApi("warning", "Account numbers do not match!");
+      return;
+    }
+
+    const borrowerFullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim();
+    if (bankaccountprofile.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccountprofile.nameAtBank, borrowerFullName)) {
+      Swal.fire(
+        "Bank Account Name Mismatch",
+        `Bank Account Holder Name ("${bankaccountprofile.nameAtBank}") does NOT match Borrower Profile Name ("${borrowerFullName}"). Bank account must belong to the borrower.`,
+        "error"
+      );
+      return;
+    }
+
     if (dashboarddata.isValid === true) {
       if (bankaccountprofile.mobileOtp === "") {
         setBankaccountProfile({
           ...bankaccountprofile,
           mobileOtperror: "Enter the OTP",
         });
+        return;
       }
     }
     const response = updatebankDetails(bankaccountprofile);
@@ -696,6 +858,19 @@ const BorrowerProfile = () => {
     });
   }, [userProfile.dob]);
   const handlefileupload = (event) => {
+    if (profileCompletionPct < 75) {
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Completion Under 75%",
+        text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before uploading KYC.`,
+        confirmButtonText: "Okay",
+        confirmButtonColor: "#3d5ee1",
+      });
+      if (event.target) {
+        event.target.value = "";
+      }
+      return;
+    }
     const response = uploadkyc(event);
     response
       .then((data) => {
@@ -1013,40 +1188,79 @@ const BorrowerProfile = () => {
 
 
   const handlePinCodeChange = async (name, value) => {
-  if (name === "pinCode" && value.length === 6) {
-    try {
-      const res = await axios.get(`${BASE_URL}/${value}/pincode`);
-      const blocks = res.data.pinresults
-        .map((item) => item.block)
-        .filter((block, index, self) => block && self.indexOf(block) === index); // Get unique non-null blocks
+    if (name === "pinCode" && value.length === 6) {
+      try {
+        const res = await axios.get(`${BASE_URL}/${value}/pincode`);
+        const resData = res.data || res;
 
-      setLocalityOptions(blocks);
+        const blocks = resData.pinresults
+          ? resData.pinresults
+              .map((item) => item.block)
+              .filter((block, index, self) => block && self.indexOf(block) === index)
+          : [];
 
-      // Set the first locality as default if blocks are available
-      setUserProfile((prev) => ({
-        ...prev,
-        locality: blocks.length > 0 ? blocks[0] : "", // Select first option or empty string
-        localityerror: blocks.length > 0 ? "" : "No localities found for this pin code",
-      }));
-    } catch (error) {
-      console.error("Failed to fetch pincode info", error);
+        setLocalityOptions(blocks);
+
+        let cities = [];
+        if (typeof resData.city === "string" && resData.city.trim()) {
+          cities = resData.city.split(/[,/]+/).map((c) => c.trim()).filter(Boolean);
+        } else if (Array.isArray(resData.city)) {
+          cities = resData.city.filter(Boolean);
+        }
+
+        if (resData.cities && Array.isArray(resData.cities)) {
+          const extraCities = resData.cities.map((c) => String(c).trim()).filter(Boolean);
+          cities = [...cities, ...extraCities];
+        }
+
+        if (resData.pinresults && Array.isArray(resData.pinresults)) {
+          const pinCities = resData.pinresults
+            .map((item) => item.city || item.district || item.districtName || item.taluk)
+            .filter(Boolean);
+          cities = [...cities, ...pinCities];
+        }
+
+        cities = Array.from(new Set(cities));
+
+        setCityOptions(cities);
+
+        const fetchedState =
+          resData.state ||
+          (resData.pinresults && resData.pinresults[0]?.state) ||
+          (resData.pinresults && resData.pinresults[0]?.statename) ||
+          "";
+
+        setUserProfile((prev) => ({
+          ...prev,
+          locality: blocks.length > 0 ? (blocks.includes(prev.locality) ? prev.locality : blocks[0]) : prev.locality,
+          localityerror: blocks.length > 0 ? "" : "No localities found for this pin code",
+          city: cities.length > 0 ? (cities.includes(prev.city) ? prev.city : cities[0]) : (resData.city || prev.city),
+          cityer: "",
+          state: fetchedState || prev.state,
+          stateerror: "",
+          pinCodeerror: "",
+        }));
+      } catch (error) {
+        console.error("Failed to fetch pincode info", error);
+        setLocalityOptions([]);
+        setCityOptions([]);
+        setUserProfile((prev) => ({
+          ...prev,
+          locality: "",
+          localityerror: "Failed to fetch pincode info",
+        }));
+      }
+    } else if (name === "pinCode" && value.length < 6) {
       setLocalityOptions([]);
+      setCityOptions([]);
       setUserProfile((prev) => ({
         ...prev,
         locality: "",
-        localityerror: "Failed to fetch localities",
+        localityerror: "",
+        cityer: "",
       }));
     }
-  } else if (name === "pinCode" && value.length < 6) {
-    // Clear locality options and reset locality if pin code is invalid
-    setLocalityOptions([]);
-    setUserProfile((prev) => ({
-      ...prev,
-      locality: "",
-      localityerror: "",
-    }));
-  }
-};
+  };
   const handlechange = async(event) => {
     let { name, value } = event.target;
     if (name === "panNumber" && value) {
@@ -1251,6 +1465,30 @@ const BorrowerProfile = () => {
       }
     }
   
+    // Run comprehensive borrower validation rules
+    const valData = {
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      fatherName: userProfile.fatherName,
+      dob: userProfile.dob,
+      panNumber: userProfile.panNumber,
+      whatsAppNumber: userProfile.whatsAppNumber,
+      residenceAddress: userProfile.residenceAddress,
+      city: userProfile.city,
+      state: userProfile.state,
+      pinCode: userProfile.pinCode,
+      workExperience: formData.totalExperience,
+      companyName: formData.company,
+      salary: formData.salary,
+      aadharNumber: userProfile.aadharNumber,
+    };
+    const validationResult = validateBorrowerPersonalDetails(valData, category);
+    if (!validationResult.valid) {
+      setError(validationResult.message);
+      WarningBackendApi("warning", validationResult.message);
+      return;
+    }
+
     // If everything is valid
     setError("");
     // Proceed with API call or other logic
@@ -1345,6 +1583,48 @@ const BorrowerProfile = () => {
       toastrWarning("fill the mandatory fields");
     }
   };
+
+  useEffect(() => {
+    const address = (userProfile.residenceAddress || "").trim();
+    const pinCode = String(userProfile.pinCode || "").trim();
+    const city = (userProfile.city || "").trim();
+    const state = (userProfile.state || "").trim();
+
+    if (!address || pinCode.length < 6 || !city || !state) {
+      setAddressGeoStatus({ loading: false, lat: null, lng: null, message: "", valid: null });
+      return;
+    }
+
+    setAddressGeoStatus({ loading: true, lat: null, lng: null, message: "Verifying address...", valid: null });
+
+    const timer = setTimeout(async () => {
+      try {
+        const query = encodeURIComponent(`${address}, ${pinCode}, ${city}, ${state}, India`);
+        const res = await axios.get(
+          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=in`,
+          { headers: { "Accept-Language": "en" } }
+        );
+        if (res.data && res.data.length > 0) {
+          const { lat, lon, display_name } = res.data[0];
+          setAddressGeoStatus({
+            loading: false,
+            lat: parseFloat(lat),
+            lng: parseFloat(lon),
+            message: `✓ Address verified — Lat: ${parseFloat(lat).toFixed(5)}, Lng: ${parseFloat(lon).toFixed(5)}`,
+            valid: true,
+            displayName: display_name,
+          });
+        } else {
+          setAddressGeoStatus({ loading: false, lat: null, lng: null, message: "Address not found. Please check the address and pin code.", valid: false });
+        }
+      } catch (err) {
+        console.error("Address geocoding failed", err);
+        setAddressGeoStatus({ loading: false, lat: null, lng: null, message: "Failed to verify address. Please try again.", valid: false });
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [userProfile.residenceAddress, userProfile.pinCode, userProfile.city, userProfile.state]);
 
   const handleVerifyPan = async () => {
     if (!userProfile.panNumber || userProfile.panNumber.length !== 10) {
@@ -1511,24 +1791,21 @@ const BorrowerProfile = () => {
   };
 
   useEffect(() => {
-    if (userProfile.pinCode.length == 6) {
-      const response = handlepincodeapicall(userProfile.pinCode);
-      response
-        .then((data) => {
-          if (data.request.status === 200 && data.data !== "") {
-            setUserProfile({
-              ...userProfile,
-              state: data.data.state,
-              city: data.data.city,
-            });
-          }
-        })
-        .catch((error) => {
-          // Handle error if necessary
-        });
+    if (userProfile.pinCode && String(userProfile.pinCode).length === 6) {
+      handlePinCodeChange("pinCode", String(userProfile.pinCode));
     }
   }, [userProfile.pinCode]);
   const openTheActiveTabs = (type) => {
+    if (type === "Kyc" && profileCompletionPct < 75) {
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Completion Under 75%",
+        text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before uploading KYC.`,
+        confirmButtonText: "Okay",
+        confirmButtonColor: "#3d5ee1",
+      });
+      return;
+    }
     var i, j;
     let tablinks = document.getElementsByClassName("nav-link");
     let tapPan = document.getElementsByClassName("tab-pane");
@@ -1641,6 +1918,20 @@ const BorrowerProfile = () => {
         bankCity: data.data.bankAddress,
         moblieNumber: data.data.mobileNumber,
       });
+      if (data.data.referenceDetailsResponseDto) {
+        setReferenceDetails({
+          reference1: data.data.referenceDetailsResponseDto.reference1 || "",
+          reference2: data.data.referenceDetailsResponseDto.reference2 || "",
+          reference3: data.data.referenceDetailsResponseDto.reference3 || "",
+          reference4: data.data.referenceDetailsResponseDto.reference4 || "",
+          reference5: data.data.referenceDetailsResponseDto.reference5 || "",
+          reference6: data.data.referenceDetailsResponseDto.reference6 || "",
+          reference7: data.data.referenceDetailsResponseDto.reference7 || "",
+          reference8: data.data.referenceDetailsResponseDto.reference8 || "",
+          loading: false,
+          errors: {}
+        });
+      }
     }
     else{
 console.log("data",data.status);
@@ -1797,7 +2088,7 @@ console.log("data",data.status);
                   <h3 className="page-title">Profile</h3>
                   <ul className="breadcrumb">
                     <li className="breadcrumb-item">
-                      <Link to="/dashboard">Dashboard</Link>
+                      <Link to="/borrowerDashboard">Dashboard</Link>
                     </li>
                     <li className="breadcrumb-item active">Profile</li>
                   </ul>
@@ -1928,8 +2219,20 @@ console.log("data",data.status);
                     <li className="nav-item">
                       <Link
                         className="nav-link Kyc"
-                        data-bs-toggle="tab"
-                        to="#uploadKyc_tab"
+                        data-bs-toggle={profileCompletionPct >= 75 ? "tab" : undefined}
+                        to={profileCompletionPct >= 75 ? "#uploadKyc_tab" : "#"}
+                        onClick={(e) => {
+                          if (profileCompletionPct < 75) {
+                            e.preventDefault();
+                            Swal.fire({
+                              icon: "warning",
+                              title: "Profile Completion Under 75%",
+                              text: `Your profile is only ${profileCompletionPct}% complete. Please complete at least 75% of your profile details before uploading KYC.`,
+                              confirmButtonText: "Okay",
+                              confirmButtonColor: "#3d5ee1",
+                            });
+                          }
+                        }}
                       >
                         <i className="fa-solid fa-upload"></i> Upload KYC
                       </Link>
@@ -1951,6 +2254,15 @@ console.log("data",data.status);
                         to="#secure_info_tab"
                       >
                         <i className="fa-solid fa-user-shield"></i> Secure Info
+                      </Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link
+                        className="nav-link References"
+                        data-bs-toggle="tab"
+                        to="#references_tab"
+                      >
+                        <i className="fa-solid fa-users"></i> Reference Details
                       </Link>
                     </li>
                   </ul>
@@ -2083,17 +2395,34 @@ console.log("data",data.status);
                               <span>Secure Info</span>
                               <Link
                                 className="edit-link"
-                                to="#"
-                                onClick={(e) => {
-                                  openTheActiveTabs("Secure");
-                                }}
-                              >
-                                <i className="far fa-edit me-1" />
-                                Edit
-                              </Link>
-                            </h5>
+                                  to="#"
+                                  onClick={(e) => {
+                                    openTheActiveTabs("Secure");
+                                  }}
+                                >
+                                  <i className="far fa-edit me-1" />
+                                  Edit
+                                </Link>
+                              </h5>
+                            </div>
                           </div>
-                        </div>
+                          <div className="card">
+                            <div className="card-body">
+                              <h5 className="card-title d-flex justify-content-between">
+                                <span>Reference Details</span>
+                                <Link
+                                  className="edit-link"
+                                  to="#"
+                                  onClick={(e) => {
+                                    openTheActiveTabs("References");
+                                  }}
+                                >
+                                  <i className="far fa-edit me-1" />
+                                  Edit
+                                </Link>
+                              </h5>
+                            </div>
+                          </div>
                       </div>
                     </div>
                     {/* /Personal Details */}
@@ -2628,6 +2957,7 @@ console.log("data",data.status);
                                     onChange={handlechange}
                                     value={userProfile.panNumber}
                                     maxLength={10}
+                                    readOnly={isPanVerified}
                                     name="panNumber"
                                     style={{ textTransform: "uppercase" }}
                                   />
@@ -2813,6 +3143,20 @@ console.log("data",data.status);
                                     {userProfile.residenceAddresserror}
                                   </div>
                                 )}
+                                {addressGeoStatus.loading && (
+                                  <div className="text-muted small mt-1">
+                                    <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                    Verifying address...
+                                  </div>
+                                )}
+                                {!addressGeoStatus.loading && addressGeoStatus.message && (
+                                  <div className={`mt-1 small ${addressGeoStatus.valid === true ? "text-success" : "text-danger"}`}>
+                                    {addressGeoStatus.message}
+                                    {addressGeoStatus.valid === true && addressGeoStatus.displayName && (
+                                      <div className="text-muted" style={{ fontSize: "0.75rem" }}>{addressGeoStatus.displayName}</div>
+                                    )}
+                                  </div>
+                                )}
 
                                 {/* ✅ Checkbox */}
                                 <div className="form-check mt-2">
@@ -2919,6 +3263,65 @@ console.log("data",data.status);
                                 )}
                               </div>
 
+                              {/* City Dropdown / Input */}
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  City <span className="login-danger">*</span>
+                                </label>
+                                {displayCityOptions && displayCityOptions.length > 0 ? (
+                                  <select
+                                    className="form-control"
+                                    name="city"
+                                    value={userProfile.city}
+                                    onChange={handlechange}
+                                  >
+                                    <option value="">Select City</option>
+                                    {displayCityOptions.map((c, index) => (
+                                      <option key={index} value={c}>
+                                        {c}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Enter City"
+                                    onKeyPress={handleKeyPress}
+                                    onChange={handlechange}
+                                    value={userProfile.city}
+                                    name="city"
+                                  />
+                                )}
+                                {userProfile.cityer && (
+                                  <div className="text-danger">
+                                    {userProfile.cityer}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* State */}
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  State
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="Enter State"
+                                  onChange={handlechange}
+                                  onKeyPress={handleKeyPress}
+                                  value={userProfile.state}
+                                  name="state"
+                                />
+                                {userProfile.stateerror && (
+                                  <div className="text-danger">
+                                    {userProfile.stateerror}
+                                  </div>
+                                )}
+                              </div>
+
                               {/* Locality Dropdown */}
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
@@ -2941,45 +3344,6 @@ console.log("data",data.status);
                                 {userProfile.localityerror && (
                                   <div className="text-danger">
                                     {userProfile.localityerror}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>
-                                  City <span className="login-danger">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Enter City "
-                                  onKeyPress={handleKeyPress}
-                                  onChange={handlechange}
-                                  value={userProfile.city}
-                                  name="city"
-                                />
-                                {userProfile.cityer && (
-                                  <div className="text-danger">
-                                    {userProfile.cityer}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>
-                                  State
-                                  <span className="login-danger">*</span>
-                                </label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="Enter State"
-                                  onChange={handlechange}
-                                  onKeyPress={handleKeyPress}
-                                  value={userProfile.state}
-                                  name="state"
-                                />
-                                {userProfile.stateerror && (
-                                  <div className="text-danger">
-                                    {userProfile.stateerror}
                                   </div>
                                 )}
                               </div>
@@ -4119,6 +4483,147 @@ console.log("data",data.status);
                             Save Details
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="references_tab" className="tab-pane fade References">
+                    <div className="card">
+                      <div className="card-body">
+                        <h5 className="card-title mb-4">Reference Details</h5>
+                        <form onSubmit={handleReferenceSave}>
+                          <div className="row g-3">
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Father Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference1"
+                                value={referenceDetails.reference1}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Father Number"
+                              />
+                              {referenceDetails.errors.reference1 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference1}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Mother Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference2"
+                                value={referenceDetails.reference2}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Mother Number"
+                              />
+                              {referenceDetails.errors.reference2 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference2}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Brother Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference3"
+                                value={referenceDetails.reference3}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Brother Number"
+                              />
+                              {referenceDetails.errors.reference3 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference3}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Sister Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference4"
+                                value={referenceDetails.reference4}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Sister Number"
+                              />
+                              {referenceDetails.errors.reference4 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference4}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Wife Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference5"
+                                value={referenceDetails.reference5}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Wife Number"
+                              />
+                              {referenceDetails.errors.reference5 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference5}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>First Friend Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference6"
+                                value={referenceDetails.reference6}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter First Friend Number"
+                              />
+                              {referenceDetails.errors.reference6 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference6}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Second Friend Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference7"
+                                value={referenceDetails.reference7}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Second Friend Number"
+                              />
+                              {referenceDetails.errors.reference7 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference7}</div>
+                              )}
+                            </div>
+
+                            <div className="form-group col-12 col-md-4 local-forms mb-3">
+                              <label>Third Friend Mobile Number <span className="login-danger">*</span></label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                name="reference8"
+                                value={referenceDetails.reference8}
+                                onChange={handleReferenceChange}
+                                placeholder="Enter Third Friend Number"
+                              />
+                              {referenceDetails.errors.reference8 && (
+                                <div className="text-danger small">{referenceDetails.errors.reference8}</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-start mt-3">
+                            <button
+                              type="submit"
+                              className="btn btn-primary"
+                              disabled={referenceDetails.loading}
+                            >
+                              {referenceDetails.loading ? "Saving..." : "Save Reference Details"}
+                            </button>
+                          </div>
+                        </form>
                       </div>
                     </div>
                   </div>

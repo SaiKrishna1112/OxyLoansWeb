@@ -9,6 +9,7 @@ import "./login.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { toastrWarning } from "../Base UI Elements/Toast";
 import { registersuccess } from "../Base UI Elements/SweetAlert";
+import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 const Register_active_proceed = () => {
   const history = useNavigate();
@@ -41,9 +42,13 @@ const Register_active_proceed = () => {
     addresserror: "",
   });
     const [isloading, setLoading] = useState(false)
-    const [errors, setErrors] = useState({
-  panNumber: "",
-});
+  const [errors, setErrors] = useState({
+    panNumber: "",
+  });
+
+  useEffect(() => {
+    clearLastVisitedUrls();
+  }, []);
   
   // useEffect(() => {
   //   // Calculate today's date

@@ -6,7 +6,7 @@ const userisIn = "local"; //local or production
 //     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
 //     : "https://fintech.oxyloans.com/oxyloans/v1/user/"; 
 
-
+const AI_BASE_URL = `${BASE_URL}/v1/ai/`;
 
 const getToken = () => {
   return sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
@@ -43,11 +43,40 @@ const handleApiRequestAfterLoginService = async (
         ...headers,
       },
     });
+
+    if (response && response.data) {
+      const resData = response.data;
+      if (
+        resData.errorCode === "100" ||
+        resData.errorCode === 100 ||
+        (resData.errorMessage &&
+          resData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+        return response;
+      }
+    }
+
     // Add your common logic here
     if (response.status == 200) {
       return response;
     }
   } catch (error) {
+    if (error && error.response && error.response.data) {
+      const errData = error.response.data;
+      if (
+        errData.errorCode === "100" ||
+        errData.errorCode === 100 ||
+        (errData.errorMessage &&
+          errData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
     return error;
   }
 };
@@ -78,6 +107,25 @@ export const handleBorrowerEmiRequest = async (value) => {
   }
 };
 
+export const getcommentsHistory = async (value) => {
+  try{
+    const token = getToken();
+    const response = await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      `commentHistory/${value.userDisplayId || value.lenderId}`,
+      "get",
+      token,
+      // data
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching comments history:", error);
+    throw error;
+  }
+};
+
+
+// NOFICATIONS API CALLS
 
 export const handleSendMessageNotification=async(value)=>{
   try {
@@ -476,24 +524,22 @@ export const handleComments=async(value1,value2,formattedDate)=>{
   const userId = getUserId();
   const email=getEmail()
   console.log("handleComments value",value1)
-  console.log(value1.lenderUser.mobileNumber)
+  // console.log(value1.lenderUser.mobileNumber)
   // console.log(email.split("@")[0])
 
-  let data={
-    // comments: value2
-    loanRequestId: value1.loanRequestId,
-    updatedByUserId: Number(value1.userDisplayId),
-    updatedByName: email.split("@")[0],
+  let data = {
+    loanRequestId: value1.loanRequestId || 0,
+    updatedByUserId: Number(value1.userDisplayId ?? value1.lenderId ?? 0),
+    updatedByName: email?.split("@")[0] || "",
     comment: value2,
-    created_at:formattedDate,
-    telecallinguserid:userId,
-    userName:value1.user.firstName,
-    userMobileNumber:value1.lenderUser.mobileNumber,
-
-  }
+    created_at: formattedDate,
+    telecallinguserid: userId,
+    userName: value1.user?.firstName || value1.lenderName,
+    userMobileNumber: value1.lenderUser?.mobileNumber || value1.mobileNumber,
+  };
   console.log({data})
 
-   const response = await handleApiRequestAfterLoginService(
+  const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
     `commentshistory`,
     "POST",
@@ -508,17 +554,17 @@ export const handleComments=async(value1,value2,formattedDate)=>{
 export const handlegetComments=async(value)=>{
   const token = getToken();
   const userId = getUserId();
-console.log("value",value.userDisplayId )
+  console.log("value",value.userDisplayId  || value.lenderId)
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `commentshistorygetting/${value.userDisplayId}`,
+    `commentshistorygetting/${value.userDisplayId || value.lenderId}`,
     "get",
     token,
     // data
     // postdatastring
   );
 
-   return response;
+  return response;
 
 }
 
@@ -901,6 +947,52 @@ export const adminUpdateProcessingFee = async (payload) => {
   return response;
 };
 
+export const radiusBasedFee = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `radiusBasedFee`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getRadiusBasedFee = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getRadiusBasedfee`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const updateBorrowerScore = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateBorrowerScore`,
+    "PATCH",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerCibilScore = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `getBorrowerCibilScore`,
+    "GET",
+    token
+  );
+  return response;
+};
+
 export const adminBorrowerSecureInfo = async (payload) => {
   const token = getToken();
   const response = await handleApiRequestAfterLoginService(
@@ -909,6 +1001,29 @@ export const adminBorrowerSecureInfo = async (payload) => {
     "PATCH",
     token,
     payload
+  );
+  return response;
+};
+
+export const getAdminCreditReport = async (borrowerUserId) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${borrowerUserId}/adminCreditReport`,
+    "GET",
+    token
+  );
+  return response;
+};
+
+export const updateOxyScore = async (borrowerId, oxyScore, comments) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateOxyScore`,
+    "PATCH",
+    token,
+    { borrowerId, oxyScore, comments }
   );
   return response;
 };
@@ -992,6 +1107,113 @@ export const uploadBorrowerDocument = async (borrowerId, file) => {
   return response;
 };
 
+const buildAdminNotificationPayload = (payload) => {
+  const adminId = Number(sessionStorage.getItem("userId"));
+  return {
+    ...payload,
+    adminCreated: true,
+    adminId: Number.isFinite(adminId) ? adminId : null,
+    sendInApp: true,
+    sendPush: true,
+  };
+};
+
+const adminNotificationHeaders = () => {
+  const token = getToken();
+  if (!token) {
+    throw new Error("Admin accessToken missing. Please log out and log in again.");
+  }
+  return {
+    headers: {
+      accessToken: token,
+      accesstoken: token,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  };
+};
+
+export const sendAdminNotificationAll = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-all`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const sendAdminNotificationSegment = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-segment`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const sendAdminNotificationLimited = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-limited`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const sendAdminNotificationIndividual = async (payload) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/send-individual`,
+    buildAdminNotificationPayload(payload),
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotifications = async (page = 0, size = 10) => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/getAllAdminNotifications?page=${page}&size=${size}`,
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationDispatchStatus = async (notificationId) => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/${notificationId}/dispatch-status`,
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationAnalytics = async (notificationId) => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/${notificationId}/analytics`,
+    adminNotificationHeaders()
+  );
+};
+
+export const deleteAdminNotification = async (notificationId) => {
+  return axios.delete(
+    `${AI_BASE_URL}admin/notifications/${notificationId}`,
+    adminNotificationHeaders()
+  );
+};
+
+export const duplicateAdminNotification = async (notificationId) => {
+  return axios.post(
+    `${AI_BASE_URL}admin/notifications/${notificationId}/duplicate`,
+    {},
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationStatistics = async () => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/analytics/statistics`,
+    adminNotificationHeaders()
+  );
+};
+
+export const getAdminNotificationAvgReadPercentage = async () => {
+  return axios.get(
+    `${AI_BASE_URL}admin/notifications/analytics/avg-read-percentage`,
+    adminNotificationHeaders()
+  );
+};
 const adminRegisteredUsersHeaders = () => {
   const token = getToken();
   return token ? { accessToken: token } : {};
@@ -1520,6 +1742,49 @@ export const uploadAdminAILenderCampaignImage = async (file) => {
     throw new Error(payload?.message || "Image upload did not return a URL.");
   }
   return url;
+};
+
+export const getAdminLenderQueriesCount = async (lenderId) => {
+  const token = getToken();
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${lenderId}/allQueriesCount`,
+    "GET",
+    token
+  );
+};
+
+export const uploadAdminLenderQueryImage = async (lenderId, file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("USERQUERYSCREENSHOT", file);
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${lenderId}/userQueryScreenshot`,
+    "POST",
+    token,
+    formData,
+    { "Content-Type": "multipart/form-data" }
+  );
+};
+
+export const writeAdminLenderQuery = async (lenderId, queryData) => {
+  const token = getToken();
+  const profiledata = queryData?.profiledata || {};
+  const payload = {
+    query: `${queryData?.query || ""}${queryData?.urlquery || ""}`,
+    documentId: queryData?.documentId || 0,
+    email: profiledata.email,
+    mobileNumber: profiledata.mobileNumber,
+  };
+
+  return handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${lenderId}/readingQueriesFromUsers`,
+    "POST",
+    token,
+    payload
+  );
 };
 
 export const parseAdminAICampaignExcelRecipients = async (file) => {
@@ -2304,3 +2569,69 @@ export const getAdminAIActiveLenderReferralDeals = async (lenderId, refereeId) =
   );
   return response.data;
 };
+
+export const getLenderListNearByRediusForBorrower = async (
+  borrowerUserId,
+  pageNo = 1,
+  pageSize = 10000
+) => {
+  const token = getToken();
+  const payload = {
+    pageNo,
+    pageSize,
+    userId: String(borrowerUserId),
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getLenderListNearByRedius1",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerListNearByRediusForLender = async (
+  lenderUserId,
+  pageNo = 1,
+  pageSize = 1000
+) => {
+  const token = getToken();
+  const payload = {
+    pageNo,
+    pageSize,
+    userId: String(lenderUserId),
+  };
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "getBorrowerListNearByRedius1",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const deductBorrowerLoanDisbursementWallet = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanDisbursementFile",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
+export const getBorrowerLoanGeneratedFiles = async () => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "admin/borrowerLoanGeneratedFiles",
+    "GET",
+    token
+  );
+  return response;
+};
+

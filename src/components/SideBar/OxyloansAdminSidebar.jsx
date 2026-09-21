@@ -97,12 +97,26 @@ const OxyloansAdminSidebar = () => {
       icon: "fa-solid fa-robot",
       type: ["ADMIN", "HELPDESKADMIN"],
     },
+      {
+      key: "adminNotifications",
+      label: "Send Notifications",
+      link: "/adminNotifications",
+      icon: "fa-solid fa-bell",
+      type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
+    },
     {
       key: "adminAIReconciliation",
       label: "🤖 AI Reconciliation",
       link: "/adminAIReconciliation",
       icon: "fa-solid fa-scale-balanced",
       type: ["ADMIN"],
+    },
+    {
+      key: "adminProximityLoanOverview",
+      label: "Proximity Loan Overview",
+      link: "/admin/proximity-loan-overview",
+      icon: "fa-solid fa-map-location-dot",
+      type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
     },
     {
       key: "lenderLoanApplications",
@@ -122,6 +136,16 @@ const OxyloansAdminSidebar = () => {
       link: "/activeLendersParticipation",
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
+      {
+      key: "borrowerFees",
+      label: "Borrower Fees",
+      icon: "fa-solid fa-indian-rupee-sign",
+      children: [
+        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
+        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
+      ],
+      type: ["ADMIN", "SUPERADMIN"],
+    },
     {
       key: "participationamountinfo",
       label: " Participation Amount Info",
@@ -269,16 +293,6 @@ const OxyloansAdminSidebar = () => {
       link: "/monthlyReturnedInterest",
       icon: "fas fa-hand-holding-usd",
       type: ["ADMIN","SUPERADMIN"],
-    },
-    {
-      key: "borrowerFees",
-      label: "Borrower Fees",
-      icon: "fa-solid fa-indian-rupee-sign",
-      children: [
-        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
-        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
-      ],
-      type: ["ADMIN", "SUPERADMIN"],
     },
 
   ];

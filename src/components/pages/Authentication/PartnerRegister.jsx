@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { login } from "../../imagepath";
 import { Link } from "react-router-dom";
@@ -8,6 +8,7 @@ import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { MARKETPLACE_URL } from "../../../config";
+import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 // Replace with your real site key from https://www.google.com/recaptcha/admin
 // Use env var for prod (real key). Falls back to Google's test key (always passes, for dev/test servers).
@@ -52,6 +53,11 @@ const PartnerRegister = () => {
   const dispatch = useDispatch();
 
   const reduxStoreData = useSelector((data) => data.counter.userProfile);
+
+  useEffect(() => {
+    clearLastVisitedUrls();
+  }, []);
+
   const handlechange = (event) => {
     const { name, value } = event.target;
     setdata((prev) => ({
