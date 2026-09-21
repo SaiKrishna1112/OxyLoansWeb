@@ -208,7 +208,8 @@ export const LIVE_ACTIVE_LENDERS_API = `${API_USER_URL}activLendersParicipationA
 
 const PAGE_SIZE = 20;
 
-export const getToken = () => sessionStorage.getItem("accessToken");
+export const getToken = () =>
+  sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
 
 export const clearAdminSession = () => {
   sessionStorage.removeItem("accessToken");

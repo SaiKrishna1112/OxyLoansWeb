@@ -9,6 +9,7 @@ import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfo
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 import AdminAIFeaturePage from "./components/pages/Oxyloans/Admin/AdminAIFeaturePage";
+import AdminCmsDealLendersPage from "./components/pages/Oxyloans/Admin/AdminCmsDealLendersPage";
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
 import AdminAIOXYInsightsPage from "./components/pages/Oxyloans/Admin/AdminAIOXYInsightsPage";
@@ -263,6 +264,7 @@ const AppRouter = () => {
         <Route path="/emicalculator" element={<Emicalculator />} />
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
+        <Route path="/adminAIDashboard/cms-payments/lenders/:dealId" element={<AdminCmsDealLendersPage />} />
         <Route path="/adminAIDashboard/:featureId" element={<AdminAIFeaturePage />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />

@@ -68,6 +68,7 @@ export const DataTable = ({
   emptyText = "No records found",
   initialLimit = 10,
   showMoreLabel = "Show more rows",
+  className = "",
 }) => {
   const [visibleCount, setVisibleCount] = useState(initialLimit);
   const visible = rows.slice(0, visibleCount);
@@ -78,13 +79,13 @@ export const DataTable = ({
   }, [rows, initialLimit]);
 
   return (
-    <div className="ai-table-panel">
+    <div className={`ai-table-panel ${className}`.trim()}>
       <div className="ai-table-wrap">
         <table className="ai-table ai-table--modern">
           <thead>
             <tr>
-              {columns.map(([, label]) => (
-                <th key={label}>{label}</th>
+              {columns.map(([key, label]) => (
+                <th key={key}>{label}</th>
               ))}
             </tr>
           </thead>
@@ -98,8 +99,8 @@ export const DataTable = ({
             ) : (
               visible.map((row, i) => (
                 <tr key={row.borrowerPaymentId || row.lenderId || row.dealId || row.userId || i}>
-                  {columns.map(([key, label, format]) => (
-                    <td key={label}>{format ? format(row[key], row) : row[key] ?? "—"}</td>
+                  {columns.map(([key, , format]) => (
+                    <td key={key}>{format ? format(row[key], row) : row[key] ?? "—"}</td>
                   ))}
                 </tr>
               ))

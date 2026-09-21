@@ -389,10 +389,10 @@ export const FeatureContent = ({
 
     case "cms-payments":
     case "cms-lender-payouts":
-      return <CmsPayoutsFullReport />;
+      return <CmsPayoutsFullReport key={refreshNonce} />;
 
     case "roi-based-deals":
-      return <RoiBasedDealsFullReport />;
+      return <RoiBasedDealsFullReport key={refreshNonce} />;
 
     case "borrower-summary":
       return <BorrowerSummaryFullReport ctx={ctx} />;
