@@ -129,6 +129,17 @@ const Loginsso = () => {
     else history("/borrowerDashboard");
   };
 
+  // Backend throws "User Registration step 2 is pending =<userId>=<email>" (EMAIL_NOT_VERIFIED)
+  // when DOB / PAN / address are not filled yet. Send the user to the same form the activation
+  // email opens (same as the Google STEP2_PENDING path) instead of showing the raw error.
+  const goToStep2IfPending = (message) => {
+    const m = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
+    if (!m) return false;
+    toastrSuccess("Please complete your registration to continue.");
+    history(`/register_active_proceed?id=${m[1]}&time=${Date.now()}`);
+    return true;
+  };
+
   // ── STEP 1: user clicks Continue ──────────────────────────────────────────
   const handleContinue = async () => {
     const trimmed = inputVal.trim();
@@ -195,6 +206,7 @@ const Loginsso = () => {
         loginRes = await usersubmitotp(inputVal.trim(), otp.trim());
         if (!isApiSuccess(loginRes)) {
           const { message } = warnApiError(loginRes, "Invalid OTP", "Wrong OTP. Please try again.");
+          if (goToStep2IfPending(message)) return;
           setOtpError(message);
           return;
         }
@@ -219,6 +231,7 @@ const Loginsso = () => {
       }
     } catch (e) {
       const msg = e?.response?.data?.errorMessage || "Invalid OTP. Please try again.";
+      if (goToStep2IfPending(msg)) return;
       setOtpError(msg);
     } finally {
       setLoading(false);
