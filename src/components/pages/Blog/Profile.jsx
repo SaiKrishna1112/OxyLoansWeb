@@ -1487,7 +1487,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                     </div>
                     <div className="col ms-md-n2 profile-user-info">
                       <h4 className="user-name mb-0">
-                        {reduxStoreData.length != 0
+                        {reduxStoreData?.length
                           ? reduxStoreData.firstName
                           : dashboarddata.profileData != null
                             ? dashboarddata.profileData.data.firstName
@@ -1495,12 +1495,12 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                       </h4>
                       <h6 className="text-muted">
                         LR
-                        {reduxStoreData.length != 0
+                        {reduxStoreData?.length
                           ? reduxStoreData.userId
                           : dashboarddata.profileData != null
                             ? dashboarddata.profileData.data.userId
                             : "LR18"}
-                        {`, ${reduxStoreData.length != 0
+                        {`, ${reduxStoreData?.length
                           ? reduxStoreData.groupName
                           : dashboarddata.profileData != null
                             ? dashboarddata.profileData.data.groupName
@@ -1509,14 +1509,14 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                       </h6>
                       <div className="user-Location">
                         <i className="fas fa-map-marker-alt" />{" "}
-                        {reduxStoreData.length != 0
+                        {reduxStoreData?.length
                           ? reduxStoreData.city
                           : dashboarddata.profileData != null
                             ? dashboarddata.profileData.data.city
                             : ""}
                       </div>
                       <div className="about-text">
-                        {reduxStoreData.length != 0
+                        {reduxStoreData?.length
                           ? reduxStoreData.address
                           : dashboarddata.profileData != null
                             ? dashboarddata.profileData.data.address
