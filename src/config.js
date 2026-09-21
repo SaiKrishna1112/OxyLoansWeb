@@ -20,14 +20,13 @@ const isTestHost =
   hostname === "ec2-15-207-239-145.ap-south-1.compute.amazonaws.com" ||
   hostname.includes("ap-south-1.compute.amazonaws.com");
 
-// Hostname wins over .env.production so test builds never call a stale IP (e.g. 35.154.108.71).
-const BASE_URL = envBaseUrl
-  ? envBaseUrl
-  : isLocalHost
-    ? "http://localhost:8181/oxyloans"
-    : isTestHost
-      ? "http://15.207.239.145:8080/oxyloans"
-      : "https://fintech.oxyloans.com/oxyloans";
+// Hostname always wins. Never let a baked .env.production IP (e.g. 35.154.108.71)
+// send the test server UI to the wrong API.
+const BASE_URL = isLocalHost
+  ? (envBaseUrl && isLocalHostUrl(envBaseUrl) ? envBaseUrl : "http://localhost:8181/oxyloans")
+  : isTestHost
+    ? "http://15.207.239.145:8080/oxyloans"
+    : "https://fintech.oxyloans.com/oxyloans";
 
 const ENV = isLocalHost ? "local" : isTestHost ? "test" : "production";
 export const API_USER_URL = `${BASE_URL}/v1/user/`;
