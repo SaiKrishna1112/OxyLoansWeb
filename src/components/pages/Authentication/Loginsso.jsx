@@ -20,6 +20,18 @@ const detectInputType = (val) => {
 
 const OTP_LENGTH = 6;
 
+// Gmail / Googlemail addresses sign in with Google (Google itself verifies the address, so no password).
+const isGmailAddress = (val) => /@(gmail|googlemail)\.com$/i.test((val || "").trim());
+
+const GoogleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48">
+    <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.1 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5c11 0 20.5-8 20.5-19.5 0-1.3-.1-2.7-.5-4z"/>
+    <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.2 13 24 13c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/>
+    <path fill="#FBBC05" d="M24 43.5c5.8 0 10.8-1.9 14.5-5.2l-6.7-5.5C29.8 34.7 27 35.5 24 35.5c-6 0-10.7-3.9-11.7-9.1l-7 5.4C8.5 39.5 15.7 43.5 24 43.5z"/>
+    <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.7-2.2 4.9-4.4 6.4l6.7 5.5C41.8 36.7 44.5 30.8 44.5 24c0-1.3-.1-2.7-.5-4z"/>
+  </svg>
+);
+
 const cardStyle = {
   background: "#fff",
   borderRadius: 16,
@@ -86,7 +98,7 @@ const dividerStyle = {
 const Loginsso = () => {
   const history = useNavigate();
 
-  // === Stages: "entry" | "otp_mobile" | "otp_email" | "not_found" | "gmail_role" | "gmail_register"
+  // === Stages: "entry" | "otp_mobile" | "gmail_login" | "not_found" | "gmail_role" | "gmail_register"
   const [stage, setStage] = useState("entry");
   const [inputVal, setInputVal] = useState("");
   const [inputError, setInputError] = useState("");
@@ -97,6 +109,8 @@ const Loginsso = () => {
   // Store for display purposes
   const [maskedContact, setMaskedContact] = useState("");
   const [detectedType, setDetectedType] = useState(null); // "mobile" | "email"
+  // Gmail address typed on the entry step; the Google account chosen in the popup must match it
+  const [expectedEmail, setExpectedEmail] = useState("");
   // Gmail-first registration state
   const [googleToken, setGoogleToken] = useState(null);
   const [googleEmail, setGoogleEmail] = useState("");
@@ -170,17 +184,15 @@ const Loginsso = () => {
           }
         }
       } else {
-        // email — call new sendEmailOtp endpoint
-        const res = await axios.post(`${BASE_URL}/v1/user/sendEmailLoginOtp`, { email: trimmed });
-        const status = res.data?.phoneNumberRequiredOrNot;
-        if (status === "OTP_SENT") {
-          setMaskedContact(trimmed.replace(/(.{2}).+(@.+)/, "$1***$2"));
+        // email — Gmail signs in with Google (no password); any other email uses the original
+        // email + password page
+        if (isGmailAddress(trimmed)) {
+          setExpectedEmail(trimmed.toLowerCase());
           setDetectedType("email");
-          setStage("otp_email");
-        } else if (status === "NOT_FOUND") {
-          setStage("not_found");
+          setStage("gmail_login");
         } else {
-          setInputError("Unexpected response. Please try again.");
+          toastrSuccess("Please sign in with your email and password.");
+          history("/login");
         }
       }
     } catch (e) {
@@ -216,18 +228,6 @@ const Loginsso = () => {
         }
         toastrSuccess("Login successful!");
         redirectAfterLogin(loginRes.data);
-      } else {
-        // email OTP
-        const res = await axios.post(`${BASE_URL}/v1/user/verifyEmailLoginOtp`, {
-          email: inputVal.trim(),
-          otp: otp.trim(),
-        });
-        if (saveLoginSession(res)) {
-          toastrSuccess("Login successful!");
-          redirectAfterLogin(res.data);
-        } else {
-          setOtpError("Login succeeded but session could not be saved. Please retry.");
-        }
       }
     } catch (e) {
       const msg = e?.response?.data?.errorMessage || "Invalid OTP. Please try again.";
@@ -239,6 +239,13 @@ const Loginsso = () => {
   };
 
   // ── Google login ───────────────────────────────────────────────────────────
+  // When the user typed a Gmail address first, the account picked in Google's popup must be that one.
+  const googleAccountMismatch = (actualEmail) => {
+    if (!expectedEmail || !actualEmail || actualEmail.toLowerCase() === expectedEmail) return false;
+    WarningBackendApi("Different Google account", `Please choose ${expectedEmail} in the Google popup.`);
+    return true;
+  };
+
   const handleGoogleSuccess = async (tokenResponse) => {
     setGoogleLoading(true);
     try {
@@ -254,11 +261,13 @@ const Loginsso = () => {
           { accessToken: tokenResponse.access_token },
           { headers: { "Content-Type": "application/json" } }
         );
+        if (googleAccountMismatch(loginRes.data?.email)) return;
         if (saveLoginSession(loginRes)) {
           toastrSuccess("Google login successful!");
           redirectAfterLogin(loginRes.data);
         }
       } else if (status === "NOT_FOUND") {
+        if (googleAccountMismatch(signInUrl)) return;
         // New user — pick role first, then collect mobile
         setGoogleToken(tokenResponse.access_token);
         setGoogleEmail(signInUrl || "");
@@ -281,6 +290,7 @@ const Loginsso = () => {
   });
 
   const handleBack = () => {
+    setExpectedEmail("");
     setStage("entry");
     setOtp("");
     setOtpError("");
@@ -420,12 +430,7 @@ const Loginsso = () => {
               {googleLoading
                 ? <span className="spinner-border spinner-border-sm" />
                 : (
-                  <svg width="18" height="18" viewBox="0 0 48 48">
-                    <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.1 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5c11 0 20.5-8 20.5-19.5 0-1.3-.1-2.7-.5-4z"/>
-                    <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.2 13 24 13c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/>
-                    <path fill="#FBBC05" d="M24 43.5c5.8 0 10.8-1.9 14.5-5.2l-6.7-5.5C29.8 34.7 27 35.5 24 35.5c-6 0-10.7-3.9-11.7-9.1l-7 5.4C8.5 39.5 15.7 43.5 24 43.5z"/>
-                    <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.7-2.2 4.9-4.4 6.4l6.7 5.5C41.8 36.7 44.5 30.8 44.5 24c0-1.3-.1-2.7-.5-4z"/>
-                  </svg>
+                  <GoogleIcon />
                 )
               }
               Continue with Google
@@ -446,8 +451,36 @@ const Loginsso = () => {
           </>
         )}
 
-        {/* ── STAGE: otp (mobile or email) ── */}
-        {(stage === "otp_mobile" || stage === "otp_email") && (
+        {/* ── STAGE: gmail_login (Gmail address — sign in with Google, no password) ── */}
+        {stage === "gmail_login" && (
+          <>
+            <button onClick={handleBack} style={{ background: "none", border: "none", color: "#1a73e8", cursor: "pointer", fontSize: 13, padding: 0, marginBottom: 16 }}>
+              ← Back
+            </button>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a1a2e", margin: "0 0 8px" }}>
+              Sign in with Google
+            </h2>
+            <p style={{ color: "#666", fontSize: 14, margin: "0 0 24px", lineHeight: 1.5 }}>
+              <strong style={{ color: "#1a1a2e" }}>{expectedEmail}</strong> is a Gmail address. Continue with
+              Google to sign in. No password needed, as Google verifies your email.
+            </p>
+
+            <button style={btnOutline} onClick={() => googleLogin()} disabled={googleLoading}>
+              {googleLoading ? <span className="spinner-border spinner-border-sm" /> : <GoogleIcon />}
+              Continue with Google
+            </button>
+
+            <button
+              onClick={() => history("/login")}
+              style={{ display: "block", width: "100%", marginTop: 12, background: "none", border: "none", color: "#888", fontSize: 13, cursor: "pointer" }}
+            >
+              Use email &amp; password instead
+            </button>
+          </>
+        )}
+
+        {/* ── STAGE: otp (mobile) ── */}
+        {stage === "otp_mobile" && (
           <>
             <button onClick={handleBack} style={{ background: "none", border: "none", color: "#1a73e8", cursor: "pointer", fontSize: 13, padding: 0, marginBottom: 16 }}>
               ← Back
