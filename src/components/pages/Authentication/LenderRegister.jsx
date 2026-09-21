@@ -226,9 +226,7 @@ export default function LenderRegister() {
     if (gmailPrefill) {
       try {
         const res = await axios.post(API_USER_URL + "registerLenderWithGoogle", {
-          googleAccessToken: gmailPrefill.googleAccessToken,
           mobileNumber: gmailPrefill.mobile,
-          email: gmailPrefill.email,
           nameAsPan: registrationField.pancard,
           password: registrationField.password || "",
           referrerId: registrationField.referrerId || "",

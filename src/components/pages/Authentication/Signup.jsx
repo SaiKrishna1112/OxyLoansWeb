@@ -186,7 +186,7 @@ const Signup = () => {
       const verifyRes = await axios.post(`${BASE_URL}/v1/user/verifyGoogleRegMobileOtp`, {
         mobileNumber: grMobile,
         mobileOtp: grOtp,
-        email: googleEmail,
+        googleAccessToken: googleToken, // server validates it with Google and derives the email itself
       });
       if (!verifyRes.data?.valid) {
         setGrOtpError("Invalid OTP. Please try again.");
@@ -197,7 +197,6 @@ const Signup = () => {
         email: googleEmail,
         mobile: grMobile,
         name: googleName,
-        googleAccessToken: googleToken,
         emailVerified: true,
         role: grRole,
       }));
