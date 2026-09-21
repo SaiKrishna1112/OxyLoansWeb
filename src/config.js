@@ -24,7 +24,7 @@ const isTestHost =
 const BASE_URL = envBaseUrl
   ? envBaseUrl
   : isLocalHost
-    ? "http://localhost:8181/oxyloans"
+    ? "http://localhost:8182/oxyloans"
     : isTestHost
       ? "http://15.207.239.145:8080/oxyloans"
       : "https://fintech.oxyloans.com/oxyloans";
