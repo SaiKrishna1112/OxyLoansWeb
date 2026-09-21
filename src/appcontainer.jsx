@@ -52,8 +52,8 @@ const Spining = React.lazy(() =>
   import("./components/pages/Oxyloans/Lender/Spining")
 );
 
-const Loginsso = React.lazy(() =>
-  import("./components/pages/Authentication/Loginsso")
+const Signup = React.lazy(() =>
+  import("./components/pages/Authentication/Signup")
 );
 const Loginotp = React.lazy(() =>
   import("./components/pages/Authentication/Loginotp")
@@ -382,8 +382,8 @@ export const newRouter = createBrowserRouter([
     errorElement: <Error404></Error404>,
   },
   {
-    path: "/loginsso",
-    element: <Loginsso />,
+    path: "/signup",
+    element: <Signup />,
     errorElement: <Error404></Error404>,
   },
   {
