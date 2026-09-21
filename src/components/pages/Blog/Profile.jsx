@@ -1523,7 +1523,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                             : ""}
                       </div>
 
-                      {reduxStoreData.groupName != "NewLender" &&
+                      {reduxStoreData?.groupName != "NewLender" &&
                         reduxStoreDataDashboard?.validityDate != null ? (
                         <div className="user-Location my-1">
                           <i className="fa-solid fa-calendar-days" /> Validity :
@@ -1639,27 +1639,27 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 Name
                               </p>
                               <p className="col-sm-9">
-                                {reduxStoreData.firstName}
+                                {reduxStoreData?.firstName}
                               </p>
                             </div>
                             <div className="row">
                               <p className="col-sm-3 text-muted text-sm-end mb-0 mb-sm-3">
                                 Date of Birth
                               </p>
-                              <p className="col-sm-9">{reduxStoreData.dob}</p>
+                              <p className="col-sm-9">{reduxStoreData?.dob}</p>
                             </div>
                             <div className="row">
                               <p className="col-sm-3 text-muted text-sm-end mb-0 mb-sm-3">
                                 Email ID
                               </p>
-                              <p className="col-sm-9">{reduxStoreData.email}</p>
+                              <p className="col-sm-9">{reduxStoreData?.email}</p>
                             </div>
                             <div className="row">
                               <p className="col-sm-3 text-muted text-sm-end mb-0 mb-sm-3">
                                 Mobile
                               </p>
                               <p className="col-sm-9">
-                                {reduxStoreData.mobileNumber}
+                                {reduxStoreData?.mobileNumber}
                               </p>
                             </div>
                             <div className="row">
@@ -1667,10 +1667,10 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 Address
                               </p>
                               <p className="col-sm-9 mb-0">
-                                {reduxStoreData.address}
+                                {reduxStoreData?.address}
                                 <br />
 
-                                {reduxStoreData.city}
+                                {reduxStoreData?.city}
                               </p>
                             </div>
                           </div>
