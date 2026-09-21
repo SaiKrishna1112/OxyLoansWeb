@@ -135,7 +135,7 @@ export default function BorrowerRegister() {
           navigate("/profile");
         } else {
           toastrWarning("Registration succeeded but login failed. Please login.");
-          navigate("/loginotp");
+          navigate("/loginsso");
         }
       } catch (err) {
         const errMsg = err?.response?.data?.errorMessage || "Registration failed. Please try again.";
