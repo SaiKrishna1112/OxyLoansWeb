@@ -82,6 +82,7 @@ export const isAuthOrExcludedPath = (pathname) => {
     "/top-lenders",
     "/escrowdeals",
     "/regularescrowdeals",
+    "/signup"
   ];
 
   if (

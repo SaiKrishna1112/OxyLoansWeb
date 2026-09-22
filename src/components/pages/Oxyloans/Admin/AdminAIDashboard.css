@@ -1383,7 +1383,7 @@
 .admin-ai-search-grid-unified {
   grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
   margin-top: 0;
-  align-items: end;
+  align-items: flex-end;
 }
 
 .admin-ai-unified-search-actions {
@@ -4603,7 +4603,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  align-items: end;
+  align-items: flex-end;
   margin-top: 16px;
 }
 
@@ -13427,7 +13427,7 @@
   display: grid;
   grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr) auto auto;
   gap: 10px;
-  align-items: end;
+  align-items: flex-end;
   min-width: min(720px, 100%);
   width: min(720px, 100%);
 }
@@ -18632,7 +18632,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  align-items: end;
+  align-items: flex-end;
   margin-bottom: 14px;
 }
 .admin-ai-ywd-search label { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
@@ -19229,7 +19229,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
-  align-items: end;
+  align-items: flex-end;
 }
 
 .admin-ai-membership-form label {
