@@ -52,6 +52,7 @@ import Admlogin from "./components/pages/Authentication/Admlogin";
 import Membership from "./components/pages/Oxyloans/Lender/Membership";
 import Spining from "./components/pages/Oxyloans/Lender/Spining";
 import Loginotp from "./components/pages/Authentication/Loginotp";
+import Signup from "./components/pages/Authentication/Signup";
 import GoogleSSOTest from "./components/pages/Authentication/GoogleSSOTest";
 import ConfigautoInvest from "./components/pages/Oxyloans/Lender/ConfigautoInvest";
 import EarningCertificate from "./components/pages/Oxyloans/Lender/EarningCertificate";
@@ -267,6 +268,7 @@ const AppRouter = () => {
         {/* <Route path="/" element={<Login />} /> */}
         {/* <Route path="/login" element={<Login />} /> */}
         <Route path="/loginotp" element={<Loginotp />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/otplogin" element={<Navigate to="/loginotp" replace />} />
         <Route path="/glogin-test" element={<GoogleSSOTest />} />
         <Route path="/admlogin" element={<Admlogin />} />

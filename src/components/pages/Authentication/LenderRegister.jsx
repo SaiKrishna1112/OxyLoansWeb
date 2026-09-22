@@ -23,6 +23,7 @@ export default function LenderRegister() {
   const [error, setError] = useState("");
   const [response1, setResponse] = useState({});
   const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+  const [gmailPrefill, setGmailPrefill] = useState(null);
   const [resendTimer, setResendTimer] = useState(30);
   const [loadingResend, setLoadingResend] = useState(false);
 
@@ -69,6 +70,25 @@ export default function LenderRegister() {
         }
       );
     }
+    // Check for Gmail pre-fill from Gmail signup flow
+    try {
+      const raw = sessionStorage.getItem("gmail_prefill");
+      if (raw) {
+        const prefill = JSON.parse(raw);
+        // Discard stale/incomplete prefill (email or mobile missing)
+        if (prefill.role === "LENDER" && prefill.emailVerified && prefill.email && prefill.mobile) {
+          setGmailPrefill(prefill);
+          setRegistrationField(prev => ({
+            ...prev,
+            email: prefill.email || "",
+            moblie: prefill.mobile || "",
+            pancard: prefill.name || "",
+          }));
+        } else {
+          sessionStorage.removeItem("gmail_prefill");
+        }
+      }
+    } catch (e) { /* ignore */ }
   }, []);
 
   const [registrationField, setRegistrationField] = useState({
@@ -195,16 +215,55 @@ export default function LenderRegister() {
     }
   };
   const handleLenderRegister = async () => {
+    // Validate name
+    if (!registrationField.pancard) {
+      setRegistrationField(prev => ({ ...prev, pancarderror: "Please enter the Name" }));
+      toastrWarning("Please enter your name as per PAN card");
+      return;
+    }
+
+    // Gmail one-shot registration — email + mobile already verified, skip OTP
+    if (gmailPrefill) {
+      try {
+        const res = await axios.post(API_USER_URL + "registerLenderWithGoogle", {
+          mobileNumber: gmailPrefill.mobile,
+          nameAsPan: registrationField.pancard,
+          password: registrationField.password || "",
+          referrerId: registrationField.referrerId || "",
+          userType: "LENDER",
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        });
+        // Save session and redirect to KYC / dashboard
+        const token = res.headers?.accesstoken || res.headers?.accessToken || res.headers?.["access-token"];
+        if (token && res.data?.id) {
+          sessionStorage.setItem("accessToken", token);
+          sessionStorage.setItem("userId", String(res.data.id));
+          sessionStorage.setItem("tokenTime", res.data.tokenGeneratedTime || "");
+          sessionStorage.setItem("email", res.data.email || "");
+          localStorage.setItem("primaryType", res.data.primaryType || "");
+          localStorage.setItem("id", String(res.data.id));
+          sessionStorage.removeItem("gmail_prefill");
+          navigate("/profile");
+        } else {
+          toastrWarning("Registration succeeded but login failed. Please login.");
+          navigate("/loginotp");
+        }
+      } catch (err) {
+        const errMsg = err?.response?.data?.errorMessage || "Registration failed. Please try again.";
+        setError(errMsg);
+        toastrWarning(errMsg);
+      }
+      return;
+    }
+
+    // Normal OTP registration flow
     setRegistrationField((prevState) => ({
       ...prevState,
-      emailerror:
-        registrationField.email === "" ? "Please enter the Email" : "",
-      pancarderror:
-        registrationField.pancard === "" ? "Please enter the Name" : "",
-      moblieerror:
-        registrationField.moblie === "" ? "Please enter the Mobile Number" : "",
-      passworderror:
-        registrationField.password === "" ? "Please enter the Password" : "",
+      emailerror: registrationField.email === "" ? "Please enter the Email" : "",
+      pancarderror: registrationField.pancard === "" ? "Please enter the Name" : "",
+      moblieerror: registrationField.moblie === "" ? "Please enter the Mobile Number" : "",
+      passworderror: registrationField.password === "" ? "Please enter the Password" : "",
     }));
 
     const validationError = api.validateRegisterInput(
@@ -264,11 +323,9 @@ export default function LenderRegister() {
         console.error("Error:", error.response?.data?.errorMessage);
         const errData = error.response?.data;
         if (errData && (errData.errorCode === "113" || String(errData.errorCode) === "113")) {
-          // Parse user id & email from errorMessage
           const errMsg = errData.errorMessage || "";
           const idMatch = errMsg.match(/id=(\d+)/);
           const userId = idMatch ? idMatch[1] : null;
-          
           const emailMatch = errMsg.match(/email=([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
           const email = emailMatch ? emailMatch[1] : registrationField.email;
 
@@ -284,15 +341,9 @@ export default function LenderRegister() {
           }).then((result) => {
             if (result.isConfirmed && userId) {
               axios
-                .post(API_USER_URL + "sendingEmailActivationLink", {
-                  userId: userId,
-                })
-                .then((res) => {
-                  Swal.fire("Sent!", "Email activation link has been resent successfully.", "success");
-                })
-                .catch((err) => {
-                  Swal.fire("Error!", err.response?.data?.errorMessage || "Failed to resend activation link. Please try again.", "error");
-                });
+                .post(API_USER_URL + "sendingEmailActivationLink", { userId })
+                .then(() => Swal.fire("Sent!", "Email activation link has been resent successfully.", "success"))
+                .catch((err) => Swal.fire("Error!", err.response?.data?.errorMessage || "Failed to resend.", "error"));
             }
           });
         } else {
@@ -348,20 +399,11 @@ export default function LenderRegister() {
   useEffect(
     () => {
       if (/\d/.test(registrationField.pancard)) {
-        // Use a regular expression to check if the value contains a number
-        setRegistrationField({
-          ...registrationField,
-          pancarderror: "Enter characters only!", // Corrected typo
-        });
+        setRegistrationField(prev => ({ ...prev, pancarderror: "Enter characters only!" }));
       } else {
-        // Clear the error if the input is valid
-        setRegistrationField({
-          ...registrationField,
-          pancarderror: "",
-        });
+        setRegistrationField(prev => ({ ...prev, pancarderror: "" }));
       }
     },
-    // .
     [registrationField.pancard]
   );
   // useEffect(() => {
@@ -471,6 +513,11 @@ export default function LenderRegister() {
                             </div>
                           )}
                         </div>
+                        {gmailPrefill && (
+                          <div style={{ background: "#e8f5e9", border: "1px solid #4caf50", borderRadius: 6, padding: "8px 12px", marginBottom: 12, fontSize: 13, color: "#2e7d32" }}>
+                            ✅ Gmail verified — email and mobile are pre-filled and locked.
+                          </div>
+                        )}
                         <div className="form-group">
                           <label>
                             Email <span className="login-danger">*</span>
@@ -480,7 +527,10 @@ export default function LenderRegister() {
                             type="email"
                             name="email"
                             maxLength={100}
-                            onChange={handlechange}
+                            value={registrationField.email}
+                            readOnly={!!gmailPrefill}
+                            onChange={gmailPrefill ? undefined : handlechange}
+                            style={gmailPrefill ? { background: "#f5f5f5", cursor: "not-allowed" } : {}}
                           />
                           <span className="profile-views">
                             <i className="fas fa-envelope" />
@@ -493,7 +543,7 @@ export default function LenderRegister() {
                         </div>
                         <div className="form-group">
                           <label>
-                            Password <span className="login-danger">*</span>
+                            Password {gmailPrefill ? <span style={{color:"#888",fontWeight:"normal",fontSize:"0.85em"}}>(optional — you'll sign in with Google)</span> : <span className="login-danger">*</span>}
                           </label>
                           <input
                             ref={inputRef}
@@ -508,10 +558,6 @@ export default function LenderRegister() {
                             showIcon={showIcon}
                             hideIcon={hideIcon}
                           />
-                          {/* <input className="form-control pass-input" type="text" />
-                                            <span className="profile-views feather-eye toggle-password">
-                                                <FeatherIcon icon="eye" />
-                                            </span> */}{" "}
                           {registrationField.passworderror && (
                             <div className="error">
                               {registrationField.passworderror}
@@ -554,8 +600,11 @@ export default function LenderRegister() {
                             type="tel"
                             name="moblie"
                             maxLength={10}
-                            onKeyPress={handleKeyPressNumber}
-                            onChange={handlechange}
+                            value={registrationField.moblie}
+                            readOnly={!!gmailPrefill}
+                            onKeyPress={gmailPrefill ? undefined : handleKeyPressNumber}
+                            onChange={gmailPrefill ? undefined : handlechange}
+                            style={gmailPrefill ? { background: "#f5f5f5", cursor: "not-allowed" } : {}}
                           />
                           <span className="profile-views">
                             <i className="fas fa-phone" />
