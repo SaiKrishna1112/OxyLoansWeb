@@ -344,7 +344,7 @@ const Loginotp = () => {
                   <h1>Welcome to OxyLoans</h1>
 
                   <p className="account-subtitle">
-                    Need an account? <Link to="/signup">Sign Up</Link>
+                    Need an account? <Link to="/register">Sign Up</Link>
                   </p>
                   <h2>Login With OTP</h2>
 
@@ -588,7 +588,7 @@ const Loginotp = () => {
                             <button className="btn btn-primary btn-block mb-2" onClick={() => setGoogleModal(null)}>
                               Login with Mobile OTP
                             </button>
-                            <Link to="/signup" className="btn btn-success btn-block mb-2" onClick={() => setGoogleModal(null)}>
+                            <Link to="/register" className="btn btn-success btn-block mb-2" onClick={() => setGoogleModal(null)}>
                               Sign Up
                             </Link>
                             <Link to="/whatsapplogin" className="btn btn-outline-success btn-block" onClick={() => setGoogleModal(null)}>
