@@ -286,7 +286,7 @@ export default function BorrowerMarketplaceListings() {
                         <strong>Both parties have consented.</strong> Please{" "}
                         <button
                           className="btn btn-link p-0 align-baseline"
-                          onClick={() => navigate(`/esign/${loan.loanRequestId}`)}
+                          onClick={() => navigate(`/esign/${loan.loanRequestId}${loan.id ? `?assignmentId=${loan.id}` : ""}`)}
                         >
                           eSign the loan agreement
                         </button>{" "}
@@ -323,7 +323,7 @@ export default function BorrowerMarketplaceListings() {
                     {loan.loanStatus === "CONSENTED" && (
                       <button
                         className="btn btn-sm btn-success"
-                        onClick={() => navigate(`/esign/${loan.loanRequestId}`)}
+                        onClick={() => navigate(`/esign/${loan.loanRequestId}${loan.id ? `?assignmentId=${loan.id}` : ""}`)}
                       >
                         <i className="fa-solid fa-file-signature me-1"></i>
                         eSign Agreement

@@ -1,0 +1,69 @@
+.wallet-load-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.wallet-load-card {
+  background: #fff;
+  border: 1px solid #e9e9e9;
+  border-radius: 9px;
+  min-height: 350px;
+  padding: 22px 22px 23px;
+  color: #303030;
+}
+
+.wallet-load-card h2 {
+  color: #101010;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0 0 22px;
+}
+
+.wallet-instructions ol {
+  margin: 0;
+  padding-left: 27px;
+}
+
+.wallet-instructions li {
+  font-size: 14px;
+  line-height: 1.55;
+  margin-bottom: 12px;
+  padding-left: 1px;
+}
+
+.wallet-instructions li:last-child { margin-bottom: 22px; }
+.wallet-instructions a { color: #4264b7; font-weight: 600; }
+
+.wallet-help-note {
+  align-items: flex-start;
+  background: #fff2c9;
+  border-radius: 9px;
+  display: flex;
+  gap: 12px;
+  line-height: 1.45;
+  padding: 16px 17px;
+}
+
+.wallet-help-icon { color: #e9a72b; font-size: 16px; line-height: 1.2; margin-top: 1px; }
+.wallet-help-note strong { font-weight: 700; }
+.wallet-help-note p { font-size: 14px; margin: 5px 0 0; }
+
+.account-details-card { padding-left: 22px; }
+.account-detail-list { display: flex; flex-direction: column; gap: 17px; }
+
+.account-detail-item { align-items: flex-start; display: flex; gap: 12px; }
+.account-detail-item > svg { color: #496fc5; flex: 0 0 18px; height: 18px; margin-top: 1px; stroke-width: 1.8; width: 18px; }
+.account-detail-item > div { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.account-detail-item strong { color: #181818; font-size: 14px; font-weight: 700; line-height: 1.35; }
+.account-detail-item span { color: #737373; font-size: 13px; line-height: 1.35; }
+.account-detail-item button { align-items: center; background: none; border: 0; color: #222; cursor: pointer; display: inline-flex; gap: 4px; margin: 0 0 0 5px; padding: 0; vertical-align: -2px; }
+.account-detail-item button svg { height: 14px; width: 14px; }
+.copy-account-button em { color: #496fc5; font-size: 11px; font-style: normal; font-weight: 600; }
+
+@media (max-width: 767px) {
+  .wallet-load-layout { grid-template-columns: 1fr; }
+  .wallet-load-card { min-height: 0; padding: 19px 17px; }
+}

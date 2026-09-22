@@ -187,7 +187,14 @@ export default function BorrowerMarketplaceConsent() {
                 onClick={handleSubmit}
                 disabled={!allChecked || submitting}
               >
-                {submitting ? "Submitting..." : "I Agree & Proceed to eSign"}
+                {submitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Submitting...
+                  </>
+                ) : (
+                  "I Agree & Proceed to eSign"
+                )}
               </button>
               {!allChecked && (
                 <span className="text-danger small">

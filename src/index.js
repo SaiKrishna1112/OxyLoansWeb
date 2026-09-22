@@ -1,5 +1,42 @@
 import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
+import axios from "axios";
+
+// Global interceptor for checking expired session across all APIs
+axios.interceptors.response.use(
+  (response) => {
+    if (response && response.data) {
+      const resData = response.data;
+      if (
+        resData.errorCode === "100" ||
+        resData.errorCode === 100 ||
+        (resData.errorMessage &&
+          resData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
+    return response;
+  },
+  (error) => {
+    if (error && error.response && error.response.data) {
+      const errData = error.response.data;
+      if (
+        errData.errorCode === "100" ||
+        errData.errorCode === 100 ||
+        (errData.errorMessage &&
+          errData.errorMessage.toLowerCase().includes("session has expired"))
+      ) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./assets/plugins/bootstrap/css/bootstrap.min.css";

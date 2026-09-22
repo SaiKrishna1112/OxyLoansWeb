@@ -1,10 +1,14 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { registerImage } from "../../imagepath";
 import { Link } from "react-router-dom";
 import ReactPasswordToggleIcon from "react-password-toggle-icon";
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
+import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 const Register = () => {
+  useEffect(() => {
+    clearLastVisitedUrls();
+  }, []);
   let inputRef = useRef();
   let inputRef2 = useRef();
   const showIcon = () => (

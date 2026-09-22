@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Table, Spin } from "antd";
+import { Table, Spin, Tag } from "antd";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
-import { showingInterestAmountToBorrower } from "../../../HttpRequest/afterlogin";
+import { showingInterestAmountToBorrower, getBorrowerLoanEmiCards } from "../../../HttpRequest/afterlogin";
 
 const feeRows = [
   { key: "platFormFeeIncludingGst", label: "Platform Fee (incl. GST)" },
@@ -22,6 +22,8 @@ const BorrowerDisbursementInterestAmount = () => {
   const id = Number(rId);
 
   const [interestBreakup, setInterestBreakup] = useState({ loading: true, errorMessage: "", data: null });
+  const [emiCards, setEmiCards] = useState([]);
+  const [loadingEmiCards, setLoadingEmiCards] = useState(false);
 
   const fmt = (value) => {
     const n = Number(value);
@@ -51,7 +53,7 @@ const BorrowerDisbursementInterestAmount = () => {
     }
     const load = async () => {
       try {
-        const res = await showingInterestAmountToBorrower({ borrowerId, loanId, id });
+        const res = await getBorrowerLoanEmiCards({ borrowerId, loanId, id });
         if (res?.status == 200) {
           const raw = res.data;
           setInterestBreakup({ loading: false, errorMessage: "", data: Array.isArray(raw) ? raw[0] || null : raw });
@@ -64,6 +66,24 @@ const BorrowerDisbursementInterestAmount = () => {
     };
     load();
   }, [borrowerId, loanId, id]);
+
+  useEffect(() => {
+    const targetLoanReqId = id || loanId;
+    if (targetLoanReqId) {
+      setLoadingEmiCards(true);
+      getBorrowerLoanEmiCards(targetLoanReqId)
+        .then((res) => {
+          if (res?.status === 200 && res?.data) {
+            const cards = Array.isArray(res.data) ? res.data : [res.data];
+            setEmiCards(cards);
+          }
+        })
+        .catch((err) => {
+          console.log("Failed to load loanEmiCards in BorrowerDisbursementInterestAmount", err);
+        })
+        .finally(() => setLoadingEmiCards(false));
+    }
+  }, [id, loanId]);
 
   const tableColumns = [
     {
@@ -122,6 +142,60 @@ const BorrowerDisbursementInterestAmount = () => {
     return interestBreakup.data.list.map((item, i) => ({ ...item, key: `${item.loanId || "loan"}-${i}` }));
   }, [interestBreakup.data]);
 
+  const emiCardColumns = [
+    {
+      title: "EMI #",
+      dataIndex: "emiNumber",
+      key: "emiNumber",
+      align: "center",
+      render: (v, _, i) => v || i + 1,
+    },
+    {
+      title: "Due Date",
+      dataIndex: "emiDueOn",
+      key: "emiDueOn",
+      align: "center",
+      render: (v, row) => fmtDate(v || row.dueDate || row.dueDateStart),
+    },
+    {
+      title: "EMI Amount",
+      dataIndex: "emiAmount",
+      key: "emiAmount",
+      align: "center",
+      render: (v, row) => fmt(v || row.amount || row.totalRepaymentAmount),
+    },
+    {
+      title: "Principal Amount",
+      dataIndex: "emiPrincipalAmount",
+      key: "emiPrincipalAmount",
+      align: "center",
+      render: (v, row) => fmt(v || row.principalAmount),
+    },
+    {
+      title: "Interest Amount",
+      dataIndex: "emiInterestAmount",
+      key: "emiInterestAmount",
+      align: "center",
+      render: (v, row) => fmt(v || row.interestAmount),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      align: "center",
+      render: (v, row) => {
+        const st = (v || (row.emiPaidOn ? "PAID" : "UPCOMING")).toUpperCase();
+        const color =
+          st === "PAID" || st === "COMPLETED"
+            ? "green"
+            : st === "OVERDUE" || st === "FAILED"
+            ? "red"
+            : "orange";
+        return <Tag color={color}>{st}</Tag>;
+      },
+    },
+  ];
+
   const renderContent = () => {
     if (interestBreakup.loading)
       return (
@@ -142,7 +216,7 @@ const BorrowerDisbursementInterestAmount = () => {
     return (
       <>
         {/* Header */}
-        <div
+        {/* <div
           style={{
             borderBottom: "1px solid #e2e8f0",
             paddingBottom: 10,
@@ -153,10 +227,10 @@ const BorrowerDisbursementInterestAmount = () => {
             Borrower ID: <strong>{borrowerId}</strong> &nbsp;|&nbsp; Loan ID:{" "}
             <strong>{loanId}</strong>
           </div>
-        </div>
+        </div> */}
 
         {/* Fee Breakdown */}
-        <div style={{ border: "1px solid #e2e8f0", marginBottom: 16 }}>
+        {/* <div style={{ border: "1px solid #e2e8f0", marginBottom: 16 }}>
           <div
             style={{
               padding: "8px 14px",
@@ -213,10 +287,10 @@ const BorrowerDisbursementInterestAmount = () => {
               {fmt(data.grandTotal)}
             </span>
           </div>
-        </div>
+        </div> */}
 
         {/* Lender Table */}
-        <div style={{ border: "1px solid #e2e8f0" }}>
+        {/* <div style={{ border: "1px solid #e2e8f0" }}>
           <div
             style={{
               padding: "8px 14px",
@@ -242,6 +316,36 @@ const BorrowerDisbursementInterestAmount = () => {
             locale={{ emptyText: "No lender breakup found." }}
             style={{ borderRadius: 0 }}
           />
+        </div> */}
+
+        {/* Loan EMI Cards Table */}
+        <div style={{ border: "1px solid #e2e8f0", marginTop: 24 }}>
+          <div
+            style={{
+              padding: "8px 14px",
+              borderBottom: "1px solid #e2e8f0",
+              background: "#f8fafc",
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: 13, color: "#1e293b" }}>
+              Loan EMI Cards & Schedule
+            </span>
+            <br />
+            <p style={{ color: "#1e293b", margin: 0 }}>
+              View EMI cards and schedule details for this loan request.
+            </p>
+          </div>
+          <Table
+            columns={emiCardColumns}
+            dataSource={emiCards.map((item, i) => ({ ...item, key: item.id || item.emiCardId || i }))}
+            bordered={false}
+            size="small"
+            loading={loadingEmiCards}
+            pagination={{ pageSize: 10, showSizeChanger: false }}
+            scroll={{ x: true }}
+            locale={{ emptyText: "No EMI cards found for this loan." }}
+            style={{ borderRadius: 0 }}
+          />
         </div>
       </>
     );
@@ -256,7 +360,7 @@ const BorrowerDisbursementInterestAmount = () => {
           <div className="page-header">
             <div className="row align-items-center">
               <div className="col">
-                <h3 className="page-title">Interest Charges</h3>
+                <h3 className="page-title">EMI Details</h3>
                 <ul className="breadcrumb">
                   <li className="breadcrumb-item">
                     <Link to="/borrowerDashboard">Dashboard</Link>
@@ -264,7 +368,7 @@ const BorrowerDisbursementInterestAmount = () => {
                   <li className="breadcrumb-item">
                     <Link to="/borrowerDisbursementAmount">Disbursements</Link>
                   </li>
-                  <li className="breadcrumb-item active">Interest Charges</li>
+                  <li className="breadcrumb-item active">EMI Details</li>
                 </ul>
               </div>
               <p className="">View a detailed breakdown of interest, fees, and charges applied to your loan. </p>

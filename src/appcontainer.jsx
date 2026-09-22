@@ -52,6 +52,9 @@ const Spining = React.lazy(() =>
   import("./components/pages/Oxyloans/Lender/Spining")
 );
 
+const Signup = React.lazy(() =>
+  import("./components/pages/Authentication/Signup")
+);
 const Loginotp = React.lazy(() =>
   import("./components/pages/Authentication/Loginotp")
 );
@@ -336,11 +339,11 @@ const BorrowerMarketplaceConsent = React.lazy(() =>
 );
 
 const MarketplaceEsign = React.lazy(() =>
-  import("./components/pages/Oxyloans/Borrower/MarketplaceEsign")
+  import("./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEsign")
 );
 
 const MarketplaceEnach = React.lazy(() =>
-  import("./components/pages/Oxyloans/Borrower/MarketplaceEnach")
+  import("./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEnach")
 );
 
 const MyOxyScore = React.lazy(() =>
@@ -376,6 +379,11 @@ export const newRouter = createBrowserRouter([
   {
     path: "/loginotp",
     element: <Loginotp />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
     errorElement: <Error404></Error404>,
   },
   {

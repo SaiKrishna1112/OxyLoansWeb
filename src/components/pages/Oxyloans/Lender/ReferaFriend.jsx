@@ -162,57 +162,89 @@ const ReferaFriend = () => {
 
   const emailcontentdata = emailres.emailcontent + emailres.buttomemail;
 
+  const copyToClipboard = (text) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch((err) => {
+        console.error("Clipboard API failed, using fallback", err);
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
+  const fallbackCopy = (text) => {
+    const input = document.createElement("input");
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    try {
+      document.execCommand("copy");
+    } catch (err) {
+      console.error("Fallback copy command failed", err);
+    }
+    document.body.removeChild(input);
+  };
+
   const Invitelender = async () => {
+    const userId = localStorage.getItem("userType") || getUserId() || "";
+    const link = `https://www.user.oxyloans.com/register?ref=${userId}`;
+    copyToClipboard(link);
 
-    const userId = localStorage.getItem("userType");
-    const input = document.createElement("input");
-    console.log(userId)
-    input.value = `https://www.user.oxyloans.com/register?ref=${userId}`;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand("copy");
-    document.body.removeChild(input);
-
-    setEmailres({
-      ...emailres,
-      invaitlenderlink: !emailres.invaitlenderlink,
+    setEmailres((prev) => ({
+      ...prev,
+      invaitlenderlink: true,
       invaitNrilink: false,
-      invaitborrowerlink: false
-    });
+      invaitborrowerlink: false,
+    }));
+
+    setTimeout(() => {
+      setEmailres((prev) => ({
+        ...prev,
+        invaitlenderlink: false,
+      }));
+    }, 3000);
   };
+
   const invitenri = async () => {
-    const userId = localStorage.getItem("userType");
-    const input = document.createElement("input");
-    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=${userId}`;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand("copy");
-    document.body.removeChild(input);
+    const userId = localStorage.getItem("userType") || getUserId() || "";
+    const link = `https://www.oxyloans.com/new/nrilenderregistration?ref=${userId}`;
+    copyToClipboard(link);
 
-    setEmailres({
-      ...emailres,
-      invaitNrilink: !emailres.invaitNrilink,
+    setEmailres((prev) => ({
+      ...prev,
+      invaitNrilink: true,
       invaitlenderlink: false,
-      invaitborrowerlink: false
-    });
-  };
-  const Inviteborrower = async () => {
-    const userId = localStorage.getItem("userType");
-    const input = document.createElement("input");
-    input.value = `https:///www.user.oxyloans.com/borrower_register?ref=${userId}`;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand("copy");
-    document.body.removeChild(input);
+      invaitborrowerlink: false,
+    }));
 
-    setEmailres({
-      ...emailres,
-      invaitborrowerlink: !emailres.invaitborrowerlink,
+    setTimeout(() => {
+      setEmailres((prev) => ({
+        ...prev,
+        invaitNrilink: false,
+      }));
+    }, 3000);
+  };
+
+  const Inviteborrower = async () => {
+    const userId = localStorage.getItem("userType") || getUserId() || "";
+    const link = `https://www.user.oxyloans.com/borrower_register?ref=${userId}`;
+    copyToClipboard(link);
+
+    setEmailres((prev) => ({
+      ...prev,
+      invaitborrowerlink: true,
       invaitNrilink: false,
       invaitlenderlink: false,
-    });
-  };
+    }));
 
+    setTimeout(() => {
+      setEmailres((prev) => ({
+        ...prev,
+        invaitborrowerlink: false,
+      }));
+    }, 3000);
+  };
 
   const handleKeyPressNumber = (event) => {
     const inputChar = event.key;
@@ -231,13 +263,16 @@ const ReferaFriend = () => {
 
   useEffect(() => {
     const response = getUserDetails();
-    response.then((data) => {
-      console.log(data.data.userDisplayId)
-      localStorage.setItem("userType", data.data.userDisplayId)
-    }).catch((error) => {
-      console.log(error)
-    })
-  })
+    response
+      .then((data) => {
+        if (data?.data?.userDisplayId) {
+          localStorage.setItem("userType", data.data.userDisplayId);
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
   return (
     <>
       <div className="main-wrapper">
@@ -311,10 +346,10 @@ const ReferaFriend = () => {
                       {emailres.invaitlenderlink ? (
                         <>
                           <button
-                            className="btn btn-xs btn-warning col-md-3 col-12 "
+                            className="btn btn-xs btn-warning col-md-3 col-12 text-white"
                             onClick={Invitelender}
                           >
-                            copied
+                            <i className="fa-solid fa-check mx-1"></i> Copied!
                           </button>
                         </>
                       ) : (
@@ -336,7 +371,7 @@ const ReferaFriend = () => {
                             className="btn btn-xs btn-info col-12 col-md-3 mx-lg-2 text-white"
                             onClick={invitenri}
                           >
-                            copied
+                            <i className="fa-solid fa-check mx-1"></i> Copied!
                           </button>
                         </>
                       ) : (
@@ -358,7 +393,7 @@ const ReferaFriend = () => {
                             className="btn btn-xs btn-success col-12 col-md-3 mx-lg-2 text-white"
                             onClick={Inviteborrower}
                           >
-                            copied
+                            <i className="fa-solid fa-check mx-1"></i> Copied!
                           </button>
                         </>
                       ) : (

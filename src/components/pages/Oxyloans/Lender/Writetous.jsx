@@ -272,7 +272,9 @@
 // export default Writetous;
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
+import Loader from "../../../../loader";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import { Success, WarningBackendApi } from "../../Base UI Elements/SweetAlert";
@@ -315,6 +317,8 @@ const Writetous = () => {
     cancelledCount: 0,
     pendingCount: 3,
   });
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const setDataFun = (query) => {
     setWriteTous({
@@ -340,6 +344,7 @@ const Writetous = () => {
   useEffect(() => {
     const fetchallQueriesCount1 = async () => {
       try {
+        setIsPageLoading(true);
         const response = await allQueriesCount1();
 
         setqueryresponse({
@@ -349,8 +354,10 @@ const Writetous = () => {
           cancelledCount: response.data.cancelledCount,
           pendingCount: response.data.pendingCount,
         });
-      } catch {
-        console.log("error");
+      } catch (error) {
+        console.log("error", error);
+      } finally {
+        setIsPageLoading(false);
       }
     };
 
@@ -375,7 +382,7 @@ const Writetous = () => {
   // ***********************
   //     VALIDATION ADDED
   // ***********************
-  const querySubmission = () => {
+  const querySubmission = async () => {
     // Remove HTML tags & spaces to check real content
     const cleanedQuery = writetous.query
       .replace(/<[^>]+>/g, "") // remove HTML tags
@@ -392,14 +399,32 @@ const Writetous = () => {
       isVaild: true,
     });
 
-    const response = writequery(writetous);
-    response.then((data) => {
+    setIsSubmitting(true);
+
+    try {
+      const data = await writequery(writetous);
+
       if (data.request.status == 200) {
         Success("success", "You have successfully submitted the query");
+        Swal.fire({
+          icon: "success",
+          title: "Query Submitted",
+          text: "You have successfully submitted the query.",
+          confirmButtonText: "OK",
+          willClose: () => {
+            window.location.href = "/ticketHistory";
+          },
+        });
       } else if (data.response.data.errorCode != "200") {
         WarningBackendApi("warning", `${data.response.data.errorMessage}`);
       }
-    });
+    } catch (error) {
+      const message =
+        error?.response?.data?.errorMessage || "Something went wrong while submitting your query.";
+      WarningBackendApi("warning", message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -410,132 +435,146 @@ const Writetous = () => {
 
         <div className="page-wrapper">
           <div className="content container-fluid">
-            <div className="page-header">
-              <div className="row align-items-center">
-                <div className="col">
-                  <h3 className="page-title">Write to us </h3>
-                  <ul className="breadcrumb">
-                    <li className="breadcrumb-item">
-                      <Link to="/dashboard">Dashboard</Link>
-                    </li>
-                    <li className="breadcrumb-item active">Write to us</li>
-                  </ul>
-                </div>
+            {isPageLoading ? (
+              <div className="d-flex justify-content-center align-items-center py-5">
+                <Loader />
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="page-header">
+                  <div className="row align-items-center">
+                    <div className="col">
+                      <h3 className="page-title">Write to us </h3>
+                      <ul className="breadcrumb">
+                        <li className="breadcrumb-item">
+                          <Link to="/dashboard">Dashboard</Link>
+                        </li>
+                        <li className="breadcrumb-item active">Write to us</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="student-group-form">
-              <div className="row">
-                <div className="col-xl-3 col-sm-6 col-12">
-                  <div className="card inovices-card">
-                    <div className="card-body">
-                      <div className="inovices-widget-header">
-                        <span className="inovices-widget-icon">
-                          <img src={allqueries} alt="" className="queyImage" />
-                        </span>
-                        <div className="inovices-dash-count">
-                          <div className="inovices-amount">
-                            {queryresponse.allQueriesCount}
+                <div className="student-group-form">
+                  <div className="row">
+                    <div className="col-xl-3 col-sm-6 col-12">
+                      <div className="card inovices-card">
+                        <div className="card-body">
+                          <div className="inovices-widget-header">
+                            <span className="inovices-widget-icon">
+                              <img src={allqueries} alt="" className="queyImage" />
+                            </span>
+                            <div className="inovices-dash-count">
+                              <div className="inovices-amount">
+                                {queryresponse.allQueriesCount}
+                              </div>
+                            </div>
+                          </div>
+                          <p className="inovices-all">All Queries</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-xl-3 col-sm-6 col-12">
+                      <div className="card inovices-card">
+                        <div className="card-body">
+                          <div className="inovices-widget-header">
+                            <span className="inovices-widget-icon">
+                              <img src={resolved} alt="" className="queyImage" />
+                            </span>
+                            <div className="inovices-dash-count">
+                              <div className="inovices-amount">
+                                {queryresponse.resolvedCount}
+                              </div>
+                            </div>
+                          </div>
+                          <p className="inovices-all">Resolved Queries</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-xl-3 col-sm-6 col-12">
+                      <div className="card inovices-card">
+                        <div className="card-body">
+                          <div className="inovices-widget-header">
+                            <span className="inovices-widget-icon">
+                              <img src={cancelled} alt="" className="queyImage" />
+                            </span>
+                            <div className="inovices-dash-count">
+                              <div className="inovices-amount">
+                                {queryresponse.cancelledCount}
+                              </div>
+                            </div>
+                          </div>
+                          <p className="inovices-all">Cancelled Queries</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-xl-3 col-sm-6 col-12">
+                      <div className="card inovices-card">
+                        <div className="card-body">
+                          <div className="inovices-widget-header">
+                            <span className="inovices-widget-icon">
+                              <img src={pending} alt="" className="queyImage" />
+                            </span>
+                            <div className="inovices-dash-count">
+                              <div className="inovices-amount">
+                                {queryresponse.pendingCount}
+                              </div>
+                            </div>
+                          </div>
+                          <p className="inovices-all">Pending Queries</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row">
+                  <div className="col-sm-14">
+                    <div className="card card-table">
+                      <div className="card-body">
+                        <div className="page-header">
+                          <div className="row align-items-center">
+                            <div className="col">
+                              <h3 className="page-title">Write a query</h3>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="row col-12">
+                          <div className="col-12 col-sm-12">
+                            <MyRichTextEditor
+                              data={writetous}
+                              setdata={setDataFun}
+                              documentUpload={setImageUploadId}
+                            />
+                          </div>
+
+                          <div className="row col-12 mobileView">
+                            <button
+                              className="btn btn-primary col-md-3 mx-3 my-5 querybtn"
+                              onClick={querySubmission}
+                              disabled={writetous.isVaild || isSubmitting}
+                            >
+                              {isSubmitting ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                                  Submitting...
+                                </>
+                              ) : (
+                                "Submit"
+                              )}
+                            </button>
                           </div>
                         </div>
                       </div>
-                      <p className="inovices-all">All Queries</p>
                     </div>
                   </div>
                 </div>
-
-                <div className="col-xl-3 col-sm-6 col-12">
-                  <div className="card inovices-card">
-                    <div className="card-body">
-                      <div className="inovices-widget-header">
-                        <span className="inovices-widget-icon">
-                          <img src={resolved} alt="" className="queyImage" />
-                        </span>
-                        <div className="inovices-dash-count">
-                          <div className="inovices-amount">
-                            {queryresponse.resolvedCount}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="inovices-all">Resolved Queries</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-xl-3 col-sm-6 col-12">
-                  <div className="card inovices-card">
-                    <div className="card-body">
-                      <div className="inovices-widget-header">
-                        <span className="inovices-widget-icon">
-                          <img src={cancelled} alt="" className="queyImage" />
-                        </span>
-                        <div className="inovices-dash-count">
-                          <div className="inovices-amount">
-                            {queryresponse.cancelledCount}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="inovices-all">Cancelled Queries</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-xl-3 col-sm-6 col-12">
-                  <div className="card inovices-card">
-                    <div className="card-body">
-                      <div className="inovices-widget-header">
-                        <span className="inovices-widget-icon">
-                          <img src={pending} alt="" className="queyImage" />
-                        </span>
-                        <div className="inovices-dash-count">
-                          <div className="inovices-amount">
-                            {queryresponse.pendingCount}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="inovices-all">Pending Queries</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Write a Query */}
-            <div className="row">
-              <div className="col-sm-14">
-                <div className="card card-table">
-                  <div className="card-body">
-                    <div className="page-header">
-                      <div className="row align-items-center">
-                        <div className="col">
-                          <h3 className="page-title">Write a query</h3>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="row col-12">
-                      <div className="col-12 col-sm-12">
-                        <MyRichTextEditor
-                          data={writetous}
-                          setdata={setDataFun}
-                          documentUpload={setImageUploadId}
-                        />
-                      </div>
-
-                      <div className="row col-12 mobileView">
-                        <button
-                          className="btn btn-primary col-md-3 mx-3 my-5 querybtn"
-                          onClick={querySubmission}
-                          disabled={writetous.isVaild}
-                        >
-                          Submit
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
 
           <Footer />

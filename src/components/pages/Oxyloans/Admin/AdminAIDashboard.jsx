@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import { saveAs } from "file-saver";
@@ -31,6 +31,8 @@ import {
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
 import Footer from "../../../Footer/Footer";
+import { getAdminAIPlatformStats } from "../../../HttpRequest/afterlogin";
+import AdminNotificationPanel from "./Notification/AdminNotificationPanel";
 import {
   getAdminAIActiveLenderDeals,
   getAdminAIActiveLenderProfile,

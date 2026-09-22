@@ -329,6 +329,7 @@ export const participatedapi = async (deal) => {
             }).then((result) => {
               if (result.isConfirmed) {
                 window.location.reload();
+                navigate("/myRunningDeals");
               }
             });
           } else {
@@ -452,7 +453,12 @@ export const participatedapi = async (deal) => {
                 cancelButtonText: "cancel",
                 showConfirmButton: true,
                 confirmButtonText: "OK",
-              });
+              }).then((result) => {
+              if (result.isConfirmed) {
+                window.location.reload();
+                navigate("/myRunningDeals");
+              }
+            });
             } else {
               console.log(data.response);
               //           if (data.response.status === 403) {
@@ -1081,7 +1087,7 @@ export const handleprincipalreturnaccounttype = (dealId, accountType) => {
   });
 };
 
-export const handletocancelticket = (id) => {
+export const handletocancelticket = (id, onSuccess, onStart, onFinish) => {
   Swal.fire({
     text: `Are you sure you want to cancel the query?  `,
     icon: "info",
@@ -1091,21 +1097,29 @@ export const handletocancelticket = (id) => {
     confirmButtonText: "Yes !",
   }).then((result) => {
     if (result.isConfirmed) {
+      if (onStart) onStart();
       const response = handletocancelticketapi1(id);
       response.then((data) => {
         if (data.request.status == 200) {
-          Swal.fire("Success!", `Query cancelled successfully`, "success");
+          Swal.fire("Success!", `Query cancelled successfully`, "success").then(() => {
+            if (onSuccess) onSuccess();
+            if (onFinish) onFinish();
+          });
         } else if (data.response.data.errorCode != "200") {
           Swal.fire(
             "warning!",
             `${data.response.data.errorMessage}`,
             "warning"
-          );
+          ).then(() => {
+            if (onFinish) onFinish();
+          });
         }
+      }).catch(() => {
+        if (onFinish) onFinish();
       });
     }
   });
-};
+}; 
 export const downloadMytransactionAlert = () => {
   Swal.fire({
     title: "Are you sure?",

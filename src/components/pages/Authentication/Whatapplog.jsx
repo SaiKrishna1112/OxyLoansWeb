@@ -20,7 +20,8 @@ import {
   sendwhatappotp,
   verifywhatappotp,
 } from "../../HttpRequest/beforelogin";
-import { toastrError } from "../Base UI Elements/Toast";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
+import { toastrError, toastrSuccess } from "../Base UI Elements/Toast";
 import "./user.css";
 import Whatappuser from "./Whatappuser";
 import { BsWhatsapp } from "react-icons/bs";
@@ -42,6 +43,18 @@ const Whatapplog = () => {
   const [dataIpv6, setdataIpv6] = useState({});
   const [dataIpv4, setdataIpv4] = useState("");
   const [whatsapploginotp, setwhatsapploginotp] = useState([]);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
 
   const [whatappotp, setwhatappotp] = useState({
     successMessage: "",
@@ -89,6 +102,40 @@ const Whatapplog = () => {
     handleip4();
   }, []);
 
+  const handleResendWhatsappOtp = async () => {
+    if (isResending || resendTimer > 0) return;
+    if (value == "" || value == undefined) {
+      toastrError("Enter the WhatsApp Number");
+      return;
+    }
+    setIsResending(true);
+    try {
+      const response = await sendwhatappotp(value);
+      if (response.request?.status === 200 || response.status === 200) {
+        setwhatappotp({
+          ...whatappotp,
+          otpdata: response.data,
+          successMessage: "WhatsApp OTP resent successfully!",
+          errorMessage: "",
+        });
+        toastrSuccess("WhatsApp OTP resent successfully!");
+        setResendTimer(30);
+      } else {
+        const errMsg = response.response?.data?.errorMessage || "Failed to resend WhatsApp OTP";
+        setwhatappotp({
+          ...whatappotp,
+          errorMessage: errMsg,
+          successMessage: "",
+        });
+        toastrError(errMsg);
+      }
+    } catch (error) {
+      toastrError("Failed to resend WhatsApp OTP");
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   const verifyotp = async () => {
     let whatsappotpvaluescallback =
       whatsapploginotp.length > 0 ? whatsapploginotp.join("") : "";
@@ -110,13 +157,11 @@ const Whatapplog = () => {
           sessionStorage.setItem("userId", data.data.id);
           sessionStorage.setItem("tokenTime", data.data.tokenGeneratedTime);
           if (accessToken != null) {
-            if (data.data.primaryType == "LENDER") {
-              history("/dashboard");
-            } else if (data.data.primaryType == "ADMIN") {
-              history("/dashboard");
-            }
-            else if (data.data.primaryType == "BORROWER") {
-              history("/borrowerDashboard");
+            const pType = data.data.primaryType;
+            if (pType === "LENDER" || pType === "ADMIN") {
+              history(getPostLoginRedirectUrl("/dashboard", pType));
+            } else if (pType === "BORROWER") {
+              history(getPostLoginRedirectUrl("/borrowerDashboard", pType));
             } else {
               toastrError("Try to Login of Lender Only");
             }
@@ -142,18 +187,24 @@ const Whatapplog = () => {
     } else {
       const response = sendwhatappotp(value);
       response.then((data) => {
-        if (data.request.status === 200) {
+        if (data.request?.status === 200 || data.status === 200) {
           sethandlewhatapp(false);
           setwhatappotp({
             ...whatappotp,
             otpdata: data.data,
+            successMessage: "WhatsApp OTP sent successfully!",
+            errorMessage: "",
           });
+          toastrSuccess("WhatsApp OTP sent!");
+          setResendTimer(30);
         } else {
+          const errMsg = data.response?.data?.errorMessage || "Failed to send WhatsApp OTP";
           setwhatappotp({
             ...whatappotp,
-            errorMessage: data.response.data.errorMessage,
+            errorMessage: errMsg,
+            successMessage: "",
           });
-          toastrError(data.response.data.errorMessage);
+          toastrError(errMsg);
         }
       });
     }
@@ -203,7 +254,7 @@ const Whatapplog = () => {
                     {handlewhatapp ? (
                       <>
                         <div className="login-right-wrap">
-                          <h1>Welcome to Oxyloans</h1>
+                          <h1>Welcome to OxyLoans</h1>
                           <p className="account-subtitle">
                             Need an account? <Link to="/register">Sign Up</Link>
                           </p>
@@ -222,7 +273,7 @@ const Whatapplog = () => {
                             />
                           </div>
                           <div className="forgotpass">
-                            <Link to="/forgotpassword">Forgot Password?</Link>
+                            {/* <Link to="/forgotpassword">Forgot Password?</Link> */}
                           </div>
                           <div className="form-group">
                             <button
@@ -244,23 +295,55 @@ const Whatapplog = () => {
                             <GoogleLoginButton />
                           </div>
                           {/* Social Login */}
-                          <div className="social-login">
-                            <Link
-                              to="/"
-                              className="bg-success text-white"
-                            >
-                              <i class="fa-solid fa-at"></i>
-                            </Link>
-                              <Link to="/loginotp" className="bg-success text-white">
-                          <i class="fa-solid fa-phone"></i>{" "}
+                          <Link to="/" 
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 15,
+                                  height: "40px",
+                                }}>
+                          <i class="fa-solid fa-mobile-screen-button" style={{ fontSize: 18, color: "#2563EB" }} /> Login with Mobile OTP
                         </Link>
+                            <Link
+                              to="/login"
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 2,
+                                  height: "40px",
+                                }}
+                            >
+                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Email
+                            </Link>
+                              
                           </div>
-                        </div>
                       </>
                     ) : (
                       <>
                         <div className="login-right-wrap">
-                          <h1>Welcome to Oxyloans</h1>
+                          <h1>Welcome to OxyLoans</h1>
                           <p className="account-subtitle">
                             Need an account? <Link to="/register">Sign Up</Link>
                           </p>
@@ -272,18 +355,35 @@ const Whatapplog = () => {
                             />
                           </div>
                           {whatappotp.successMessage && (
-                            <div className="errorMessage">
+                            <div className="text-success small mt-2">
                               {whatappotp.successMessage}{" "}
                             </div>
                           )}
                           {whatappotp.errorMessage && (
-                            <div className="errorMessage">
+                            <div className="text-danger small mt-2">
                               {whatappotp.errorMessage}{" "}
                             </div>
                           )}
+                          <div className="d-flex justify-content-between align-items-center mt-3 mb-2">
+                            <span className="text-muted small">Didn't receive WhatsApp OTP?</span>
+                            {resendTimer > 0 ? (
+                              <span className="text-muted small fw-bold">
+                                Resend in <span className="text-primary">{resendTimer}s</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 small fw-bold text-primary text-decoration-none"
+                                onClick={handleResendWhatsappOtp}
+                                disabled={isResending}
+                              >
+                                {isResending ? "Resending..." : "Resend OTP"}
+                              </button>
+                            )}
+                          </div>
                           <div className="form-group">
                             <button
-                              className="btn btn-primary btn-block mt-4"
+                              className="btn btn-primary btn-block mt-3"
                               type="submit"
                               onClick={verifyotp}
                             >
@@ -297,17 +397,52 @@ const Whatapplog = () => {
                             <span className="span-or">or</span>
                           </div>
                           {/* Social Login */}
-                          <div className="social-login">
-                            <Link
-                              to="/"
-                              className="bg-success text-white"
-                            >
-                              <i class="fa-solid fa-at"></i>
-                            </Link>
-                            <Link to="/whatsapplogin" className="bg-success text-white">
-
-                          <BsWhatsapp />{" "}
+                          <div className="mb-3">
+                            <GoogleLoginButton />
+                          </div>
+                          {/* Social Login */}
+                          <Link to="/" 
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 15,
+                                  height: "40px",
+                                }}>
+                          <i class="fa-solid fa-mobile-screen-button" style={{ fontSize: 20, color: "#2563EB" }} /> Login with Mobile OTP
                         </Link>
+                            <Link
+                              to="/login"
+                              style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: 10,
+                                  width: "100%",
+                                  padding: "10px 16px",
+                                  background: "#fff",
+                                  border: "1.5px solid #ddd",
+                                  borderRadius: 8,
+                                  fontSize: 15,
+                                  fontWeight: 600,
+                                  color: "#3c4043",
+                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
+                                  marginBottom: 2,
+                                  height: "40px",
+                                }}
+                            >
+                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Using Email
+                            </Link>
 
                             {/* <Link to="#">
                           <i className="fab fa-facebook-f" />
@@ -316,7 +451,6 @@ const Whatapplog = () => {
                           <i className="fab fa-twitter" />
                         </Link> */}
                           </div>
-                        </div>
                       </>
                     )}
                   </div>

@@ -6,10 +6,12 @@ import ReactPasswordToggleIcon from "react-password-toggle-icon";
 import * as api from "./api";
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import OtpInput from "./OtpInput";
-import { toastrWarning } from "../Base UI Elements/Toast";
+import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import Swal from "sweetalert2";
 import { API_USER_URL } from "../../../config";
 import axios from "axios";
+import { referrerdata, isApiSuccess } from "../../HttpRequest/beforelogin";
+import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 export default function BorrowerRegister() {
   const inputRef = useRef();
@@ -17,7 +19,42 @@ export default function BorrowerRegister() {
 
   const navigate = useNavigate();
   const [field, setField] = useState(true);
+  const [submitotp, setSubmitOtp] = useState(false);
+  const [error, setError] = useState("");
+  const [response1, setResponse] = useState({});
   const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
+  const [gmailPrefill, setGmailPrefill] = useState(null);
+  const [resendTimer, setResendTimer] = useState(30);
+  const [loadingResend, setLoadingResend] = useState(false);
+
+  useEffect(() => {
+    let interval = null;
+    if (!field && !submitotp && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [field, submitotp, resendTimer]);
+
+  const handleResendOtp = async () => {
+    setLoadingResend(true);
+    try {
+      const RegisterResponse = await api.RegisterUser(registrationField.mobile);
+      localStorage.setItem("seesion", RegisterResponse);
+      toastrSuccess("OTP resent successfully!");
+      setError("");
+      setResendTimer(30);
+    } catch (err) {
+      const errMsg = err.response?.data?.errorMessage || "Failed to resend OTP";
+      setError(errMsg);
+      toastrWarning(errMsg);
+    } finally {
+      setLoadingResend(false);
+    }
+  };
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -34,9 +71,6 @@ export default function BorrowerRegister() {
       );
     }
   }, []);
-  const [submitotp, setSubmitOtp] = useState(false);
-  const [error, setError] = useState("");
-  const [response1, setResponse] = useState({});
   const localData = JSON.parse(localStorage.getItem("userData") || "{}");
 
   const [registrationField, setRegistrationField] = useState({
@@ -54,22 +88,65 @@ export default function BorrowerRegister() {
     mobileOTPNew: "",
   });
 
+  const validateReferrerId = async (refValue) => {
+    const val = String(refValue || "").trim();
+    if (!val || val === "0") {
+      setRegistrationField((prev) => ({
+        ...prev,
+        referrerIderror: "",
+        uniqueNumber: "0",
+      }));
+      localStorage.setItem("uniqnumber", "0");
+      return true;
+    }
+
+    try {
+      const response = await referrerdata(val);
+      if (response && (response.status === 200 || isApiSuccess(response))) {
+        const fetchedUniqueNumber =
+          response?.data?.uniqueNumber ||
+          (typeof response?.data === "string" ? response.data : val);
+
+        setRegistrationField((prev) => ({
+          ...prev,
+          referrerIderror: "",
+          uniqueNumber: fetchedUniqueNumber,
+        }));
+        localStorage.setItem("uniqnumber", fetchedUniqueNumber);
+        return true;
+      } else {
+        const errMsg =
+          response?.response?.data?.errorMessage ||
+          response?.data?.errorMessage ||
+          "Invalid Referrer ID";
+        setRegistrationField((prev) => ({
+          ...prev,
+          referrerIderror: errMsg,
+          uniqueNumber: "0",
+        }));
+        localStorage.setItem("uniqnumber", "0");
+        return false;
+      }
+    } catch (err) {
+      setRegistrationField((prev) => ({
+        ...prev,
+        referrerIderror: "Invalid Referrer ID",
+        uniqueNumber: "0",
+      }));
+      localStorage.setItem("uniqnumber", "0");
+      return false;
+    }
+  };
+
   const handlechange = (event) => {
     const { name, value } = event.target;
     setError("");
 
-    if (name === "referrerId" && value.trim() === "BR100001") {
-      setRegistrationField((prev) => ({
-        ...prev,
-        referrerIderror: "Invalid Referrer Id",
-      }));
-    } else {
-      setRegistrationField((prev) => ({
-        ...prev,
-        [name]: value,
-        [`${name}error`]: "",
-      }));
-    }
+    setRegistrationField((prev) => ({
+      ...prev,
+      [name]: value,
+      [`${name}error`]: "",
+    }));
   };
 
   const setwhatsappotphandler = (OTP) => {
@@ -102,16 +179,61 @@ export default function BorrowerRegister() {
   };
 
   const handleLenderRegister = async () => {
+    if (!registrationField.pancard) {
+      setRegistrationField(prev => ({ ...prev, pancarderror: "Please enter the Name" }));
+      toastrWarning("Please enter your name as per PAN card");
+      return;
+    }
+
+    // Gmail one-shot registration — email + mobile already verified
+    if (gmailPrefill) {
+      try {
+        const res = await axios.post(API_USER_URL + "registerLenderWithGoogle", {
+          mobileNumber: gmailPrefill.mobile,
+          nameAsPan: registrationField.pancard,
+          password: registrationField.password || "",
+          referrerId: registrationField.referrerId || "",
+          userType: "BORROWER",
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+        });
+        const token = res.headers?.accesstoken || res.headers?.accessToken || res.headers?.["access-token"];
+        if (token && res.data?.id) {
+          sessionStorage.setItem("accessToken", token);
+          sessionStorage.setItem("userId", String(res.data.id));
+          sessionStorage.setItem("tokenTime", res.data.tokenGeneratedTime || "");
+          sessionStorage.setItem("email", res.data.email || "");
+          localStorage.setItem("primaryType", res.data.primaryType || "");
+          localStorage.setItem("id", String(res.data.id));
+          sessionStorage.removeItem("gmail_prefill");
+          navigate("/profile");
+        } else {
+          toastrWarning("Registration succeeded but login failed. Please login.");
+          navigate("/loginotp");
+        }
+      } catch (err) {
+        const errMsg = err?.response?.data?.errorMessage || "Registration failed. Please try again.";
+        setError(errMsg);
+        toastrWarning(errMsg);
+      }
+      return;
+    }
+
+    // Normal OTP flow
     setRegistrationField((prevState) => ({
       ...prevState,
       emailerror: !registrationField.email ? "Please enter the email" : "",
       pancarderror: !registrationField.pancard ? "Please enter the Name" : "",
       mobileerror: !registrationField.mobile ? "Please enter the mobile" : "",
-      passworderror: !registrationField.password
-        ? "Please enter the password"
-        : "",
+      passworderror: !registrationField.password ? "Please enter the password" : "",
     }));
-
+    if (!registrationField.pancard || registrationField.pancard.trim().length < 2) {
+      setRegistrationField((prev) => ({
+        ...prev,
+        pancarderror: !registrationField.pancard ? "Please enter the Name" : "Name must be at least 2 characters",
+      }));
+      return;
+    }
     const validationError = api.validateRegisterInput(
       registrationField.email,
       registrationField.password,
@@ -125,32 +247,45 @@ export default function BorrowerRegister() {
     }
 
     if (
+      registrationField.referrerId &&
+      String(registrationField.referrerId).trim() !== "" &&
+      String(registrationField.referrerId).trim() !== "0"
+    ) {
+      const isValidRef = await validateReferrerId(registrationField.referrerId);
+      if (!isValidRef) {
+        const refErrMsg = registrationField.referrerIderror || "Invalid Referrer ID";
+        setError(refErrMsg);
+        toastrWarning(refErrMsg);
+        return;
+      }
+    }
+
+    if (
       !registrationField.emailerror &&
       !registrationField.pancarderror &&
       !registrationField.mobileerror &&
-      !registrationField.passworderror
+      !registrationField.passworderror &&
+      !registrationField.referrerIderror
     ) {
       try {
-        const RegisterResponse = await api.RegisterUser(
-          registrationField.mobile
-        );
+        const RegisterResponse = await api.RegisterUser(registrationField.mobile);
         localStorage.setItem("seesion", RegisterResponse);
         localStorage.setItem("type", "Borrower");
+        if(registrationField.referrerId !== 0 && registrationField.referrerId){
+          const finalUniq = registrationField.uniqueNumber || registrationField.referrerId;
+          localStorage.setItem("uniqnumber", finalUniq);
+        }
         setResponse(RegisterResponse);
         setField(false);
         setError(null);
       } catch (error) {
-        console.error("Error:", error.response?.data?.errorMessage);
         const errData = error.response?.data;
         if (errData && (errData.errorCode === "113" || String(errData.errorCode) === "113")) {
-          // Parse user id & email from errorMessage
           const errMsg = errData.errorMessage || "";
           const idMatch = errMsg.match(/id=(\d+)/);
           const userId = idMatch ? idMatch[1] : null;
-          
           const emailMatch = errMsg.match(/email=([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
           const email = emailMatch ? emailMatch[1] : registrationField.email;
-
           Swal.fire({
             title: "Email Verification Required",
             html: `Your email <strong>${email}</strong> has not been verified yet.<br/><br/>Would you like us to resend the activation link?`,
@@ -162,16 +297,9 @@ export default function BorrowerRegister() {
             cancelButtonText: "Cancel",
           }).then((result) => {
             if (result.isConfirmed && userId) {
-              axios
-                .post(API_USER_URL + "sendingEmailActivationLink", {
-                  userId: userId,
-                })
-                .then((res) => {
-                  Swal.fire("Sent!", "Email activation link has been resent successfully.", "success");
-                })
-                .catch((err) => {
-                  Swal.fire("Error!", err.response?.data?.errorMessage || "Failed to resend activation link. Please try again.", "error");
-                });
+              axios.post(API_USER_URL + "sendingEmailActivationLink", { userId })
+                .then(() => Swal.fire("Sent!", "Email activation link has been resent successfully.", "success"))
+                .catch((err) => Swal.fire("Error!", err.response?.data?.errorMessage || "Failed to resend.", "error"));
             }
           });
         } else {
@@ -231,28 +359,50 @@ export default function BorrowerRegister() {
   }, [registrationField.pancard]);
 
   useEffect(() => {
+    clearLastVisitedUrls();
     const searchParams = new URLSearchParams(window.location.search);
     const refParam = searchParams.get("ref");
-    localStorage.setItem("uniqnumber", refParam || 0);
 
     if (refParam) {
       setRegistrationField((prev) => ({
         ...prev,
         referrerId: refParam,
       }));
-    }else{
+      validateReferrerId(refParam);
+    } else {
       setRegistrationField((prev) => ({
         ...prev,
-        referrerId: 0,
+        referrerId: "",
       }));
+      localStorage.setItem("uniqnumber", "0");
     }
 
-    if (localData) {
+    // Check for Gmail pre-fill (takes priority over localData)
+    try {
+      const raw = sessionStorage.getItem("gmail_prefill");
+      if (raw) {
+        const prefill = JSON.parse(raw);
+        if (prefill.role === "BORROWER" && prefill.emailVerified && prefill.email && prefill.mobile) {
+          setGmailPrefill(prefill);
+          setRegistrationField(prev => ({
+            ...prev,
+            email: prefill.email || "",
+            mobile: prefill.mobile || "",
+            pancard: prefill.name || "",
+          }));
+          return; // skip localData pre-fill
+        } else {
+          sessionStorage.removeItem("gmail_prefill");
+        }
+      }
+    } catch (e) { /* ignore */ }
+
+    if (localData && Object.keys(localData).length > 0) {
       setRegistrationField((prev) => ({
         ...prev,
-        email: localData.email || "",
-        mobile: localData.number || "",
-        pancard: localData.name || "",
+        email: localData.email || prev.email,
+        mobile: localData.number || prev.mobile,
+        pancard: localData.name || prev.pancard,
       }));
     }
   }, []);
@@ -325,20 +475,22 @@ export default function BorrowerRegister() {
                           className="form-control"
                           type="text"
                           name="pancard"
-                          maxLength={30}
+                          maxLength={100}
                           onChange={handlechange}
                           value={registrationField.pancard}
-                          // onKeyPress={handleKeyPressNumberCapital}
                         />
                         <span className="profile-views">
                           <i className="fas fa-user-circle" />
                         </span>
                         {registrationField.pancarderror && (
-                          <div className="error">
-                            {registrationField.pancarderror}
-                          </div>
+                          <div className="error">{registrationField.pancarderror}</div>
                         )}
                       </div>
+                      {gmailPrefill && (
+                        <div style={{background:"#e8f5e9",border:"1px solid #4caf50",borderRadius:"6px",padding:"10px 14px",marginBottom:"12px",color:"#2e7d32",fontWeight:"500"}}>
+                          ✅ Gmail verified — email and mobile are pre-filled and locked.
+                        </div>
+                      )}
                       <div className="form-group">
                         <label>
                           Email <span className="login-danger">*</span>
@@ -347,22 +499,24 @@ export default function BorrowerRegister() {
                           className="form-control"
                           type="email"
                           name="email"
-                          maxLength={35}
+                          maxLength={100}
                           value={registrationField.email}
-                          onChange={handlechange}
+                          readOnly={!!gmailPrefill}
+                          onChange={gmailPrefill ? undefined : handlechange}
+                          style={gmailPrefill ? { background: "#f5f5f5", cursor: "not-allowed" } : {}}
                         />
                         <span className="profile-views">
                           <i className="fas fa-envelope" />
                         </span>
                         {registrationField.emailerror && (
-                          <div className="error">
-                            {registrationField.emailerror}
-                          </div>
+                          <div className="error">{registrationField.emailerror}</div>
                         )}
                       </div>
                       <div className="form-group">
                         <label>
-                          Password <span className="login-danger">*</span>
+                          Password {gmailPrefill
+                            ? <span style={{color:"#888",fontWeight:"normal",fontSize:"0.85em"}}>(optional — you'll sign in with Google)</span>
+                            : <span className="login-danger">*</span>}
                         </label>
                         <input
                           ref={inputRef}
@@ -378,14 +532,8 @@ export default function BorrowerRegister() {
                           showIcon={showIcon}
                           hideIcon={hideIcon}
                         />
-                        {/* <input className="form-control pass-input" type="text" />
-                                          <span className="profile-views feather-eye toggle-password">
-                                              <FeatherIcon icon="eye" />
-                                          </span> */}{" "}
                         {registrationField.passworderror && (
-                          <div className="error">
-                            {registrationField.passworderror}
-                          </div>
+                          <div className="error">{registrationField.passworderror}</div>
                         )}
                       </div>
                       <p className="reffertext">
@@ -401,6 +549,7 @@ export default function BorrowerRegister() {
                           name="referrerId"
                           value={registrationField.referrerId}
                           onChange={handlechange}
+                          onBlur={(e) => validateReferrerId(e.target.value)}
                         />
                         {/* <span className="profile-views">
                           <i className="fas fa-phone" />
@@ -418,14 +567,15 @@ export default function BorrowerRegister() {
                         </label>
                         {/* <input className="form-control pass-confirm" type="text" /> */}
                         <input
-                          // ref={inputRef2}
                           className="form-control"
                           type="tel"
                           name="mobile"
                           maxLength={10}
-                          onChange={handlechange}
+                          onChange={gmailPrefill ? undefined : handlechange}
+                          onKeyPress={gmailPrefill ? undefined : handleKeyPressNumber}
                           value={registrationField.mobile}
-                          onKeyPress={handleKeyPressNumber}
+                          readOnly={!!gmailPrefill}
+                          style={gmailPrefill ? { background: "#f5f5f5", cursor: "not-allowed" } : {}}
                         />
                         <span className="profile-views">
                           <i className="fas fa-phone" />
@@ -477,6 +627,22 @@ export default function BorrowerRegister() {
                               data={6}
                               setwhatsappotphandler={setwhatsappotphandler}
                             />
+                          </div>
+                          <div className="dont-have text-center my-2">
+                            {resendTimer > 0 ? (
+                              <span className="text-muted">
+                                Resend OTP in <strong>{resendTimer}s</strong>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 text-primary fw-bold"
+                                onClick={handleResendOtp}
+                                disabled={loadingResend}
+                              >
+                                {loadingResend ? "Sending..." : "Resend OTP"}
+                              </button>
+                            )}
                           </div>
                           <div className=" dont-have">
                             Already Registered? <Link to="/">Login</Link>

@@ -77,6 +77,39 @@ The **OxyLoans React Web Platform** is a Peer-to-Peer (P2P) Fintech Lending Mark
 
 ---
 
+### 7. Bank Statement Analysis & PDF Report Integration (`Profile.jsx`)
+- **Location**:
+  - `src/components/pages/Oxyloans/Borrower/redesign/pages/Profile.jsx`
+  - `src/components/HttpRequest/afterlogin.js`
+- **APIs Integrated**:
+  - `POST /v1/user/borrower/:borrowerId/analyze` (`analyzeBorrowerBankStatement`)
+  - `GET /v1/user/borrower/:borrowerId` (`getBorrowerAnalysis`)
+  - `GET /v1/user/:statementId/borrower` (`getBorrowerStatementById`)
+  - `GET /v1/user/:id/report/pdf/user` (`getBorrowerReportPdfUser`)
+  - `POST /:userId/upload/kyc` (`uploadkyc` with name `BANKSTATEMENT`)
+- **Key Features**:
+  - **Upload & Direct Analysis**: Uploading a 6-month bank statement directly posts `file` and optional `password` as `multipart/form-data` to `POST /v1/user/borrower/:borrowerId/analyze`.
+  - **Latest Statement Selection**: Parses the `statements` array returned from `/v1/user/borrower/:borrowerId`, sorts by `uploadedAt`/`id` descending, picks the latest statement, and passes its statement `id` to `GET /v1/user/:statementId/borrower`.
+  - **Interactive Analysis Controls**: "Analyze Statement" and "PDF Report" action buttons added to the Profile KYC section.
+  - **PDF Password Prompt & Decryption Handling**: If a bank statement PDF is encrypted or password-protected, the UI prompts the borrower to enter their PDF password at upload time or upon password error, appending `password` to the `form-data` request.
+  - **Summary Metrics**: Displays real-time bank statement analysis metrics (Analysis Status, Bank Name, Account Number, Upload Timestamp, Average Monthly Balance, Total Turnover, Risk Rating).
+  - **PDF Report Download**: Direct Blob download & preview trigger passing statement `id` to `/v1/user/:statementId/report/pdf/user`.
+
+---
+
+### 8. Post-Login Last Step / Process Redirection (`redirectUtils.js`)
+- **Location**:
+  - `src/utils/redirectUtils.js`
+  - `src/approuter.jsx`
+  - `src/components/pages/Authentication/` (`index.jsx`, `Loginotp.jsx`, `Admlogin.jsx`, `Whatapplog.jsx`, `Whatappuser.jsx`, `PartnerLogin.jsx`)
+- **Key Enhancements**:
+  - **Process Step Tracking**: `NavigationTracker` in `approuter.jsx` captures active route changes and persists `lastVisitedUrl` across sessions.
+  - **Exclusion Filters**: Automatically ignores public/auth routes (`/login`, `/register`, etc.) and explicitly excludes `esign` and `enach` routes (`/esign/*`, `/enach/*`, `/lender_esign/*`) so users are not redirected back to eSign or eNACH pages upon logging back in.
+  - **Session Clearance Protection**: Wraps `Storage.prototype.clear` to preserve `lastVisitedUrl` even when `localStorage.clear()` is invoked during logout.
+  - **Seamless Resume**: Upon user re-authentication, `getPostLoginRedirectUrl()` restores the exact step/process page where the user left off, falling back to role-specific default dashboards.
+
+---
+
 ## 📌 Route Mapping Summary
 
 | Path | Component | Description |
