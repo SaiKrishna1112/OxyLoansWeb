@@ -161,7 +161,7 @@ export default function LenderRegister() {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
         });
-        // Save session and redirect to KYC / dashboard
+        // Save session and redirect to step 2 (DOB / WhatsApp / address)
         const token = res.headers?.accesstoken || res.headers?.accessToken || res.headers?.["access-token"];
         if (token && res.data?.id) {
           sessionStorage.setItem("accessToken", token);
@@ -171,7 +171,7 @@ export default function LenderRegister() {
           localStorage.setItem("primaryType", res.data.primaryType || "");
           localStorage.setItem("id", String(res.data.id));
           sessionStorage.removeItem("gmail_prefill");
-          navigate("/profile");
+          navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now());
         } else {
           toastrWarning("Registration succeeded but login failed. Please login.");
           navigate("/loginsso");
