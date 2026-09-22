@@ -1294,7 +1294,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   };
 
   useEffect(() => {
-    if (userProfile.pinCode.length == 6) {
+    if (userProfile?.pinCode?.length == 6) {
       const response = handlepincodeapicall(userProfile.pinCode);
       response
         .then((data) => {
@@ -2289,7 +2289,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   value={userProfile.panNumber}
                                   maxLength={10}
                                   name="panNumber"
-                                  readOnly={userProfile.panNumber ? true : false}
+                                  readOnly={userProfile.panNumber==="" ? false : true}
                                 />
 
                                 {userProfile.panNumbererror && (
@@ -2335,11 +2335,12 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 <input
                                   type={userProfile.dob == "" ? "date" : "text"}
                                   className="form-control "
-                                  // onChange={handlechange}
+                                  onChange={handlechange}
                                   value={userProfile.dob}
                                   maxLength={10}
                                   name="dob"
                                   max={new Date().toISOString().split("T")[0]}
+                                  readOnly = {userProfile.dob === null ? false : true}
                                 />
 
                                 {userProfile.doberror && (
@@ -2382,6 +2383,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   // onChange={handlechange}
                                   value={userProfile.mobileNumber}
                                   name="mobileNumber"
+                                  readOnly
                                 />
                                 {userProfile.mobileNumbererror && (
                                   <div className="text-danger">
@@ -2422,6 +2424,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   // onChange={handlechange}
                                   value={userProfile.email}
                                   name="email"
+                                  readOnly
                                 />
 
                                 {userProfile.emailerror && (

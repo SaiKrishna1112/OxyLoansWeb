@@ -199,7 +199,9 @@ export const vaildateotp = async (
   referrerId,
   userType,
   latitude,
-  longitude
+  longitude,
+  trackingId,
+  relationshipId
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
@@ -251,15 +253,28 @@ export const vaildateotp = async (
     // localStorage.setItem("type", "")
   }
   try {
-    const response = await axios.post(
-      API_BASE_URL + "newUserRegistration",
-      data
-    );
+      const params = {};
 
-    return {
-      responseData: response.data,
-    };
-  } catch (error) {
-    throw error;
-  }
+      if (trackingId) {
+        params.trackingId = trackingId;
+      }
+
+      if (relationshipId) {
+        params.relationshipId = relationshipId;
+      }
+
+      const response = await axios.post(
+        API_BASE_URL + "newUserRegistration",
+        data,
+        {
+          params,
+        }
+      );
+
+      return {
+        responseData: response.data,
+      };
+    } catch (error) {
+      throw error;
+    }
 };

@@ -26,6 +26,8 @@ export default function LenderRegister() {
   const [gmailPrefill, setGmailPrefill] = useState(null);
   const [resendTimer, setResendTimer] = useState(30);
   const [loadingResend, setLoadingResend] = useState(false);
+  const [trackingId, setTrackingId] = useState(null);
+  const [relationshipId, setRelationshipId] = useState(null);
 
   useEffect(() => {
     let interval = null;
@@ -107,55 +109,66 @@ export default function LenderRegister() {
     mobileOTPNew: "",
   });
 
-  const validateReferrerId = async (refValue) => {
-    const val = String(refValue || "").trim();
-    if (!val || val === "0") {
+const validateReferrerId = async (refValue) => {
+  let val = String(refValue || "").trim().toUpperCase();
+
+  if (!val || val === "0") {
+    setRegistrationField((prev) => ({
+      ...prev,
+      referrerIderror: "",
+      uniqueNumber: "0",
+    }));
+    localStorage.setItem("uniqnumber", "0");
+    return true;
+  }
+
+  // Normalize LR1040972 -> LR40972
+  if (val.startsWith("LR10")) {
+    val = "LR" + val.substring(4);
+  }
+
+  try {
+    const response = await referrerdata(val);
+
+    if (response && (response.status === 200 || isApiSuccess(response))) {
+      const fetchedUniqueNumber =
+        response?.data?.uniqueNumber ||
+        (typeof response?.data === "string" ? response.data : val);
+
       setRegistrationField((prev) => ({
         ...prev,
         referrerIderror: "",
-        uniqueNumber: "0",
+        uniqueNumber: fetchedUniqueNumber,
       }));
-      localStorage.setItem("uniqnumber", "0");
+
+      localStorage.setItem("uniqnumber", fetchedUniqueNumber);
       return true;
-    }
+    } else {
+      const errMsg =
+        response?.response?.data?.errorMessage ||
+        response?.data?.errorMessage ||
+        "Invalid Referrer ID";
 
-    try {
-      const response = await referrerdata(val);
-      if (response && (response.status === 200 || isApiSuccess(response))) {
-        const fetchedUniqueNumber =
-          response?.data?.uniqueNumber ||
-          (typeof response?.data === "string" ? response.data : val);
-
-        setRegistrationField((prev) => ({
-          ...prev,
-          referrerIderror: "",
-          uniqueNumber: fetchedUniqueNumber,
-        }));
-        localStorage.setItem("uniqnumber", fetchedUniqueNumber);
-        return true;
-      } else {
-        const errMsg =
-          response?.response?.data?.errorMessage ||
-          response?.data?.errorMessage ||
-          "Invalid Referrer ID";
-        setRegistrationField((prev) => ({
-          ...prev,
-          referrerIderror: errMsg,
-          uniqueNumber: "0",
-        }));
-        localStorage.setItem("uniqnumber", "0");
-        return false;
-      }
-    } catch (err) {
       setRegistrationField((prev) => ({
         ...prev,
-        referrerIderror: "Invalid Referrer ID",
+        referrerIderror: errMsg,
         uniqueNumber: "0",
       }));
+
       localStorage.setItem("uniqnumber", "0");
       return false;
     }
-  };
+  } catch (err) {
+    setRegistrationField((prev) => ({
+      ...prev,
+      referrerIderror: "Invalid Referrer ID",
+      uniqueNumber: "0",
+    }));
+
+    localStorage.setItem("uniqnumber", "0");
+    return false;
+  }
+};
 
   const handlechange = (event) => {
     const { name, value } = event.target;
@@ -370,7 +383,9 @@ export default function LenderRegister() {
           registrationField.referrerId,
           "Lender",
           userLocation.latitude,
-          userLocation.longitude
+          userLocation.longitude,
+          trackingId, 
+          relationshipId
         );
         setfield(false);
         setsubmitotp(true);
@@ -416,6 +431,12 @@ export default function LenderRegister() {
     clearLastVisitedUrls();
     const searchParams = new URLSearchParams(window.location.search);
     const refParam = searchParams.get("ref");
+    const trackingId = searchParams.get("trackingId");
+    const relationshipId = searchParams.get("relationshipId");
+    if (trackingId) localStorage.setItem("trackingId", trackingId);
+    if (relationshipId) localStorage.setItem("relationshipId", relationshipId);
+    if (trackingId) setTrackingId(trackingId);
+    if (relationshipId) setRelationshipId(relationshipId);
 
     if (refParam) {
       setRegistrationField((prev) => ({

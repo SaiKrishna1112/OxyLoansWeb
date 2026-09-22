@@ -14,7 +14,7 @@ import {
 const PROJECT_TYPES = [
   { id: "oxyloans", label: "oxyloans (admin@oxyloans.com)", displayName: "OxyLoans" },
   { id: "oxyloans-team", label: "oxyloans (team@oxyloans.in)", displayName: "OxyLoans" },
-  { id: "bmv", label: "bmv (anil@askoxy.ai)", displayName: "BMV" },
+  { id: "bmv", label: "bmv (Hi@bmv.money)", displayName: "BMV" },
   { id: "oxybricks", label: "oxybricks (radha@oxybricks.world)", displayName: "Oxybricks" },
   { id: "erice", label: "erice (ceo@oxyglobaltech.net)", displayName: "Erice" },
   { id: "rotary", label: "rotary (Rotaryaihub@rotary3150.com)", displayName: "Rotary AI Hub" },

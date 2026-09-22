@@ -26,6 +26,8 @@ export default function BorrowerRegister() {
   const [gmailPrefill, setGmailPrefill] = useState(null);
   const [resendTimer, setResendTimer] = useState(30);
   const [loadingResend, setLoadingResend] = useState(false);
+  const [trackingId, setTrackingId] = useState(null);
+  const [relationshipId, setRelationshipId] = useState(null);
 
   useEffect(() => {
     let interval = null;
@@ -99,6 +101,11 @@ export default function BorrowerRegister() {
       localStorage.setItem("uniqnumber", "0");
       return true;
     }
+
+     // Normalize LR1040972 -> LR40972
+      if (val.startsWith("LR10")) {
+        val = "LR" + val.substring(4);
+      }
 
     try {
       const response = await referrerdata(val);
@@ -326,7 +333,9 @@ export default function BorrowerRegister() {
           registrationField.referrerId,
           "Borrower",
           userLocation.latitude,
-          userLocation.longitude
+          userLocation.longitude,
+          trackingId,
+          relationshipId
         );
 
         setField(false);
@@ -362,6 +371,12 @@ export default function BorrowerRegister() {
     clearLastVisitedUrls();
     const searchParams = new URLSearchParams(window.location.search);
     const refParam = searchParams.get("ref");
+    const trackingId = searchParams.get("trackingId");
+    const relationshipId = searchParams.get("relationshipId");
+    if (trackingId) localStorage.setItem("trackingId", trackingId);
+    if (relationshipId) localStorage.setItem("relationshipId", relationshipId);
+    if (trackingId) setTrackingId(trackingId);
+    if (relationshipId) setRelationshipId(relationshipId);
 
     if (refParam) {
       setRegistrationField((prev) => ({
