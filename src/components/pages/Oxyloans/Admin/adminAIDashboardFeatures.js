@@ -112,8 +112,8 @@ export const ADMIN_AI_FEATURES = [
   },
   {
     id: "deal-intelligence",
-    title: "Deal Closure & AI Suggestions",
-    description: "Closed deal counts, ROI-based close/relaunch recommendations, and launch size",
+    title: "Deal Recommendations",
+    description: "Close, relaunch, or launch — AI-assisted deal actions",
     icon: "fas fa-lightbulb",
     color: "#7c3aed",
     variant: "violet",

@@ -29,7 +29,6 @@ import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import AdminWalletHubPanel from "./AdminWalletHubPanel";
 import {
   CmsPayoutsFullReport,
-  DealIntelligenceFullReport,
   MonthlyPayoutFullReport,
   BorrowerAccountsFullReport,
   BorrowerFeesFullReport,
@@ -283,7 +282,10 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
       };
 
     case "deal-intelligence":
-      return async () => ({ ready: true });
+      return async () => {
+        const res = await loadDealIntelligence();
+        return { dealIntelligence: res?.data || res };
+      };
 
     case "cms-reconciliation":
       return async () => {
@@ -434,8 +436,30 @@ export const FeatureContent = ({
       );
     }
 
-    case "deal-intelligence":
-      return <DealIntelligenceFullReport key={refreshNonce} />;
+    case "deal-intelligence": {
+      const di = dealIntelligence || ctx.dealIntelligence || {};
+      const fees = di.feeSummary || ctx.feeSummary || {};
+      const running = di.runningDeals || ctx.dealRows || [];
+      const launch = di.launchSuggestion || {};
+      return (
+        <>
+          <div className="ai-stat-grid mb-3">
+            <StatTile label="Borrower fees" value={money(fees.borrowerFeesCollected)} color="#2563eb" />
+            <StatTile label="Interest to lenders" value={money(fees.lenderInterestPaid)} color="#059669" />
+            <StatTile label="Avg spread" value={fees.avgSpreadPercent != null ? `${fees.avgSpreadPercent}%` : "—"} color="#d97706" />
+            <StatTile label="Active deals" value={number(fees.activeRunningDeals)} color="#0891b2" />
+          </div>
+          {launch.suggestedDealSize > 0 && (
+            <p className="small mb-3">
+              Launch idea: ~{money(launch.suggestedDealSize)} at {launch.suggestedLenderRoiMin}–{launch.suggestedLenderRoiMax}% lender / ~{launch.suggestedBorrowerRoi}% borrower
+            </p>
+          )}
+          {running.length > 0 && (
+            <AdminDealRoiTable deals={running} limit={15} compact />
+          )}
+        </>
+      );
+    }
 
     case "top-lenders":
       return (
@@ -613,14 +637,11 @@ export const getFeaturePreviewStats = (featureId, ctx, fy) => {
         { label: "Upcoming", value: "Interest" },
         { label: "Window", value: "3 days" },
       ];
-    case "deal-intelligence": {
-      const intel = ctx?.dealIntelligence || {};
-      const intelFees = intel.feeSummary || fees;
+    case "deal-intelligence":
       return [
-        { label: "Closed", value: number(intelFees.closedDeals) },
-        { label: "Close soon", value: number((intel.closeCandidates || []).length) },
+        { label: "Fees", value: money(fees.borrowerFeesCollected) },
+        { label: "Spread", value: fees.avgSpreadPercent != null ? `${fees.avgSpreadPercent}%` : "—" },
       ];
-    }
     case "capital-liquidity": {
       const flow = buildWalletFlowSnapshot(ctx?.walletSummary, ctx?.platform?.kpis);
       return [

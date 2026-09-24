@@ -569,19 +569,11 @@ export const loadDealIntelligence = async () => {
   try {
     const res = await axios.get(`${AI_BASE_URL}admin/deal-intelligence`, { headers, timeout: 180000 });
     if (res.data?.error) throw new Error(res.data.error);
-    const body = unwrapDealIntelligenceBody(res.data);
-    if (!isLiveDealIntelligence(body)) {
-      throw new Error("Deal intelligence API returned an empty payload.");
-    }
-    return { data: { ...body, source: body.source || "live" } };
+    return { data: { ...res.data, source: res.data.source || "live" } };
   } catch (err) {
     if (isAuthError(err)) {
       clearAdminSession();
       throw err;
-    }
-    const status = err?.response?.status;
-    if (status !== 404) {
-      throw new Error(extractApiError(err) || "Deal intelligence load failed");
     }
     try {
       return { data: await buildDealIntelligenceFallback() };
@@ -593,56 +585,6 @@ export const loadDealIntelligence = async () => {
       throw new Error(extractApiError(err) || extractApiError(fallbackErr));
     }
   }
-};
-
-const unwrapDealIntelligenceBody = (raw) => {
-  if (!raw || typeof raw !== "object") return {};
-  if (raw.feeSummary || Array.isArray(raw.runningDeals) || Array.isArray(raw.closeCandidates)) {
-    return raw;
-  }
-  if (raw.data && typeof raw.data === "object") {
-    return unwrapDealIntelligenceBody(raw.data);
-  }
-  return raw;
-};
-
-const isLiveDealIntelligence = (body) => {
-  if (!body || typeof body !== "object") return false;
-  return Boolean(
-    body.feeSummary ||
-    Array.isArray(body.runningDeals) ||
-    Array.isArray(body.closeCandidates) ||
-    body.launchSuggestion
-  );
-};
-
-export const loadRoiDeals = async ({
-  roi = null,
-  dealStatus = "ALL",
-  lenderStatus = "ALL",
-  includeDeals = false,
-  includeLenders = false,
-} = {}) => {
-  const headers = requireAuth();
-  const params = new URLSearchParams();
-  if (roi != null && roi !== "") params.set("roi", String(roi));
-  if (dealStatus) params.set("dealStatus", dealStatus);
-  if (lenderStatus) params.set("lenderStatus", lenderStatus);
-  if (includeDeals) params.set("includeDeals", "true");
-  if (includeLenders) params.set("includeLenders", "true");
-  const qs = params.toString() ? `?${params.toString()}` : "";
-  const res = await axios.get(`${AI_BASE_URL}admin/roi-deals${qs}`, { headers, timeout: 300000 });
-  return res.data?.data ?? res.data;
-};
-
-export const loadDealRoiLenders = async (dealId, status = "ALL") => {
-  const headers = requireAuth();
-  const qs = status && status !== "ALL" ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await axios.get(`${AI_BASE_URL}admin/deals/${dealId}/roi-lenders${qs}`, {
-    headers,
-    timeout: 120000,
-  });
-  return res.data?.data ?? res.data ?? [];
 };
 
 

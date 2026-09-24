@@ -18,7 +18,6 @@ const SELF_LOADING = new Set([
   "lender-directory",
   "membership-lookup",
   "shared-bank-accounts",
-  "deal-intelligence",
   "view-payments",
 ]);
 

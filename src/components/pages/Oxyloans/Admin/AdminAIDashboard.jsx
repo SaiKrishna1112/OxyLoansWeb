@@ -20,7 +20,6 @@ import {
   FaFilter,
   FaUserCheck,
   FaUniversity,
-  FaLightbulb,
   FaUserPlus,
   FaEnvelope,
   FaWhatsapp,
@@ -3433,22 +3432,6 @@ const AdminAIDashboard = () => {
                       Year filter with lenders, deal amount, participation, principal return, partial return,
                       withdrawals, tenure extension, closed status, and Excel download.
                     </p>
-                  </div>
-                  <span className="admin-ai-yearwise-header-meta">
-                    <span className="admin-ai-yearwise-header-open">Open →</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-intel-entry"
-                  onClick={() => navigate("/adminAIDashboard/deal-intelligence", { state: { from: "/adminAIDashboard" } })}
-                >
-                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--intel">
-                    <FaLightbulb />
-                  </div>
-                  <div className="admin-ai-yearwise-header-copy">
-                    <h2>Deal Closure &amp; AI Suggestions</h2>
-                    <p>How many deals are closed, ROI-based close/relaunch recommendations, and launch size. Click to open.</p>
                   </div>
                   <span className="admin-ai-yearwise-header-meta">
                     <span className="admin-ai-yearwise-header-open">Open →</span>
