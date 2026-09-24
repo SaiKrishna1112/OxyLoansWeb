@@ -106,9 +106,20 @@ const Login = () => {
         history(getPostLoginRedirectUrl(defaultPath, pType));
       } else {
         setLoading(false)
+          const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
+          // Backend: "User Registration step 2 is pending =<userId>=<email>" (DOB / PAN / address not filled yet).
+          // Send them to the step-2 form instead of a dead-end error, as the Google path does.
+          const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
+          if (step2) {
+            toastrSuccess("Please complete your registration to continue.");
+            history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}`);
+            return;
+          }
+          toastrWarning(message);
+          WarningBackendApi(title, message);
+          }
         toastrWarning(retriveresponse.response.data.errorMessage);
       }
-    }
   };
 
   return (

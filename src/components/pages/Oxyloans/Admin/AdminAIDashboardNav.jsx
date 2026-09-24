@@ -45,7 +45,7 @@ export const AI_NAV_SECTIONS = [
       { path: "/adminAIDashboard/portfolio-overview", label: "Portfolio Overview", icon: "fas fa-chart-pie" },
       { path: "/adminAIDashboard/deals-directory", label: "Deal Directory", icon: "fas fa-briefcase" },
       { path: "/adminAIDashboard/deal-roi-board", label: "Deal Performance", icon: "fas fa-table-list" },
-      { path: "/adminAIDashboard/deal-intelligence", label: "Deal Recommendations", icon: "fas fa-lightbulb" },
+      { path: "/adminAIDashboard/deal-intelligence", label: "Deal Closure & Suggestions", icon: "fas fa-lightbulb", isNew: true, hint: "Closed counts, ROI close/relaunch suggestions, launch size" },
     ],
   },
   {
