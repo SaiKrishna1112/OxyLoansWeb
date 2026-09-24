@@ -19,6 +19,7 @@ import AdminFdStatistics from "./AdminFdStatistics";
 import AdminBorrowerFdHubPanel from "./AdminBorrowerFdHubPanel";
 import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import { AdminDealRoiTable } from "./AdminDealRoiTable";
+import { AdminDealIntelligencePanel } from "./AdminRoiDealsPanel";
 import { AdminFyEarnersPanel } from "./AdminFyEarnersPanel";
 import {
   DealsDirectoryPanel,
@@ -50,6 +51,10 @@ const statusBadge = (status) => {
 
 export const CmsPayoutsFullReport = () => (
   <AdminCmsPaymentsPanel fullPage />
+);
+
+export const DealIntelligenceFullReport = () => (
+  <AdminDealIntelligencePanel />
 );
 
 export const MonthlyPayoutFullReport = ({ platform, fy }) => {
