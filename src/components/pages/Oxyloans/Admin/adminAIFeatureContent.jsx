@@ -29,6 +29,8 @@ import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import AdminWalletHubPanel from "./AdminWalletHubPanel";
 import {
   CmsPayoutsFullReport,
+  RoiBasedDealsFullReport,
+  DealIntelligenceFullReport,
   MonthlyPayoutFullReport,
   BorrowerAccountsFullReport,
   BorrowerFeesFullReport,
@@ -261,7 +263,10 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
     case "deals-directory":
     case "lender-directory":
     case "view-payments":
+    case "cms-payments":
     case "cms-lender-payouts":
+    case "roi-based-deals":
+    case "deal-intelligence":
       return async () => ({ ready: true });
 
     case "fy-earners":
@@ -279,12 +284,6 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
             null
           ),
         };
-      };
-
-    case "deal-intelligence":
-      return async () => {
-        const res = await loadDealIntelligence();
-        return { dealIntelligence: res?.data || res };
       };
 
     case "cms-reconciliation":
@@ -384,8 +383,12 @@ export const FeatureContent = ({
     case "operations-alerts":
       return <PriorityAlertsFullReport ctx={ctx} onOpenModule={onOpenModule} />;
 
+    case "cms-payments":
     case "cms-lender-payouts":
-      return <CmsPayoutsFullReport />;
+      return <CmsPayoutsFullReport key={refreshNonce} />;
+
+    case "roi-based-deals":
+      return <RoiBasedDealsFullReport key={refreshNonce} />;
 
     case "borrower-summary":
       return <BorrowerSummaryFullReport ctx={ctx} />;
@@ -436,30 +439,8 @@ export const FeatureContent = ({
       );
     }
 
-    case "deal-intelligence": {
-      const di = dealIntelligence || ctx.dealIntelligence || {};
-      const fees = di.feeSummary || ctx.feeSummary || {};
-      const running = di.runningDeals || ctx.dealRows || [];
-      const launch = di.launchSuggestion || {};
-      return (
-        <>
-          <div className="ai-stat-grid mb-3">
-            <StatTile label="Borrower fees" value={money(fees.borrowerFeesCollected)} color="#2563eb" />
-            <StatTile label="Interest to lenders" value={money(fees.lenderInterestPaid)} color="#059669" />
-            <StatTile label="Avg spread" value={fees.avgSpreadPercent != null ? `${fees.avgSpreadPercent}%` : "—"} color="#d97706" />
-            <StatTile label="Active deals" value={number(fees.activeRunningDeals)} color="#0891b2" />
-          </div>
-          {launch.suggestedDealSize > 0 && (
-            <p className="small mb-3">
-              Launch idea: ~{money(launch.suggestedDealSize)} at {launch.suggestedLenderRoiMin}–{launch.suggestedLenderRoiMax}% lender / ~{launch.suggestedBorrowerRoi}% borrower
-            </p>
-          )}
-          {running.length > 0 && (
-            <AdminDealRoiTable deals={running} limit={15} compact />
-          )}
-        </>
-      );
-    }
+    case "deal-intelligence":
+      return <DealIntelligenceFullReport key={refreshNonce} />;
 
     case "top-lenders":
       return (
@@ -665,10 +646,16 @@ export const getFeaturePreviewStats = (featureId, ctx, fy) => {
         { label: "Pending", value: money(reconciliation?.totalPending) },
         { label: "Status", value: reconciliation?.fullyReconciled ? "OK" : "Review" },
       ];
+    case "cms-payments":
     case "cms-lender-payouts":
       return [
         { label: "CMS", value: "Payouts" },
         { label: "Range", value: "Date filter" },
+      ];
+    case "roi-based-deals":
+      return [
+        { label: "ROI", value: "Monthly" },
+        { label: "Deals", value: "Search" },
       ];
     case "borrower-summary":
       return [

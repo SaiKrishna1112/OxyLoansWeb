@@ -1,12 +1,32 @@
 /** Admin Operations Center — business modules */
 export const ADMIN_AI_FEATURES = [
   {
+    id: "cms-payments",
+    title: "CMS Payments",
+    description: "Paid and pending by deal — Interest, Principal, Principal + Interest",
+    icon: "fas fa-money-check-alt",
+    color: "#059669",
+    variant: "green",
+    scope: "live",
+    usesFy: false,
+  },
+  {
     id: "cms-lender-payouts",
     title: "Lender Payout Status",
     description: "Per deal — lenders paid or not paid (Interest, Principal, Principal+Interest)",
     icon: "fas fa-money-check-alt",
     color: "#059669",
     variant: "green",
+    scope: "live",
+    usesFy: false,
+  },
+  {
+    id: "roi-based-deals",
+    title: "Lender ROI Portfolio",
+    description: "Deals by monthly lender ROI — participation across running and closed deals",
+    icon: "fas fa-percent",
+    color: "#0d9488",
+    variant: "teal",
     scope: "live",
     usesFy: false,
   },
@@ -112,8 +132,8 @@ export const ADMIN_AI_FEATURES = [
   },
   {
     id: "deal-intelligence",
-    title: "Deal Recommendations",
-    description: "Close, relaunch, or launch — AI-assisted deal actions",
+    title: "Deal Closure & AI Suggestions",
+    description: "Closed deal counts, ROI-based close/relaunch recommendations, and launch size",
     icon: "fas fa-lightbulb",
     color: "#7c3aed",
     variant: "violet",

@@ -13,6 +13,20 @@ export const AI_NAV_SECTIONS = [
     title: "CMS & Payouts",
     items: [
       {
+        path: "/adminAIDashboard/cms-payments",
+        label: "CMS Payments",
+        icon: "fas fa-money-check-alt",
+        isNew: true,
+        hint: "Paid and pending by deal — Interest, Principal, Principal + Interest",
+      },
+      {
+        path: "/adminAIDashboard/roi-based-deals",
+        label: "Lender ROI Portfolio",
+        icon: "fas fa-percent",
+        isNew: true,
+        hint: "Deals by ROI — lenders and participation amounts",
+      },
+      {
         path: "/adminAIDashboard/cms-lender-payouts",
         label: "Lender Payout Status",
         icon: "fas fa-money-check-alt",
@@ -45,7 +59,7 @@ export const AI_NAV_SECTIONS = [
       { path: "/adminAIDashboard/portfolio-overview", label: "Portfolio Overview", icon: "fas fa-chart-pie" },
       { path: "/adminAIDashboard/deals-directory", label: "Deal Directory", icon: "fas fa-briefcase" },
       { path: "/adminAIDashboard/deal-roi-board", label: "Deal Performance", icon: "fas fa-table-list" },
-      { path: "/adminAIDashboard/deal-intelligence", label: "Deal Recommendations", icon: "fas fa-lightbulb" },
+      { path: "/adminAIDashboard/deal-intelligence", label: "Deal Closure & AI Suggestions", icon: "fas fa-lightbulb" },
     ],
   },
   {
