@@ -29,6 +29,7 @@ import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import AdminWalletHubPanel from "./AdminWalletHubPanel";
 import {
   CmsPayoutsFullReport,
+  RoiBasedDealsFullReport,
   DealIntelligenceFullReport,
   MonthlyPayoutFullReport,
   BorrowerAccountsFullReport,
@@ -262,7 +263,10 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
     case "deals-directory":
     case "lender-directory":
     case "view-payments":
+    case "cms-payments":
     case "cms-lender-payouts":
+    case "roi-based-deals":
+    case "deal-intelligence":
       return async () => ({ ready: true });
 
     case "fy-earners":
@@ -281,9 +285,6 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
           ),
         };
       };
-
-    case "deal-intelligence":
-      return async () => ({ ready: true });
 
     case "cms-reconciliation":
       return async () => {
@@ -382,8 +383,12 @@ export const FeatureContent = ({
     case "operations-alerts":
       return <PriorityAlertsFullReport ctx={ctx} onOpenModule={onOpenModule} />;
 
+    case "cms-payments":
     case "cms-lender-payouts":
-      return <CmsPayoutsFullReport />;
+      return <CmsPayoutsFullReport key={refreshNonce} />;
+
+    case "roi-based-deals":
+      return <RoiBasedDealsFullReport key={refreshNonce} />;
 
     case "borrower-summary":
       return <BorrowerSummaryFullReport ctx={ctx} />;
@@ -613,14 +618,11 @@ export const getFeaturePreviewStats = (featureId, ctx, fy) => {
         { label: "Upcoming", value: "Interest" },
         { label: "Window", value: "3 days" },
       ];
-    case "deal-intelligence": {
-      const intel = ctx?.dealIntelligence || {};
-      const intelFees = intel.feeSummary || fees;
+    case "deal-intelligence":
       return [
-        { label: "Closed", value: number(intelFees.closedDeals) },
-        { label: "Close soon", value: number((intel.closeCandidates || []).length) },
+        { label: "Fees", value: money(fees.borrowerFeesCollected) },
+        { label: "Spread", value: fees.avgSpreadPercent != null ? `${fees.avgSpreadPercent}%` : "—" },
       ];
-    }
     case "capital-liquidity": {
       const flow = buildWalletFlowSnapshot(ctx?.walletSummary, ctx?.platform?.kpis);
       return [
@@ -644,10 +646,16 @@ export const getFeaturePreviewStats = (featureId, ctx, fy) => {
         { label: "Pending", value: money(reconciliation?.totalPending) },
         { label: "Status", value: reconciliation?.fullyReconciled ? "OK" : "Review" },
       ];
+    case "cms-payments":
     case "cms-lender-payouts":
       return [
         { label: "CMS", value: "Payouts" },
         { label: "Range", value: "Date filter" },
+      ];
+    case "roi-based-deals":
+      return [
+        { label: "ROI", value: "Monthly" },
+        { label: "Deals", value: "Search" },
       ];
     case "borrower-summary":
       return [

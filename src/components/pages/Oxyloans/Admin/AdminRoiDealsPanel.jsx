@@ -608,6 +608,15 @@ const IntelStat = ({ label, value, hint, tone }) => (
   </div>
 );
 
+const DcKpi = ({ tone, icon, label, value, hint }) => (
+  <div className={`ai-dc-kpi ai-dc-kpi--${tone}`}>
+    <span className="ai-dc-kpi-icon" aria-hidden="true"><i className={icon} /></span>
+    <small>{label}</small>
+    <strong>{value}</strong>
+    {hint ? <em>{hint}</em> : null}
+  </div>
+);
+
 const actionLabel = (action) => {
   const a = String(action || "");
   if (a === "CLOSE") return "Close now — matured";
@@ -774,13 +783,22 @@ export const AdminDealIntelligencePanel = () => {
 
   const usefulSummary = String(payload?.aiSummary || "").trim();
   const showSummary = usefulSummary && !/temporarily unavailable|unavail/i.test(usefulSummary);
+  const statusTotal = closeNow.length + closeSoon.length + extendedDeals.length + relaunchCandidates.length;
+  const statusSlice = (n) => (statusTotal ? (n / statusTotal) * 360 : 0);
+  const closeDeg = statusSlice(closeNow.length);
+  const soonDeg = closeDeg + statusSlice(closeSoon.length);
+  const extDeg = soonDeg + statusSlice(extendedDeals.length);
 
   return (
-    <div className="ai-dc-page">
-      <div className="ai-dc-toolbar">
-        <p className="ai-dc-toolbar-note">Same live counts as YearWise Deals. Test deals are excluded. Close requires confirm.</p>
-        <button type="button" className="btn btn-success btn-sm" onClick={load} disabled={loading}>
-          <i className={`fas fa-sync-alt me-1 ${loading ? "fa-spin" : ""}`} />
+    <div className="ai-dc-page ai-dc-page--studio">
+      <div className="ai-dc-hero">
+        <div>
+          <p className="ai-dc-hero-kicker">Deal ops</p>
+          <h2>Deal Closure &amp; AI Suggestions</h2>
+          <p>Welcome back. Live YearWise counts, TEST deals excluded. Close now and Extended are separate lists.</p>
+        </div>
+        <button type="button" className="ai-dc-hero-btn" onClick={load} disabled={loading}>
+          <i className={`fas fa-sync-alt ${loading ? "fa-spin" : ""}`} />
           {loading ? "Refreshing…" : "Refresh"}
         </button>
       </div>
@@ -788,76 +806,39 @@ export const AdminDealIntelligencePanel = () => {
       {error ? <div className="alert alert-danger py-2">{error}</div> : null}
 
       <div className="ai-dc-kpi-row">
-        <div className="ai-dc-kpi ai-dc-kpi--closed">
-          <small>Closed deals</small>
-          <strong>{number(fees.closedDeals)}</strong>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--active">
-          <small>Active deals</small>
-          <strong>{number(fees.activeRunningDeals)}</strong>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--closed">
-          <small>Close now</small>
-          <strong>{number(closeNow.length)}</strong>
-          <em>Already matured / overdue</em>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--soon">
-          <small>Close soon</small>
-          <strong>{number(closeSoon.length)}</strong>
-          <em>Matures in ≤45 days</em>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--extended">
-          <small>Extended deals</small>
-          <strong>{number(extendedDeals.length)}</strong>
-          <em>{number(extendedDeals.filter(originalTenureEnded).length)} original tenure over · not the same as Close now</em>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--roi">
-          <small>Highest ROI on extended</small>
-          <strong>{highestExtended ? fmtRoi(highestExtended.roi) : "—"} / month</strong>
-          <em>
-            {highestExtended
-              ? `#${highestExtended.dealId} ${highestExtended.dealName || ""}`.trim()
-              : "No extended deal"}
-          </em>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--relaunch">
-          <small>Relaunch ideas</small>
-          <strong>{number(relaunchCandidates.length)}</strong>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--roi">
-          <small>Lender ROI (average)</small>
-          <strong>{fmtRoi(fees.avgLenderRoi)} / month</strong>
-          <em>≈ {fmtRoi(Number(fees.avgLenderRoi) * 12)} / year (monthly × 12)</em>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--spread">
-          <small>Spread (average)</small>
-          <strong>{fmtRoi(fees.avgSpreadPercent)} / month</strong>
-          <em>Borrower {fmtRoi(fees.avgBorrowerRoi)} − lender {fmtRoi(fees.avgLenderRoi)}</em>
-        </div>
+        <DcKpi tone="closed" icon="fas fa-lock" label="Closed deals" value={number(fees.closedDeals)} />
+        <DcKpi tone="active" icon="fas fa-play" label="Active deals" value={number(fees.activeRunningDeals)} />
+        <DcKpi tone="close" icon="fas fa-exclamation" label="Close now" value={number(closeNow.length)} hint="Current end date already over" />
+        <DcKpi tone="soon" icon="fas fa-clock" label="Close soon" value={number(closeSoon.length)} hint="Matures in ≤45 days" />
+        <DcKpi tone="extended" icon="fas fa-expand-arrows-alt" label="Extended deals" value={number(extendedDeals.length)} hint={`${number(extendedDeals.filter(originalTenureEnded).length)} original tenure over`} />
+        <DcKpi tone="relaunch" icon="fas fa-redo" label="Relaunch ideas" value={number(relaunchCandidates.length)} />
       </div>
 
-      <div className="ai-dc-kpi-row ai-dc-kpi-row--money">
-        <div className="ai-dc-kpi ai-dc-kpi--fee">
-          <small>Borrower fees</small>
-          <strong>{money(fees.borrowerFeesCollected)}</strong>
+      <div className="ai-dc-overview">
+        <div className="ai-dc-panel">
+          <h3>Status overview</h3>
+          <div className="ai-dc-donut-wrap">
+            <div
+              className="ai-dc-donut"
+              style={{
+                background: `conic-gradient(#6366f1 0deg ${closeDeg}deg, #f59e0b ${closeDeg}deg ${soonDeg}deg, #f43f5e ${soonDeg}deg ${extDeg}deg, #22c55e ${extDeg}deg 360deg)`,
+              }}
+            >
+              <span>
+                <strong>{number(running.length)}</strong>
+                <small>running</small>
+              </span>
+            </div>
+            <ul className="ai-dc-legend-list">
+              <li><i style={{ background: "#6366f1" }} /> Close now <b>{number(closeNow.length)}</b></li>
+              <li><i style={{ background: "#f59e0b" }} /> Close soon <b>{number(closeSoon.length)}</b></li>
+              <li><i style={{ background: "#f43f5e" }} /> Extended <b>{number(extendedDeals.length)}</b></li>
+              <li><i style={{ background: "#22c55e" }} /> Relaunch <b>{number(relaunchCandidates.length)}</b></li>
+            </ul>
+          </div>
         </div>
-        <div className="ai-dc-kpi ai-dc-kpi--fd">
-          <small>Borrower FD book</small>
-          <strong>{money(fees.totalFdAmount)}</strong>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--part">
-          <small>Active participation</small>
-          <strong>{money(fees.activeParticipationAmount)}</strong>
-        </div>
-        <div className="ai-dc-kpi ai-dc-kpi--int">
-          <small>Interest paid</small>
-          <strong>{money(fees.lenderInterestPaid)}</strong>
-        </div>
-      </div>
-
-      <div className="ai-dc-insight">
-        <div className="ai-dc-insight-main">
-          <small>Suggested next launch</small>
+        <div className="ai-dc-panel ai-dc-panel--launch">
+          <h3>Suggested next launch</h3>
           <strong>{launch.suggestedDealSize > 0 ? money(launch.suggestedDealSize) : "—"}</strong>
           <p>
             Lender {fmtRoi(launch.suggestedLenderRoiMin)}–{fmtRoi(launch.suggestedLenderRoiMax)}
@@ -865,16 +846,29 @@ export const AdminDealIntelligencePanel = () => {
           </p>
           <div className="ai-dc-insight-chips">
             <span>Active lenders {number(launch.activeLendersCount)} · wallet {money(launch.activeLendersWalletAmount)}</span>
-            <span>Extended deals {number(extendedDeals.length)}</span>
-            <span>
-              Highest extended ROI {highestExtended ? `${fmtRoi(highestExtended.roi)} #${highestExtended.dealId}` : "—"}
-            </span>
+            <span>Highest extended ROI {highestExtended ? `${fmtRoi(highestExtended.roi)} #${highestExtended.dealId}` : "—"}</span>
             <span>Matures in 30 days {money(launch.maturingPrincipalNext30Days)}</span>
           </div>
+          <Link className="ai-dc-hero-btn ai-dc-hero-btn--ghost" to={roiLink(launch.suggestedLenderRoiMin)}>
+            Open ROI portfolio
+          </Link>
         </div>
-        <Link className="btn btn-outline-primary btn-sm" to={roiLink(launch.suggestedLenderRoiMin)}>
-          Open ROI portfolio
-        </Link>
+        <div className="ai-dc-panel">
+          <h3>Returns snapshot</h3>
+          <ul className="ai-dc-stat-stack">
+            <li><span>Avg lender ROI</span><b>{fmtRoi(fees.avgLenderRoi)} / mo</b></li>
+            <li><span>Yearly equivalent</span><b>{fmtRoi(Number(fees.avgLenderRoi) * 12)}</b></li>
+            <li><span>Avg spread</span><b>{fmtRoi(fees.avgSpreadPercent)}</b></li>
+            <li><span>Highest extended</span><b>{highestExtended ? fmtRoi(highestExtended.roi) : "—"}</b></li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="ai-dc-kpi-row ai-dc-kpi-row--money">
+        <DcKpi tone="fee" icon="fas fa-receipt" label="Borrower fees" value={money(fees.borrowerFeesCollected)} />
+        <DcKpi tone="fd" icon="fas fa-university" label="Borrower FD book" value={money(fees.totalFdAmount)} />
+        <DcKpi tone="part" icon="fas fa-users" label="Active participation" value={money(fees.activeParticipationAmount)} />
+        <DcKpi tone="int" icon="fas fa-coins" label="Interest paid" value={money(fees.lenderInterestPaid)} />
       </div>
 
       {showSummary ? (

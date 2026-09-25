@@ -13,12 +13,14 @@ import {
 import "./AdminAIDashboard.css";
 
 const SELF_LOADING = new Set([
+  "cms-payments",
   "cms-lender-payouts",
+  "roi-based-deals",
+  "deal-intelligence",
   "deals-directory",
   "lender-directory",
   "membership-lookup",
   "shared-bank-accounts",
-  "deal-intelligence",
   "view-payments",
 ]);
 
@@ -37,7 +39,13 @@ const AdminAIFeaturePageInner = ({ feature }) => {
   const selfLoading = SELF_LOADING.has(feature.id);
   const showContent = selfLoading || (!loading && !error);
 
-  const compactChrome = feature.id === "shared-bank-accounts" || feature.id === "membership-lookup";
+  const compactChrome =
+    feature.id === "shared-bank-accounts" ||
+    feature.id === "membership-lookup" ||
+    feature.id === "cms-payments" ||
+    feature.id === "cms-lender-payouts" ||
+    feature.id === "roi-based-deals" ||
+    feature.id === "deal-intelligence";
 
   return (
     <PageShell

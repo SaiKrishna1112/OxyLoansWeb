@@ -13,6 +13,7 @@ import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSu
 import AITestAdmin from "./components/pages/Dashboard/AITestAdmin";
 import LenderUpgradePortal from "./components/pages/Dashboard/LenderUpgradePortal";
 import AdminAIDashboard from "./components/pages/Oxyloans/Admin/AdminAIDashboard";
+import AdminCmsDealLendersPage from "./components/pages/Oxyloans/Admin/AdminCmsDealLendersPage";
 import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIFeaturePage from "./components/pages/Oxyloans/Admin/AdminAIFeaturePage";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
@@ -324,6 +325,7 @@ const AppRouter = () => {
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/adminAIDashboard/cms-payments/lenders/:dealId" element={<AdminCmsDealLendersPage />} />
         <Route path="/adminAICampaignHistory" element={<AdminAILenderCampaignHistoryPage />} />
         <Route path="/adminAIDashboard/:featureId" element={<AdminAIFeaturePage />} />
         <Route path="/adminAiDashboard" element={<Navigate to="/adminAIDashboard" replace />} />
