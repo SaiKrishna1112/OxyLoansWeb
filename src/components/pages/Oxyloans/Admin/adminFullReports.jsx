@@ -14,12 +14,12 @@ import {
   PriorityTier,
 } from "./adminReportKit";
 import AdminCmsPaymentsPanel from "./AdminCmsPaymentsPanel";
+import AdminRoiDealsPanel, { AdminDealIntelligencePanel } from "./AdminRoiDealsPanel";
 import AdminBorrowerOverview from "./AdminBorrowerOverview";
 import AdminFdStatistics from "./AdminFdStatistics";
 import AdminBorrowerFdHubPanel from "./AdminBorrowerFdHubPanel";
 import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import { AdminDealRoiTable } from "./AdminDealRoiTable";
-import { AdminDealIntelligencePanel } from "./AdminRoiDealsPanel";
 import { AdminFyEarnersPanel } from "./AdminFyEarnersPanel";
 import {
   DealsDirectoryPanel,
@@ -51,6 +51,10 @@ const statusBadge = (status) => {
 
 export const CmsPayoutsFullReport = () => (
   <AdminCmsPaymentsPanel fullPage />
+);
+
+export const RoiBasedDealsFullReport = () => (
+  <AdminRoiDealsPanel fullPage />
 );
 
 export const DealIntelligenceFullReport = () => (

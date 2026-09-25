@@ -20,6 +20,8 @@ import {
   FaFilter,
   FaUserCheck,
   FaUniversity,
+  FaMoneyCheckAlt,
+  FaPercent,
   FaLightbulb,
   FaUserPlus,
   FaEnvelope,
@@ -3289,6 +3291,54 @@ const AdminAIDashboard = () => {
                     <span className="admin-ai-yearwise-header-open">Open →</span>
                   </span>
                 </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-cms-entry"
+                  onClick={() => navigate("/adminAIDashboard/cms-payments", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--cms">
+                    <FaMoneyCheckAlt />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>CMS Payments</h2>
+                    <p>Paid and pending by deal — Interest, Principal, Principal + Interest. Click to open the CMS payout screen.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-roi-entry"
+                  onClick={() => navigate("/adminAIDashboard/roi-based-deals", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--roi">
+                    <FaPercent />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Lender ROI Portfolio</h2>
+                    <p>Search deals by monthly lender ROI, then open a deal for users and participation amounts.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-intel-entry"
+                  onClick={() => navigate("/adminAIDashboard/deal-intelligence", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--intel">
+                    <FaLightbulb />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Deal Closure &amp; AI Suggestions</h2>
+                    <p>How many deals are closed, ROI-based close/relaunch recommendations, and launch size. Click to open.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
               </section>
 
               <section className="admin-ai-pro-section admin-ai-pro-section--high-participation">
@@ -3433,22 +3483,6 @@ const AdminAIDashboard = () => {
                       Year filter with lenders, deal amount, participation, principal return, partial return,
                       withdrawals, tenure extension, closed status, and Excel download.
                     </p>
-                  </div>
-                  <span className="admin-ai-yearwise-header-meta">
-                    <span className="admin-ai-yearwise-header-open">Open →</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-intel-entry"
-                  onClick={() => navigate("/adminAIDashboard/deal-intelligence", { state: { from: "/adminAIDashboard" } })}
-                >
-                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--intel">
-                    <FaLightbulb />
-                  </div>
-                  <div className="admin-ai-yearwise-header-copy">
-                    <h2>Deal Closure &amp; AI Suggestions</h2>
-                    <p>How many deals are closed, ROI-based close/relaunch recommendations, and launch size. Click to open.</p>
                   </div>
                   <span className="admin-ai-yearwise-header-meta">
                     <span className="admin-ai-yearwise-header-open">Open →</span>
