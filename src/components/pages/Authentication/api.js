@@ -113,6 +113,10 @@ export const validateRegisterInput = (email, password, moblie) => {
     return "Password must be at least 6 characters long";
   }
 
+  if (password.length > 15) {
+    return "Password cannot exceed 15 characters";
+  }
+
   const phoneNumberRegex = /^\d{10}$/;
   if (!moblie || !moblie.match(phoneNumberRegex)) {
     return "Please enter a valid 10-digit phone number";
@@ -199,6 +203,7 @@ export const vaildateotp = async (
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
+  
 
   if (uniqnumber === null) {
     var data = {

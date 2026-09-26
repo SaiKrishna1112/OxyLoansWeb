@@ -583,11 +583,20 @@ export const loadDealIntelligence = async () => {
   try {
     const res = await axios.get(`${AI_BASE_URL}admin/deal-intelligence`, { headers, timeout: 180000 });
     if (res.data?.error) throw new Error(res.data.error);
-    return { data: { ...res.data, source: res.data.source || "live" } };
+    const body = unwrapDealIntelligenceBody(res.data);
+    if (!isLiveDealIntelligence(body)) {
+      throw new Error("Deal intelligence API returned an empty payload.");
+    }
+    return { data: { ...body, source: body.source || "live" } };
   } catch (err) {
     if (isAuthError(err)) {
       clearAdminSession();
       throw err;
+    }
+    const status = err?.response?.status;
+    const missing = status === 404;
+    if (!missing && err?.message !== "Deal intelligence API returned an empty payload.") {
+      throw new Error(extractApiError(err) || "Deal intelligence load failed");
     }
     try {
       return { data: await buildDealIntelligenceFallback() };
@@ -599,6 +608,27 @@ export const loadDealIntelligence = async () => {
       throw new Error(extractApiError(err) || extractApiError(fallbackErr));
     }
   }
+};
+
+const unwrapDealIntelligenceBody = (raw) => {
+  if (!raw || typeof raw !== "object") return {};
+  if (raw.feeSummary || Array.isArray(raw.runningDeals) || Array.isArray(raw.closeCandidates)) {
+    return raw;
+  }
+  if (raw.data && typeof raw.data === "object") {
+    return unwrapDealIntelligenceBody(raw.data);
+  }
+  return raw;
+};
+
+const isLiveDealIntelligence = (body) => {
+  if (!body || typeof body !== "object") return false;
+  return Boolean(
+    body.feeSummary ||
+    Array.isArray(body.runningDeals) ||
+    Array.isArray(body.closeCandidates) ||
+    body.launchSuggestion
+  );
 };
 
 
@@ -2162,6 +2192,49 @@ export const loadDealCmsInterestPaymentHistory = async (dealId) => {
   );
   return res.data?.data ?? res.data ?? [];
 };
+
+/** ROI-based deals — GET /v1/ai/admin/roi-deals */
+export const loadRoiDeals = async ({
+  roi = null,
+  dealStatus = "ALL",
+  lenderStatus = "ALL",
+  includeDeals = false,
+  includeLenders = false,
+} = {}) => {
+  const headers = requireAuth();
+  const params = new URLSearchParams();
+  if (roi != null && roi !== "") params.set("roi", String(roi));
+  if (dealStatus) params.set("dealStatus", dealStatus);
+  if (lenderStatus) params.set("lenderStatus", lenderStatus);
+  if (includeDeals) params.set("includeDeals", "true");
+  if (includeLenders) params.set("includeLenders", "true");
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  try {
+    const res = await axios.get(`${AI_BASE_URL}admin/roi-deals${qs}`, { headers, timeout: 300000 });
+    return res.data?.data ?? res.data;
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status === 504 || err?.code === "ECONNABORTED") {
+      throw new Error("Lender ROI report timed out. Try again in a moment.");
+    }
+    if (!err?.response) {
+      throw new Error("Cannot reach backend. Check that the API server is running, then refresh.");
+    }
+    throw new Error(err?.response?.data?.error || err?.message || "ROI deals load failed");
+  }
+};
+
+/** Deal lenders for ROI page — GET /v1/ai/admin/deals/{dealId}/roi-lenders */
+export const loadDealRoiLenders = async (dealId, status = "ALL") => {
+  const headers = requireAuth();
+  const qs = status && status !== "ALL" ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await axios.get(`${AI_BASE_URL}admin/deals/${dealId}/roi-lenders${qs}`, {
+    headers,
+    timeout: 120000,
+  });
+  return res.data?.data ?? res.data ?? [];
+};
+
 export { AI_DASHBOARD_USE_STATIC } from "../../config";
 
 /** ROI-based deals � GET /v1/ai/admin/roi-deals */

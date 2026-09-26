@@ -9,8 +9,10 @@ import {
 } from "../../Base UI Elements/SweetAlert";
 
 import { submitloanRequest } from "../../../HttpRequest/afterlogin";
+import BorrowerConsentSection, { BORROWER_CONSENTS } from "./BorrowerConsentSection";
 
 const LoanRequest = () => {
+  const [consentItems, setConsentItems] = useState(new Array(BORROWER_CONSENTS.length).fill(false));
   const [newloandrequest, setnewloanrequest] = useState({
     loanamount: "",
     roi: "",
@@ -29,7 +31,13 @@ const LoanRequest = () => {
     });
   };
 
+  const allConsentsChecked = consentItems.every(Boolean);
+
   const handleSubmitHandler = () => {
+    if (!allConsentsChecked) {
+      WarningAlerterror("Please read and acknowledge all 8 consent items before submitting.");
+      return;
+    }
     const response = submitloanRequest(newloandrequest);
     response.then((data) => {
       if (data.status == 200) {
@@ -312,12 +320,22 @@ const LoanRequest = () => {
                             />
                           </div>
                         </div>
+
+                        {/* 8-Point Borrower Consent Section */}
+                        <div className="col-12 mb-3">
+                          <BorrowerConsentSection
+                            consentItems={consentItems}
+                            onChange={(updated) => setConsentItems(updated)}
+                          />
+                        </div>
+
                         <div className="col-12">
                           <div className="student-submit">
                             <button
                               type="button"
                               className="btn btn-primary"
                               onClick={handleSubmitHandler}
+                              disabled={!allConsentsChecked}
                             >
                               Submit
                             </button>

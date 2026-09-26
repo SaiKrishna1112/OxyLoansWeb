@@ -7,8 +7,12 @@ import {
   brLoanStatusApprovalByLr,
   getOfferGivenList,
   loanAmountApproval,
+  completeEsign,
+  getUserDetails,
+  lenderBorrowerEsign,
 } from "../../../HttpRequest/afterlogin";
 import Swal from "sweetalert2";
+import { personalDetails } from "../../Base UI Elements/SweetAlert";
 
 const PRIMARY   = "#3d5ee1";
 const PAGE_SIZE = 10;
@@ -38,6 +42,7 @@ const OfferGivenList = () => {
   const [confirmModal, setConfirmModal] = useState(null); // { offer, action: "LOANACCEPTED"|"LENDER_REJECTED" }
   const [actionLoading, setActionLoading] = useState(false);
   const [agreementLoadingById, setAgreementLoadingById] = useState({});
+  const [esignLoadingById, setEsignLoadingById] = useState({});
 
   useEffect(() => { fetchOffers(1); }, []);
   useEffect(() => { fetchOffers(currentPage); }, [currentPage]);
@@ -64,6 +69,11 @@ const OfferGivenList = () => {
 
     setAgreementLoadingById((prev) => ({ ...prev, [rowId]: true }));
     try {
+      // Execute esign API before generating the agreement
+      if (offer?.loanRequestId) {
+        await completeEsign(offer.loanRequestId, offer?.id);
+      }
+      
       const response = await aggrementGenerationforLenderSide({
         lenderId: Number(offer?.lenderId),
         loanId: Number(offer?.loanRequestId),
@@ -89,6 +99,107 @@ const OfferGivenList = () => {
       });
     } finally {
       setAgreementLoadingById((prev) => ({ ...prev, [rowId]: false }));
+    }
+  };
+
+  const handleEsignAction = async (offer) => {
+    const rowId = String(offer?.id ?? "");
+    try {
+      // const userDetailsRes = await getUserDetails();
+      // if (userDetailsRes?.status === 200) {
+      //   const profileDetails = userDetailsRes.data;
+      //   if (profileDetails?.personalDetailsInfo !== true) {
+      //     personalDetails(
+      //       "Please complete your personal details first to proceed with the eSign.", 
+      //       "/profile"
+      //     );
+      //     return;
+      //   }
+      // } else {
+      //   throw new Error("Unable to verify profile details.");
+      // }
+
+      const confirm = await Swal.fire({
+        title: "Confirm eSign",
+        text: "Do you want to eSign this loan agreement?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, eSign",
+        cancelButtonText: "Cancel",
+        confirmButtonColor: PRIMARY,
+      });
+      if (!confirm.isConfirmed) return;
+
+      let prefilledAadhar = "";
+      try {
+        const userDetailsRes = await getUserDetails();
+        if (userDetailsRes?.status === 200 || userDetailsRes?.data) {
+          prefilledAadhar = userDetailsRes.data?.aadharNumber || "";
+        }
+      } catch (err) {
+        console.error("Failed to fetch user details for Aadhaar pre-fill:", err);
+      }
+
+      const { value: aadharNumber } = await Swal.fire({
+        title: "Enter Aadhaar Number",
+        input: "text",
+        inputValue: prefilledAadhar,
+        inputLabel: "A 12-digit Aadhaar number is required for verification.",
+        inputPlaceholder: "Enter 12-digit Aadhaar Number",
+        showCancelButton: true,
+        confirmButtonColor: PRIMARY,
+        confirmButtonText: "Submit",
+        inputAttributes: {
+          maxlength: "12",
+          autocapitalize: "off",
+          autocorrect: "off",
+        },
+        inputValidator: (value) => {
+          if (!value) {
+            return "Aadhaar number is required!";
+          }
+          if (!/^\d{12}$/.test(value)) {
+            return "Please enter a valid 12-digit Aadhaar number!";
+          }
+        }
+      });
+
+      if (!aadharNumber) return;
+
+      if (rowId) {
+        setEsignLoadingById((prev) => ({ ...prev, [rowId]: true }));
+      }
+
+      const esignRes = await lenderBorrowerEsign(offer?.loanRequestId, aadharNumber, offer?.id);
+      const data = esignRes?.data;
+      if (data && (data.redirect_url || data.redirectUrl)) {
+        const url = data.redirect_url || data.redirectUrl;
+        window.open(url, "_self");
+        return;
+      }
+
+      if (esignRes?.status === 200 || esignRes?.request?.status === 200) {
+        await Swal.fire({
+          icon: "success",
+          title: "eSign Completed",
+          text: "Loan agreement eSigned successfully.",
+          confirmButtonColor: PRIMARY,
+        });
+        fetchOffers(currentPage);
+      } else {
+        throw esignRes;
+      }
+    } catch (error) {
+      await Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: getApiErrorMessage(error) || "Failed to complete eSign.",
+        confirmButtonColor: PRIMARY,
+      });
+    } finally {
+      if (rowId) {
+        setEsignLoadingById((prev) => ({ ...prev, [rowId]: false }));
+      }
     }
   };
 
@@ -120,8 +231,8 @@ const OfferGivenList = () => {
     // ✅ Clean message mapping
     const actionMap = {
       LOANACCEPTED: {
-        title: "Offer Accepted!",
-        text: "The offer has been accepted successfully.",
+        title: "Funding Confirmed!",
+        text: "Your confirmation has been received. Once the borrower agrees to execute the loan, you will be navigated to the agreement and loan disbursement process.",
         icon: "success",
       },
       LENDER_REJECTED: {
@@ -388,13 +499,19 @@ const OfferGivenList = () => {
                           className="py-3 text-uppercase text-muted"
                           style={{ fontSize: 11, letterSpacing: 0.5 }}
                         >
+                          Repayment Method
+                        </th>
+                        <th
+                          className="py-3 text-uppercase text-muted"
+                          style={{ fontSize: 11, letterSpacing: 0.5 }}
+                        >
                           Status
                         </th>
                         <th
                           className="py-3 text-uppercase text-muted"
                           style={{ fontSize: 11, letterSpacing: 0.5 }}
                         >
-                          Agreement
+                          Progress
                         </th>
                         <th
                           className="text-center py-3 text-uppercase text-muted"
@@ -420,6 +537,7 @@ const OfferGivenList = () => {
                               : lenderStatus === "LOANACCEPTED"
                                 ? "Loan_Accepted"
                                 : lenderStatus;
+                        const isLoanAcceptedStatus = status === "Loan_Accepted" || lenderStatus === "LOANACCEPTED";
                         const { bg, color } = statusStyle(status);
                         const isInitiated = lenderStatus === "INITIATED";
                         const canAccept =
@@ -432,9 +550,7 @@ const OfferGivenList = () => {
                         const walletDebited =
                           (offer.walletStatus || "").toUpperCase() ===
                           "DEBITED";
-                        const hasInvoiceUrl = Boolean(
-                          (offer.invoiceUrl || "").toString().trim(),
-                        );
+                        const hasLenderAgreement = offer?.lenderAgrrement !== null && offer?.lenderAgrrement !== undefined && offer?.lenderAgrrement !== "";
                         const rowId = String(offer?.id ?? "");
                         const isAgreementLoading = Boolean(
                           agreementLoadingById[rowId],
@@ -470,9 +586,7 @@ const OfferGivenList = () => {
                                       "—"}
                                   </div>
                                   <small className="text-muted">
-                                    {offer.borrowerId ||
-                                      offer.borrowerUserId ||
-                                      ""}
+                                    {offer.borrowerId ? `••••${String(offer.borrowerId).slice(-2)}` : ""}
                                   </small>
                                 </div>
                               </div>
@@ -487,10 +601,17 @@ const OfferGivenList = () => {
                               ).toLocaleString("en-IN")}
                             </td>
                             <td className="py-3">
-                              {offer.duration ? `${offer.duration} Days` : "—"}
+                              {offer.duration
+                                ? `${offer.duration} ${offer.durationType || "Days"}`
+                                : "—"}
                             </td>
                             <td className="py-3">
                               {offer.roi ? `${offer.roi}%` : "—"}
+                            </td>
+                            <td className="py-3 fw-semibold text-dark">
+                              {offer.repaymentMethodForLender == "PI"
+                                ? "Principal + Interest"
+                                : "Only Interest"}
                             </td>
                             {/* <td className="text-muted">{offer.offerDate || offer.createdDate || offer.offeredOn || "—"}</td> */}
 
@@ -509,9 +630,9 @@ const OfferGivenList = () => {
                               </span>
                             </td>
                             <td className="py-3">
-                              {hasInvoiceUrl ? (
+                              {hasLenderAgreement ? (
                                 <a
-                                  href={offer.invoiceUrl}
+                                  href={offer.lenderAgrrement}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="btn btn-sm"
@@ -551,10 +672,16 @@ const OfferGivenList = () => {
                                     </>
                                   )}
                                 </button>
-                              ) : (
+                              ) : offer.loanStatus === "REJECTED" ? (
                                 <small className="text-muted">
-                                  Pending wallet debit
+                                  { offer.lenderStatus === "LENDER_REJECTED"
+                                      ? "The lender has rejected this loan request."
+                                      : offer.borrowerStatus === "BORROWER_REJECTED"
+                                      ? "The borrower has rejected this loan offer."
+                                      : ""}
                                 </small>
+                              ):(
+                                <small className="text-muted">Pending</small>
                               )}
                             </td>
 
@@ -603,7 +730,7 @@ const OfferGivenList = () => {
                                     <i className="fa fa-times me-1" /> Reject
                                   </button>
                                 )}
-                                {canProcess && (
+                                {/* {canProcess && (
                                   <button
                                     className="btn btn-sm"
                                     title="Accept"
@@ -624,6 +751,46 @@ const OfferGivenList = () => {
                                     <i className="fa fa-check me-1" /> Process &
                                     Disburse Loan
                                   </button>
+                                )} */}
+                                {isLoanAcceptedStatus &&  (
+                                  <button
+                                    className="btn btn-sm text-white"
+                                    title="eSign Agreement"
+                                    disabled={Boolean(esignLoadingById[rowId]) || offer.lenderEsigned}
+                                    style={{
+                                      background: "#fd7e14",
+                                      borderRadius: 6,
+                                      padding: "4px 10px",
+                                      fontSize: 12,
+                                    }}
+                                    onClick={() => handleEsignAction(offer)}
+                                  >
+                                    {Boolean(esignLoadingById[rowId]) ? (
+                                      <>
+                                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        eSigning...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <i className="fa fa-signature me-1" /> { offer.lenderEsigned? 'eSign Completed' : 'eSign'}
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                                {canProcess && (
+                                  <div
+                                      style={{
+                                        backgroundColor: "#FFF3CD",
+                                        color: "#856404",
+                                        padding: "12px 16px",
+                                        border: "1px solid #FFE69C",
+                                        borderRadius: "8px",
+                                        fontWeight: "600",
+                                        textAlign: "center",
+                                      }}
+                                    >
+                                      🚀 Disbursal is in progress.
+                                    </div>
                                 )}
                               </div>
                             </td>
@@ -792,21 +959,18 @@ const OfferGivenList = () => {
             {/* Modal Body */}
             <div style={{ padding: "20px 24px" }}>
               <p className="mb-3" style={{ fontSize: 14 }}>
-                Are you sure you want to{" "}
-                <strong>
-                  {confirmModal.action === "LOANACCEPTED"
-                    ? "proceed"
-                    : confirmModal.action === "LOANPROCESSED"
-                      ? "process"
-                      : "reject"}
-                </strong>{" "}
-                with this offer for{" "}
-                <strong>
+               <strong>
                   {confirmModal.offer.borrowerName ||
                     confirmModal.offer.firstName ||
                     "this borrower"}
                 </strong>
-                ?
+                <strong>
+                  {confirmModal.action === "LOANACCEPTED"
+                    ? "has accepted your loan offer. Are you ready to proceed with funding this loan?"
+                    : confirmModal.action === "LOANPROCESSED"
+                      ? "Are you sure you want to process and disburse this loan?"
+                      : "Are you sure you want to reject this offer?"}
+                </strong>{" "}
               </p>
               <div
                 className="rounded p-3 mb-0"
@@ -827,7 +991,7 @@ const OfferGivenList = () => {
                   <span className="text-muted">Duration</span>
                   <strong>
                     {confirmModal.offer.duration
-                      ? `${confirmModal.offer.duration} Days`
+                      ? `${confirmModal.offer.duration} ${confirmModal.offer.durationType || "Days"}`
                       : "—"}
                   </strong>
                 </div>

@@ -123,13 +123,29 @@ export default function FeeDisclosure() {
                       disabled={!agreed || accepting}
                       onClick={handleAccept}
                     >
-                      {accepting ? "Processing…" : "Accept & Proceed to eSign"}
+                      {accepting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Processing…
+                        </>
+                      ) : (
+                        "Accept & Proceed to eSign"
+                      )}
                     </button>
                   </div>
                 </>
               ) : (
-                <div className="alert alert-success text-center mb-0">
-                  ✅ Fee disclosure accepted. Proceed to eSign.
+                <div className="text-center d-grid gap-2">
+                  <div className="alert alert-success text-center mb-2">
+                    ✅ Fee disclosure accepted.
+                  </div>
+                  <button
+                    className="btn btn-primary btn-lg"
+                    onClick={() => navigate(`/esign/${loanRequestId}`)}
+                  >
+                    <i className="fa-solid fa-file-signature me-2"></i>
+                    Proceed to eSign
+                  </button>
                 </div>
               )}
             </div>

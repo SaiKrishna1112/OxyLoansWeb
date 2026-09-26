@@ -6,10 +6,12 @@ import ReactPasswordToggleIcon from "react-password-toggle-icon";
 import * as api from "./api";
 import FeatherIcon from "feather-icons-react/build/FeatherIcon";
 import OtpInput from "./OtpInput";
-import { toastrWarning } from "../Base UI Elements/Toast";
+import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import Swal from "sweetalert2";
 import { API_USER_URL } from "../../../config";
 import axios from "axios";
+import { referrerdata, isApiSuccess } from "../../HttpRequest/beforelogin";
+import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 export default function BorrowerRegister() {
   const inputRef = useRef();
@@ -17,8 +19,45 @@ export default function BorrowerRegister() {
 
   const navigate = useNavigate();
   const [field, setField] = useState(true);
+  const [submitotp, setSubmitOtp] = useState(false);
+  const [error, setError] = useState("");
+  const [response1, setResponse] = useState({});
   const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
   const [gmailPrefill, setGmailPrefill] = useState(null);
+<<<<<<< HEAD
+=======
+  const [resendTimer, setResendTimer] = useState(30);
+  const [loadingResend, setLoadingResend] = useState(false);
+
+  useEffect(() => {
+    let interval = null;
+    if (!field && !submitotp && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [field, submitotp, resendTimer]);
+
+  const handleResendOtp = async () => {
+    setLoadingResend(true);
+    try {
+      const RegisterResponse = await api.RegisterUser(registrationField.mobile);
+      localStorage.setItem("seesion", RegisterResponse);
+      toastrSuccess("OTP resent successfully!");
+      setError("");
+      setResendTimer(30);
+    } catch (err) {
+      const errMsg = err.response?.data?.errorMessage || "Failed to resend OTP";
+      setError(errMsg);
+      toastrWarning(errMsg);
+    } finally {
+      setLoadingResend(false);
+    }
+  };
+>>>>>>> feature/ai-lender-chat
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -35,9 +74,6 @@ export default function BorrowerRegister() {
       );
     }
   }, []);
-  const [submitotp, setSubmitOtp] = useState(false);
-  const [error, setError] = useState("");
-  const [response1, setResponse] = useState({});
   const localData = JSON.parse(localStorage.getItem("userData") || "{}");
 
   const [registrationField, setRegistrationField] = useState({
@@ -55,22 +91,65 @@ export default function BorrowerRegister() {
     mobileOTPNew: "",
   });
 
+  const validateReferrerId = async (refValue) => {
+    const val = String(refValue || "").trim();
+    if (!val || val === "0") {
+      setRegistrationField((prev) => ({
+        ...prev,
+        referrerIderror: "",
+        uniqueNumber: "0",
+      }));
+      localStorage.setItem("uniqnumber", "0");
+      return true;
+    }
+
+    try {
+      const response = await referrerdata(val);
+      if (response && (response.status === 200 || isApiSuccess(response))) {
+        const fetchedUniqueNumber =
+          response?.data?.uniqueNumber ||
+          (typeof response?.data === "string" ? response.data : val);
+
+        setRegistrationField((prev) => ({
+          ...prev,
+          referrerIderror: "",
+          uniqueNumber: fetchedUniqueNumber,
+        }));
+        localStorage.setItem("uniqnumber", fetchedUniqueNumber);
+        return true;
+      } else {
+        const errMsg =
+          response?.response?.data?.errorMessage ||
+          response?.data?.errorMessage ||
+          "Invalid Referrer ID";
+        setRegistrationField((prev) => ({
+          ...prev,
+          referrerIderror: errMsg,
+          uniqueNumber: "0",
+        }));
+        localStorage.setItem("uniqnumber", "0");
+        return false;
+      }
+    } catch (err) {
+      setRegistrationField((prev) => ({
+        ...prev,
+        referrerIderror: "Invalid Referrer ID",
+        uniqueNumber: "0",
+      }));
+      localStorage.setItem("uniqnumber", "0");
+      return false;
+    }
+  };
+
   const handlechange = (event) => {
     const { name, value } = event.target;
     setError("");
 
-    if (name === "referrerId" && value.trim() === "BR100001") {
-      setRegistrationField((prev) => ({
-        ...prev,
-        referrerIderror: "Invalid Referrer Id",
-      }));
-    } else {
-      setRegistrationField((prev) => ({
-        ...prev,
-        [name]: value,
-        [`${name}error`]: "",
-      }));
-    }
+    setRegistrationField((prev) => ({
+      ...prev,
+      [name]: value,
+      [`${name}error`]: "",
+    }));
   };
 
   const setwhatsappotphandler = (OTP) => {
@@ -113,9 +192,13 @@ export default function BorrowerRegister() {
     if (gmailPrefill) {
       try {
         const res = await axios.post(API_USER_URL + "registerLenderWithGoogle", {
+<<<<<<< HEAD
           googleAccessToken: gmailPrefill.googleAccessToken,
           mobileNumber: gmailPrefill.mobile,
           email: gmailPrefill.email,
+=======
+          mobileNumber: gmailPrefill.mobile,
+>>>>>>> feature/ai-lender-chat
           nameAsPan: registrationField.pancard,
           password: registrationField.password || "",
           referrerId: registrationField.referrerId || "",
@@ -135,7 +218,11 @@ export default function BorrowerRegister() {
           navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now());
         } else {
           toastrWarning("Registration succeeded but login failed. Please login.");
+<<<<<<< HEAD
           navigate("/loginsso");
+=======
+          navigate("/loginotp");
+>>>>>>> feature/ai-lender-chat
         }
       } catch (err) {
         const errMsg = err?.response?.data?.errorMessage || "Registration failed. Please try again.";
@@ -153,7 +240,13 @@ export default function BorrowerRegister() {
       mobileerror: !registrationField.mobile ? "Please enter the mobile" : "",
       passworderror: !registrationField.password ? "Please enter the password" : "",
     }));
-
+    if (!registrationField.pancard || registrationField.pancard.trim().length < 2) {
+      setRegistrationField((prev) => ({
+        ...prev,
+        pancarderror: !registrationField.pancard ? "Please enter the Name" : "Name must be at least 2 characters",
+      }));
+      return;
+    }
     const validationError = api.validateRegisterInput(
       registrationField.email,
       registrationField.password,
@@ -167,15 +260,34 @@ export default function BorrowerRegister() {
     }
 
     if (
+      registrationField.referrerId &&
+      String(registrationField.referrerId).trim() !== "" &&
+      String(registrationField.referrerId).trim() !== "0"
+    ) {
+      const isValidRef = await validateReferrerId(registrationField.referrerId);
+      if (!isValidRef) {
+        const refErrMsg = registrationField.referrerIderror || "Invalid Referrer ID";
+        setError(refErrMsg);
+        toastrWarning(refErrMsg);
+        return;
+      }
+    }
+
+    if (
       !registrationField.emailerror &&
       !registrationField.pancarderror &&
       !registrationField.mobileerror &&
-      !registrationField.passworderror
+      !registrationField.passworderror &&
+      !registrationField.referrerIderror
     ) {
       try {
         const RegisterResponse = await api.RegisterUser(registrationField.mobile);
         localStorage.setItem("seesion", RegisterResponse);
         localStorage.setItem("type", "Borrower");
+        if(registrationField.referrerId !== 0 && registrationField.referrerId){
+          const finalUniq = registrationField.uniqueNumber || registrationField.referrerId;
+          localStorage.setItem("uniqnumber", finalUniq);
+        }
         setResponse(RegisterResponse);
         setField(false);
         setError(null);
@@ -260,20 +372,22 @@ export default function BorrowerRegister() {
   }, [registrationField.pancard]);
 
   useEffect(() => {
+    clearLastVisitedUrls();
     const searchParams = new URLSearchParams(window.location.search);
     const refParam = searchParams.get("ref");
-    localStorage.setItem("uniqnumber", refParam || 0);
 
     if (refParam) {
       setRegistrationField((prev) => ({
         ...prev,
         referrerId: refParam,
       }));
-    }else{
+      validateReferrerId(refParam);
+    } else {
       setRegistrationField((prev) => ({
         ...prev,
-        referrerId: 0,
+        referrerId: "",
       }));
+      localStorage.setItem("uniqnumber", "0");
     }
 
     // Check for Gmail pre-fill (takes priority over localData)
@@ -296,12 +410,16 @@ export default function BorrowerRegister() {
       }
     } catch (e) { /* ignore */ }
 
+<<<<<<< HEAD
     if (localData) {
+=======
+    if (localData && Object.keys(localData).length > 0) {
+>>>>>>> feature/ai-lender-chat
       setRegistrationField((prev) => ({
         ...prev,
-        email: localData.email || "",
-        mobile: localData.number || "",
-        pancard: localData.name || "",
+        email: localData.email || prev.email,
+        mobile: localData.number || prev.mobile,
+        pancard: localData.name || prev.pancard,
       }));
     }
   }, []);
@@ -374,7 +492,7 @@ export default function BorrowerRegister() {
                           className="form-control"
                           type="text"
                           name="pancard"
-                          maxLength={30}
+                          maxLength={100}
                           onChange={handlechange}
                           value={registrationField.pancard}
                         />
@@ -398,7 +516,7 @@ export default function BorrowerRegister() {
                           className="form-control"
                           type="email"
                           name="email"
-                          maxLength={35}
+                          maxLength={100}
                           value={registrationField.email}
                           readOnly={!!gmailPrefill}
                           onChange={gmailPrefill ? undefined : handlechange}
@@ -448,6 +566,7 @@ export default function BorrowerRegister() {
                           name="referrerId"
                           value={registrationField.referrerId}
                           onChange={handlechange}
+                          onBlur={(e) => validateReferrerId(e.target.value)}
                         />
                         {/* <span className="profile-views">
                           <i className="fas fa-phone" />
@@ -525,6 +644,22 @@ export default function BorrowerRegister() {
                               data={6}
                               setwhatsappotphandler={setwhatsappotphandler}
                             />
+                          </div>
+                          <div className="dont-have text-center my-2">
+                            {resendTimer > 0 ? (
+                              <span className="text-muted">
+                                Resend OTP in <strong>{resendTimer}s</strong>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-link p-0 text-primary fw-bold"
+                                onClick={handleResendOtp}
+                                disabled={loadingResend}
+                              >
+                                {loadingResend ? "Sending..." : "Resend OTP"}
+                              </button>
+                            )}
                           </div>
                           <div className=" dont-have">
                             Already Registered? <Link to="/">Login</Link>

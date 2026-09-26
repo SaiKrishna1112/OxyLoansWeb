@@ -1,11 +1,17 @@
 import axios from "axios";
 import { API_USER_URL as API_BASE_URL } from "../../config";
+import { initWebPush } from "../../utils/fcmWebPush";
 // const userisIn = "local"; //local or production
 // let API_BASE_URL =
 //   userisIn == "local"
 //     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
 //     : "https://fintech.oxyloans.com/oxyloans/v1/user/";
 
+function registerFcmAfterLogin(userId, accessToken) {
+  if (userId && accessToken) {
+    initWebPush(userId, accessToken).catch(() => {});
+  }
+}
 /** True when axios returned HTTP 200 (not an error object). */
 export const isApiSuccess = (response) => {
   if (!response) return false;
@@ -128,6 +134,9 @@ export const Admlog = async (userid, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
+    registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
+    return response;
+  } else {
     sessionStorage.setItem("email", response.data.email || "");
     localStorage.setItem("primaryType", response.data.primaryType || "");
     return response;
@@ -153,6 +162,7 @@ export const partnerlogin = async (userid, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
+    registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
     return response;
   } else {
     return response;
@@ -182,6 +192,7 @@ export const userloginSection = async (email, password) => {
     sessionStorage.setItem("userId", response.data.id);
     localStorage.setItem("userId", response.data.id);
     sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime);
+    registerFcmAfterLogin(response.data.id, accessTokenFromHeader);
     sessionStorage.setItem("email", response.data.email || "");
     localStorage.setItem("primaryType", response.data.primaryType || "");
     return response;
@@ -202,27 +213,33 @@ export const sendwhatappotp = async (value1) => {
   );
   return response;
 };
-export const referrerdata = (referrerId, refParam) => {
-  const numericPart = referrerId.match(/\d+$/);
+export const referrerdata = async (referrerId, refParam) => {
+  try {
+    const rawId =
+      referrerId !== undefined && referrerId !== null && String(referrerId).trim() !== "" && String(referrerId).trim() !== "0"
+        ? String(referrerId).trim()
+        : refParam !== undefined && refParam !== null && String(refParam).trim() !== "" && String(refParam).trim() !== "0"
+        ? String(refParam).trim()
+        : "";
 
-  if (referrerId !== "") {
-    const response = handleApiRequestBeforeLogin(
+    if (!rawId) {
+      return null;
+    }
+
+    const match = rawId.match(/\d+/);
+    const numericPart = match ? match[0] : rawId;
+
+    const response = await handleApiRequestBeforeLogin(
       "GET",
       API_BASE_URL,
-
       `${numericPart}/user-uniquenumber`
     );
     return response;
-  } else {
-    const response = handleApiRequestBeforeLogin(
-      "GET",
-      API_BASE_URL,
-
-      `${refParam}/user-uniquenumber`
-    );
-    return response;
+  } catch (error) {
+    return error;
   }
 };
+
 
 export const handlesenOtp = async (moblie) => {
   var data = {

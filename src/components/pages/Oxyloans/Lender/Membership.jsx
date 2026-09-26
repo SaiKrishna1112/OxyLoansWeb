@@ -12,9 +12,10 @@ import {
   getpaymentorder,
   lenderfeeamountdetailsapi,
   handellenderFeePaymentsapi,
-  getuserMembershipValidity,
+  getMembershipDetails,
 } from "../../../HttpRequest/afterlogin";
 import {
+<<<<<<< HEAD
   fetchSubscriptionOffer,
   getFinalSubscriptionAmount,
   formatRupee,
@@ -25,6 +26,8 @@ import {
 import { shouldHideMembershipOffers } from "./dealFeeFreeGate";
 import ActiveOfferPopup from "./ActiveOfferPopup";
 import {
+=======
+>>>>>>> feature/ai-lender-chat
   registersuccess,
   WarningAlertwithdrow,
   membershipsweetalert,
@@ -50,9 +53,10 @@ const Membership = React.memo((pros) => {
     data: [],
     isLoading: true,
   });
-  const [subscriptionOffer, setSubscriptionOffer] = useState(null);
-  const [offerFetchDone, setOfferFetchDone] = useState(false);
-  const [activeMembership, setActiveMembership] = useState(null);
+  const [membershipStatus, setMembershipStatus] = useState({
+    isLoading: true,
+    isActive: false,
+  });
   const [payment, setpaymentsession] = useState("");
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
@@ -170,59 +174,51 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
   }, [myorder]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadMembershipPageData = async () => {
+    const lenderfeeamountdetails = async () => {
       try {
-        const [membershipResponse, offer, validityResponse] = await Promise.all([
-          lenderfeeamountdetailsapi(),
-          fetchSubscriptionOffer(),
-          getuserMembershipValidity(),
-        ]);
-
-        if (cancelled) return;
-
-        if (validityResponse?.request?.status === 200 && validityResponse.data?.validityDate) {
-          const validityDate = new Date(validityResponse.data.validityDate);
-          if (validityDate > new Date()) {
-            setActiveMembership({
-              validityDate: validityResponse.data.validityDate,
-            });
-          }
-        }
-
-        if (membershipResponse?.status === 200) {
+        const response = await lenderfeeamountdetailsapi();
+        if (response.status === 200) {
           setmebershipdata({
-            data: membershipResponse.data,
+            data: response.data,
             isLoading: false,
           });
         } else {
-          setmebershipdata({
-            data: [],
-            isLoading: false,
-          });
+          throw new Error("Failed to fetch data");
         }
-        setSubscriptionOffer(offer);
       } catch (error) {
         console.error(error);
-        if (!cancelled) {
-          setmebershipdata((prev) => ({
-            ...prev,
-            isLoading: false,
-          }));
-        }
-      } finally {
-        if (!cancelled) {
-          setOfferFetchDone(true);
-        }
+        setmebershipdata({
+          data: [],
+          isLoading: false,
+        });
       }
     };
 
-    loadMembershipPageData();
+    lenderfeeamountdetails();
+  }, [lenderfeeamountdetailsapi]);
 
-    return () => {
-      cancelled = true;
+  useEffect(() => {
+    const membershipDetails = async () => {
+      try {
+        const response = await getMembershipDetails();
+        const details = response?.data;
+
+        setMembershipStatus({
+          isLoading: false,
+          isActive: !details?.lenderValidityStatus === true,
+          plan: details?.membershipType || "",
+          endDate: details?.validityDate || "",
+        });
+      } catch (error) {
+        console.error(error);
+        setMembershipStatus({
+          isLoading: false,
+          isActive: false,
+        });
+      }
     };
+
+    membershipDetails();
   }, []);
   useEffect(() => {
     if (payment != null || payment != "") {
@@ -253,8 +249,10 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
 
   const buttonNumber = 0;
   const isButtonLoading = mywalletTowalletHistory[`loading${buttonNumber}`];
-  const membershipPaymentBlocked = Boolean(activeMembership);
-  if (membershipdata.isLoading || !offerFetchDone) {
+  const hasLifetimeMembership =
+    membershipStatus.isActive &&
+    membershipStatus.plan?.toUpperCase() === "LIFETIME";
+  if (membershipdata.isLoading) {
     return <div>Loading...</div>;
   }
 
@@ -268,102 +266,21 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
     TENYEARS: 90000,
   };
 
+  function calculateTotalWithGST(amount) {
+    const gst = (amount * 18) / 100;
+    const total = amount + gst;
+
+    return total;
+  }
+
   function calculateDiscountPercentage(originalPrice, discountedPrice) {
+    console.log(originalPrice, discountedPrice);
+
     const discount = originalPrice - discountedPrice;
     const discountPercentage = (discount / originalPrice) * 100;
 
-    return discountPercentage.toFixed(2);
+    return discountPercentage.toFixed(2); // Returns percentage with 2 decimal places
   }
-
-   const getPaymentAmount = (planData) => {
-    const pricing = getFinalSubscriptionAmount(planData, subscriptionOffer);
-    return Math.round(pricing.finalWithGst);
-  };
-
-  const renderMembershipPricing = (data) => {
-    const pricing = getFinalSubscriptionAmount(data, subscriptionOffer);
-
-    if (pricing.offerApplied) {
-      return (
-        <div className="subscription-offer-pricing mb-2">
-          <p className="text-muted small mb-1">
-            <del>₹{formatRupee(pricing.originalBase)}</del>
-          </p>
-          <span className="badge badge-success subscription-discount-badge mb-2">
-            {pricing.discountPercent > 0
-              ? `${pricing.discountPercent}% OFF`
-              : "OFFER APPLIED"}
-          </span>
-          <h4
-            className="font-weight-bold text-success subscription-you-pay"
-            style={{ fontSize: "20px" }}
-          >
-            You Pay: ₹{formatRupee(pricing.finalBase)}
-          </h4>
-          <p className="text-muted small mb-1">
-            + 18% GST = ₹{formatRupee(Math.round(pricing.finalWithGst))}
-          </p>
-          <p className="text-muted small mb-1">
-            <del>Was ₹{formatRupee(Math.round(pricing.originalWithGst))} with GST</del>
-          </p>
-          <p className="text-success small subscription-offer-note mb-0">
-            Same membership plan &amp; validity as full price — only the amount is discounted.
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        {data.feeAmount !==
-          actualPrices[data.lenderFeePayments.toUpperCase()] && (
-          <div className="mb-2" style={{ fontSize: "14px" }}>
-            <span className="badge badge-danger">Discounted!</span>
-            <p className="text-muted small mb-1">
-              <del>
-                ₹
-                {actualPrices[data.lenderFeePayments.toUpperCase()]}
-              </del>{" "}
-              + 18% GST = ₹
-              {Math.round(
-                calculateTotalWithGST(
-                  actualPrices[data.lenderFeePayments.toUpperCase()]
-                )
-              )}
-            </p>
-            <p className="text-muted small mb-1">
-              Discount:{" "}
-              {calculateDiscountPercentage(
-                calculateTotalWithGST(
-                  actualPrices[data.lenderFeePayments.toUpperCase()]
-                ),
-                data.feeAmountWithGst
-              )}
-              % off
-            </p>
-          </div>
-        )}
-        <h4
-          className="font-weight-bold text-success"
-          style={{ fontSize: "20px" }}
-        >
-          ₹{data.feeAmount} + 18% GST = ₹{data.feeAmountWithGst}
-        </h4>
-        {data.percentageDiscount && (
-          <p className="text-success" style={{ fontSize: "14px" }}>
-            <b>
-              {data.percentageDiscount ||
-                calculateDiscountPercentage(
-                  actualPrices[data.lenderFeePayments.toUpperCase()],
-                  data.feeAmount
-                )}
-              % OFF
-            </b>
-          </p>
-        )}
-      </>
-    );
-  };
 
   // Function to format the plans correctly
   const formatPlanName = (plan) => {
@@ -407,7 +324,54 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
               <div className="col-sm-12">
                 <div className="card card-table">
                   <div className="card-body">
+                    <div
+                      className="d-flex align-items-center justify-content-between mb-2 px-2"
+                    >
+                      <h5
+                        className="mb-0 font-weight-bold text-dark"
+                        style={{ fontSize: "18px", whiteSpace: "nowrap" }}
+                      >
+                        Membership Status
+                      </h5>
+                      {!membershipStatus.isLoading && (
+                        <span
+                          className={`badge ${
+                            membershipStatus.isActive
+                              ? "badge-success"
+                              : "badge-warning"
+                          }`}
+                          style={{
+                            fontSize: "13px",
+                            padding: "7px 12px",
+                            minWidth: "60px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {membershipStatus.isActive ? "Active" : "Inactive"}
+                        </span>
+                      )}
+                    </div>
+                    <div 
+                      className="d-flex mb-4 px-2"
+                      style={{
+                        borderBottom: "1px solid #e9ecef",
+                        paddingBottom: "12px",
+                        gap: "20px",
+                        flexWrap: "wrap",
+                      }}>
+                        <h6
+                        className="mb-0 font-weight-bold "
+                        style={{ flex: "1 1 auto", fontSize: "16px",color: membershipStatus.isActive ? "#28a745" : "#dc3545" }}
+                      >
+                        {membershipStatus.isActive
+                          ? `You already have a membership for ${formatPlanName(
+                              membershipStatus?.plan || "this plan"
+                            )} plan till ${membershipStatus?.endDate || "the validity date"}`
+                          : "You do not have an active membership. Please consider renewing your membership."}
+                      </h6>
+                      </div>
                     <div className="row">
+<<<<<<< HEAD
                       {activeMembership && (
                         <div className="col-12 mb-3">
                           <div className="alert alert-info subscription-offer-banner mb-0">
@@ -434,6 +398,8 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                           </div>
                         </div>
                       )}
+=======
+>>>>>>> feature/ai-lender-chat
                       {console.log(membershipdata.data[6])}
 
                       {membershipdata.data.length !== 0 ? (
@@ -447,7 +413,11 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                 key={index}
                               >
                                 <div
-                                  className="card shadow-lg border-0 rounded-lg text-center"
+                                  className={`card shadow-lg rounded-lg text-center ${
+                                    hasLifetimeMembership
+                                      ? "border border-warning"
+                                      : "border-0"
+                                  }`}
                                   style={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -455,7 +425,15 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     justifyContent: "space-between",
                                   }}
                                 >
-                                  <div className="card-header bg-primary text-white">
+                                  <div
+                                    className="card-header bg-primary text-white"
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
                                     <h3
                                       className="mb-0"
                                       style={{
@@ -471,7 +449,66 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     className="card-body d-flex flex-column justify-content-center"
                                     style={{ flexGrow: 1, textAlign: "center" }}
                                   >
-                                    {renderMembershipPricing(data)}
+                                    {data.feeAmount !==
+                                      actualPrices[
+                                        data.lenderFeePayments.toUpperCase()
+                                      ] && (
+                                      <div
+                                        className="mb-2"
+                                        style={{ fontSize: "14px" }}
+                                      >
+                                        <span className="badge badge-danger">
+                                          Discounted!
+                                        </span>
+                                        <p className="text-muted small mb-1">
+                                          <del>
+                                            ₹
+                                            {
+                                              actualPrices[
+                                                data.lenderFeePayments.toUpperCase()
+                                              ]
+                                            }
+                                          </del>{" "}
+                                          + 18% GST = ₹
+                                          {Math.round(
+                                            calculateTotalWithGST(
+                                              actualPrices[
+                                                data.lenderFeePayments.toUpperCase()
+                                              ]
+                                            )
+                                          )}
+                                        </p>
+                                        {/* Displaying the discount percentage */}
+                                        <p className="text-muted small mb-1">
+                                          Discount:{" "}
+                                          {calculateDiscountPercentage(
+                                            calculateTotalWithGST(
+                                              actualPrices[
+                                                data.lenderFeePayments.toUpperCase()
+                                              ]
+                                            ),
+                                            data.feeAmountWithGst
+                                          )}
+                                          % off
+                                        </p>
+                                      </div>
+                                    )}
+                                    <h4
+                                      className="font-weight-bold text-success"
+                                      style={{ fontSize: "20px" }}
+                                    >
+                                      ₹{data.feeAmount} + 18% GST = ₹
+                                      {data.feeAmountWithGst}
+                                    </h4>
+                                    {/* Displaying the percentage discount here */}
+                                    {data.percentageDiscount && (
+                                      <p
+                                        className="text-success"
+                                        style={{ fontSize: "14px" }}
+                                      >
+                                        <b>{data.percentageDiscount}% OFF</b>
+                                      </p>
+                                    )}
                                     <ul
                                       className="list-group list-group-flush mt-3"
                                       style={{ fontSize: "14px" }}
@@ -480,26 +517,19 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                         <i className="text-danger mr-2">✔</i>
                                         <b>
                                           {data.lenderFeePayments === "LIFETIME"
-                                            ? "14 Years "
-                                            : ""}{" "}
+                                            ? " 14 Years "
+                                            : " 1 Month "}{" "}
                                           Membership
                                         </b>
                                       </li>
                                       <li className="list-group-item">
                                         <i className="text-danger mr-2">✔</i>{" "}
-                                        Unlimited Deals Participation
+                                          Unlimited Deals Participation
                                       </li>
                                     </ul>
                                   </div>
                                   <div className="card-footer bg-white">
-                                    {membershipPaymentBlocked ? (
-                                      <button
-                                        className="btn btn-secondary btn-block"
-                                        disabled
-                                      >
-                                        Membership Active
-                                      </button>
-                                    ) : isButtonLoading ? (
+                                    {!hasLifetimeMembership && isButtonLoading ? (
                                       <button
                                         className="btn btn-success btn-block"
                                         disabled
@@ -507,7 +537,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                         <span className="spinner-border spinner-border-sm mr-2"></span>{" "}
                                         Processing...
                                       </button>
-                                    ) : (
+                                    ) : !hasLifetimeMembership ? (
                                       <button
                                         className={`btn btn-success bg-gradient btn-block text-white`}
                                         style={{
@@ -518,13 +548,15 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                           handlePaymembershipfree(
                                             data.lenderFeePayments,
                                             index + 1,
-                                            getPaymentAmount(data)
+                                            data.feeAmountWithGst
                                           )
                                         }
                                       >
-                                        Subscribe Now
+                                        {membershipStatus.isActive
+                                          ? "Subscribe to extend subscription"
+                                          : "Subscribe Now"}
                                       </button>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>
@@ -539,7 +571,13 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                 key={index}
                               >
                                 <div
-                                  className="card text-center shadow-lg border-0 rounded-lg membership-border"
+                                  className={`card text-center shadow-lg rounded-lg membership-border ${
+                                    hasLifetimeMembership &&
+                                    data.lenderFeePayments?.toUpperCase() ===
+                                      "LIFETIME"
+                                      ? "border border-warning"
+                                      : "border-0"
+                                  }`}
                                   style={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -547,7 +585,15 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     justifyContent: "space-between",
                                   }}
                                 >
-                                  <div className="card-header bg-primary text-white">
+                                  <div
+                                    className="card-header bg-primary text-white"
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
                                     <h3
                                       className="card_heading mb-0"
                                       style={{
@@ -564,47 +610,109 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                     className="card-body d-flex flex-column justify-content-center"
                                     style={{ flexGrow: 1, textAlign: "center" }}
                                   >
-                                    {renderMembershipPricing(data)}
+                                    {data.feeAmount !==
+                                      actualPrices[
+                                        data.lenderFeePayments.toUpperCase()
+                                      ] && (
+                                      <div
+                                        className="mb-2"
+                                        style={{ fontSize: "14px" }}
+                                      >
+                                        <span className="badge badge-danger">
+                                          Discounted!
+                                        </span>
+                                        <p className="text-muted small mb-1">
+                                          <del>
+                                            ₹
+                                            {
+                                              actualPrices[
+                                                data.lenderFeePayments.toUpperCase()
+                                              ]
+                                            }
+                                          </del>{" "}
+                                          + 18% GST = ₹
+                                          {Math.round(
+                                            calculateTotalWithGST(
+                                              actualPrices[
+                                                data.lenderFeePayments.toUpperCase()
+                                              ]
+                                            )
+                                          )}
+                                        </p>
+                                        {/* Displaying the discount percentage */}
+                                        <p className="text-muted small mb-1">
+                                          Discount:{" "}
+                                          {calculateDiscountPercentage(
+                                            calculateTotalWithGST(
+                                              actualPrices[
+                                                data.lenderFeePayments.toUpperCase()
+                                              ]
+                                            ),
+                                            data.feeAmountWithGst
+                                          )}
+                                          % off
+                                        </p>
+                                      </div>
+                                    )}
+                                    <h4
+                                      className="font-weight-bold text-success"
+                                      style={{ fontSize: "20px" }}
+                                    >
+                                      ₹{data.feeAmount} + 18% GST = ₹
+                                      {data.feeAmountWithGst}
+                                    </h4>
+                                    {/* Displaying the percentage discount here */}
+                                    {data.percentageDiscount && (
+                                      <p
+                                        className="text-success"
+                                        style={{ fontSize: "14px" }}
+                                      >
+                                        <b>
+                                          {calculateDiscountPercentage(
+                                            actualPrices[
+                                              data.lenderFeePayments.toUpperCase()
+                                            ],
+                                            data.feeAmount
+                                          )}
+                                          % OFF
+                                        </b>
+                                      </p>
+                                    )}
                                     <ul
                                       className="list-group list-group-flush"
                                       style={{ fontSize: "14px" }}
                                     >
                                       <li className="list-group-item">
-                                        <i className="text-danger mr-2">✔</i>
+                                        <i className="text-danger mr-2">✔ {" "}</i>
                                         <b
                                           className="paymembership_tenture"
                                           style={{ fontSize: "14px" }}
-                                        >
+                                        > 
+                                          {data.lenderFeePayments === 
+                                          "MONTHLY" && " 1 Month "}
                                           {data.lenderFeePayments ===
-                                            "QUARTERLY" && "3 Months "}
+                                            "QUARTERLY" && " 3 Months "}
                                           {data.lenderFeePayments ===
-                                            "HALFYEARLY" && "6 Months "}
+                                            "HALFYEARLY" && " 6 Months "}
                                           {data.lenderFeePayments ===
-                                            "PERYEAR" && "1 Year "}
+                                            "PERYEAR" && " 1 Year "}
                                           {data.lenderFeePayments ===
-                                            "FIVEYEARS" && "5 Years "}
+                                            "FIVEYEARS" && " 5 Years "}
                                           {data.lenderFeePayments ===
-                                            "TENYEARS" && "10 Years "}
+                                            "TENYEARS" && " 10 Years "}
                                           {data.lenderFeePayments ===
-                                            "LIFETIME" && "14 Years "}
+                                            "LIFETIME" && " 14 Years "}
                                         </b>
-                                        Membership
+                                          Membership
                                       </li>
                                       <li className="list-group-item">
-                                        <i className="text-danger mr-2">✔</i>{" "}
+                                        <i className="text-danger mr-2">✔</i>{"  "}
                                         Unlimited Deals Participation
                                       </li>
                                     </ul>
                                   </div>
                                   <div className="card-footer bg-white">
-                                    {membershipPaymentBlocked ? (
-                                      <button
-                                        className="btn btn-secondary btn-block"
-                                        disabled
-                                      >
-                                        Membership Active
-                                      </button>
-                                    ) : isButtonLoading ? (
+                                    {!hasLifetimeMembership && isButtonLoading ? (
                                       <button
                                         className="btn btn-success btn-block"
                                         disabled
@@ -612,7 +720,7 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                         <span className="spinner-border spinner-border-sm mr-2"></span>{" "}
                                         Processing...
                                       </button>
-                                    ) : (
+                                    ) : !hasLifetimeMembership ? (
                                       <button
                                         type="button"
                                         className={`btn btn-success bg-gradient btn-block text-white`}
@@ -624,13 +732,15 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                                           handlePaymembershipfree(
                                             data.lenderFeePayments,
                                             index + 1,
-                                            getPaymentAmount(data)
+                                            data.feeAmountWithGst
                                           )
                                         }
                                       >
-                                        Subscribe
+                                        {membershipStatus.isActive
+                                          ? "Subscribe to extend subscription"
+                                          : "Subscribe"}
                                       </button>
-                                    )}
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>

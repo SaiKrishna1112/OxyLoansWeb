@@ -127,6 +127,7 @@ const InterestsDateWise = () => {
                                                                             <tr>
                                                                                 <th>S#</th>
                                                                                 <th>dealId</th>
+                                                                                <th>Deal Name</th>
                                                                                 <th>Paid Date</th>
                                                                                 <th>Amount</th>
                                                                                 <th>Amount Type</th>
@@ -146,6 +147,7 @@ const InterestsDateWise = () => {
 
                                                                                             <td> {index + 1}</td>
                                                                                             <td> {item.dealId}</td>
+                                                                                            <td> {item.dealName}</td>
                                                                                             <td> {item.paidDate}</td>
                                                                                             <td> {item.amount}</td>
                                                                                             <td>

@@ -3,7 +3,10 @@ export const ADMIN_AI_FEATURES = [
   {
     id: "cms-payments",
     title: "CMS Payments",
+<<<<<<< HEAD
     description: "Paid and Pending by deal — Interest, Principal, Principal + Interest",
+=======
+    description: "Paid and pending by deal — Interest, Principal, Principal + Interest",
     icon: "fas fa-money-check-alt",
     color: "#059669",
     variant: "green",
@@ -11,6 +14,18 @@ export const ADMIN_AI_FEATURES = [
     usesFy: false,
   },
   {
+    id: "cms-lender-payouts",
+    title: "Lender Payout Status",
+    description: "Per deal — lenders paid or not paid (Interest, Principal, Principal+Interest)",
+>>>>>>> feature/ai-lender-chat
+    icon: "fas fa-money-check-alt",
+    color: "#059669",
+    variant: "green",
+    scope: "live",
+    usesFy: false,
+  },
+  {
+<<<<<<< HEAD
     id: "cms-lender-payouts",
     title: "Lender Payout Status",
     description: "Paid and Pending by deal — Interest, Principal, Principal + Interest",
@@ -21,6 +36,8 @@ export const ADMIN_AI_FEATURES = [
     usesFy: false,
   },
   {
+=======
+>>>>>>> feature/ai-lender-chat
     id: "roi-based-deals",
     title: "Lender ROI Portfolio",
     description: "Deals by monthly lender ROI — participation across running and closed deals",
@@ -132,8 +149,8 @@ export const ADMIN_AI_FEATURES = [
   },
   {
     id: "deal-intelligence",
-    title: "Deal Recommendations",
-    description: "Close, relaunch, or launch — AI-assisted deal actions",
+    title: "Deal Closure & AI Suggestions",
+    description: "Closed deal counts, ROI-based close/relaunch recommendations, and launch size",
     icon: "fas fa-lightbulb",
     color: "#7c3aed",
     variant: "violet",

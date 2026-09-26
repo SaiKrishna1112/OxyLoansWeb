@@ -10650,6 +10650,7 @@
   margin-top: 12px;
 }
 
+<<<<<<< HEAD
 .admin-ai-pro-section-icon--cms {
   background: linear-gradient(135deg, #047857 0%, #10b981 100%) !important;
   box-shadow: 0 4px 12px rgba(4, 120, 87, 0.35) !important;
@@ -10674,6 +10675,8 @@
   border-color: #5eead4 !important;
 }
 
+=======
+>>>>>>> feature/ai-lender-chat
 .admin-ai-ref-portfolio-inline-entry {
   display: flex;
   align-items: center;
@@ -19364,6 +19367,7 @@
   align-items: center;
 }
 
+<<<<<<< HEAD
 .ai-feature-header-nav {
   display: flex;
   flex-wrap: wrap;
@@ -19384,6 +19388,8 @@
   gap: 8px;
 }
 
+=======
+>>>>>>> feature/ai-lender-chat
 .sba-back {
   display: inline-flex;
   align-items: center;
@@ -20674,7 +20680,313 @@
   }
 }
 
+<<<<<<< HEAD
 /* Lender ROI portfolio (additive) */
+=======
+.ai-dc-page { display: flex; flex-direction: column; gap: 16px; }
+.ai-dc-page--studio { padding: 4px 2px 20px; }
+.ai-dc-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 8px 4px 4px;
+}
+.ai-dc-hero-kicker {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #6366f1;
+}
+.ai-dc-hero h2 { margin: 0; font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: -.02em; }
+.ai-dc-hero p { margin: 6px 0 0; max-width: 640px; color: #64748b; font-size: 14px; }
+.ai-dc-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: #4f46e5;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ai-dc-hero-btn--ghost { background: #eef2ff; color: #4338ca; margin-top: 14px; }
+.ai-dc-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.ai-dc-toolbar-note { margin: 0; font-size: 13px; color: #64748b; }
+.ai-dc-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+.ai-dc-kpi-row--money { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ai-dc-kpi {
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+  min-height: 118px;
+}
+.ai-dc-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.ai-dc-kpi small {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+.ai-dc-kpi strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 26px;
+  line-height: 1.1;
+  color: #0f172a;
+}
+.ai-dc-kpi em { display: block; margin-top: 6px; font-style: normal; font-size: 12px; color: #94a3b8; font-weight: 600; }
+.ai-dc-kpi--closed .ai-dc-kpi-icon, .ai-dc-kpi--close .ai-dc-kpi-icon { background: #eef2ff; color: #4f46e5; }
+.ai-dc-kpi--active .ai-dc-kpi-icon, .ai-dc-kpi--int .ai-dc-kpi-icon { background: #ecfdf5; color: #059669; }
+.ai-dc-kpi--soon .ai-dc-kpi-icon { background: #fff7ed; color: #d97706; }
+.ai-dc-kpi--extended .ai-dc-kpi-icon { background: #fff1f2; color: #e11d48; }
+.ai-dc-kpi--relaunch .ai-dc-kpi-icon { background: #f5f3ff; color: #7c3aed; }
+.ai-dc-kpi--fee .ai-dc-kpi-icon { background: #eff6ff; color: #2563eb; }
+.ai-dc-kpi--fd .ai-dc-kpi-icon { background: #faf5ff; color: #9333ea; }
+.ai-dc-kpi--part .ai-dc-kpi-icon { background: #ecfeff; color: #0e7490; }
+.ai-dc-overview {
+  display: grid;
+  grid-template-columns: 1.1fr 1.2fr .9fr;
+  gap: 14px;
+}
+.ai-dc-panel {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .04);
+}
+.ai-dc-panel h3 { margin: 0 0 14px; font-size: 16px; font-weight: 800; color: #0f172a; }
+.ai-dc-panel--launch strong { display: block; font-size: 30px; color: #0f172a; }
+.ai-dc-panel--launch p { margin: 6px 0 12px; color: #64748b; }
+.ai-dc-donut-wrap { display: flex; align-items: center; gap: 18px; }
+.ai-dc-donut {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 132px;
+}
+.ai-dc-donut span {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.ai-dc-donut strong { display: block; font-size: 20px; color: #0f172a; }
+.ai-dc-donut small { color: #94a3b8; font-size: 11px; }
+.ai-dc-legend-list, .ai-dc-stat-stack { list-style: none; margin: 0; padding: 0; }
+.ai-dc-legend-list li, .ai-dc-stat-stack li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  color: #475569;
+  font-size: 13px;
+}
+.ai-dc-legend-list i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+  display: inline-block;
+}
+.ai-dc-stat-stack li { border-bottom: 1px solid #f1f5f9; }
+.ai-dc-stat-stack li:last-child { border-bottom: 0; }
+.ai-dc-stat-stack b { color: #0f172a; }
+.ai-dc-insight-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-dc-insight-chips span {
+  background: #f8fafc;
+  color: #334155;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.ai-dc-summary {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  white-space: pre-wrap;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-dc-list-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.ai-dc-list-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 18px;
+  border-bottom: 2px solid #99f6e4;
+  flex-wrap: wrap;
+  background: #ecfdf5;
+}
+.ai-dc-tabs { display: flex; flex-wrap: wrap; gap: 14px; }
+.ai-dc-tabs button {
+  border: 1px solid #99f6e4;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f766e;
+  box-shadow: 0 1px 0 rgba(15, 118, 110, .08);
+}
+.ai-dc-tabs button em { font-style: normal; margin-left: 8px; color: #0f766e; }
+.ai-dc-tabs button.is-active { background: #0f766e; color: #fff; border-color: #0f766e; }
+.ai-dc-tabs button.is-active em { color: #ccfbf1; }
+.ai-dc-search {
+  min-width: 240px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.ai-dc-legend {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ai-dc-legend p { margin: 0; }
+.ai-dc-legend p + p { margin-top: 6px; }
+.ai-dc-table-wrap { overflow-x: auto; }
+.ai-dc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ai-dc-table th, .ai-dc-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+  vertical-align: top;
+}
+.ai-dc-table th {
+  background: #f8fafc;
+  font-size: 11px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.ai-dc-deal-id {
+  border: 0;
+  background: #ecfdf5;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: #0f766e;
+  font-weight: 800;
+  font-size: 20px;
+  line-height: 1.2;
+  cursor: pointer;
+  letter-spacing: .01em;
+}
+.ai-dc-lender-roi {
+  display: inline-block;
+  background: #fff7ed;
+  color: #c2410c;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.2;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+.ai-dc-lender-roi span { font-size: 12px; font-weight: 700; color: #9a3412; }
+.ai-dc-type {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.ai-dc-type.is-monthly { background: #ecfeff; color: #0e7490; }
+.ai-dc-type.is-yearly { background: #f5f3ff; color: #6d28d9; }
+.ai-dc-term { margin-top: 6px; font-weight: 700; color: #0f172a; }
+.ai-dc-roi-link { display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 600; color: #0f766e; }
+.ai-dc-sub { margin-top: 3px; color: #64748b; font-size: 12px; max-width: 280px; }
+.ai-dc-actions { display: flex; gap: 6px; white-space: nowrap; }
+.ai-dc-empty { text-align: center !important; color: #94a3b8; padding: 28px !important; }
+.ai-dc-detail td { background: #f8fafc; color: #475569; font-size: 12px; }
+.ai-dc-pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  color: #64748b;
+  font-size: 13px;
+}
+@media (max-width: 1100px) {
+  .ai-dc-kpi-row, .ai-dc-kpi-row--money { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ai-dc-overview { grid-template-columns: 1fr; }
+  .ai-dc-insight { flex-direction: column; align-items: flex-start; }
+}
+
+
+/* CMS Payments and Lender ROI Portfolio layout — match test server */
+.admin-ai-pro-section-icon--cms {
+  background: linear-gradient(135deg, #047857 0%, #10b981 100%) !important;
+  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.35) !important;
+}
+
+.admin-ai-cms-entry {
+  border-color: #6ee7b7 !important;
+  background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 55%, #f0fdf4 100%) !important;
+}
+
+.admin-ai-cms-entry:hover,
+.admin-ai-cms-entry:focus-visible {
+  border-color: #059669 !important;
+  box-shadow: 0 8px 22px rgba(5, 150, 105, 0.22) !important;
+}
+
+.admin-ai-pro-section-icon--roi {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%) !important;
+}
+
+.admin-ai-roi-entry {
+  border-color: #5eead4 !important;
+}
+
+>>>>>>> feature/ai-lender-chat
 
 .ai-roi-page { padding-bottom: 1.5rem; }
 .ai-roi-page-header {
@@ -21005,7 +21317,11 @@
 .ai-roi-modal-body .ai-roi-stat-grid { margin-bottom: 0.85rem; }
 .ai-roi-modal-body .ai-roi-charts-row { margin: 0.75rem 0; }
 
+<<<<<<< HEAD
 /* CMS Payments — layout that was missing, causing jammed unstyled text */
+=======
+/* CMS Payments â€” layout that was missing, causing jammed unstyled text */
+>>>>>>> feature/ai-lender-chat
 .ai-cms-range-panel {
   display: flex;
   flex-direction: column;
@@ -21577,6 +21893,7 @@
   .ai-cms-lender-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+<<<<<<< HEAD
 .ai-dash .page-header {
   margin-bottom: 1rem !important;
   padding: 0;
@@ -21590,6 +21907,8 @@
   margin: 0;
   white-space: nowrap;
 }
+=======
+>>>>>>> feature/ai-lender-chat
 .ai-feature-header-nav {
   display: flex;
   flex-wrap: wrap;
@@ -21836,3 +22155,7 @@
   .ai-cms-range-panel--full .ai-cms-hero-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ai-cms-presets { margin-left: 0; }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> feature/ai-lender-chat

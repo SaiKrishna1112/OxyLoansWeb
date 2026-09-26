@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import { saveAs } from "file-saver";
@@ -22,6 +22,10 @@ import {
   FaUniversity,
   FaMoneyCheckAlt,
   FaPercent,
+<<<<<<< HEAD
+=======
+  FaLightbulb,
+>>>>>>> feature/ai-lender-chat
   FaUserPlus,
   FaEnvelope,
   FaWhatsapp,
@@ -33,6 +37,8 @@ import {
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
 import Footer from "../../../Footer/Footer";
+import { getAdminAIPlatformStats } from "../../../HttpRequest/afterlogin";
+import AdminNotificationPanel from "./Notification/AdminNotificationPanel";
 import {
   getAdminAIActiveLenderDeals,
   getAdminAIActiveLenderProfile,
@@ -3320,6 +3326,25 @@ const AdminAIDashboard = () => {
                     <span className="admin-ai-yearwise-header-open">Open →</span>
                   </span>
                 </button>
+<<<<<<< HEAD
+=======
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry admin-ai-intel-entry"
+                  onClick={() => navigate("/adminAIDashboard/deal-intelligence", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise admin-ai-pro-section-icon--intel">
+                    <FaLightbulb />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Deal Closure &amp; AI Suggestions</h2>
+                    <p>How many deals are closed, ROI-based close/relaunch recommendations, and launch size. Click to open.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+>>>>>>> feature/ai-lender-chat
               </section>
 
               <section className="admin-ai-pro-section admin-ai-pro-section--high-participation">

@@ -28,12 +28,14 @@ import {
   handleInterestStatus,
   handleComments,
   handlegetComments,
+  getcommentsHistory,
   handleupdatedob,
   handleSendStatement,
   handleEmiUpdateComments,
 } from "../../../../HttpRequest/admin";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import AdminWriteToUs from "./AdminWriteToUs";
 
 const { Option } = Select;
 const { Title, Text } = Typography;
@@ -66,18 +68,20 @@ const LenderLoanApplications = () => {
   const [interestStatus, setInterestStatus] = useState(false);
   const [comments, setComments] = useState("");
   const [commentsError, setCommentsError] = useState('');
-  const[getComments,setGetComments]=useState([])
+  const [getComments,setGetComments]=useState([])
   const [showComments, setShowComments] = useState(false);
   const [dobModal, setDobModal] = useState(false);
   const [userDob, setUserDob] = useState("");
   const [actualDob, setActualDob] = useState("");
+  const [writeToUsModal, setWriteToUsModal] = useState(false);
 
   const handleClose = () => {
     setShow(false);
     setChangeToTest(false),
       setInterestStatus(false),
       setShowComments(false),
-      setDobModal(false);
+        setDobModal(false);
+      setWriteToUsModal(false);
   };
 
   const accessToken = sessionStorage.getItem("accessToken");
@@ -503,7 +507,7 @@ const LenderLoanApplications = () => {
 
 //Function to get Comments
 const getCommentsfun=async(record)=>{
-  const response =await handlegetComments(record)
+  const response =await getcommentsHistory(record)
   console.log(response.data)
   if(response.status==200){
     setGetComments(response.data)
@@ -689,13 +693,13 @@ const getCommentsfun=async(record)=>{
         </div>
       ),
     },
-    {
-      title: "View Documents",
-      key: "viewdocs",
-      render: (_, record) => (
-        <></>
-      ),
-    },
+    // {
+    //   title: "View Documents",
+    //   key: "viewdocs",
+    //   render: (_, record) => (
+    //     <></>
+    //   ),
+    // },
 
     {
       title: "Actions",
@@ -705,6 +709,14 @@ const getCommentsfun=async(record)=>{
           size="small"
           style={{ display: "flex", flexDirection: "column" }}
         >
+          <Button 
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={()=> navigate('/lenderNearbyBorrowers/'+record.user.id)}
+          >
+            Nearby Borrowers
+          </Button>
           <Button
             type="primary"
             icon={<EyeOutlined />}
@@ -713,6 +725,7 @@ const getCommentsfun=async(record)=>{
           >
             Change to Borrower
           </Button>
+
           <Button size="small" onClick={() => viewComments(record)}>
             Change to Test Lender
           </Button>
@@ -729,10 +742,21 @@ const getCommentsfun=async(record)=>{
             size="small"
             onClick={() => writeComments(record)}
           >
-            Write to Comments
+            Add Comments
           </Button>
           <Button size="small" onClick={() => updatedob(record)}>
             Update the DOB
+          </Button>
+          <Button 
+            type="primary"
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => {
+              setSelectedRecord(record);
+              setWriteToUsModal(true);
+            }}
+          >
+            Write to us
           </Button>
         </Space>
       ),
@@ -1021,9 +1045,11 @@ const getCommentsfun=async(record)=>{
         name="withdrawFeedback"
         className="form-control"
         value={comments}
-        onChange={(e) => {setComments(e.target.value);
-                 if (commentsError) setCommentsError('');
-        }}
+        onChange={(e) => {
+                            setComments(e.target.value);
+                            if (commentsError) setCommentsError('');
+                          }
+                    }
         placeholder="Enter Comments"
       />
         {commentsError && (
@@ -1100,6 +1126,11 @@ const getCommentsfun=async(record)=>{
             </Button>
           </Modal.Footer>
         </Modal>
+        <AdminWriteToUs
+          show={writeToUsModal}
+          onHide={() => setWriteToUsModal(false)}
+          lender={selectedRecord}
+        />
       </div>
     </div>
   );

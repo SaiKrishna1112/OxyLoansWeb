@@ -9,6 +9,7 @@ import FeatherIcon from "feather-icons-react";
 import { Admlog, partnerlogin } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
+import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 
 const PartnerLogin = () => {
   const dispatch = useDispatch();
@@ -70,13 +71,12 @@ const PartnerLogin = () => {
     const retriveresponse = await Admlog(userid.substring(2), password);
     if (retriveresponse.request.status == 200) {
       toastrSuccess("Login Success!");
-      if (retriveresponse.data.primaryType == "LENDER") {
-        history("/dashboard");
-      } else if (retriveresponse.data.primaryType == "ADMIN") {
-        history("/dashboard");
-      } else {
-        history("/borrowerDashboard");
+      const pType = retriveresponse.data.primaryType;
+      let defaultPath = "/borrowerDashboard";
+      if (pType === "LENDER" || pType === "ADMIN") {
+        defaultPath = "/dashboard";
       }
+      history(getPostLoginRedirectUrl(defaultPath, pType));
     } else {
       toastrWarning(retriveresponse.response.data.errorMessage);
     }
@@ -90,7 +90,7 @@ const PartnerLogin = () => {
         toastrSuccess("Login Success!");
         console.log(retriveresponse.data.userType)
       if (retriveresponse.data.userType == "PARTNER") {
-        history("/patnerdashboard");
+        history(getPostLoginRedirectUrl("/patnerdashboard", "PARTNER"));
       } 
     } else {
       toastrWarning(retriveresponse.response.data.errorMessage);

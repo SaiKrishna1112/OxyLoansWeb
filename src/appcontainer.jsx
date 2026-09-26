@@ -52,8 +52,13 @@ const Spining = React.lazy(() =>
   import("./components/pages/Oxyloans/Lender/Spining")
 );
 
+<<<<<<< HEAD
 const Loginsso = React.lazy(() =>
   import("./components/pages/Authentication/Loginsso")
+=======
+const Signup = React.lazy(() =>
+  import("./components/pages/Authentication/Signup")
+>>>>>>> feature/ai-lender-chat
 );
 const Loginotp = React.lazy(() =>
   import("./components/pages/Authentication/Loginotp")
@@ -343,11 +348,11 @@ const BorrowerMarketplaceConsent = React.lazy(() =>
 );
 
 const MarketplaceEsign = React.lazy(() =>
-  import("./components/pages/Oxyloans/Borrower/MarketplaceEsign")
+  import("./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEsign")
 );
 
 const MarketplaceEnach = React.lazy(() =>
-  import("./components/pages/Oxyloans/Borrower/MarketplaceEnach")
+  import("./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEnach")
 );
 
 const MyOxyScore = React.lazy(() =>
@@ -386,8 +391,13 @@ export const newRouter = createBrowserRouter([
     errorElement: <Error404></Error404>,
   },
   {
+<<<<<<< HEAD
     path: "/loginsso",
     element: <Loginsso />,
+=======
+    path: "/signup",
+    element: <Signup />,
+>>>>>>> feature/ai-lender-chat
     errorElement: <Error404></Error404>,
   },
   {
@@ -857,7 +867,17 @@ export const newRouter = createBrowserRouter([
     errorElement: <Error404></Error404>,
   },
   {
+    path: "/esign/:loanRequestId/",
+    element: <MarketplaceEsign />,
+    errorElement: <Error404></Error404>,
+  },
+  {
     path: "/enach/:loanRequestId",
+    element: <MarketplaceEnach />,
+    errorElement: <Error404></Error404>,
+  },
+  {
+    path: "/enach/:loanRequestId/",
     element: <MarketplaceEnach />,
     errorElement: <Error404></Error404>,
   },

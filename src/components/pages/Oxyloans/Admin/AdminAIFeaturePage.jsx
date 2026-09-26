@@ -17,6 +17,10 @@ const SELF_LOADING = new Set([
   "cms-payments",
   "cms-lender-payouts",
   "roi-based-deals",
+<<<<<<< HEAD
+=======
+  "deal-intelligence",
+>>>>>>> feature/ai-lender-chat
   "deals-directory",
   "lender-directory",
   "membership-lookup",
@@ -44,12 +48,22 @@ const AdminAIFeaturePageInner = ({ feature }) => {
     feature.id === "membership-lookup" ||
     feature.id === "cms-payments" ||
     feature.id === "cms-lender-payouts" ||
+<<<<<<< HEAD
     feature.id === "roi-based-deals";
+=======
+    feature.id === "roi-based-deals" ||
+    feature.id === "deal-intelligence";
+>>>>>>> feature/ai-lender-chat
 
   const showDashNav =
     feature.id === "cms-payments" ||
     feature.id === "cms-lender-payouts" ||
+<<<<<<< HEAD
     feature.id === "roi-based-deals";
+=======
+    feature.id === "roi-based-deals" ||
+    feature.id === "deal-intelligence";
+>>>>>>> feature/ai-lender-chat
 
   const refreshFeature = () => {
     reload();

@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import "./InvoiceGrid.css";
+<<<<<<< HEAD
 import "./ParticipateOfferBanners.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
@@ -15,6 +16,12 @@ import {
   syncDealFeeFreeGateFromDealApi,
   syncDealFeeFreeGateFromOffers,
 } from "./dealFeeFreeGate";
+=======
+import { handledetail, withdrawriaseapipay } from "../../../HttpRequest/afterlogin";
+import { Button, Table,Tooltip } from "antd";
+import { toastrError } from "../../Base UI Elements/Toast";
+import { participatedapi } from "../../Base UI Elements/SweetAlert";
+>>>>>>> feature/ai-lender-chat
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -53,6 +60,7 @@ const Participatedeal = () => {
     currentUserWallet: 0,
   });
 
+<<<<<<< HEAD
   const [loadError, setLoadError] = useState("");
   const dealLoadStartedRef = useRef(false);
 
@@ -310,25 +318,42 @@ const Participatedeal = () => {
         `Amount below ₹${minInvest.toLocaleString("en-IN")} pays normal fee and keeps the offer ACTIVE.`,
     };
   };
+=======
+>>>>>>> feature/ai-lender-chat
 
   useEffect(() => {
-    if (dealLoadStartedRef.current) {
-      return;
-    }
-    dealLoadStartedRef.current = true;
-
     const handledealinfo = async () => {
-      setDeal((prev) => ({ ...prev, spining: true }));
-      setLoadError("");
       const urlparam = new URLSearchParams(window.location.search);
       const dealId = urlparam.get("dealId");
-      if (!dealId) {
-        const message = "Deal ID is missing from the URL.";
-        setLoadError(message);
-        toastrError(message);
-        setDeal((prev) => ({ ...prev, spining: false }));
-        return;
+      const response = await handledetail(dealId);
+
+      const newObj = { ...response.data };
+      if (newObj.monthlyInterest != 0) {
+        newObj.rateOfInterest = newObj.monthlyInterest + " % PM";
+        newObj["payout"] = "MONTHLY";
+        localStorage.setItem("choosenPayOutOption", "MONTHLY");
+      } else if (newObj.quartlyInterest != 0) {
+        newObj.rateOfInterest = newObj.quartlyInterest * 3 + " % PA ";
+        newObj["payout"] = "QUARTERLY";
+        localStorage.setItem("choosenPayOutOption", "QUARTELY");
+      } else if (newObj.halfInterest != 0) {
+        newObj.rateOfInterest = newObj.halfInterest * 6 + " % PA ";
+        newObj["payout"] = "HALFYEARLY";
+        localStorage.setItem("choosenPayOutOption", "HALFLY");
+      } else if (newObj.yearlyInterest != 0) {
+        newObj.rateOfInterest = newObj.yearlyInterest * 12 + " %  PA ";
+        newObj["payout"] = "YEARLY";
+        localStorage.setItem("choosenPayOutOption", "YEARLY");
+      } else if (newObj.endofthedealInterest != 0) {
+        newObj.rateOfInterest = newObj.endofthedealInterest * 12 + " %  PA ";
+        newObj["payout"] = "ENDOFTHEDEAL";
+        localStorage.setItem("choosenPayOutOption", "ENDOFTHEDEAL");
+      } else if (newObj.perDayInterestRoi != 0 || newObj.perDayInterestAmount != null) {
+        newObj.rateOfInterest = newObj.perDayInterestRoi ==0.0 ? newObj.perDayInterestAmount + " PD " : newObj.perDayInterestRoi + " % PD ";
+        newObj["payout"] = "PERDAY";
+        localStorage.setItem("choosenPayOutOption", "PERDAY");
       }
+<<<<<<< HEAD
 
       try {
         const response = await handledetail(dealId);
@@ -419,6 +444,16 @@ const Participatedeal = () => {
 
         setDeal((prev) => ({
           ...prev,
+=======
+      if (response.request.status == 500) {
+        setDeal({
+          ...deal,
+          spining: true,
+        });
+      } else {
+        setDeal({
+          ...deal,
+>>>>>>> feature/ai-lender-chat
           apidata: newObj,
           urldealId: dealId,
           lenderRemainingPanLimit: newObj.lenderRemainingPanLimit,
@@ -433,14 +468,7 @@ const Participatedeal = () => {
           dealfeestatus: newObj.feeStatusToParticipate,
           uservalidity: newObj.lenderValidityStatus,
           groupName: newObj.groupName,
-          spining: false,
-        }));
-        setLoadError("");
-      } catch (error) {
-        const message = "Unable to load deal information. Please try again.";
-        setLoadError(message);
-        toastrError(message);
-        setDeal((prev) => ({ ...prev, spining: false }));
+        });
       }
     };
 
@@ -455,47 +483,41 @@ const Participatedeal = () => {
   });
 
   useEffect(() => {
+    const urlparam = new URLSearchParams(window.location.search);
+    const amount = urlparam.get("amount");
+
     const withdrawriase = async () => {
-      try {
-        const response = await withdrawriaseapipay(null);
-        if (response?.status === 200 && response.data) {
-          const walletAmount = response.data.amount;
-          setWithdrawriaseapi({
-            message: response.data.status,
-            amount:
-              walletAmount === null || walletAmount === undefined
-                ? ""
-                : String(walletAmount),
-            status: null,
-          });
-        }
-      } catch (error) {
-        /* wallet balance is optional for deal page */
+      const response = await withdrawriaseapipay(withdrawriaseapi.status);
+
+      if (response.status === 200) {
+        setWithdrawriaseapi({
+          message: response.data.status,
+          amount: response.data.amount,
+          status: withdrawriaseapi.status // keep the current status
+        });
+      } else {
+        setWithdrawriaseapi({
+          message: null,
+          amount: "",
+          status: withdrawriaseapi.status // keep the current status
+        });
       }
     };
 
     withdrawriase();
-  }, []);
+  }, [withdrawriaseapi.status]);
 
   useEffect(() => {
-    const walletAmount = withdrawriaseapi.amount;
-    if (walletAmount === "" || walletAmount === null || walletAmount === undefined) {
-      return;
-    }
-    const walletNum = Number(walletAmount);
-    if (!Number.isFinite(walletNum)) {
-      return;
-    }
-
     const urlparam = new URLSearchParams(window.location.search);
     const amountFromURL = urlparam.get("amount");
-    const urlNum = Number(amountFromURL);
-    if (Number.isFinite(urlNum) && urlNum === walletNum) {
-      return;
-    }
 
-    urlparam.set("amount", String(walletNum));
-    window.history.replaceState({}, "", `${window.location.pathname}?${urlparam.toString()}`);
+    if (parseInt(amountFromURL) !== parseInt(withdrawriaseapi.amount)) {
+      urlparam.set("amount", withdrawriaseapi.amount);
+      window.history.replaceState({}, '', `${window.location.pathname}?${urlparam.toString()}`);
+
+
+
+    }
   }, [withdrawriaseapi.amount]);
 
 
@@ -708,10 +730,7 @@ const Participatedeal = () => {
 
 
   const dataSource = [];
-  const rateOfInterest =
-    deal.apidata && deal.apidata !== ""
-      ? parseFloat(deal.apidata.rateOfInterest)
-      : NaN;
+  const rateOfInterest = parseFloat(deal.apidata.rateOfInterest);
   deal.apidata && deal.apidata != ""
     ? dataSource.push({
       key: Math.random(),
@@ -770,20 +789,6 @@ const Participatedeal = () => {
                 {" "}
                 <Spining />
               </>
-            ) : loadError ? (
-              <div className="alert alert-danger text-center m-5" role="alert">
-                <h5 className="mb-2">Could not load deal</h5>
-                <p className="mb-3">{loadError}</p>
-                <Button
-                  type="primary"
-                  onClick={() => {
-                    dealLoadStartedRef.current = false;
-                    window.location.reload();
-                  }}
-                >
-                  Retry
-                </Button>
-              </div>
             ) : (
               <>
                 <p>Welcome to {deal.apidata && deal.apidata.dealName}</p>
@@ -841,23 +846,27 @@ const Participatedeal = () => {
                   </div>
                 </div>
 
-                {showValidityExpiredNote && (
+                {deal.apidata.lenderValidityStatus == true && (
                   <div className="row notepoint text-center m-5 align-self-center">
-                    {deal.apidata.feeStatusToParticipate == "OPTIONAL" ? (
+                    {deal.apidata.feeStatusToParticipate == "OPTIONAL" &&
+                      deal.apidata.lenderValidityStatus == true ? (
                       <h4 className="text-bold font-monospace">
                         <code>Note :</code> Processing Fee is waived for this
                         deal.
                       </h4>
-                    ) : deal.apidata.groupName != "NewLender" ? (
+                    ) : deal.apidata.lenderValidityStatus == true &&
+                      deal.apidata.groupName != "NewLender" ? (
                       <h4 className="text-bold fs-4 fw-light textquery">
                         <code>Note :</code> Your validity has expired. Please
                         pay to continue your participation.
                       </h4>
-                    ) : (
+                    ) : deal.apidata.lenderValidityStatus == true &&
+                      deal.apidata.groupName == "NewLender" ? (
                       <h4 className="text-bold fs-4 fw-light">
                         <code>Note :</code> You are requested to pay a 1%
                         processing fee on your investment.
                       </h4>
+<<<<<<< HEAD
                     )}
                   </div>
                 )}
@@ -979,6 +988,9 @@ const Participatedeal = () => {
                         : ""}
                       Your free membership period has ended. Normal participation fee / membership payment applies for this deal.
                     </p>
+=======
+                    ) : null}
+>>>>>>> feature/ai-lender-chat
                   </div>
                 )}
 
@@ -997,22 +1009,7 @@ const Participatedeal = () => {
                       onChange={handleChange}
                     />
                   </div>
-                  {deal.participatedAmount !== 0 &&
-                    deal.participatedAmount !== "" &&
-                    deal.participatedAmount !== null &&
-                    shouldShowPaymentSection && (
-                      <div className="error">
-                        {offerAmountTooLow
-                          ? "Normal participation fee applies (1% + 18% GST) of ₹ "
-                          : "This deal has a fee (1% + 18% GST) of ₹ "}
-                        {Math.round(deal.participatedAmount * 0.01 * 1.18)}.
-                        {offerAmountTooLow
-                          ? ` Offer fee waiver needs at least ₹${OFFER_MIN_PARTICIPATION.toLocaleString(
-                              "en-IN"
-                            )}.`
-                          : ""}
-                      </div>
-                    )}
+                  {deal.participatedAmount!==0 && deal.participatedAmount !== "" && deal.participatedAmount !== null && deal.dealfeestatus !== "OPTIONAL" && deal.uservalidity === true && <div className="error">This deal has a fee(1% + 18% GST) of ₹ {Math.round((deal.participatedAmount * 0.01) * 1.18)}. </div>}
                   {console.log(typeof (withdrawriaseapi.amount), withdrawriaseapi.amount)}
                   {withdrawriaseapi.amount !== "" && withdrawriaseapi.amount !== null ? (
                     <div className="error">Actual wallet amount after withdrawal request: ₹ {withdrawriaseapi.amount}.</div>
