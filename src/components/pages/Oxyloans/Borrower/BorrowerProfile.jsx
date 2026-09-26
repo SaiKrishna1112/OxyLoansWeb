@@ -61,7 +61,7 @@ import {
   validateIfscCode,
   isBankNameMatching,
   validateMobileNumber,
-} from "../../../../../utils/borrowerValidation";
+} from "../../../../utils/borrowerValidation";
 import { error } from "jquery";
 
 const BorrowerProfile = () => {

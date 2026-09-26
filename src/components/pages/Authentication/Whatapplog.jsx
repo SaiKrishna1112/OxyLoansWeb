@@ -157,7 +157,6 @@ const Whatapplog = () => {
           sessionStorage.setItem("userId", data.data.id);
           sessionStorage.setItem("tokenTime", data.data.tokenGeneratedTime);
           if (accessToken != null) {
-<<<<<<< HEAD
             if (data.data.primaryType == "LENDER") {
               history("/lenderAIDashboard/" + data.data.id);
             } else if (data.data.primaryType == "ADMIN") {
@@ -165,13 +164,6 @@ const Whatapplog = () => {
             }
             else if (data.data.primaryType == "BORROWER") {
               history("/borrowerDashboard");
-=======
-            const pType = data.data.primaryType;
-            if (pType === "LENDER" || pType === "ADMIN") {
-              history(getPostLoginRedirectUrl("/dashboard", pType));
-            } else if (pType === "BORROWER") {
-              history(getPostLoginRedirectUrl("/borrowerDashboard", pType));
->>>>>>> feature/ai-lender-chat
             } else {
               toastrError("Try to Login of Lender Only");
             }
@@ -305,7 +297,6 @@ const Whatapplog = () => {
                             <GoogleLoginButton />
                           </div>
                           {/* Social Login */}
-<<<<<<< HEAD
                           <div className="social-login">
                             <Link
                               to="/"
@@ -316,52 +307,8 @@ const Whatapplog = () => {
                               <Link to="/loginotp" className="bg-success text-white">
                           <i class="fa-solid fa-phone"></i>{" "}
                         </Link>
-=======
-                          <Link to="/" 
-                              style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: 10,
-                                  width: "100%",
-                                  padding: "10px 16px",
-                                  background: "#fff",
-                                  border: "1.5px solid #ddd",
-                                  borderRadius: 8,
-                                  fontSize: 15,
-                                  fontWeight: 600,
-                                  color: "#3c4043",
-                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                                  marginBottom: 15,
-                                  height: "40px",
-                                }}>
-                          <i class="fa-solid fa-mobile-screen-button" style={{ fontSize: 18, color: "#2563EB" }} /> Login with Mobile OTP
-                        </Link>
-                            <Link
-                              to="/login"
-                              style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: 10,
-                                  width: "100%",
-                                  padding: "10px 16px",
-                                  background: "#fff",
-                                  border: "1.5px solid #ddd",
-                                  borderRadius: 8,
-                                  fontSize: 15,
-                                  fontWeight: 600,
-                                  color: "#3c4043",
-                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                                  marginBottom: 2,
-                                  height: "40px",
-                                }}
-                            >
-                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Email
-                            </Link>
-                              
->>>>>>> feature/ai-lender-chat
                           </div>
+                        </div>
                       </>
                     ) : (
                       <>

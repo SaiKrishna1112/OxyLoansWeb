@@ -59,7 +59,7 @@ import {
   validatePincode,
   validateName,
   validatePanNumber,
-} from "../../../../../../utils/borrowerValidation";
+} from "../../../../../utils/borrowerValidation";
 
 const Profile = () => {
   const navigate = useNavigate();

@@ -183,7 +183,6 @@ const Loginotp = () => {
           return;
         }
         toastrSuccess("Login Success!");
-<<<<<<< HEAD
 
         const role = retriveresponse.data.primaryType;
         if (role === "LENDER") {
@@ -192,21 +191,7 @@ const Loginotp = () => {
           history("/oxyloansadmindashboard");
         } else {
           history("/borrowerDashboard");
-=======
-        // Link Google account if user came via Google flow (non-blocking)
-        if (googleModal?.pendingLink && googleModal?.accessToken) {
-          try {
-            await axios.post(
-              `${BASE_URL}/v1/user/${retriveresponse.data?.id}/linkGoogleAccount`,
-              { accessToken: googleModal.accessToken },
-              { headers: { "Content-Type": "application/json", accessToken: sessionStorage.getItem("accessToken") } }
-            );
-            toastrSuccess("Google account linked! Next time you can login with Google directly.");
-          } catch (e) { /* non-blocking */ }
-          setGoogleModal(null);
->>>>>>> feature/ai-lender-chat
         }
-        const role = retriveresponse.data.primaryType;
         Swal.fire({
             title: "Login Success!",
             text: `Welcome back, Valued ${role}! Your trust drives us to serve you better every day.`,

@@ -21,7 +21,6 @@ import {
   withdrawriaseapipay,
 } from "../../HttpRequest/afterlogin";
 import { toastrSuccess } from "./Toast";
-<<<<<<< HEAD
 import { markUnclaimedDealFeeFree } from "../Oxyloans/Lender/dealFeeFreeGate";
 
 export const OFFER_MIN_PARTICIPATION = 10000;
@@ -303,8 +302,6 @@ const participateWithoutFee = (deal) => {
     }
   });
 };
-=======
->>>>>>> feature/ai-lender-chat
 
 // Inside your component
 export const HandleClick = () => {
@@ -604,7 +601,6 @@ export const participatedapi = async (deal) => {
     confirmButtonText: "Ok!",
   }).then((result) => {
     if (result.isConfirmed) {
-<<<<<<< HEAD
       // Fee waived when: (1) Deal Fee Free amount >= ₹10,000 → claim + free month, OR
       // (2) no unclaimed Deal Fee Free and membership already covers the fee.
       if (isParticipationFeeWaived(deal.apidata, deal.participatedAmount)) {
@@ -662,146 +658,12 @@ export const participatedapi = async (deal) => {
                 ? `Participation fee waived. Free ${months}-month membership is now active.`
                 : `Participation fee waived. This offer is now claimed.`;
 
-=======
-      if (deal.apidata.feeStatusToParticipate == "OPTIONAL") {
-        const response = dealparticipationValidityUser(deal);
-        response.then((data) => {
-          if (data.request.status === 200) {
-            Swal.fire({
-              title: "Congratulations!",
-              text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName}. `,
-              icon: "success",
-              showCancelButton: true,
-              confirmButtonColor: "#3085d6",
-              cancelButtonColor: "#d33",
-              confirmButtonText: "OK",
-            }).then((result) => {
-              if (result.isConfirmed) {
-                window.location.reload();
-                navigate("/myRunningDeals");
-              }
-            });
-          } else {
-            Swal.fire({
-              title: "Error!",
-              text: `${data.response.data.errorMessage}`,
-              icon: "error",
-              showCancelButton: true,
-              confirmButtonColor: "#3085d6",
-              cancelButtonColor: "#d33",
-              confirmButtonText: "OK",
-            });
-          }
-        });
-      } else {
-        if (deal.apidata.groupName == "NewLender") {
-          const response = newlenderdealparticipation(deal);
-          var newLenderFeePercentage =
-            (parseInt(deal.participatedAmount) * 1) / 100;
-          var newLenderGstAndFeeCalculation =
-            (newLenderFeePercentage * 118) / 100;
-          response.then((data) => {
-            if (data.request.status === 200) {
-              Swal.fire({
-                title: "Congratulations!",
-                text: `We are reserving ${deal.participatedAmount} for ${deal.apidata.dealName} .please pay the INR ${newLenderGstAndFeeCalculation}
-					    	 for the deal processing fee. `,
-                icon: "success",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "Pay Fee",
-              }).then(async (result) => {
-                if (result.isConfirmed) {
-                  const res = feeapicallforonedeal(
-                    newLenderGstAndFeeCalculation,
-                    deal.urldealId
-                  );
-                  res.then((data) => {
-                    if (data.request.status === 200) {
-                      Swal.fire({
-                        title: "Congratulations!",
-                        text: `You have successfully paid the fee`,
-                        icon: "success",
-                        showCancelButton: true,
-                        cancelButtonText: "cancel",
-                        showConfirmButton: true,
-                        confirmButtonText: "ok",
-                      });
-                    } else {
-                      Swal.fire({
-                        title: "Error!",
-                        text: `${data.response.data.errorMessage}`,
-                        icon: "error",
-                        showCancelButton: true,
-                        cancelButtonText: "cancel",
-                        showConfirmButton: true,
-                        confirmButtonText: "ok",
-                      });
-                    }
-                  });
-                }
-              });
-            } else {
-              console.log(data.response);
-
-              if (data.response.data.errorCode == "123") {
-                let paymentErrormessage =
-                  data.response.data.errorMessage.match(/\d+(\.\d+)?/g);
-
-                Swal.fire({
-                  title: "Fee Alert",
-                  text: `${data.response.data.errorMessage}`, // Displaying the error message
-                  icon: "info",
-                  showCancelButton: true,
-                  cancelButtonText: "cancel",
-                  showConfirmButton: true,
-                  confirmButtonText: "Wallet",
-                }).then(async (result) => {
-                  if (result.isConfirmed) {
-                    paypendingprocessingAmount(
-                      paymentErrormessage[1],
-                      parseInt(paymentErrormessage[0])
-                    );
-                  }
-                });
-              } else {
-                Swal.fire({
-                  title: "Error!",
-                  text: `${data.response.data.errorMessage}`, // Displaying the error message
-                  icon: "error",
-                  showCancelButton: true,
-                  cancelButtonText: "cancel",
-                  showConfirmButton: true,
-                  confirmButtonText: "ok",
-                });
-              }
-            }
-          });
-        } else if (
-          deal.apidata.lenderValidityStatus == true &&
-          deal.apidata.groupName != "NewLender"
-        ) {
-          const membershipExpiredUser = membership(
-            deal.urldealId,
-            deal,
-            deal.participatedAmount
-          );
-        } else if (
-          deal.apidata.lenderValidityStatus == false &&
-          deal.apidata.groupName != "NewLender"
-        ) {
-          const response = dealparticipationValidityUser(deal);
-          response.then((data) => {
-            if (data.request.status === 200) {
->>>>>>> feature/ai-lender-chat
               Swal.fire({
                 title: "Offer Claimed Successfully!",
                 text: offerPopupText,
                 icon: "success",
                 confirmButtonColor: "#198754",
                 confirmButtonText: "OK",
-<<<<<<< HEAD
                 showCancelButton: false,
               }).then((r) => {
                 if (r.isConfirmed) {
@@ -825,70 +687,12 @@ export const participatedapi = async (deal) => {
             showPendingFeeOrErrorAlert(data?.response?.data);
           }
         });
-=======
-              }).then((result) => {
-              if (result.isConfirmed) {
-                window.location.reload();
-                navigate("/myRunningDeals");
-              }
-            });
-            } else {
-              console.log(data.response);
-              //           if (data.response.status === 403) {
-              //   Swal.fire({
-              //     title: "Error!",
-              //     text: `${data.response.data.errorMessage}`,
-              //     icon: "error",
-              //     showCancelButton: true,
-              //     cancelButtonText: "Cancel",
-              //     showConfirmButton: true,
-              //     confirmButtonText: "OK",
-              //   }).then(async (result) => {
-              //     if (result.isConfirmed) {
-              //       try {
-              //         const res = await feeapicallforonedeal(newLenderGstAndFeeCalculation, deal.urldealId);
-              //         if (res.request.status === 200) {
-              //           Swal.fire({
-              //             title: "Congratulations!",
-              //             text: `You have successfully paid the fee`,
-              //             icon: "success",
-              //             showCancelButton: true,
-              //             cancelButtonText: "Cancel",
-              //             showConfirmButton: true,
-              //             confirmButtonText: "OK",
-              //           });
-              //         }
-              //       } catch (error) {
-              //         console.error("Error while making fee API call:", error);
-              //         Swal.fire({
-              //           title: "Error!",
-              //           text: "There was an error processing your request. Please try again later.",
-              //           icon: "error",
-              //         });
-              //       }
-              //     }
-              //   });
-              // }
-              Swal.fire({
-                title: "Error!",
-                text: `${data.response.data.errorMessage}`,
-                icon: "error",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "ok",
-              });
-            }
-          });
-        }
->>>>>>> feature/ai-lender-chat
       }
     }
   });
 };
 
 export const membership = async (dealId, dealInfo, participatedAmount) => {
-<<<<<<< HEAD
   if (isParticipationFeeWaived(dealInfo?.apidata, participatedAmount)) {
     participateWithoutFee(dealInfo);
     return;
@@ -903,8 +707,6 @@ export const membership = async (dealId, dealInfo, participatedAmount) => {
     return;
   }
 
-=======
->>>>>>> feature/ai-lender-chat
   let amount;
   let calculate;
   const tenure = {
@@ -990,19 +792,7 @@ if(choosenPayoutMethod == "PerDeal"){
                 confirmButtonText: "ok",
               });
             } else {
-<<<<<<< HEAD
               showPendingFeeOrErrorAlert(data?.response?.data);
-=======
-              Swal.fire({
-                title: "Error!",
-                text: `${data.response.data.errorMessage}`,
-                icon: "error",
-                showCancelButton: true,
-                cancelButtonText: "cancel",
-                showConfirmButton: true,
-                confirmButtonText: "ok",
-              });
->>>>>>> feature/ai-lender-chat
             }
           });
         }
@@ -1031,19 +821,7 @@ if(choosenPayoutMethod == "PerDeal"){
           }
         });
       } else {
-<<<<<<< HEAD
         showPendingFeeOrErrorAlert(data.response.data);
-=======
-        Swal.fire({
-          title: "Error!",
-          text: `${data.response.data.errorMessage}`, // Displaying the error message
-          icon: "error",
-          showCancelButton: true,
-          cancelButtonText: "cancel",
-          showConfirmButton: true,
-          confirmButtonText: "ok",
-        });
->>>>>>> feature/ai-lender-chat
       }
     }
   });

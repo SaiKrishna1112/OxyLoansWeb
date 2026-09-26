@@ -268,7 +268,6 @@ export default function LenderUpgradePortal() {
 
   // ── Plans Screen ──────────────────────────────────────────────
   return (
-<<<<<<< HEAD
     <div style={styles.page}>
       <div style={{ maxWidth: 800, margin: "0 auto", padding: "30px 16px" }}>
 
@@ -276,18 +275,6 @@ export default function LenderUpgradePortal() {
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <img
             src="/assets/img/logo.png"
-=======
-    <div className="main-wrapper">
-      <Header />
-      <SideBar />
-      <div className="page-wrapper">
-        <div style={styles.page}>
-          <div style={{ margin: "0 auto", padding: "30px 16px" }}>
-            {/* Header */}
-            <div style={{ textAlign: "center", marginBottom: 28 }}>
-              {/* <img
-            src="../../../assets/img/logo.png"
->>>>>>> feature/ai-lender-chat
             alt="OxyLoans"
             style={{ height: 36, marginBottom: 10 }}
             onError={(e) => { e.target.style.display = "none"; }}
@@ -299,7 +286,6 @@ export default function LenderUpgradePortal() {
                 Unlock AI-powered insights on your lending portfolio
               </p>
 
-<<<<<<< HEAD
           {!onTrial && validUntil && (
             <span style={{
               background: isPaidPro ? "#f0e6ff" : "#e6f4ff",
@@ -319,36 +305,10 @@ export default function LenderUpgradePortal() {
             >
               ← Dashboard
             </button>
-=======
-              {!onTrial && validUntil && (
-                <span
-                  style={{
-                    background: isPaidPro ? "#f0e6ff" : "#e6f4ff",
-                    color: isPaidPro ? "#722ed1" : "#1890ff",
-                    borderRadius: 20,
-                    padding: "4px 16px",
-                    fontSize: 13,
-                    fontWeight: 600,
-                    display: "inline-block",
-                    marginTop: 8,
-                  }}
-                >
-                  {currentTier} Plan · Valid until{" "}
-                  {new Date(validUntil).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              )}
-
-              {/* <div style={{ marginTop: 8 }}>
->>>>>>> feature/ai-lender-chat
             <button onClick={handleLogout} style={styles.linkBtn}>Logout</button>
           </div> */}
             </div>
 
-<<<<<<< HEAD
         {/* Free trial banner */}
         {onTrial && (
           <div style={{
@@ -485,38 +445,6 @@ export default function LenderUpgradePortal() {
                   >
                     {btnLabel}
                   </button>
-=======
-            {/* Free trial banner */}
-            {onTrial && (
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)",
-                  borderRadius: 14,
-                  padding: "16px 24px",
-                  marginBottom: 24,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 12,
-                }}
-              >
-                <div>
-                  <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                    🎁 Free PRO trial — ends August 1st
-                  </div>
-                  <div
-                    style={{
-                      color: "rgba(255,255,255,0.8)",
-                      fontSize: 13,
-                      marginTop: 3,
-                    }}
-                  >
-                    Subscribe now and your plan stays valid until{" "}
-                    <strong>August 1, 2027</strong>
-                  </div>
->>>>>>> feature/ai-lender-chat
                 </div>
                 <span
                   style={{
@@ -805,15 +733,11 @@ export default function LenderUpgradePortal() {
               before renewal
             </p>
           </div>
-<<<<<<< HEAD
         )}
 
         <p style={{ textAlign: "center", color: "#bfbfbf", fontSize: 12, marginTop: 32 }}>
           Annual subscription · Auto-renews on expiry · Cancel anytime before renewal
         </p>
-=======
-        </div>
->>>>>>> feature/ai-lender-chat
       </div>
     </div>
   );

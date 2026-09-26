@@ -30,10 +30,6 @@ import AdminWalletHubPanel from "./AdminWalletHubPanel";
 import {
   CmsPayoutsFullReport,
   RoiBasedDealsFullReport,
-<<<<<<< HEAD
-=======
-  DealIntelligenceFullReport,
->>>>>>> feature/ai-lender-chat
   MonthlyPayoutFullReport,
   BorrowerAccountsFullReport,
   BorrowerFeesFullReport,
@@ -269,10 +265,6 @@ export const buildFeatureLoader = (feature, fy, cache = {}) => {
     case "cms-payments":
     case "cms-lender-payouts":
     case "roi-based-deals":
-<<<<<<< HEAD
-=======
-    case "deal-intelligence":
->>>>>>> feature/ai-lender-chat
       return async () => ({ ready: true });
 
     case "fy-earners":
@@ -660,13 +652,8 @@ export const getFeaturePreviewStats = (featureId, ctx, fy) => {
       ];
     case "roi-based-deals":
       return [
-<<<<<<< HEAD
         { label: "ROI", value: "Deals" },
         { label: "Lenders", value: "Active / Closed" },
-=======
-        { label: "ROI", value: "Monthly" },
-        { label: "Deals", value: "Search" },
->>>>>>> feature/ai-lender-chat
       ];
     case "borrower-summary":
       return [

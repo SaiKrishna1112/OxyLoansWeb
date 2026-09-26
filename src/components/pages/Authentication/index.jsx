@@ -6,11 +6,6 @@ import FeatherIcon from "feather-icons-react";
 import { Admlog, userloginSection } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
-<<<<<<< HEAD
-=======
-import { BsWhatsapp } from "react-icons/bs";
-import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
->>>>>>> feature/ai-lender-chat
 import GoogleLoginButton from "./GoogleLoginButton";
 
 const Login = () => {
@@ -99,7 +94,6 @@ const Login = () => {
         sessionStorage.setItem("email", retriveresponse.data.email);
         // sessionStorage.setItem("accessToken", retriveresponse.data.accessToken)
         // alert(retriveresponse.data.accessToken)
-<<<<<<< HEAD
         if (retriveresponse.data.primaryType == "LENDER") {
           history("/lenderAIDashboard/" + retriveresponse.data.id);
         } else if (retriveresponse.data.primaryType == "ADMIN") {
@@ -109,14 +103,6 @@ const Login = () => {
         } 
         else {
           history("/borrowerDashboard");
-=======
-        const pType = retriveresponse.data.primaryType;
-        let defaultPath = "/borrowerDashboard";
-        if (pType === "LENDER") {
-          defaultPath = "/ai/portfolio";
-        } else if (pType === "ADMIN" || pType === "HELPDESKADMIN") {
-          defaultPath = "/oxyloansadmindashboard";
->>>>>>> feature/ai-lender-chat
         }
         history(getPostLoginRedirectUrl(defaultPath, pType));
       } else {

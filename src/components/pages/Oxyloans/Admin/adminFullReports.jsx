@@ -14,11 +14,7 @@ import {
   PriorityTier,
 } from "./adminReportKit";
 import AdminCmsPaymentsPanel from "./AdminCmsPaymentsPanel";
-<<<<<<< HEAD
 import AdminRoiDealsPanel from "./AdminRoiDealsPanel";
-=======
-import AdminRoiDealsPanel, { AdminDealIntelligencePanel } from "./AdminRoiDealsPanel";
->>>>>>> feature/ai-lender-chat
 import AdminBorrowerOverview from "./AdminBorrowerOverview";
 import AdminFdStatistics from "./AdminFdStatistics";
 import AdminBorrowerFdHubPanel from "./AdminBorrowerFdHubPanel";
@@ -61,13 +57,6 @@ export const RoiBasedDealsFullReport = () => (
   <AdminRoiDealsPanel fullPage />
 );
 
-<<<<<<< HEAD
-=======
-export const DealIntelligenceFullReport = () => (
-  <AdminDealIntelligencePanel />
-);
-
->>>>>>> feature/ai-lender-chat
 export const MonthlyPayoutFullReport = ({ platform, fy }) => {
   const [chartType, setChartType] = useState("bar");
   const monthlyTrend = platform?.monthlyTrend || [];

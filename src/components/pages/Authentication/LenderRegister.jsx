@@ -24,40 +24,6 @@ export default function LenderRegister() {
   const [response1, setResponse] = useState({});
   const [userLocation, setUserLocation] = useState({ latitude: null, longitude: null });
   const [gmailPrefill, setGmailPrefill] = useState(null);
-<<<<<<< HEAD
-=======
-  const [resendTimer, setResendTimer] = useState(30);
-  const [loadingResend, setLoadingResend] = useState(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (!field && !submitotp && resendTimer > 0) {
-      interval = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [field, submitotp, resendTimer]);
-
-  const handleResendOtp = async () => {
-    setLoadingResend(true);
-    try {
-      const RegisterResponse = await api.RegisterUser(registrationField.moblie);
-      localStorage.setItem("seesion", RegisterResponse);
-      toastrSuccess("OTP resent successfully!");
-      setError("");
-      setResendTimer(30);
-    } catch (err) {
-      const errMsg = err.response?.data?.errorMessage || "Failed to resend OTP";
-      setError(errMsg);
-      toastrWarning(errMsg);
-    } finally {
-      setLoadingResend(false);
-    }
-  };
->>>>>>> feature/ai-lender-chat
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -229,13 +195,9 @@ export default function LenderRegister() {
     if (gmailPrefill) {
       try {
         const res = await axios.post(API_USER_URL + "registerLenderWithGoogle", {
-<<<<<<< HEAD
           googleAccessToken: gmailPrefill.googleAccessToken,
           mobileNumber: gmailPrefill.mobile,
           email: gmailPrefill.email,
-=======
-          mobileNumber: gmailPrefill.mobile,
->>>>>>> feature/ai-lender-chat
           nameAsPan: registrationField.pancard,
           password: registrationField.password || "",
           referrerId: registrationField.referrerId || "",
@@ -256,11 +218,7 @@ export default function LenderRegister() {
           navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now());
         } else {
           toastrWarning("Registration succeeded but login failed. Please login.");
-<<<<<<< HEAD
           navigate("/loginsso");
-=======
-          navigate("/loginotp");
->>>>>>> feature/ai-lender-chat
         }
       } catch (err) {
         const errMsg = err?.response?.data?.errorMessage || "Registration failed. Please try again.";
@@ -431,24 +389,10 @@ export default function LenderRegister() {
     const refParam = searchParams.get("ref");
 
     if (refParam) {
-<<<<<<< HEAD
       setRegistrationField(prev => ({
         ...prev,
         referrerId: refParam,
       }));
-=======
-      setRegistrationField((prev) => ({
-        ...prev,
-        referrerId: refParam,
-      }));
-      validateReferrerId(refParam);
-    } else {
-      setRegistrationField((prev) => ({
-        ...prev,
-        referrerId: "",
-      }));
-      localStorage.setItem("uniqnumber", "0");
->>>>>>> feature/ai-lender-chat
     }
   }, []);
 
@@ -546,11 +490,7 @@ export default function LenderRegister() {
                             className="form-control"
                             type="email"
                             name="email"
-<<<<<<< HEAD
                             maxLength={35}
-=======
-                            maxLength={100}
->>>>>>> feature/ai-lender-chat
                             value={registrationField.email}
                             readOnly={!!gmailPrefill}
                             onChange={gmailPrefill ? undefined : handlechange}

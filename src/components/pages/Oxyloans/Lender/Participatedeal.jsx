@@ -4,7 +4,6 @@ import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import Footer from "../../../Footer/Footer";
 import "./InvoiceGrid.css";
-<<<<<<< HEAD
 import "./ParticipateOfferBanners.css";
 import { handledetail, withdrawriaseapipay, getUserReactivationOffers } from "../../../HttpRequest/afterlogin";
 import { Button, Table,Tooltip } from "antd";
@@ -16,12 +15,6 @@ import {
   syncDealFeeFreeGateFromDealApi,
   syncDealFeeFreeGateFromOffers,
 } from "./dealFeeFreeGate";
-=======
-import { handledetail, withdrawriaseapipay } from "../../../HttpRequest/afterlogin";
-import { Button, Table,Tooltip } from "antd";
-import { toastrError } from "../../Base UI Elements/Toast";
-import { participatedapi } from "../../Base UI Elements/SweetAlert";
->>>>>>> feature/ai-lender-chat
 import Spining from "./Spining";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -60,7 +53,6 @@ const Participatedeal = () => {
     currentUserWallet: 0,
   });
 
-<<<<<<< HEAD
   const [loadError, setLoadError] = useState("");
   const dealLoadStartedRef = useRef(false);
 
@@ -318,43 +310,11 @@ const Participatedeal = () => {
         `Amount below ₹${minInvest.toLocaleString("en-IN")} pays normal fee and keeps the offer ACTIVE.`,
     };
   };
-=======
->>>>>>> feature/ai-lender-chat
 
   useEffect(() => {
     const handledealinfo = async () => {
       const urlparam = new URLSearchParams(window.location.search);
       const dealId = urlparam.get("dealId");
-      const response = await handledetail(dealId);
-
-      const newObj = { ...response.data };
-      if (newObj.monthlyInterest != 0) {
-        newObj.rateOfInterest = newObj.monthlyInterest + " % PM";
-        newObj["payout"] = "MONTHLY";
-        localStorage.setItem("choosenPayOutOption", "MONTHLY");
-      } else if (newObj.quartlyInterest != 0) {
-        newObj.rateOfInterest = newObj.quartlyInterest * 3 + " % PA ";
-        newObj["payout"] = "QUARTERLY";
-        localStorage.setItem("choosenPayOutOption", "QUARTELY");
-      } else if (newObj.halfInterest != 0) {
-        newObj.rateOfInterest = newObj.halfInterest * 6 + " % PA ";
-        newObj["payout"] = "HALFYEARLY";
-        localStorage.setItem("choosenPayOutOption", "HALFLY");
-      } else if (newObj.yearlyInterest != 0) {
-        newObj.rateOfInterest = newObj.yearlyInterest * 12 + " %  PA ";
-        newObj["payout"] = "YEARLY";
-        localStorage.setItem("choosenPayOutOption", "YEARLY");
-      } else if (newObj.endofthedealInterest != 0) {
-        newObj.rateOfInterest = newObj.endofthedealInterest * 12 + " %  PA ";
-        newObj["payout"] = "ENDOFTHEDEAL";
-        localStorage.setItem("choosenPayOutOption", "ENDOFTHEDEAL");
-      } else if (newObj.perDayInterestRoi != 0 || newObj.perDayInterestAmount != null) {
-        newObj.rateOfInterest = newObj.perDayInterestRoi ==0.0 ? newObj.perDayInterestAmount + " PD " : newObj.perDayInterestRoi + " % PD ";
-        newObj["payout"] = "PERDAY";
-        localStorage.setItem("choosenPayOutOption", "PERDAY");
-      }
-<<<<<<< HEAD
-
       try {
         const response = await handledetail(dealId);
         const status = response?.status ?? response?.response?.status;
@@ -444,16 +404,6 @@ const Participatedeal = () => {
 
         setDeal((prev) => ({
           ...prev,
-=======
-      if (response.request.status == 500) {
-        setDeal({
-          ...deal,
-          spining: true,
-        });
-      } else {
-        setDeal({
-          ...deal,
->>>>>>> feature/ai-lender-chat
           apidata: newObj,
           urldealId: dealId,
           lenderRemainingPanLimit: newObj.lenderRemainingPanLimit,
@@ -468,7 +418,12 @@ const Participatedeal = () => {
           dealfeestatus: newObj.feeStatusToParticipate,
           uservalidity: newObj.lenderValidityStatus,
           groupName: newObj.groupName,
-        });
+        }));
+      } catch (err) {
+        const message = err?.message || "Failed to load deal info. Please try again.";
+        setLoadError(message);
+        toastrError(message);
+        setDeal((prev) => ({ ...prev, spining: false }));
       }
     };
 
@@ -866,8 +821,7 @@ const Participatedeal = () => {
                         <code>Note :</code> You are requested to pay a 1%
                         processing fee on your investment.
                       </h4>
-<<<<<<< HEAD
-                    )}
+                    ) : null}
                   </div>
                 )}
 
@@ -988,9 +942,6 @@ const Participatedeal = () => {
                         : ""}
                       Your free membership period has ended. Normal participation fee / membership payment applies for this deal.
                     </p>
-=======
-                    ) : null}
->>>>>>> feature/ai-lender-chat
                   </div>
                 )}
 

@@ -15,7 +15,6 @@ import {
   getMembershipDetails,
 } from "../../../HttpRequest/afterlogin";
 import {
-<<<<<<< HEAD
   fetchSubscriptionOffer,
   getFinalSubscriptionAmount,
   formatRupee,
@@ -26,8 +25,6 @@ import {
 import { shouldHideMembershipOffers } from "./dealFeeFreeGate";
 import ActiveOfferPopup from "./ActiveOfferPopup";
 import {
-=======
->>>>>>> feature/ai-lender-chat
   registersuccess,
   WarningAlertwithdrow,
   membershipsweetalert,
@@ -371,7 +368,6 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                       </h6>
                       </div>
                     <div className="row">
-<<<<<<< HEAD
                       {activeMembership && (
                         <div className="col-12 mb-3">
                           <div className="alert alert-info subscription-offer-banner mb-0">
@@ -398,8 +394,6 @@ const membershipsweetalertconformation = (membership, no, feeAmountWithGst) => {
                           </div>
                         </div>
                       )}
-=======
->>>>>>> feature/ai-lender-chat
                       {console.log(membershipdata.data[6])}
 
                       {membershipdata.data.length !== 0 ? (

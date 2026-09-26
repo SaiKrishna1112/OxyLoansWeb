@@ -2364,13 +2364,9 @@ const AdminAIDealsDashboard = () => {
     setDealsError("");
   };
 
-<<<<<<< HEAD
   const backToListLabel = deepLinkReturnTo
     ? (deepLinkReturnTo.includes("shared-bank-accounts") ? "Back to Lenders" : "Back to Portfolio")
     : "Back to Lenders";
-=======
-  const backToListLabel = deepLinkReturnTo ? "Back to Portfolio" : "Back to Lenders";
->>>>>>> feature/ai-lender-chat
 
   const toggleInterestDetails = async (deal) => {
     const dealId = deal.dealId;

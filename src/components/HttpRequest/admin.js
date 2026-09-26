@@ -1744,52 +1744,6 @@ export const uploadAdminAILenderCampaignImage = async (file) => {
   return url;
 };
 
-<<<<<<< HEAD
-=======
-export const getAdminLenderQueriesCount = async (lenderId) => {
-  const token = getToken();
-  return handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `${lenderId}/allQueriesCount`,
-    "GET",
-    token
-  );
-};
-
-export const uploadAdminLenderQueryImage = async (lenderId, file) => {
-  const token = getToken();
-  const formData = new FormData();
-  formData.append("USERQUERYSCREENSHOT", file);
-  return handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `${lenderId}/userQueryScreenshot`,
-    "POST",
-    token,
-    formData,
-    { "Content-Type": "multipart/form-data" }
-  );
-};
-
-export const writeAdminLenderQuery = async (lenderId, queryData) => {
-  const token = getToken();
-  const profiledata = queryData?.profiledata || {};
-  const payload = {
-    query: `${queryData?.query || ""}${queryData?.urlquery || ""}`,
-    documentId: queryData?.documentId || 0,
-    email: profiledata.email,
-    mobileNumber: profiledata.mobileNumber,
-  };
-
-  return handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `${lenderId}/readingQueriesFromUsers`,
-    "POST",
-    token,
-    payload
-  );
-};
-
->>>>>>> feature/ai-lender-chat
 export const parseAdminAICampaignExcelRecipients = async (file) => {
   const formData = new FormData();
   formData.append("EXCEL", file);
@@ -2636,5 +2590,28 @@ export const getBorrowerLoanGeneratedFiles = async () => {
     token
   );
   return response;
+};
+
+export const getAdminLenderQueriesCount = async (lenderId) => {
+  const token = getToken();
+  return await axios.get(`${AI_BASE_URL}admin/lenders/${lenderId}/queries/count`, {
+    headers: { accessToken: token },
+  });
+};
+
+export const uploadAdminLenderQueryImage = async (lenderId, file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("file", file);
+  return await axios.post(`${AI_BASE_URL}admin/lenders/${lenderId}/queries/upload`, formData, {
+    headers: { accessToken: token, "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const writeAdminLenderQuery = async (lenderId, payload) => {
+  const token = getToken();
+  return await axios.post(`${AI_BASE_URL}admin/lenders/${lenderId}/queries`, payload, {
+    headers: { accessToken: token },
+  });
 };
 

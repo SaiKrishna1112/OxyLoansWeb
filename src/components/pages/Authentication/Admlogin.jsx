@@ -89,7 +89,6 @@ const Admlogin = () => {
       const retriveresponse = await Admlog(userid.trim(), password);
       if (isApiSuccess(retriveresponse)) {
         toastrSuccess("Login Success!");
-<<<<<<< HEAD
         const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
         localStorage.setItem("primaryType", primaryType || "");
         if (primaryType === "LENDER") {
@@ -98,20 +97,6 @@ const Admlogin = () => {
           history("/adminAIDashboard");
         } else {
           history("/borrowerDashboard");
-=======
-        const role = retriveresponse.data.primaryType;
-        localStorage.setItem("primaryType", role || "");
-        let defaultPath = "/borrowerDashboard";
-        if (role === "LENDER") {
-          defaultPath = "/dashboard";
-        } else if (
-          role === "ADMIN" ||
-          role === "HELPDESKADMIN" ||
-          role === "SUPERADMIN" ||
-          role === "PRIMARYADMIN"
-        ) {
-          defaultPath = "/adminAIDashboard";
->>>>>>> feature/ai-lender-chat
         }
         history(getPostLoginRedirectUrl(defaultPath, role));
       } else {

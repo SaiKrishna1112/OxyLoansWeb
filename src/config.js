@@ -47,3 +47,14 @@ export { ENV, BASE_URL };
 export const AI_DASHBOARD_USE_STATIC = false;
 export const DEV_ADMIN_MOBILE = "";
 export const DEV_OTP = "";
+
+export const FCM_WEB_CONFIG = {
+  apiKey: process.env.REACT_APP_FCM_API_KEY || "",
+  authDomain: process.env.REACT_APP_FCM_AUTH_DOMAIN || "",
+  projectId: process.env.REACT_APP_FCM_PROJECT_ID || "",
+  storageBucket: process.env.REACT_APP_FCM_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.REACT_APP_FCM_MESSAGING_SENDER_ID || "",
+  appId: process.env.REACT_APP_FCM_APP_ID || "",
+};
+
+export const FCM_VAPID_KEY = process.env.REACT_APP_FCM_VAPID_KEY || "";

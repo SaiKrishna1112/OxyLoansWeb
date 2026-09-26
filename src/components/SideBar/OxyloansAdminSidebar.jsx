@@ -9,22 +9,6 @@ const OxyloansAdminSidebar = () => {
   const [openSubmenus, setOpenSubmenus] = useState({});
   const { pathname } = useLocation();
 
-<<<<<<< HEAD
-=======
-  useEffect(() => {
-    menuItems.forEach((item) => {
-      if (item.children) {
-        const hasActiveChild = item.children.some((child) => child.link === pathname);
-        if (hasActiveChild) {
-          setOpenSubmenus((prev) => ({
-            ...prev,
-            [item.key]: true,
-          }));
-        }
-      }
-    });
-  }, [pathname]);
->>>>>>> feature/ai-lender-chat
   const primaryType=localStorage.getItem("primaryType")
   const userId=sessionStorage.getItem("userId")
 
@@ -144,7 +128,6 @@ const OxyloansAdminSidebar = () => {
       label: "Borrower Fees",
       icon: "fa-solid fa-indian-rupee-sign",
       children: [
-<<<<<<< HEAD
         { key: "offerDashboard", label: "Dashboard", link: "/admin/offers/dashboard" },
         { key: "offerCreate", label: "Generate Offers", link: "/admin/offers/create" },
         { key: "offerSegments", label: "Eligible Lenders", link: "/admin/offers/segments" },
@@ -153,10 +136,6 @@ const OxyloansAdminSidebar = () => {
         { key: "offerApproved", label: "Approved", link: "/admin/offers/approved" },
         { key: "offerRejected", label: "Rejected", link: "/admin/offers/rejected" },
         { key: "offerHistory", label: "History", link: "/admin/offers/history" },
-=======
-        { key: "adminBorrowerCharges", label: "Borrower Charges", link: "/adminBorrowerCharges" },
-        { key: "adminProcessingFees",  label: "Processing Fees",  link: "/adminProcessingFees"  },
->>>>>>> feature/ai-lender-chat
       ],
       type: ["ADMIN", "SUPERADMIN"],
     },
