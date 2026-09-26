@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { buildFeatureLoader, FeatureContent } from "./adminAIFeatureContent";
 import { getFeatureById } from "./adminAIDashboardFeatures";
+import { goBackOrAdminAI, goToAdminAIDashboard } from "./adminAINavigation";
 import {
   BackToHub,
   currentFy,
@@ -47,28 +48,71 @@ const AdminAIFeaturePageInner = ({ feature }) => {
     feature.id === "roi-based-deals" ||
     feature.id === "deal-intelligence";
 
+  const showDashNav =
+    feature.id === "cms-payments" ||
+    feature.id === "cms-lender-payouts" ||
+    feature.id === "roi-based-deals" ||
+    feature.id === "deal-intelligence";
+
+  const refreshFeature = () => {
+    reload();
+    setRefreshNonce((current) => current + 1);
+  };
+
+  const backAndRefresh = (
+    <div className="ai-feature-header-nav">
+      <button
+        type="button"
+        className="sba-back"
+        onClick={() => goBackOrAdminAI(navigate)}
+        title="Back to Admin AI Dashboard"
+      >
+        <i className="fas fa-arrow-left" />
+        Back
+      </button>
+      <button
+        type="button"
+        className="sba-dash-btn"
+        onClick={() => goToAdminAIDashboard(navigate)}
+        title="Open Admin AI Dashboard"
+      >
+        Admin AI Dashboard
+      </button>
+      <button
+        type="button"
+        className="btn btn-success btn-sm"
+        onClick={refreshFeature}
+        disabled={loading}
+      >
+        <i className={`fas fa-sync-alt me-1 ${loading ? "fa-spin" : ""}`} />
+        {loading ? "Loading…" : "Refresh"}
+      </button>
+    </div>
+  );
+
   return (
     <PageShell
       title={feature.title}
       breadcrumb={
-        <>
-          <li className="breadcrumb-item">
-            <Link to="/adminAIDashboard">Control Panel</Link>
-          </li>
-          <li className="breadcrumb-item active">{feature.title}</li>
-        </>
+        showDashNav ? null : (
+          <>
+            <li className="breadcrumb-item">
+              <Link to="/adminAIDashboard">Control Panel</Link>
+            </li>
+            <li className="breadcrumb-item active">{feature.title}</li>
+          </>
+        )
       }
       actions={
         feature.usesFy ? (
           <FyControls fy={fy} onFyChange={setFy} onRefresh={reload} loading={loading} />
+        ) : showDashNav ? (
+          backAndRefresh
         ) : (
           <button
             type="button"
             className="btn btn-success btn-sm"
-            onClick={() => {
-              reload();
-              setRefreshNonce((current) => current + 1);
-            }}
+            onClick={refreshFeature}
             disabled={loading}
           >
             <i className={`fas fa-sync-alt me-1 ${loading ? "fa-spin" : ""}`} />
