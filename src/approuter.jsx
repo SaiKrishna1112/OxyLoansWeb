@@ -97,6 +97,7 @@ import DashboardTransactions from "./components/pages/Oxyloans/Lender/DashboardT
 import LenderRegister from "./components/pages/Authentication/LenderRegister";
 import BorrowerRegister from "./components/pages/Authentication/BorrowerRegister";
 import Register_active_proceed from "./components/pages/Authentication/register_active_proceed";
+import RegisterStep2Dark from "./components/pages/Authentication/RegisterStep2Dark";
 import ForgotPassword3 from "./components/pages/Authentication/ForgotPassword3";
 import Whatapplog from "./components/pages/Authentication/Whatapplog";
 import PartnerRegister from "./components/pages/Authentication/PartnerRegister";
@@ -277,6 +278,7 @@ const AppRouter = () => {
         <Route path="/userType" element={<UserType />} />
         <Route path="/borrower_register" element={<BorrowerRegister />} />
         <Route path="/register_active_proceed" element={<Register_active_proceed />} />
+        <Route path="/register-step2-test" element={<RegisterStep2Dark />} />
         <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/forgotpassword" element={<ForgotPassword3 />} />
         <Route path="/forgotpassword2" element={<ForgotPassword />} />
