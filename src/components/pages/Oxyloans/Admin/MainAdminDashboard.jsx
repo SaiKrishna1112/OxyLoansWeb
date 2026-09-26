@@ -5,14 +5,10 @@ import { Link } from "react-router-dom";
 import "../../Oxyloans/Lender/table.css";
 
 import {
-  chatapi,
   getDashboardInvestment,
   regular_Api,
-  getInterestEarnings,
-  getNoDealsParticipated,
-  lenderTotalInvestmentsAndReturns,
 } from "../../../HttpRequest/afterlogin";
-import { Table, Pagination, Card } from "antd";
+import { Table, Card } from "antd";
 import { onShowSizeChange } from "../../../Pagination";
 import { fetchData } from "../../../Redux/Slice";
 import { fetchDatadashboard } from "../../../Redux/SliceDashboard";
@@ -20,8 +16,6 @@ import { useSelector, useDispatch } from "react-redux";
 import useDealActivity from "../../../Hooks/useDealActivity";
 
 import {
-  awardicon01,
-  awardicon04,
   dashboard1,
   dashboard2,
   dashboard3,
@@ -31,13 +25,10 @@ import Footer from "../../../Footer/Footer";
 import {
   getuserMembershipValidity,
   getUserDetails,
-  getactivityApisData,
 } from "../../../HttpRequest/afterlogin";
 import {
   dealmembership,
-  newlendersweetalert,
   personalDetails,
-  personalDetailsInfo,
   validityDatemodal,
 } from "../../Base UI Elements/SweetAlert";
 import Header from "../../../Header/Header";
@@ -47,19 +38,11 @@ const MainAdminDashboard = () => {
   const dispatch = useDispatch();
   const getdashboardData = useSelector((data) => data.dashboard.fetchDashboard);
   const getreducerprofiledata = useSelector((data) => data.counter.userProfile);
-  const { activitydata } = useDealActivity();
+  useDealActivity();
   const [dashboarddata, setdashboarddata] = useState({
     profileData: "",
   });
-  const [membershipdata, setmembershipdata] = useState({
-    dashboardData: "",
-  });
 
-  const [dashboardDealActive, setdashboardDealActvity] = useState({
-    activedeal: 0,
-    closedDeal: 0,
-    disbursedDeal: 0,
-  });
   const [regular_runningDeal, setRegularRunningDeal] = useState({
     apidata: "",
     dealtype: "HAPPENING",
@@ -68,7 +51,6 @@ const MainAdminDashboard = () => {
     apidataESCROW: "",
   });
 
-  useEffect(() => {}, []);
   const [dashboardInvestment, setdashboardInvestment] = useState({
     apiData: "",
     hasdata: false,
@@ -79,199 +61,29 @@ const MainAdminDashboard = () => {
   });
 
   const investmentdashboardPagination = (dats) => {
-    setdashboardInvestment({
-      ...dashboardInvestment,
+    setdashboardInvestment((prev) => ({
+      ...prev,
       defaultPageSize: dats.pageSize,
       pageNo: dats.current,
       pageSize: dats.pageSize,
-    });
+    }));
   };
 
-  const [newlender, setnewlender] = useState(false);
-
   const datasource = [];
-  {
-    dashboardInvestment.apiData != ""
-      ? dashboardInvestment.apiData.lenderWalletHistoryResponseDto.map(
-          (data) => {
-            datasource.push({
-              key: Math.random(),
-              Date: data.walletLoaded,
-              Description: data.remarks,
-              Amount: data.amount,
-            });
-          }
-        )
-      : "";
+  if (dashboardInvestment.apiData) {
+    dashboardInvestment.apiData.lenderWalletHistoryResponseDto.forEach(
+      (data) => {
+        datasource.push({
+          key: Math.random(),
+          Date: data.walletLoaded,
+          Description: data.remarks,
+          Amount: data.amount,
+        });
+      }
+    );
   }
 
-  const [data, setObject] = useState({
-    chart: {
-      height: 350,
-      type: "line",
-      toolbar: {
-        show: false,
-      },
-      fill: false,
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    datasets: {
-      id: "apaxcharts-line",
-    },
-    stroke: {
-      curve: "smooth",
-    },
-    colors: ["#3D5EE1", "#70C4CF"],
-    borderWidth: 3,
-    labels: ["2020-21", "2021-22", "2022-23", "2023-24"],
-  });
-  const [series, setSeries] = useState([
-    {
-      name: "Investment",
-      data: [],
-    },
-    {
-      name: "Total Returns",
-      data: [],
-    },
-  ]);
-
-  useEffect(() => {
-    const fetchdata = async () => {
-      try {
-        const response = await lenderTotalInvestmentsAndReturns(); // Assuming lenderTotalInvestmentsAndReturns is an asynchronous function
-
-        // Update the state based on the response data
-        setSeries((prevSeries) => [
-          {
-            name: "Investment",
-            data: [
-              ...prevSeries[0].data,
-              response.data[0]?.lenderTotalInvestment,
-              0,
-              0,
-            ],
-          },
-          {
-            name: "Total Returns",
-            data: [
-              ...prevSeries[1].data,
-              response.data[0]?.totalReturnedAmount,
-              0,
-              0,
-            ],
-          },
-        ]);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchdata();
-  }, []);
-
-  // Student Chart
-
-  const [dealsProgressed, setdealsProgressed] = useState({
-    totalDeals: 0,
-    participatedDeals: 0,
-    percentage: 0,
-  });
-
-  const [DistributedColumns, SetDistributedColumns] = useState({
-    series: [
-      {
-        name: "",
-        // data: [300000, 200000, 50000, 50000],
-        data: [0, 0, 0, 0],
-      },
-    ],
-    options: {
-      chart: {
-        height: 350,
-        type: "bar",
-        events: {
-          click: function (chart, w, e) {},
-        },
-      },
-      colors: ["#45C4B0", "#3D5EE1", "#70C4CF", "#777"],
-      plotOptions: {
-        bar: {
-          columnWidth: "45%",
-          distributed: true,
-        },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      legend: {
-        show: false,
-      },
-      xaxis: {
-        categories: [
-          ["Total Investment"],
-          ["Student"],
-          ["Escow"],
-          ["normalDeals"],
-        ],
-        labels: {
-          style: {
-            colors: ["#3D5EE1", "#70C4CF"],
-            fontSize: "12px",
-          },
-        },
-      },
-    },
-  });
-
-  useEffect(() => {
-    const response = chatapi();
-    response.then((data) => {});
-  }, []);
-
-  const [treemap, Settreemap] = useState({
-    series: [
-      {
-        name: "",
-        data: [
-          dashboardDealActive.activedeal,
-          dashboardDealActive.closedDeal,
-          dashboardDealActive.disbursedDeal,
-        ],
-        color: "#664DC9",
-      },
-    ],
-    options: {
-      chart: {
-        height: 350,
-        type: "bar",
-        zoom: {
-          enabled: false,
-        },
-      },
-
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        curve: "straight",
-      },
-
-      grid: {
-        row: {
-          colors: ["#f3f3f3", "transparent"], // takes an array which will be repeated on columns
-          opacity: 0.5,
-        },
-      },
-      xaxis: {
-        categories: ["Active Deals", "Closed Deals", "Disbursed Deals"],
-      },
-    },
-  });
-
-  const [investmentTotalEaring, setinvestmentTotalEaring] = useState({
+  const [investmentTotalEaring] = useState({
     series: [
       {
         name: "Principal Return",
@@ -341,7 +153,7 @@ const MainAdminDashboard = () => {
     },
   });
 
-  const [noofdeals, setnoofdeals] = useState({
+  const [noofdeals] = useState({
     series: [
       {
         name: "Investment ",
@@ -472,58 +284,47 @@ const MainAdminDashboard = () => {
     },
   ];
 
+  const { dealtype, pageno } = regular_runningDeal;
+
   useEffect(() => {
-    const urlparams = window.location.pathname;
     const urldealname = "regularRunningDeal";
 
     const handleRegular = () => {
-      const response = regular_Api(
-        regular_runningDeal.dealtype,
-        urldealname,
-        regular_runningDeal.pageno
-      );
+      const response = regular_Api(dealtype, urldealname, pageno);
 
       response.then((data) => {
-        setRegularRunningDeal({
-          ...regular_runningDeal,
+        setRegularRunningDeal((prev) => ({
+          ...prev,
           apidata: data.data,
-        });
+        }));
       });
     };
 
     handleRegular();
-  }, [regular_runningDeal.pageno]);
+  }, [dealtype, pageno]);
 
   useEffect(() => {
-    const urlparams = window.location.pathname;
     const urldealname = "ESCROW";
 
     const handleRegular = () => {
-      const response = regular_Api(
-        regular_runningDeal.dealtype,
-        urldealname,
-        regular_runningDeal.pageno
-      );
+      const response = regular_Api(dealtype, urldealname, pageno);
 
       response.then((data) => {
-        setRegularRunningDeal({
-          ...regular_runningDeal,
+        setRegularRunningDeal((prev) => ({
+          ...prev,
           apidataESCROW: data.data.listOfBorrowersDealsResponseDto,
-        });
+        }));
       });
     };
 
     handleRegular();
-  }, [regular_runningDeal.pageno]);
+  }, [dealtype, pageno]);
+
   useEffect(() => {
     dispatch(fetchDatadashboard());
     dispatch(fetchData());
     getuserMembershipValidity().then((data) => {
-      if (data.request.status == 200) {
-        setmembershipdata({
-          ...membershipdata,
-          dashboardData: data,
-        });
+      if (data.request.status === 200) {
         const currentDate = new Date(); // Get the current date
 
         // Format the current date as "YYYY-MM-DD"
@@ -544,38 +345,15 @@ const MainAdminDashboard = () => {
     });
 
     getUserDetails().then((data) => {
-      if (data.request.status == 200) {
-        setdashboarddata({
-          ...dashboarddata,
+      if (data.request.status === 200) {
+        setdashboarddata((prev) => ({
+          ...prev,
           profileData: data,
-        });
+        }));
       }
     });
     return () => {};
-  }, []);
-
-  useEffect(() => {
-    const activeres = getactivityApisData();
-    activeres.then((data) => {
-      if (data.request.status == 200) {
-        Settreemap({
-          ...treemap,
-          series: [
-            {
-              name: "",
-              data: [
-                data.data.activeDealsAmount,
-                data.data.closedDealsAmount,
-                data.data.disbursedDealsAmount,
-              ],
-              color: "#664DC9",
-            },
-          ],
-        });
-      }
-    });
-    return () => {};
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const response = getDashboardInvestment(
@@ -583,65 +361,18 @@ const MainAdminDashboard = () => {
       dashboardInvestment.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardInvestment({
-          ...dashboardInvestment,
+      if (data.request.status === 200) {
+        setdashboardInvestment((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
           hasdata:
-            data.data.lenderWalletHistoryResponseDto.length == 0 ? false : true,
-        });
+            data.data.lenderWalletHistoryResponseDto.length === 0 ? false : true,
+        }));
       }
     });
     return () => {};
   }, [dashboardInvestment.pageNo, dashboardInvestment.pageSize]);
-
-  useEffect(() => {
-    const earningres = getInterestEarnings();
-    earningres.then((data) => {
-      if (data.request.status == 200) {
-        const newapidata = data.data.map((info, index) => {
-          let datesplit = info.date.split("-");
-          return [
-            new Date(
-              datesplit[0],
-              datesplit[1].includes("0")
-                ? datesplit[1].substring(1)
-                : datesplit[1],
-              datesplit[2]
-            ),
-            info.amount,
-          ];
-        });
-
-        setgoogledate([
-          [
-            { type: "date", id: "Date" },
-            { type: "number", id: "Won/Loss" },
-          ],
-          ...newapidata,
-        ]);
-        // googledata;    // [new Date(2023, 1, 4), 38177],
-      }
-    });
-    return () => {};
-  }, []);
-
-  useEffect(() => {
-    const response = getNoDealsParticipated();
-    response.then((data) => {
-      if (data.request.status == 200) {
-        setdealsProgressed({
-          ...dealsProgressed,
-          totalDeals: data.data.dealCount,
-          participatedDeals: data.data.participationCount,
-          percentage:
-            (data.data.participationCount / data.data.dealCount) * 100,
-        });
-      }
-    });
-    return () => {};
-  }, []);
 
   useEffect(() => {
     const deatilskip = localStorage.getItem("deatilskip");
@@ -694,8 +425,6 @@ const MainAdminDashboard = () => {
       }
     }
   }, [dashboarddata.profileData]);
-
-  useEffect(() => {}, []);
   return (
     <>
       <div className="main-wrapper">
@@ -983,7 +712,7 @@ const MainAdminDashboard = () => {
                     <div className="activity-groups" style={{ gap: "10px" }}>
                       No of EMI processed
                       <div
-                        class="progress mt-2"
+                        className="progress mt-2"
                         role="progressbar"
                         aria-label="Success example"
                         aria-valuenow="25"
@@ -991,7 +720,7 @@ const MainAdminDashboard = () => {
                         aria-valuemax="100"
                       >
                         <div
-                          class="progress-bar bg-success"
+                          className="progress-bar bg-success"
                           style={{ width: "25%" }}
                         >
                           25%
@@ -999,7 +728,7 @@ const MainAdminDashboard = () => {
                       </div>
                       No of EMI Not processed
                       <div
-                        class="progress  mt-2"
+                        className="progress  mt-2"
                         role="progressbar"
                         aria-label="Success example"
                         aria-valuenow="25"
@@ -1007,7 +736,7 @@ const MainAdminDashboard = () => {
                         aria-valuemax="100"
                       >
                         <div
-                          class="progress-bar bg-success"
+                          className="progress-bar bg-success"
                           style={{ width: "50%" }}
                         >
                           50%
@@ -1015,7 +744,7 @@ const MainAdminDashboard = () => {
                       </div>
                       Amount Not Received
                       <div
-                        class="progress  mt-2"
+                        className="progress  mt-2"
                         role="progressbar"
                         aria-label="Success example"
                         aria-valuenow="25"
@@ -1023,7 +752,7 @@ const MainAdminDashboard = () => {
                         aria-valuemax="100"
                       >
                         <div
-                          class="progress-bar bg-success"
+                          className="progress-bar bg-success"
                           style={{ width: "75%" }}
                         >
                           25%
@@ -1031,7 +760,7 @@ const MainAdminDashboard = () => {
                       </div>
                       Earned Amount
                       <div
-                        class="progress  mt-2"
+                        className="progress  mt-2"
                         role="progressbar"
                         aria-label="Success example"
                         aria-valuenow="25"
@@ -1039,7 +768,7 @@ const MainAdminDashboard = () => {
                         aria-valuemax="100"
                       >
                         <div
-                          class="progress-bar bg-success"
+                          className="progress-bar bg-success"
                           style={{ width: "25%" }}
                         >
                           25%
@@ -1047,7 +776,7 @@ const MainAdminDashboard = () => {
                       </div>
                       No OF EMIS pending
                       <div
-                        class="progress  mt-2"
+                        className="progress  mt-2"
                         role="progressbar"
                         aria-label="Success example"
                         aria-valuenow="25"
@@ -1055,7 +784,7 @@ const MainAdminDashboard = () => {
                         aria-valuemax="100"
                       >
                         <div
-                          class="progress-bar bg-success"
+                          className="progress-bar bg-success"
                           style={{ width: "25%" }}
                         >
                           25%
@@ -1063,7 +792,7 @@ const MainAdminDashboard = () => {
                       </div>
                       Earned Amount
                       <div
-                        class="progress  mt-2"
+                        className="progress  mt-2"
                         role="progressbar"
                         aria-label="Success example"
                         aria-valuenow="25"
@@ -1071,7 +800,7 @@ const MainAdminDashboard = () => {
                         aria-valuemax="100"
                       >
                         <div
-                          class="progress-bar bg-success"
+                          className="progress-bar bg-success"
                           style={{ width: "25%" }}
                         >
                           25%

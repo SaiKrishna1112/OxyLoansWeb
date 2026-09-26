@@ -117,19 +117,19 @@ const DashboardTransactions = () => {
       dashboardInvestment.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardInvestment({
-          ...dashboardInvestment,
+      if (data.request.status === 200) {
+        setdashboardInvestment((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
           hasdata:
-            data.data.lenderWalletHistoryResponseDto.length == 0 ? false : true,
-        });
+            data.data.lenderWalletHistoryResponseDto.length !== 0,
+        }));
       } else {
-        setdashboardInvestment({
-          ...dashboardInvestment,
+        setdashboardInvestment((prev) => ({
+          ...prev,
           loading: false,
-        });
+        }));
       }
     });
     return () => {};
@@ -141,19 +141,19 @@ const DashboardTransactions = () => {
       dashboardPrincipalReturns.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardPrincipalReturns({
-          ...dashboardPrincipalReturns,
+      if (data.request.status === 200) {
+        setdashboardPrincipalReturns((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
           hasdata:
-            data.data.lenderReturnsResponseDto.length == 0 ? false : true,
-        });
+            data.data.lenderReturnsResponseDto.length !== 0,
+        }));
       } else {
-        setdashboardPrincipalReturns({
-          ...dashboardPrincipalReturns,
+        setdashboardPrincipalReturns((prev) => ({
+          ...prev,
           loading: false,
-        });
+        }));
       }
     });
     return () => {};
@@ -189,19 +189,19 @@ console.log(downloadUrl)
       dashboardInterestEarnings.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardInterestEarnings({
-          ...dashboardInterestEarnings,
+      if (data.request.status === 200) {
+        setdashboardInterestEarnings((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
           hasdata:
-            data.data.lenderReturnsResponseDto.length == 0 ? false : true,
-        });
+            data.data.lenderReturnsResponseDto.length !== 0,
+        }));
       } else {
-        setdashboardInterestEarnings({
-          ...dashboardInterestEarnings,
+        setdashboardInterestEarnings((prev) => ({
+          ...prev,
           loading: false,
-        });
+        }));
       }
     });
     return () => {};
@@ -213,18 +213,18 @@ console.log(downloadUrl)
       dashboardReferralEarnings.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardReferralEarnings({
-          ...dashboardReferralEarnings,
+      if (data.request.status === 200) {
+        setdashboardReferralEarnings((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
-          hasdata: data.data.referrerResponseDto.length == 0 ? false : true,
-        });
+          hasdata: data.data.referrerResponseDto.length !== 0,
+        }));
       } else {
-        setdashboardReferralEarnings({
-          ...dashboardReferralEarnings,
+        setdashboardReferralEarnings((prev) => ({
+          ...prev,
           loading: false,
-        });
+        }));
       }
     });
     return () => {};
@@ -236,115 +236,103 @@ console.log(downloadUrl)
       dashboardDealsVsEarnings.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardDealsVsEarnings({
-          ...dashboardDealsVsEarnings,
+      if (data.request.status === 200) {
+        setdashboardDealsVsEarnings((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
           hasdata:
-            data.data.lenderTotalPaticipationDealsInfo.length == 0
-              ? false
-              : true,
-        });
+            data.data.lenderTotalPaticipationDealsInfo.length !== 0,
+        }));
       } else {
-        setdashboardDealsVsEarnings({
-          ...dashboardDealsVsEarnings,
+        setdashboardDealsVsEarnings((prev) => ({
+          ...prev,
           loading: false,
-        });
+        }));
       }
     });
     return () => {};
   }, [dashboardDealsVsEarnings.pageNo, dashboardDealsVsEarnings.pageSize]);
 
   const datasource = [];
-  {
-    dashboardInvestment.apiData != ""
-      ? dashboardInvestment.apiData.lenderWalletHistoryResponseDto.map(
-          (data) => {
-            datasource.push({
-              key: Math.random(),
-              Date: data.walletLoaded,
-              Description: data.remarks,
-              Amount: data.amount,
-            });
-          }
-        )
-      : "";
+  if (dashboardInvestment.apiData) {
+    dashboardInvestment.apiData.lenderWalletHistoryResponseDto.forEach(
+      (data) => {
+        datasource.push({
+          key: Math.random(),
+          Date: data.walletLoaded,
+          Description: data.remarks,
+          Amount: data.amount,
+        });
+      }
+    );
   }
 
   const principalReturndatasource = [];
-  {
-    dashboardPrincipalReturns.apiData != ""
-      ? dashboardPrincipalReturns.apiData.lenderReturnsResponseDto.map(
-          (data) => {
-            principalReturndatasource.push({
-              key: Math.random(),
-              Date: data.returedDate,
-              DealName: data.dealName,
-              AmountLent: data.amount,
-              ReturnedAmount:
-                data.remarks == "Returned to account"
-                  ? "Account"
-                  : data.remarks,
-              DealBal: data.currentAmount,
-            });
-          }
-        )
-      : "";
+  if (dashboardPrincipalReturns.apiData) {
+    dashboardPrincipalReturns.apiData.lenderReturnsResponseDto.forEach(
+      (data) => {
+        principalReturndatasource.push({
+          key: Math.random(),
+          Date: data.returedDate,
+          DealName: data.dealName,
+          AmountLent: data.amount,
+          ReturnedAmount:
+            data.remarks === "Returned to account"
+              ? "Account"
+              : data.remarks,
+          DealBal: data.currentAmount,
+        });
+      }
+    );
   }
 
   const dashboardInterestEarningsdata = [];
-  {
-    dashboardInterestEarnings.apiData != ""
-      ? dashboardInterestEarnings.apiData.lenderReturnsResponseDto.map(
-          (data) => {
-            dashboardInterestEarningsdata.push({
-              key: Math.random(),
-              Date: data.returedDate,
-              DealName: data.remarks,
-              Days: data.differencInDays,
-              Profit: data.amount,
-            });
-          }
-        )
-      : "";
+  if (dashboardInterestEarnings.apiData) {
+    dashboardInterestEarnings.apiData.lenderReturnsResponseDto.forEach(
+      (data) => {
+        dashboardInterestEarningsdata.push({
+          key: Math.random(),
+          Date: data.returedDate,
+          DealName: data.remarks,
+          Days: data.differencInDays,
+          Profit: data.amount,
+        });
+      }
+    );
   }
 
   const dashboardReferralEarningsdata = [];
-  {
-    dashboardReferralEarnings.apiData != ""
-      ? dashboardReferralEarnings.apiData.referrerResponseDto.map((data) => {
-          dashboardReferralEarningsdata.push({
-            key: Math.random(),
-            Date: data.participatedDate,
-            Lender: data.refereeName,
-            DealName: data.dealName,
-            Status: data.paymentStatus,
-          });
-        })
-      : "";
+  if (dashboardReferralEarnings.apiData) {
+    dashboardReferralEarnings.apiData.referrerResponseDto.forEach((data) => {
+      dashboardReferralEarningsdata.push({
+        key: Math.random(),
+        Date: data.participatedDate,
+        Lender: data.refereeName,
+        DealName: data.dealName,
+        Status: data.paymentStatus,
+      });
+    });
   }
 
   const dashboarddealsVsEarningsdata = [];
-  {
-    dashboardDealsVsEarnings.apiData != ""
-      ? dashboardDealsVsEarnings.apiData.lenderTotalPaticipationDealsInfo.map(
-          (data) => {
-            dashboarddealsVsEarningsdata.push({
-              key: Math.random(),
-              SNo: data.sno,
-              DealName: data.dealName,
-              RoI: data.rateofinterest + " % ",
-              Tenure: data.tenure + " M ",
-              Date: data.participatedDate,
-              ClosedDate:
-                data.dealClosedDate == null ? "Running" : data.dealClosedDate,
-              Amount: data.participatedAmount,
-              LoanStatus: data.pricipaleReturnedStatus,
-            });
-          }
-        )
-      : "";
+  if (dashboardDealsVsEarnings.apiData) {
+    dashboardDealsVsEarnings.apiData.lenderTotalPaticipationDealsInfo.forEach(
+      (data) => {
+        dashboarddealsVsEarningsdata.push({
+          key: Math.random(),
+          SNo: data.sno,
+          DealName: data.dealName,
+          RoI: data.rateofinterest + " % ",
+          Tenure: data.tenure + " M ",
+          Date: data.participatedDate,
+          ClosedDate:
+            data.dealClosedDate === null ? "Running" : data.dealClosedDate,
+          Amount: data.participatedAmount,
+          LoanStatus: data.pricipaleReturnedStatus,
+        });
+      }
+    );
   }
   /*mandeva */
   const columns = [
@@ -516,7 +504,7 @@ console.log(downloadUrl)
                           <li className="star-menus">
                                                                  {
         <Link  id="downloadLink" onClick={()=>handleClickGetLink("LENDERPRICIPAL")}>
-             <i class="fa-solid fa-download"></i>
+             <i className="fa-solid fa-download"></i>
         </Link>
       }
                           </li>
@@ -565,7 +553,7 @@ console.log(downloadUrl)
                           <li className="star-menus">
                                                                                           {
         <Link  id="downloadLink" onClick={()=>handleClickGetLink("LENDERINTEREST")}>
-             <i class="fa-solid fa-download"></i>
+             <i className="fa-solid fa-download"></i>
         </Link>
       }
                           </li>
@@ -614,7 +602,7 @@ console.log(downloadUrl)
                           <li className="star-menus">
                                                                          {
         <Link  id="downloadLink" onClick={()=>handleClickGetLink("REFERRALBONUS")}>
-             <i class="fa-solid fa-download"></i>
+             <i className="fa-solid fa-download"></i>
         </Link>
       }
                           </li>
@@ -663,7 +651,7 @@ console.log(downloadUrl)
                           <li className="star-menus">
                                                                 {
         <Link  id="downloadLink" onClick={()=>handleClickGetLink("WALLETCREDITED")}>
-             <i class="fa-solid fa-download"></i>
+             <i className="fa-solid fa-download"></i>
         </Link>
       }
                           </li>
@@ -694,7 +682,7 @@ console.log(downloadUrl)
                               dashboardDealsVsEarnings.hasdata
                                 ? dashboarddealsVsEarningsdata.filter(
                                     (data, index) =>
-                                      data.ClosedDate == "Running"
+                                      data.ClosedDate === "Running"
                                   )
                                 : []
                             }
@@ -714,7 +702,7 @@ console.log(downloadUrl)
                         <ul className="chart-list-out student-ellips">
                                               {
         <Link  id="downloadLink" onClick={()=>handleClickGetLink("WALLETCREDITED")}>
-             <i class="fa-solid fa-download"></i>
+             <i className="fa-solid fa-download"></i>
         </Link>
       }
                         </ul>

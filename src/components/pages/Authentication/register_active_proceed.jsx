@@ -1,37 +1,22 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "owl.carousel/dist/assets/owl.carousel.css";
 import "owl.carousel/dist/assets/owl.theme.default.css";
 import * as api from "./api";
 
 import { registerImage } from "../../imagepath";
-import FeatherIcon from "feather-icons-react";
 import "./login.css";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toastrWarning } from "../Base UI Elements/Toast";
 import { registersuccess } from "../Base UI Elements/SweetAlert";
 import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
 const Register_active_proceed = () => {
   const history = useNavigate();
-  let inputRef = useRef();
-  const params = useParams();
-  const showIcon = () => (
-    <i class="feather feather-eye" aria-hidden="true">
-      <FeatherIcon icon="eye" />
-    </i>
-  );
-  const hideIcon = () => (
-    <i class="feather feather-eye-slash" aria-hidden="true">
-      <FeatherIcon icon="eye-off" />
-    </i>
-  );
 
   const [date1, setdate1] = useState("");
-  const [response, setResponse] = useState(null);
 
   const [id, setid] = useState("318");
   const [time, settime] = useState("");
-  const [error, setError] = useState("");
   const [data, setdata] = useState({
     pannumber: "",
     address: "",
@@ -106,7 +91,7 @@ const Register_active_proceed = () => {
         setLoading(true)
 
         try {
-          const loginResponse = await api.verifypannumber(
+          await api.verifypannumber(
             data.pannumber,
             data.address,
             time,
@@ -114,21 +99,16 @@ const Register_active_proceed = () => {
             date1
           );
           registersuccess("Registration successfully completed");
-          setResponse(loginResponse);
           history("/");
-          setLoading(false)
-
-          setError(null);
+          setLoading(false);
         } catch (error) {
           console.error("Error:", error.response.data.errorMessage);
-          setError(error.response.data.errorMessage);
           toastrWarning(error.response.data.errorMessage);
-          setLoading(false)
+          setLoading(false);
 
           // setError('An error occurred during login');
         }
       } else {
-        setError("please enter vaild pan-card number");
         toastrWarning("please enter vaild pan-card number");
         setLoading(false)
 
@@ -336,13 +316,13 @@ const Register_active_proceed = () => {
                     )}
                   </div>
 
-                  {isloading==true ? <> <button
+                  {isloading === true ? <> <button
                     className="btn btn-primary btn-block"
                     type="button"
                   // onClick={submitloginhandler}
                   >
-                    <div class="spinner-border text-light" role="status">
-                      <span class="visually-hidden">Loading...</span>
+                    <div className="spinner-border text-light" role="status">
+                      <span className="visually-hidden">Loading...</span>
                     </div>
                   </button></> :
                     <button

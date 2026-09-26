@@ -2244,7 +2244,7 @@ console.log("data",data.status);
                         data-bs-toggle="tab"
                         to="#whatapp1"
                       >
-                        <i class="fa fa-whatsapp"></i> Update Your Number
+                        <i className="fa fa-whatsapp"></i> Update Your Number
                       </Link>
                     </li>
                     <li className="nav-item">

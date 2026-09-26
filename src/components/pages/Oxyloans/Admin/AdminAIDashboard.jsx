@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import { saveAs } from "file-saver";
@@ -11,7 +11,6 @@ import {
   FaUserClock,
   FaTrophy,
   FaMedal,
-  FaCopy,
   FaBriefcase,
   FaFileExcel,
   FaCalendarDay,
@@ -28,14 +27,13 @@ import {
   FaWhatsapp,
   FaSync,
   FaFilePdf,
-  FaTimes,
   FaEye,
 } from "react-icons/fa";
 import OxyloansAdminSidebar from "../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../Header/OxyloansAdminHeader";
 import Footer from "../../../Footer/Footer";
-import { getAdminAIPlatformStats } from "../../../HttpRequest/afterlogin";
-import AdminNotificationPanel from "./Notification/AdminNotificationPanel";
+// import { getAdminAIPlatformStats } from "../../../HttpRequest/afterlogin";
+// import AdminNotificationPanel from "./Notification/AdminNotificationPanel";
 import {
   getAdminAIActiveLenderDeals,
   getAdminAIActiveLenderProfile,
@@ -49,7 +47,6 @@ import {
   getAdminAITopLenders,
   getAdminAIMonthlyTopLenders,
   getAdminAITopLendersMonthlyTrend,
-  getAdminAIActiveLenderLegacyDetails,
   getAdminAIActiveLenderStates,
   getRegisteredUsersSummary,
   getOldDashboardActiveLendersCount,
@@ -980,99 +977,6 @@ const downloadDealsExcelFallback = async (stats) => {
   saveSpreadsheetXml(allXml, `admin-ai-all-deals-${new Date().toISOString().slice(0, 10)}.xls`);
 };
 
-const formatLenderCode = (lenderId, userCode) => userCode || (lenderId ? `LR${lenderId}` : "-");
-const gmailUrl = (email) => (email ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}` : "");
-
-const hasBankDetailsData = (profile) =>
-  [profile?.bankName, profile?.accountNumber, profile?.ifscCode, profile?.branchName].some(
-    (value) => String(value || "").trim() !== ""
-  );
-
-const mapBankProfile = (bankData) => ({
-  bankName: bankData.bankName,
-  accountNumber: bankData.accountNumber || bankData.bankAccNumber,
-  ifscCode: bankData.ifscCode || bankData.ifsc,
-  branchName: bankData.branchName,
-  accountType: bankData.accountType,
-  bankAddress: bankData.bankAddress,
-  userNameAccordingToBank: bankData.userNameAccordingToBank,
-  modeOfTransactions: bankData.modeOfTransactions,
-  bankDetailsVerified: bankData.bankDetailsVerified,
-  bankDetailsUpdatedOn: bankData.bankDetailsUpdatedOn,
-  bankDetailsSource: bankData.bankDetailsSource,
-});
-
-const mergeProfile = (base, extra) => {
-  if (!base && !extra) return null;
-  const merged = { ...(base || {}) };
-  if (!extra) return merged;
-  Object.entries(extra).forEach(([key, value]) => {
-    if (value == null || value === "") return;
-    if (Array.isArray(value) || typeof value === "object") {
-      merged[key] = value;
-      return;
-    }
-    merged[key] = value;
-  });
-  return merged;
-};
-
-const mergeProfiles = (...sources) => sources.reduce((acc, source) => mergeProfile(acc, source), null);
-
-const normalizeUserToProfile = (user) => {
-  if (!user) return null;
-  const addr = user.address && typeof user.address === "object" ? user.address : {};
-  const addressLine = addr.addressLine || (typeof user.address === "string" ? user.address : "");
-  return {
-    lenderId: user.userId || user.lenderId,
-    userCode: user.userCode || (user.userId ? `LR${user.userId}` : ""),
-    name: user.name,
-    email: user.email,
-    mobileNumber: user.mobileNumber,
-    registeredOn: user.registeredOn,
-    city: addr.city || user.city,
-    state: addr.state || user.state,
-    pincode: addr.pincode || user.pincode,
-    addressLine,
-    address: addressLine,
-    dob: user.dob,
-    panNumber: user.panNumber,
-    aadharNumber: user.aadharNumber,
-    whatsappNumber: user.whatsappNumber,
-    lenderGroupId: user.lenderGroupId,
-    lenderGroupName: user.lenderGroupName,
-    lenderType: user.lenderType || user.primaryType,
-    primaryType: user.primaryType,
-    dealsCount: user.dealsCount,
-    totalParticipationAmount: user.totalParticipationAmount,
-    bankName: user.bankName,
-    accountNumber: user.accountNumber,
-    ifscCode: user.ifscCode,
-    branchName: user.branchName,
-    accountType: user.accountType,
-    userNameAccordingToBank: user.userNameAccordingToBank,
-    bankAddress: user.bankAddress,
-    modeOfTransactions: user.modeOfTransactions,
-    bankDetailsVerified: user.bankDetailsVerified,
-    bankDetailsSource: user.bankDetailsSource,
-  };
-};
-
-const formatCompleteAddress = (profile) => {
-  const parts = [profile?.addressLine || profile?.address, profile?.city, profile?.state, profile?.pincode].filter(
-    (part) => part != null && String(part).trim() !== ""
-  );
-  return parts.length ? parts.join(", ") : "-";
-};
-
-const formatLenderGroup = (profile) => {
-  const id = profile?.lenderGroupId;
-  const name = profile?.lenderGroupName;
-  if (!id && !name) return "-";
-  if (id && name) return `${id} · ${name}`;
-  return String(id || name);
-};
-
 const AdminAIDashboard = () => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(fallbackStats);
@@ -1104,7 +1008,6 @@ const AdminAIDashboard = () => {
   const [selectedProfileError, setSelectedProfileError] = useState("");
   const [adminUserDeals, setAdminUserDeals] = useState(null);
   const [adminUserDealsTab, setAdminUserDealsTab] = useState("active");
-  const [adminUserDealsLoading, setAdminUserDealsLoading] = useState(false);
   const [inactiveReactivatedLenders, setInactiveReactivatedLenders] = useState([]);
   const [inactiveReactivatedCount, setInactiveReactivatedCount] = useState(0);
   const [inactiveReactivatedLoading, setInactiveReactivatedLoading] = useState(false);
@@ -1116,7 +1019,6 @@ const AdminAIDashboard = () => {
   const [activeLendersLoading, setActiveLendersLoading] = useState(false);
   const [activeLendersError, setActiveLendersError] = useState("");
   const [activeLenderSearch, setActiveLenderSearch] = useState({ lenderId: "", mobileNumber: "" });
-  const [activeLenderSearchStatus, setActiveLenderSearchStatus] = useState("");
   const [activeLenderParticipationRange, setActiveLenderParticipationRange] = useState(null);
   const [activeLenderView, setActiveLenderView] = useState(null);
   const [newParticipationDate, setNewParticipationDate] = useState(() => defaultParticipationDate());
@@ -1162,9 +1064,6 @@ const AdminAIDashboard = () => {
   const [referralYear, setReferralYear] = useState(null);
   const [referralYearStatus, setReferralYearStatus] = useState(null);
   const [referralYearCards, setReferralYearCards] = useState([]);
-  const [referralYearGrandTotal, setReferralYearGrandTotal] = useState(0);
-  const [referralYearGrandRegistered, setReferralYearGrandRegistered] = useState(0);
-  const [referralYearGrandLent, setReferralYearGrandLent] = useState(0);
   const [topReferrers, setTopReferrers] = useState([]);
   const [selectedTopReferrerLimit, setSelectedTopReferrerLimit] = useState(null);
   const [topReferrersLoading, setTopReferrersLoading] = useState(false);
@@ -1172,10 +1071,6 @@ const AdminAIDashboard = () => {
   const [topReferrersTreePdfExporting, setTopReferrersTreePdfExporting] = useState(false);
   const [topPaidEarnedExcelExporting, setTopPaidEarnedExcelExporting] = useState(null);
   const [topReferrersTreePdfProgress, setTopReferrersTreePdfProgress] = useState("");
-  const [selectedTopReferrer, setSelectedTopReferrer] = useState(null);
-  const [selectedTopReferrerDetail, setSelectedTopReferrerDetail] = useState(null);
-  const [selectedTopReferrerLoading, setSelectedTopReferrerLoading] = useState(false);
-  const [selectedTopReferrerError, setSelectedTopReferrerError] = useState("");
   const [referralRows, setReferralRows] = useState([]);
   const [referralPage, setReferralPage] = useState(1);
   const [referralTotal, setReferralTotal] = useState(0);
@@ -1208,9 +1103,6 @@ const AdminAIDashboard = () => {
         if (cached.charts) setCharts(cached.charts);
         if (Array.isArray(cached.referralYearCards) && cached.referralYearCards.length) {
           setReferralYearCards(cached.referralYearCards);
-          setReferralYearGrandTotal(pickNumber(cached.referralYearGrandTotal));
-          setReferralYearGrandRegistered(pickNumber(cached.referralYearGrandRegistered));
-          setReferralYearGrandLent(pickNumber(cached.referralYearGrandLent));
         }
         setLoading(false);
         setLoadError("");
@@ -1237,9 +1129,6 @@ const AdminAIDashboard = () => {
       const yearlyRows = Array.isArray(referralYearly?.years) ? referralYearly.years : [];
       if (yearlyRows.length) {
         setReferralYearCards(yearlyRows);
-        setReferralYearGrandTotal(pickNumber(referralYearly?.grandTotal));
-        setReferralYearGrandRegistered(pickNumber(referralYearly?.grandRegistered));
-        setReferralYearGrandLent(pickNumber(referralYearly?.grandLent));
       }
 
       let activeLenderLocationByState = registeredUsersData.activeLenderLocationByState || [];
@@ -1680,10 +1569,14 @@ const AdminAIDashboard = () => {
     setTopLenderDetailError("");
   };
 
+  const didMountRef = useRef(false);
   useEffect(() => {
-    loadStats();
-    loadTopLendersData();
-  }, []);
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      loadStats();
+      loadTopLendersData();
+    }
+  });
 
   const refreshDashboard = () => {
     clearAdminAIDashboardCache();
@@ -1691,7 +1584,7 @@ const AdminAIDashboard = () => {
     loadTopLendersData(undefined, { force: true });
   };
 
-  const resetPanels = () => {
+  const resetPanels = useCallback(() => {
     setAdminUsers([]);
     setActiveLenders([]);
     setLenderDeals(null);
@@ -1703,7 +1596,6 @@ const AdminAIDashboard = () => {
     setSelectedProfileError("");
     setAdminUserDeals(null);
     setAdminUserDealsTab("active");
-    setAdminUserDealsLoading(false);
     setInactiveReactivatedLenders([]);
     setInactiveReactivatedCount(0);
     setInactiveReactivatedLoading(false);
@@ -1719,26 +1611,23 @@ const AdminAIDashboard = () => {
     setReferralYear(null);
     setReferralYearStatus(null);
     setReferralYearsLoading(false);
-  };
+  }, []);
 
-  const buildDefaultReferralYearCards = () => {
+  const buildDefaultReferralYearCards = useCallback(() => {
     const currentYear = Number(String(defaultParticipationDate()).slice(0, 4)) || new Date().getFullYear();
     const years = [];
     for (let year = currentYear; year >= 2021; year -= 1) {
       years.push({ year, registeredCount: 0, lentCount: 0, totalCount: 0 });
     }
     return years;
-  };
+  }, []);
 
-  const loadReferralYearCards = async ({ force = false } = {}) => {
+  const loadReferralYearCards = useCallback(async ({ force = false } = {}) => {
     const fallback = buildDefaultReferralYearCards();
     if (!force) {
       const cached = readAdminAIDashboardCache();
       if (Array.isArray(cached?.referralYearCards) && cached.referralYearCards.length) {
         setReferralYearCards(cached.referralYearCards);
-        setReferralYearGrandTotal(pickNumber(cached.referralYearGrandTotal));
-        setReferralYearGrandRegistered(pickNumber(cached.referralYearGrandRegistered));
-        setReferralYearGrandLent(pickNumber(cached.referralYearGrandLent));
         setReferralYearsLoading(false);
         return;
       }
@@ -1759,9 +1648,6 @@ const AdminAIDashboard = () => {
         data?.grandLent,
         years.reduce((sum, row) => sum + pickNumber(row.lentCount), 0)
       );
-      setReferralYearGrandTotal(grand);
-      setReferralYearGrandRegistered(grandRegistered);
-      setReferralYearGrandLent(grandLent);
       const existingCache = readAdminAIDashboardCache() || {};
       writeAdminAIDashboardCache({
         ...existingCache,
@@ -1775,9 +1661,9 @@ const AdminAIDashboard = () => {
     } finally {
       setReferralYearsLoading(false);
     }
-  };
+  }, [buildDefaultReferralYearCards]);
 
-  const loadTopReferrers = async ({ force = false } = {}) => {
+  const loadTopReferrers = useCallback(async ({ force = false } = {}) => {
     if (!force) {
       const cached = readAdminAIDashboardCache();
       if (Array.isArray(cached?.topReferrers) && cached.topReferrers.length) {
@@ -1804,7 +1690,7 @@ const AdminAIDashboard = () => {
     } finally {
       setTopReferrersLoading(false);
     }
-  };
+  }, []);
 
   const downloadTopReferrersTreePdf = async (limit = 10) => {
     const safeLimit = limit === 50 ? 50 : 10;
@@ -1914,7 +1800,7 @@ const AdminAIDashboard = () => {
     loadReferralRegistrations(1, { dateValue: today, yearValue: null, statusValue: null });
   };
 
-  const openYearWiseReferrals = () => {
+  const openYearWiseReferrals = useCallback(() => {
     setSelectedQualityChipKey("");
     resetPanels();
     setSelectedCard({ key: "yearWiseReferrals", label: "YearWise referrals" });
@@ -1925,20 +1811,17 @@ const AdminAIDashboard = () => {
     setReferralRows([]);
     setReferralTotal(0);
     setSelectedTopReferrerLimit(null);
-    setSelectedTopReferrer(null);
-    setSelectedTopReferrerDetail(null);
-    setSelectedTopReferrerError("");
     setReferralYearCards((prev) => (prev.length ? prev : buildDefaultReferralYearCards()));
     loadReferralYearCards();
     loadTopReferrers();
-  };
+  }, [buildDefaultReferralYearCards, loadReferralYearCards, loadTopReferrers, resetPanels]);
 
-  const openYearWiseDeals = () => {
+  const openYearWiseDeals = useCallback(() => {
     setSelectedQualityChipKey("");
     resetPanels();
     setSelectedCard({ key: "yearWiseDeals", label: "YearWise Deals" });
     setShowYearWiseDeals(true);
-  };
+  }, [resetPanels]);
 
   useEffect(() => {
     const requestedPanel = new URLSearchParams(window.location.search).get("panel");
@@ -1949,7 +1832,7 @@ const AdminAIDashboard = () => {
       openYearWiseDeals();
       navigate("/adminAIDashboard", { replace: true });
     }
-  }, []);
+  }, [navigate, openYearWiseDeals, openYearWiseReferrals]);
 
   const openReferralYearStatus = (year, status) => {
     const safeYear = Number(year);
@@ -2010,8 +1893,6 @@ const AdminAIDashboard = () => {
 
   const showTopReferrers = async (limit) => {
     setSelectedTopReferrerLimit(limit);
-    setSelectedTopReferrer(null);
-    setSelectedTopReferrerDetail(null);
     const visibleRows = topReferrers.slice(0, limit);
     if (!visibleRows.length) return;
     setTopReferrerStatusesLoading(true);
@@ -2047,26 +1928,6 @@ const AdminAIDashboard = () => {
     } finally {
       setTopReferrerStatusesLoading(false);
     }
-  };
-
-  const loadBankDetailsForProfile = async (userId) => {
-    try {
-      const bankData = responseData(await getAdminAIActiveLenderBankDetails(userId));
-      if (bankData && hasBankDetailsData(bankData)) {
-        return mapBankProfile(bankData);
-      }
-    } catch {
-      // Fall through to legacy admin API.
-    }
-    try {
-      const legacyData = responseData(await getAdminAIActiveLenderLegacyDetails(userId));
-      if (legacyData && hasBankDetailsData(legacyData)) {
-        return mapBankProfile({ ...legacyData, bankDetailsSource: legacyData.bankDetailsSource || "legacy_admin_api" });
-      }
-    } catch {
-      return null;
-    }
-    return null;
   };
 
   const openAdminUserProfile = (user) => {
@@ -3952,8 +3813,6 @@ const AdminAIDashboard = () => {
                       onClick={() => {
                         if (selectedTopReferrerLimit) {
                           setSelectedTopReferrerLimit(null);
-                          setSelectedTopReferrer(null);
-                          setSelectedTopReferrerDetail(null);
                         } else {
                           backToDashboard();
                         }
@@ -4315,7 +4174,6 @@ const AdminAIDashboard = () => {
                 }}>Reset</button>
               </form>
 
-              {activeLenderSearchStatus && <div className="alert alert-info">{activeLenderSearchStatus}</div>}
               {activeLendersError && <div className="alert alert-danger">{activeLendersError}</div>}
               {activeLendersLoading && <div className="admin-ai-empty-state">Loading active lender profiles...</div>}
 
@@ -5110,149 +4968,6 @@ const BankDetailsCell = ({ lender }) => {
       <strong>{bankName}</strong>
       <span>{accountNumber}</span>
       <span>{ifscCode}</span>
-    </div>
-  );
-};
-
-const ProfileRow = ({ label, value, copyable, mailLink }) => (
-  <div className="admin-ai-profile-row">
-    <span className="admin-ai-profile-row-label">{label}</span>
-    <span className="admin-ai-profile-row-value">
-      {mailLink ? (
-        <a href={mailLink} target="_blank" rel="noreferrer">{valueOrDash(value)}</a>
-      ) : (
-        valueOrDash(value)
-      )}
-      {copyable && value ? (
-        <button className="admin-ai-copy-btn" type="button" onClick={() => navigator.clipboard?.writeText(String(value))}>
-          <FaCopy />
-        </button>
-      ) : null}
-    </span>
-  </div>
-);
-
-const RegisteredLenderProfilePanel = ({ profile, loading, error, deals, dealsTab, onDealsTabChange, onClose, isLender }) => {
-  const visibleDeals = dealsTab === "active" ? deals?.activeDeals || [] : deals?.closedDeals || [];
-
-  if (!isLender) {
-    return (
-      <div className="admin-ai-profile-box">
-        <div className="admin-ai-panel-head">
-          <h5>{valueOrDash(profile.name)} ({valueOrDash(profile.userCode)})</h5>
-          <button className="admin-ai-close-btn" type="button" onClick={onClose}>Close Profile</button>
-        </div>
-        <div className="admin-ai-user-row">
-          <div><small>TYPE</small><strong>{valueOrDash(profile.primaryType)}</strong></div>
-          <div><small>MOBILE</small><strong>{valueOrDash(profile.mobileNumber)}</strong></div>
-          <div><small>EMAIL</small><strong>{valueOrDash(profile.email)}</strong></div>
-          <div><small>CITY</small><strong>{valueOrDash(profile.city)}</strong></div>
-          <div><small>STATE</small><strong>{valueOrDash(profile.state)}</strong></div>
-          <div><small>PARTICIPATION</small><strong>{fmtMoney(profile.totalParticipationAmount)}</strong></div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="admin-ai-profile-box admin-ai-profile-box-rich">
-      <div className="admin-ai-panel-head">
-        <div>
-          <h5>{formatLenderCode(profile.lenderId, profile.userCode)} {valueOrDash(profile.name)}</h5>
-          <p>Full lender profile with bank details, wallet, and deal participation.</p>
-        </div>
-        <button className="admin-ai-close-btn" type="button" onClick={onClose}>Close Profile</button>
-      </div>
-
-      {loading && <div className="admin-ai-empty-state">Loading full lender profile...</div>}
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      {!loading && (
-        <>
-          <div className="admin-ai-profile-stats-row">
-            <div className="admin-ai-profile-stat"><small>Wallet</small><strong>{fmtMoney(profile.walletAmount)}</strong></div>
-            <div className="admin-ai-profile-stat"><small>Total Investment</small><strong>{fmtMoney(profile.totalParticipationAmount)}</strong></div>
-            <div className="admin-ai-profile-stat"><small>Deals</small><strong>{fmtNum(profile.dealsCount)}</strong></div>
-          </div>
-
-          <div className="admin-ai-profile-sections">
-            <div className="admin-ai-profile-section">
-              <h6>Contact Information</h6>
-              <div className="admin-ai-profile-table">
-                <ProfileRow label="Email" value={profile.email} copyable mailLink={gmailUrl(profile.email)} />
-                <ProfileRow label="Mobile Number" value={profile.mobileNumber} copyable />
-                <ProfileRow label="WhatsApp" value={profile.whatsappNumber} copyable />
-                <ProfileRow label="Registered On" value={formatDate(profile.registeredOn)} />
-              </div>
-            </div>
-            <div className="admin-ai-profile-section">
-              <h6>Location</h6>
-              <div className="admin-ai-profile-table">
-                <ProfileRow label="City" value={profile.city} />
-                <ProfileRow label="State" value={profile.state} />
-                <ProfileRow label="Pincode" value={profile.pincode} />
-                <ProfileRow label="Address" value={formatCompleteAddress(profile)} />
-              </div>
-            </div>
-            <div className="admin-ai-profile-section">
-              <h6>Identity</h6>
-              <div className="admin-ai-profile-table">
-                <ProfileRow label="Lender ID" value={formatLenderCode(profile.lenderId, profile.userCode)} />
-                <ProfileRow label="Lender Group" value={formatLenderGroup(profile)} />
-                <ProfileRow label="Lender Type" value={profile.lenderType || profile.primaryType} />
-                <ProfileRow label="Date of Birth" value={formatDate(profile.dob)} />
-                <ProfileRow label="PAN Number" value={profile.panNumber} />
-                <ProfileRow label="Aadhar Number" value={profile.aadharNumber} />
-              </div>
-            </div>
-            <div className="admin-ai-profile-section admin-ai-profile-section-wide">
-              <h6>Bank Details</h6>
-              <div className="admin-ai-profile-table">
-                <ProfileRow label="Bank Name" value={profile.bankName} />
-                <ProfileRow label="Account Number" value={profile.accountNumber} copyable />
-                <ProfileRow label="IFSC Code" value={profile.ifscCode} copyable />
-                <ProfileRow label="Branch Name" value={profile.branchName} />
-                <ProfileRow label="Account Type" value={profile.accountType} />
-                <ProfileRow label="Name As Per Bank" value={profile.userNameAccordingToBank} />
-                <ProfileRow label="Bank Address" value={profile.bankAddress} />
-                <ProfileRow label="Mode Of Transactions" value={profile.modeOfTransactions} />
-                <ProfileRow
-                  label="Verification Status"
-                  value={
-                    profile.bankDetailsVerified === true
-                      ? "Verified"
-                      : hasBankDetailsData(profile)
-                        ? "Not Verified"
-                        : "-"
-                  }
-                />
-                {profile.bankDetailsSource ? <ProfileRow label="Data Source" value={profile.bankDetailsSource} /> : null}
-              </div>
-            </div>
-          </div>
-
-          <div className="admin-ai-deal-tabs">
-            <button type="button" className={dealsTab === "active" ? "active" : ""} onClick={() => onDealsTabChange("active")}>
-              Active Deals ({deals?.activeDeals?.length || 0})
-            </button>
-            <button type="button" className={dealsTab === "closed" ? "active" : ""} onClick={() => onDealsTabChange("closed")}>
-              Closed Deals ({deals?.closedDeals?.length || 0})
-            </button>
-          </div>
-          <div className="admin-ai-deal-list">
-            {visibleDeals.length === 0 && <div className="admin-ai-empty-state">No {dealsTab} deals found for this lender.</div>}
-            {visibleDeals.map((deal) => (
-              <div className="admin-ai-deal-row" key={`${profile.lenderId}-${deal.dealId}`}>
-                <div><small>DEAL</small><strong>#{deal.dealId} {valueOrDash(deal.dealName)}</strong></div>
-                <div><small>AMOUNT</small><strong>{fmtMoney(deal.participatedAmount)}</strong></div>
-                <div><small>ROI</small><strong>{valueOrDash(deal.roi)}%</strong></div>
-                <div><small>STATUS</small><strong>{valueOrDash(deal.status)}</strong></div>
-                <div><small>RECEIVED</small><strong>{formatDate(deal.receivedOn)}</strong></div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </div>
   );
 };

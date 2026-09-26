@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from "react";
-import Chart from "react-apexcharts";
-import Header from "../../Header/Header";
-import SideBar from "../../SideBar/SideBar";
-import ProgressBar from "react-customizable-progressbar";
 import { Link } from "react-router-dom";
 import "../Oxyloans/Lender/table.css";
 
 import {
   getDashboardInvestment,
   regular_Api,
-  getNoDealsParticipated,
   handelexcelsForNewLenderDashboard,
 } from "../../HttpRequest/afterlogin";
-import { Table, Tag } from "antd";
+import { Table } from "antd";
 import { onShowSizeChange } from "../../Pagination";
 import { fetchData } from "../../Redux/Slice";
 import { fetchDatadashboard } from "../../Redux/SliceDashboard";
@@ -20,12 +15,10 @@ import { useSelector, useDispatch } from "react-redux";
 // import useDealActivity from "../../Hooks/useDealActivity";
 
 import {
-  awardicon01,
   dashboard1,
   dashboard2,
   dashboard3,
   dashboard4,
-  rightclickmark,
 } from "../../imagepath";
 import Footer from "../../Footer/Footer";
 import {
@@ -51,11 +44,6 @@ const Patnerdashboard = () => {
     isnewlender: false,
   });
 
-  const [dashboardDealActive, setdashboardDealActvity] = useState({
-    activedeal: 0,
-    closedDeal: 0,
-    disbursedDeal: 0,
-  });
   const [regular_runningDeal, setRegularRunningDeal] = useState({
     apidata: "",
     dealtype: "HAPPENING",
@@ -86,69 +74,18 @@ const Patnerdashboard = () => {
   };
 
   const datasource = [];
-  {
-    dashboardInvestment.apiData != ""
-      ? dashboardInvestment.apiData.lenderWalletHistoryResponseDto.map(
-          (data) => {
-            datasource.push({
-              key: Math.random(),
-              Date: data.walletLoaded,
-              Description: data.remarks,
-              Amount: data.amount,
-            });
-          }
-        )
-      : "";
+  if (dashboardInvestment.apiData && dashboardInvestment.apiData !== "") {
+    dashboardInvestment.apiData.lenderWalletHistoryResponseDto?.forEach((data) => {
+      datasource.push({
+        key: Math.random(),
+        Date: data.walletLoaded,
+        Description: data.remarks,
+        Amount: data.amount,
+      });
+    });
   }
 
   const [dashboardcarddata , setdashboardcarddata]=useState({})
-
-  const [dealsProgressed, setdealsProgressed] = useState({
-    totalDeals: 0,
-    participatedDeals: 0,
-    percentage: 0,
-  });
-
-  const [treemap, Settreemap] = useState({
-    series: [
-      {
-        name: "",
-        data: [
-          dashboardDealActive.activedeal,
-          dashboardDealActive.closedDeal,
-          dashboardDealActive.disbursedDeal,
-        ],
-        color: "#664DC9",
-      },
-    ],
-  
-    options: {
-      chart: {
-        height: 350,
-        type: "bar",
-        zoom: {
-          enabled: false,
-        },
-      },
-
-      dataLabels: {
-        enabled: false,
-      },
-      stroke: {
-        curve: "straight",
-      },
-
-      grid: {
-        row: {
-          colors: ["#f3f3f3", "transparent"], // takes an array which will be repeated on columns
-          opacity: 0.5,
-        },
-      },
-      xaxis: {
-        categories: ["Active  Amount ", "Closed  Amount", "Total  Amount "],
-      },
-    },
-  });
 
   const columns = [
     {
@@ -170,7 +107,6 @@ const Patnerdashboard = () => {
   ];
 
   useEffect(() => {
-    const urlparams = window.location.pathname;
     const urldealname = "regularRunningDeal";
 
     const handleRegular = () => {
@@ -181,18 +117,17 @@ const Patnerdashboard = () => {
       );
 
       response.then((data) => {
-        setRegularRunningDeal({
-          ...regular_runningDeal,
+        setRegularRunningDeal((prev) => ({
+          ...prev,
           apidata: data.data,
-        });
+        }));
       });
     };
 
     handleRegular();
-  }, [regular_runningDeal.pageno]);
+  }, [regular_runningDeal.pageno, regular_runningDeal.dealtype]);
 
   useEffect(() => {
-    const urlparams = window.location.pathname;
     const urldealname = "ESCROW";
 
     const handleRegular = () => {
@@ -203,66 +138,50 @@ const Patnerdashboard = () => {
       );
 
       response.then((data) => {
-        setRegularRunningDeal({
-          ...regular_runningDeal,
+        setRegularRunningDeal((prev) => ({
+          ...prev,
           apidataESCROW: data.data.listOfBorrowersDealsResponseDto,
-        });
+        }));
       });
     };
 
     handleRegular();
-  }, [regular_runningDeal.pageno]);
+  }, [regular_runningDeal.pageno, regular_runningDeal.dealtype]);
+
   useEffect(() => {
     dispatch(fetchDatadashboard());
     dispatch(fetchData());
     getuserMembershipValidity().then((data) => {
-      if (data.request.status == 200) {
+      if (data.request.status === 200) {
         const validitydate = new Date(data.data?.validityDate);
         var next_date = new Date();
-        const diffTime = Math.abs(validitydate - next_date);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const validityDatecheck =
           validitydate > next_date && data.data?.validityDate !== null;
 
-        setmembershipdata({
-          ...membershipdata,
+        setmembershipdata((prev) => ({
+          ...prev,
           dashboardData: data,
           ismembershiptrue: validityDatecheck,
-        });
+        }));
       }
     });
 
     getUserDetails().then((data) => {
-      if (data.request.status == 200) {
-        setdashboarddata({
-          ...dashboarddata,
+      if (data.request.status === 200) {
+        setdashboarddata((prev) => ({
+          ...prev,
           profileData: data,
-        });
+        }));
       }
     });
     return () => {};
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const activeres = getactivityApisData();
     activeres.then((data) => {
-      if (data.request.status == 200) {
-
-        setdashboardcarddata(data.data)
-        Settreemap({
-          ...treemap,
-          series: [
-            {
-              name: "",
-              data: [
-                data.data.activeDealsAmount,
-                data.data.closedDealsAmount,
-                data.data.disbursedDealsAmount,
-              ],
-              color: "#664DC9",
-            },
-          ],
-        });
+      if (data.request.status === 200) {
+        setdashboardcarddata(data.data);
       }
     });
     return () => {};
@@ -274,92 +193,54 @@ const Patnerdashboard = () => {
       dashboardInvestment.pageSize
     );
     response.then((data) => {
-      if (data.request.status == 200) {
-        setdashboardInvestment({
-          ...dashboardInvestment,
+      if (data.request.status === 200) {
+        setdashboardInvestment((prev) => ({
+          ...prev,
           apiData: data.data,
           loading: false,
           hasdata:
-            data.data.lenderWalletHistoryResponseDto.length == 0 ? false : true,
-        });
+            data.data.lenderWalletHistoryResponseDto.length !== 0,
+        }));
       }
     });
     return () => {};
   }, [dashboardInvestment.pageNo, dashboardInvestment.pageSize]);
 
   useEffect(() => {
-    const response = getNoDealsParticipated();
-    response.then((data) => {
-      if (data.request.status == 200) {
-        setdealsProgressed({
-          ...dealsProgressed,
-          totalDeals: data.data.dealCount,
-          participatedDeals: data.data.participationCount,
-          percentage:
-            (data.data.participationCount / data.data.dealCount) * 100,
-        });
-      }
-    });
-    return () => {};
-  }, []);
-
-  useEffect(() => {
     const profileskip = localStorage.getItem("profileskip");
-    if (profileskip) {
-    } else {
+    if (!profileskip) {
       const profileData = dashboarddata?.profileData?.data;
       if (profileData) {
-        const { kycStatus, bankDetailsInfo, personalDetailsInfo, groupName } =
+        const { kycStatus, bankDetailsInfo, personalDetailsInfo } =
           profileData;
-        const isvalidity = membershipdata.ismembershiptrue;
 
         if (
-          kycStatus == false &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == true
+          kycStatus === false &&
+          bankDetailsInfo === true &&
+          personalDetailsInfo === true
         ) {
           personalDetails(
             "Attention: Update Your Personal Details for Enhanced Services and Security. ",
             "/profile"
           );
         } else if (
-          kycStatus == true &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == false
+          kycStatus === true &&
+          bankDetailsInfo === true &&
+          personalDetailsInfo === false
         ) {
           personalDetails(
             "Kindly provide/update your bank information,",
             "/profile"
           );
         } else if (
-          kycStatus == true &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == false
-        ) {
-          personalDetails(
-            " Kindly provide/update your personal Information",
-            "/profile"
-          );
-        } else if (
-          kycStatus == false &&
-          bankDetailsInfo == false &&
-          personalDetailsInfo == false
+          kycStatus === false &&
+          bankDetailsInfo === false &&
+          personalDetailsInfo === false
         ) {
           personalDetails(
             "Personal details are currently unavailable. Kindly provide/update your bank information, nominee details, and complete the KYC process ",
             "/profile"
           );
-        } else if (
-          kycStatus == true &&
-          bankDetailsInfo == true &&
-          personalDetailsInfo == true &&
-          isvalidity == false
-        ) {
-          const skipbutton = localStorage.getItem("skip");
-          // if (skipbutton) {
-          // } else {
-          //   validityDatemodal(getdashboardData?.validityDate, groupName);
-          // }
         }
       }
     }
@@ -576,7 +457,7 @@ console.log(downloadUrl)
                         </a> */}
                           {
         <Link  id="downloadLink" onClick={()=>handleClickGetLink("WALLETCREDITED")}>
-             <i class="fa-solid fa-download"></i>
+             <i className="fa-solid fa-download"></i>
         </Link>
       }
                       </li>

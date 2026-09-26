@@ -140,3 +140,1247 @@
 .PhoneInputInput{
       background: transparent;
 }
+
+/* ==========================================================================
+   Lender Register - Modern Animated Design matching reference specification
+   ========================================================================== */
+
+/* Page Background */
+.lender-register-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 20px;
+  background: #f1f4f9;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(219, 234, 254, 0.7) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(254, 243, 199, 0.45) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(241, 245, 249, 0.9) 0px, transparent 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Main Two-Column Card Shell */
+.lender-register-shell {
+  width: auto;
+  max-width: 95vw;
+  height: min(670px, calc(100vh - 24px));
+  min-height: min(670px, calc(100vh - 24px));
+  max-height: min(670px, calc(100vh - 24px));
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 50px -12px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(226, 232, 240, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  overflow: hidden;
+  position: relative;
+  animation: regCardEntrance 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes regCardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ==========================================================================
+   LEFT HERO BANNER
+   ========================================================================== */
+.lender-hero-panel {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 896 / 1200;
+  flex: 0 0 auto;
+  background: #0d2962;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lender-hero-img-full {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Floating animated light overlays on top of the hero image */
+.hero-animated-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Shimmer Light Sweep across the hero panel */
+.hero-light-sweep {
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  animation: heroLightSweep 6s infinite ease-in-out;
+}
+
+@keyframes heroLightSweep {
+  0% {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  35%, 100% {
+    transform: translateX(350%) rotate(25deg);
+  }
+}
+
+/* Floating Golden Rupee Halos */
+.hero-coin-glow {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.5) 0%, rgba(245, 158, 11, 0) 70%);
+  animation: coinGlowPulse 3s infinite ease-in-out;
+}
+
+.hero-coin-glow.left-coin {
+  width: 90px;
+  height: 90px;
+  top: 48%;
+  left: 47%;
+  animation-delay: 0s;
+}
+
+.hero-coin-glow.right-coin {
+  width: 80px;
+  height: 80px;
+  top: 53%;
+  right: 1.5%;
+  animation-delay: 1.5s;
+}
+
+@keyframes coinGlowPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.75;
+  }
+}
+
+/* Upward Gold Sparks Rising along the Arrow */
+.hero-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fde047;
+  box-shadow: 0 0 8px #f59e0b, 0 0 12px #fde047;
+  animation: sparkFloat 4s infinite linear;
+}
+
+.hero-sparkle.sp-1 {
+  bottom: 28%;
+  right: 18%;
+  animation-delay: 0.2s;
+  animation-duration: 3.5s;
+}
+
+.hero-sparkle.sp-2 {
+  bottom: 35%;
+  right: 12%;
+  animation-delay: 1.4s;
+  animation-duration: 4.2s;
+}
+
+.hero-sparkle.sp-3 {
+  bottom: 45%;
+  right: 7%;
+  animation-delay: 2.3s;
+  animation-duration: 3.8s;
+}
+
+@keyframes sparkFloat {
+  0% {
+    transform: translateY(0) scale(0.4);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-90px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Floating pulse aura on the "Your Money Can Do More" card */
+.hero-card-glow {
+  position: absolute;
+  top: 18%;
+  right: 4%;
+  width: 240px;
+  height: 130px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.15);
+  animation: cardBreathe 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes cardBreathe {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Frosted glass bar reflection */
+.hero-bottom-glass-glow {
+  position: absolute;
+  bottom: 4%;
+  left: 8%;
+  right: 8%;
+  height: 55px;
+  border-radius: 30px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: glassShimmer 5s infinite ease-in-out;
+}
+
+@keyframes glassShimmer {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* ==========================================================================
+   RIGHT REGISTRATION FORM PANEL (Compact & Balanced Proportions)
+   ========================================================================== */
+.lender-form-panel {
+  background: #ffffff;
+  padding: clamp(10px, 1.8vh, 16px) clamp(16px, 1.8vw, 24px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 0;
+  height: 100%;
+  width: 400px;
+  max-width: 420px;
+  flex: 1 1 380px;
+}
+
+.lender-form-wrap {
+  width: 100%;
+  max-width: 335px;
+  margin: 0 auto;
+}
+
+/* Header Row: Title & Subtitle + Floating Shield Badge */
+.reg-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: clamp(2px, 0.5vh, 4px);
+}
+
+.reg-title-wrap {
+  flex: 1;
+}
+
+.reg-title {
+  margin: 0;
+  font-size: clamp(19px, 2.2vh, 22.5px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.reg-subtitle {
+  margin: 3px 0 0;
+  font-size: clamp(11.5px, 1.25vh, 12.5px);
+  line-height: 1.35;
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Shield Badge on Top Right */
+.reg-shield-badge-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: clamp(52px, 5.8vh, 62px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reg-shield-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  animation: shieldFloat 3.8s ease-in-out infinite;
+  filter: drop-shadow(0 6px 12px rgba(37, 99, 235, 0.18));
+}
+
+@keyframes shieldFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-1deg);
+  }
+}
+
+/* Google Sign-in Button */
+.reg-google-btn {
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #2563eb;
+  border-radius: 12px;
+  padding: clamp(6.5px, 0.95vh, 8.5px) 14px;
+  margin-top: clamp(6px, 1vh, 9px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+  outline: none;
+}
+
+.reg-google-btn:hover {
+  background: #f8faff;
+  border-color: #1d4ed8;
+  box-shadow: 0 6px 16px -2px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
+
+.reg-google-btn:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+.reg-google-btn:hover .reg-google-arrow {
+  transform: translateX(4px);
+  color: #1d4ed8;
+}
+
+.reg-google-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.reg-google-text {
+  font-size: clamp(13px, 1.4vh, 14px);
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.reg-google-arrow {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2563eb;
+  transition: transform 0.25s ease, color 0.2s ease;
+  display: inline-block;
+  line-height: 1;
+}
+
+/* Divider with "OR" */
+.reg-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: clamp(5px, 0.8vh, 7.5px) 0;
+}
+
+.reg-divider::before,
+.reg-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.reg-divider span {
+  padding: 0 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Gmail Verified Notice */
+.reg-gmail-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  border-radius: 9px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  animation: fadeInDown 0.3s ease;
+}
+
+/* Stack of Form Fields */
+.reg-field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(5px, 0.72vh, 7px);
+}
+
+/* Individual Input Shell */
+.reg-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 11px;
+  height: clamp(36px, 4.1vh, 39.5px);
+  padding: 0 11px;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.reg-input-shell:hover:not(.disabled) {
+  border-color: #cbd5e1;
+}
+
+.reg-input-shell.focused {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.reg-input-shell.has-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  animation: inputShake 0.4s ease-in-out;
+}
+
+@keyframes inputShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.reg-input-shell.disabled {
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+/* Leading Icon */
+.reg-field-icon {
+  width: 18px;
+  color: #94a3b8;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 9px;
+  flex-shrink: 0;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.reg-input-shell.focused .reg-field-icon {
+  color: #2563eb;
+  transform: scale(1.08);
+}
+
+/* Input text element */
+.reg-field-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: #0f172a;
+  font-size: clamp(13px, 1.4vh, 13.8px);
+  font-family: inherit;
+  padding: 0;
+  line-height: normal;
+  width: 100%;
+}
+
+.reg-field-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.reg-field-input:read-only {
+  cursor: not-allowed;
+  color: #64748b;
+}
+
+/* Trailing Icons: Info and Password Eye */
+.reg-field-info-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+.reg-info-icon {
+  color: #64748b;
+  font-size: 15px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.reg-field-info-wrap:hover .reg-info-icon {
+  color: #2563eb;
+  transform: scale(1.15);
+}
+
+/* Tooltip on PAN Info */
+.reg-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: -10px;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(6px);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.reg-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 14px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e293b transparent transparent transparent;
+}
+
+.reg-field-info-wrap:hover .reg-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Password Eye Toggle Icon */
+.reg-pw-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  margin-left: 8px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  transition: color 0.2s ease, transform 0.15s ease;
+}
+
+.reg-pw-toggle-btn:hover {
+  color: #2563eb;
+  transform: scale(1.1);
+}
+
+/* Helper note above referral */
+.reg-referrer-hint {
+  font-size: clamp(10.5px, 1.15vh, 11.5px);
+  line-height: 1.35;
+  color: #64748b;
+  margin-top: 1px;
+  margin-bottom: -3px;
+  padding-left: 2px;
+}
+
+/* Inline Field Error Message */
+.reg-field-error {
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: -5px;
+  margin-bottom: 1px;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: fadeIn 0.2s ease;
+}
+
+/* Global Alert Error Message */
+.reg-global-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 9px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: fadeIn 0.25s ease;
+}
+
+/* Primary CTA Button: Next Step → */
+.reg-next-btn {
+  width: 100%;
+  height: clamp(37px, 4.1vh, 41px);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  border-radius: 11px;
+  color: #ffffff;
+  font-size: clamp(13.5px, 1.45vh, 14.5px);
+  font-weight: 700;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-top: clamp(6px, 1vh, 9px);
+  box-shadow: 0 8px 18px -3px rgba(37, 99, 235, 0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.reg-next-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -3px rgba(37, 99, 235, 0.5);
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.reg-next-btn:hover .reg-btn-arrow {
+  transform: translateX(5px);
+}
+
+.reg-next-btn:active {
+  transform: translateY(0) scale(0.985);
+  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.4);
+}
+
+.reg-btn-arrow {
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Subtle Shimmer effect running across Next Step button */
+.reg-next-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  animation: btnShimmer 4.5s infinite ease-in-out;
+}
+
+@keyframes btnShimmer {
+  0% { left: -120%; }
+  30%, 100% { left: 160%; }
+}
+
+/* Footnotes & Link Area */
+.reg-footnote {
+  text-align: center;
+  font-size: clamp(11.5px, 1.25vh, 12.5px);
+  color: #64748b;
+  margin-top: clamp(5px, 0.8vh, 7.5px);
+}
+
+.reg-link {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.reg-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.reg-small-divider {
+  margin: clamp(3px, 0.55vh, 5.5px) 0;
+}
+
+.reg-small-divider span {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.reg-borrower-row {
+  text-align: center;
+  font-size: clamp(11.5px, 1.25vh, 12.5px);
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   OTP VERIFICATION & SUCCESS STYLES
+   ========================================================================== */
+.reg-otp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0;
+  animation: fadeIn 0.4s ease;
+}
+
+.reg-otp-icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 24px;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.3);
+  margin-bottom: 10px;
+  animation: shieldFloat 3s ease-in-out infinite;
+}
+
+.reg-otp-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.reg-otp-subtitle {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0 0 14px;
+}
+
+.reg-otp-inputs {
+  margin: 10px 0 16px;
+}
+
+.reg-resend-box {
+  margin-bottom: 12px;
+  font-size: 12.5px;
+}
+
+.reg-resend-link {
+  color: #2563eb;
+  font-weight: 700;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  transition: color 0.2s ease;
+}
+
+.reg-resend-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.reg-resend-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* OTP Success View */
+.reg-success-container {
+  text-align: center;
+  padding: 20px 0;
+  animation: fadeIn 0.5s ease;
+}
+
+.reg-success-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 28px;
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.3);
+  margin-bottom: 14px;
+  animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.reg-success-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.reg-success-desc {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  max-width: 360px;
+  margin: 0 auto 16px;
+}
+
+/* ==========================================================================
+   SHORT DESKTOP SCREEN ADJUSTMENT (Fits 600px - 740px viewport height in single view)
+   ========================================================================== */
+@media (min-width: 961px) and (max-height: 750px) {
+  .lender-register-page {
+    padding: 8px 14px;
+  }
+
+  .lender-register-shell {
+    max-height: calc(100vh - 16px);
+  }
+
+  .lender-form-panel {
+    padding: 8px 16px 8px;
+  }
+
+  .lender-form-wrap {
+    max-width: 310px;
+  }
+
+  .reg-title {
+    font-size: 19px;
+  }
+
+  .reg-subtitle {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+
+  .reg-shield-badge-wrap {
+    width: 58px;
+  }
+
+  .reg-google-btn {
+    padding: 5.5px 12px;
+    margin-top: 6px;
+  }
+
+  .reg-google-text {
+    font-size: 12.5px;
+  }
+
+  .reg-divider {
+    margin: 4px 0;
+  }
+
+  .reg-field-stack {
+    gap: 4.5px;
+  }
+
+  .reg-input-shell {
+    height: 35px;
+    padding: 0 9px;
+  }
+
+  .reg-field-input {
+    font-size: 12.5px;
+  }
+
+  .reg-next-btn {
+    height: 36px;
+    margin-top: 6px;
+    font-size: 13.5px;
+  }
+
+  .reg-footnote {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  .reg-small-divider {
+    margin: 3px 0;
+  }
+
+  .reg-borrower-row {
+    font-size: 11px;
+  }
+}
+
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVE DESIGN (< 860px)
+   (Hides hero artwork on mobile to eliminate 100% of text/image overlap)
+   ========================================================================== */
+@media (max-width: 860px) {
+  .lender-register-page {
+    height: auto;
+    min-height: 100vh;
+    padding: 18px 14px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Fix: Always start at top so header is never pushed off-screen */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+
+  .lender-register-shell {
+    flex-direction: column;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  /* Completely hide the hero artwork panel on mobile to prevent any text overlapping or distortion */
+  .lender-hero-panel {
+    display: none !important;
+  }
+
+  .lender-form-panel {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: auto;
+    padding: 20px 18px 22px;
+    overflow-y: visible;
+    box-sizing: border-box;
+  }
+
+  .lender-form-wrap {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .reg-header-row {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .reg-title {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  .reg-subtitle {
+    font-size: 12px;
+    line-height: 1.35;
+    margin-top: 2px;
+  }
+
+  .reg-shield-badge-wrap {
+    width: 48px;
+    flex-shrink: 0;
+  }
+
+  .reg-google-btn {
+    padding: 9px 14px;
+    height: 42px;
+    border-radius: 11px;
+    margin-top: 8px;
+  }
+
+  .reg-google-text {
+    font-size: 13.5px;
+  }
+
+  .reg-divider {
+    margin: 8px 0;
+  }
+
+  .reg-field-stack {
+    gap: 8px;
+  }
+
+  .reg-input-shell {
+    height: 42px;
+    border-radius: 11px;
+    padding: 0 12px;
+  }
+
+  .reg-field-input {
+    font-size: 14.5px;
+  }
+
+  .reg-referrer-hint {
+    font-size: 11px;
+    margin-top: 1px;
+    margin-bottom: -2px;
+  }
+
+  .reg-next-btn {
+    height: 42px;
+    font-size: 14.5px;
+    border-radius: 11px;
+    margin-top: 12px;
+  }
+
+  .reg-footnote {
+    font-size: 12px;
+    margin-top: 10px;
+  }
+
+  .reg-small-divider {
+    margin: 4px 0;
+  }
+
+  .reg-borrower-row {
+    font-size: 12px;
+  }
+}
+
+/* Small Smartphones (< 480px) */
+@media (max-width: 480px) {
+  .lender-register-page {
+    padding: 12px 10px 24px;
+    justify-content: flex-start;
+  }
+
+  .lender-register-shell {
+    border-radius: 18px;
+    max-width: 100%;
+  }
+
+  .lender-hero-panel {
+    display: none !important;
+  }
+
+  .lender-form-panel {
+    padding: 18px 14px 20px;
+  }
+
+  .reg-header-row {
+    margin-bottom: 4px;
+  }
+
+  .reg-title {
+    font-size: 18.5px;
+  }
+
+  .reg-subtitle {
+    font-size: 11.5px;
+  }
+
+  .reg-shield-badge-wrap {
+    width: 44px;
+  }
+
+  .reg-google-btn {
+    padding: 8px 12px;
+    height: 40px;
+    margin-top: 6px;
+  }
+
+  .reg-google-text {
+    font-size: 13px;
+  }
+
+  .reg-divider {
+    margin: 6px 0;
+  }
+
+  .reg-field-stack {
+    gap: 7px;
+  }
+
+  .reg-input-shell {
+    height: 40px;
+    padding: 0 10px;
+  }
+
+  .reg-field-input {
+    font-size: 14px;
+  }
+
+  .reg-referrer-hint {
+    font-size: 10.5px;
+  }
+
+  .reg-next-btn {
+    height: 40px;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+
+  .reg-footnote,
+  .reg-borrower-row {
+    font-size: 11.5px;
+  }
+}
+
+/* ==========================================================================
+   GOOGLE SIGN-UP SUB-FLOW STYLES
+   ========================================================================== */
+.reg-google-flow-box {
+  animation: fadeIn 0.3s ease;
+  padding-top: 4px;
+}
+
+.reg-gmail-badge {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.reg-gmail-badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.reg-gmail-badge-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.reg-gmail-badge-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e40af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.reg-gmail-badge-email {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-all;
+}
+
+.reg-google-step-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.reg-google-step-desc {
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0 0 14px;
+}
+
+.reg-back-text-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 14px;
+  width: 100%;
+  text-align: center;
+  font-family: inherit;
+  transition: color 0.2s ease;
+}
+
+.reg-back-text-btn:hover {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+.reg-text-link-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.reg-text-link-btn:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

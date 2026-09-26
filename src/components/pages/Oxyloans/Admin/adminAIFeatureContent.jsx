@@ -20,11 +20,8 @@ import {
   SharedBankAccountsPanel,
   ViewPaymentsPanel,
 } from "./AdminFeaturePanels";
-import AdminPrioritiesPanel from "./AdminPrioritiesPanel";
 import { AdminDealRoiTable } from "./AdminDealRoiTable";
 import { AdminFyEarnersPanel } from "./AdminFyEarnersPanel";
-import AdminBorrowerOverview from "./AdminBorrowerOverview";
-import AdminFdStatistics from "./AdminFdStatistics";
 import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import AdminWalletHubPanel from "./AdminWalletHubPanel";
 import {
@@ -43,18 +40,14 @@ import {
 } from "./adminFullReports";
 import {
   buildAdminPriorities,
-  buildSpreadSnapshot,
-  buildCapitalSnapshot,
   buildBorrowerLifecycleSnapshot,
-  buildPlatformPlSnapshot,
   buildWalletFlowSnapshot,
   mergeFeeSummary,
   mergeAdminPlatformKpis,
   enrichBorrowerWithFdStatistics,
   buildDealsSummaryFromIntel,
-  ADMIN_METRIC_HELP,
 } from "./adminBusinessMetrics";
-import { DataTable, money, number, StatTile, TrendChart, HBarChart } from "./adminAIDashboardShared";
+import { DataTable, money, number, StatTile } from "./adminAIDashboardShared";
 
 export const sectionsToPlatform = (sections) => {
   if (!sections) return null;
@@ -74,12 +67,6 @@ const hasKpis = (kpis) =>
     kpis.totalDeals != null ||
     kpis.totalWalletBalance != null ||
     kpis.activeDealsAmount != null);
-
-const hasLiveKpis = (kpis) =>
-  kpis &&
-  (kpis.totalWalletBalance != null ||
-    kpis.activeDealsAmount != null ||
-    kpis.totalInvested != null);
 
 const loadReconciliation = async (cache) => {
   if (cache?.reconciliation && cache.reconciliation.totalInitiated != null) {
@@ -362,7 +349,6 @@ export const FeatureContent = ({
   const kpis = platform?.kpis || ctx.platform?.kpis || {};
   const users = platform?.users || ctx.platform?.users || {};
   const recon = reconciliation || ctx.reconciliation || {};
-  const overview = ctx.overview || {};
 
   switch (featureId) {
     case "deals-directory":

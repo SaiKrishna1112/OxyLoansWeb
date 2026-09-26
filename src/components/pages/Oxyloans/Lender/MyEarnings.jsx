@@ -519,7 +519,7 @@ const MyEarnings = () => {
   const Inviteborrower = async () => {
     const userId = localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.oxyloans.com/new/register_borrower?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/borrower_register?ref=${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");

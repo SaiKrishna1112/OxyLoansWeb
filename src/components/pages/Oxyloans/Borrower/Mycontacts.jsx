@@ -36,13 +36,13 @@ const Mycontacts = () => {
     const getemailcontact = async () => {
       const response = getcontactdeatils();
       response.then((data) => {
-        if (data.request.status == 200) {
-          setcontactData({
-            ...contactdata,
+        if (data.request.status === 200) {
+          setcontactData((prev) => ({
+            ...prev,
             apidata: data.data,
             loading: false,
-            hasdata: data.data.length == 0 ? false : true,
-          });
+            hasdata: data.data.length !== 0,
+          }));
         }
       });
     };
@@ -51,12 +51,12 @@ const Mycontacts = () => {
     const getemail = async () => {
       try {
         const response = await getemailcontent(); // Assuming getemailcontent is an async function
-        setmesage({
-          ...message,
+        setmesage((prev) => ({
+          ...prev,
           emailcontent: response.data.mailContent,
           emailsubject: response.data.mailSubject,
           buttomemail: response.data.bottomOfTheMail,
-        });
+        }));
 
         if (response.status === 200) {
         } else {
@@ -195,7 +195,7 @@ const Mycontacts = () => {
                     <div className="page-header">
                       <div className="row align-items-center">
                         <div className="col">
-                          <h3 className="page-title"></h3>
+                          <h3 className="page-title">My Contacts</h3>
                         </div>
                         <div className="col-auto text-end float-end ms-auto download-grp">
                           <Link
@@ -264,7 +264,7 @@ const Mycontacts = () => {
         <div
           className="modal fade"
           id="exampleModal"
-          tabindex="-1"
+          tabIndex={-1}
           aria-labelledby="exampleModalLabel"
           aria-hidden="true"
         >
@@ -311,18 +311,17 @@ const Mycontacts = () => {
                   and currently investing in lakhs. If this interests you and
                   want to earn like them then OxyLoans is the connection.
                 </p>
-                <a href="">
-                  <p>
-                    Please join as a Lender / Investor and start earning monthly
-                    income.
-                  </p>
-                </a>
+                <p>
+                  Please join as a Lender / Investor and start earning monthly
+                  income.
+                </p>
                 <p>
                   OxyLoans is founded and run by Mr.RadhakrishnaThatavarti!
                   Please review his linkedin profile{" "}
                   <a
                     href="https://www.linkedin.com/in/venkata-radhakrishna-thatavarti-214b2a213/"
                     target="_blank"
+                    rel="noreferrer"
                   >
                     https://www.linkedin.com/in/venkata-radhakrishna-thatavarti-214b2a213/
                   </a>{" "}

@@ -1,0 +1,1034 @@
+/* ==========================================================================
+   OxyLoans Modern Login with OTP Screen
+   Fixed Aspect-Ratio Two-Card Layout & Non-Overlapping Mobile Responsiveness
+   ========================================================================== */
+
+/* Page Viewport - Centered Two-Card Canvas */
+.loginotp-page {
+  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 16px 24px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(219, 234, 254, 0.75) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(209, 250, 229, 0.6) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(241, 245, 249, 0.95) 0px, transparent 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Master Two-Card Shell - Width adapts to cards so image NEVER stretches */
+.loginotp-two-cards-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  height: min(670px, calc(100vh - 36px));
+  max-height: min(670px, calc(100vh - 36px));
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   LEFT CARD (Hero Artwork Card with Fixed Aspect Ratio - NEVER Stretches)
+   ========================================================================== */
+.loginotp-left-card {
+  height: 100%;
+  aspect-ratio: 1018 / 941;
+  flex: 0 0 auto;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 
+    0 20px 50px -10px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(226, 232, 240, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: cardEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  user-select: none;
+}
+
+.loginotp-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Animated Overlays on Left Hero Card */
+.hero-animated-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 28px;
+}
+
+/* 1. Shimmer Light Sweep across Artwork */
+.hero-light-sweep {
+  position: absolute;
+  top: -50%;
+  left: -70%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  animation: heroLightSweep 7s infinite ease-in-out;
+}
+
+@keyframes heroLightSweep {
+  0% {
+    transform: translateX(-100%) rotate(25deg);
+  }
+  30%, 100% {
+    transform: translateX(450%) rotate(25deg);
+  }
+}
+
+/* 2. Golden Coin Aura Pulse */
+.hero-coin-pulse {
+  position: absolute;
+  left: 10.5%;
+  bottom: 18%;
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, rgba(245, 158, 11, 0) 70%);
+  animation: coinPulse 3s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes coinPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.8;
+  }
+}
+
+/* 3. Shield Security Aura Glow */
+.hero-shield-glow {
+  position: absolute;
+  left: 56.5%;
+  top: 41%;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.5) 0%, rgba(56, 189, 248, 0) 70%);
+  animation: shieldGlow 3.5s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes shieldGlow {
+  0%, 100% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.85;
+  }
+}
+
+/* 4. Rising Gold Sparkles along Arrow */
+.hero-sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fde047;
+  box-shadow: 0 0 8px #f59e0b, 0 0 14px #fde047;
+  animation: sparkRise 4s infinite linear;
+  pointer-events: none;
+}
+
+.hero-sparkle.sp-1 {
+  left: 51%;
+  top: 58%;
+  animation-delay: 0.3s;
+  animation-duration: 3.8s;
+}
+
+.hero-sparkle.sp-2 {
+  left: 54%;
+  top: 52%;
+  animation-delay: 1.5s;
+  animation-duration: 4.2s;
+}
+
+.hero-sparkle.sp-3 {
+  left: 58%;
+  top: 47%;
+  animation-delay: 2.7s;
+  animation-duration: 3.5s;
+}
+
+@keyframes sparkRise {
+  0% {
+    transform: translateY(0) scale(0.3);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-15px) scale(1);
+  }
+  80% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-80px) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* ==========================================================================
+   RIGHT CARD (Authentication Card - Zero Scroll Overflow)
+   ========================================================================== */
+.loginotp-right-card {
+  height: 100%;
+  width: 440px;
+  max-width: 440px;
+  flex: 0 0 auto;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 
+    0 20px 50px -10px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(226, 232, 240, 0.85),
+    0 2px 6px rgba(0, 0, 0, 0.02);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 28px 18px;
+  box-sizing: border-box;
+  overflow: hidden; /* Fits completely without scrollbar */
+  animation: cardEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Card Header */
+.loginotp-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.loginotp-header-left {
+  flex: 1;
+}
+
+.loginotp-welcome-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0c1a30;
+  letter-spacing: -0.02em;
+  margin: 0 0 2px 0;
+  line-height: 1.25;
+}
+
+.oxy-blue {
+  color: #0066f6;
+}
+
+.oxy-green {
+  color: #00a85a;
+}
+
+.loginotp-welcome-sub {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* 5. Floating Sprout Bobbing Animation */
+.loginotp-sprout-wrap {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: floatBob 3.2s ease-in-out infinite;
+}
+
+@keyframes floatBob {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.loginotp-sprout-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Section Title */
+.loginotp-section-heading {
+  margin-bottom: 8px;
+}
+
+.loginotp-step-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.loginotp-step-desc {
+  font-size: 11.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Mobile Input Field */
+.loginotp-input-box {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.loginotp-input-box:focus-within {
+  border-color: #0066f6;
+  box-shadow: 0 0 0 3px rgba(0, 102, 246, 0.12);
+}
+
+.loginotp-input-box.has-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.loginotp-phone-icon {
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.loginotp-input-divider {
+  width: 1px;
+  height: 18px;
+  background: #e2e8f0;
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+.loginotp-native-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  padding: 0;
+  width: 100%;
+}
+
+.loginotp-native-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.loginotp-field-error {
+  font-size: 11px;
+  color: #ef4444;
+  margin: 2px 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* PhoneInput with Country Code Dropdown */
+.loginotp-phone-input-wrap {
+  width: 100%;
+}
+
+.loginotp-phone-input-wrap .PhoneInput {
+  display: flex !important;
+  align-items: center !important;
+  height: 44px !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  padding: 0 12px !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInput:focus-within {
+  border-color: #25D366 !important;
+  box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.15) !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputCountry {
+  display: inline-flex !important;
+  align-items: center !important;
+  align-self: center !important;
+  gap: 6px !important;
+  margin: 0 12px 0 0 !important;
+  padding: 0 10px 0 0 !important;
+  border-right: 1.5px solid #e2e8f0 !important;
+  position: relative !important;
+  cursor: pointer !important;
+  height: 22px !important;
+  flex-shrink: 0 !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputCountryIcon {
+  width: 24px !important;
+  height: 16px !important;
+  border-radius: 3px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputCountryIconImg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputCountrySelect {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 10 !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  border: none !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputCountrySelectArrow {
+  display: inline-block !important;
+  width: 5px !important;
+  height: 5px !important;
+  margin: 0 2px 2px 0 !important;
+  border-style: solid !important;
+  border-color: #64748b !important;
+  border-top-width: 0 !important;
+  border-bottom-width: 1.5px !important;
+  border-left-width: 0 !important;
+  border-right-width: 1.5px !important;
+  transform: rotate(45deg) !important;
+  opacity: 0.8 !important;
+  flex-shrink: 0 !important;
+}
+
+.loginotp-calling-code {
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  user-select: none !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-left: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputInput {
+  flex: 1 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
+  padding: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  align-self: center !important;
+}
+
+.loginotp-phone-input-wrap .PhoneInputInput::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}
+
+/* Password Toggle Button */
+.loginotp-pw-toggle {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  transition: color 0.18s ease;
+}
+
+.loginotp-pw-toggle:hover {
+  color: #0066f6;
+}
+
+/* Links row (Forgot Password & Login with OTP) */
+.loginotp-links-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0 2px;
+  font-size: 11.5px;
+}
+
+.loginotp-text-link {
+  color: #0066f6;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loginotp-text-link:hover {
+  color: #004ecc;
+  text-decoration: underline;
+}
+
+.loginotp-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Send OTP Button */
+.loginotp-send-btn {
+  width: 100%;
+  height: 42px;
+  background: #0066f6;
+  background-image: linear-gradient(135deg, #005ce6 0%, #0066f6 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 102, 246, 0.26);
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.loginotp-send-btn:hover:not(:disabled) {
+  background-image: linear-gradient(135deg, #004ecc 0%, #005ce6 100%);
+  box-shadow: 0 6px 16px rgba(0, 102, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.loginotp-send-btn:hover:not(:disabled) .btn-arrow-icon {
+  transform: translateX(3px);
+}
+
+.btn-arrow-icon {
+  transition: transform 0.2s ease;
+}
+
+.loginotp-send-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.loginotp-send-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.loginotp-send-btn.whatsapp-btn {
+  background: #25D366;
+  background-image: linear-gradient(135deg, #1ebd5a 0%, #25D366 100%);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.28);
+}
+
+.loginotp-send-btn.whatsapp-btn:hover:not(:disabled) {
+  background-image: linear-gradient(135deg, #18a94e 0%, #1ebd5a 100%);
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.38);
+}
+
+/* OR Divider */
+.loginotp-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 9px 0 7px;
+}
+
+.loginotp-divider::before,
+.loginotp-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.loginotp-divider span {
+  padding: 0 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Alternative Login Buttons */
+.loginotp-alt-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.loginotp-alt-btn {
+  width: 100%;
+  height: 38px;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.loginotp-alt-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+}
+
+.loginotp-alt-btn:active {
+  transform: translateY(0);
+}
+
+/* Dual Column Feature Container (Lender & Borrower) */
+.loginotp-features-card {
+  background: #f0f6ff;
+  border-radius: 16px;
+  padding: 9px 12px;
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+}
+
+.loginotp-features-card::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: #dbeafe;
+}
+
+.loginotp-feature-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2px 4px;
+  text-decoration: none !important;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.loginotp-feature-col:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
+}
+
+.loginotp-feature-icon {
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginotp-feature-icon.green {
+  color: #059669;
+}
+
+.loginotp-feature-icon.blue {
+  color: #0066f6;
+}
+
+.loginotp-feature-role {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1px;
+}
+
+.loginotp-feature-desc {
+  font-size: 9.5px;
+  color: #64748b;
+  line-height: 1.25;
+  margin: 0 0 3px;
+}
+
+.loginotp-feature-signup-btn {
+  font-size: 10px;
+  font-weight: 700;
+  color: #059669;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.18s ease;
+}
+
+.loginotp-feature-signup-btn.borrower {
+  color: #0066f6;
+}
+
+.loginotp-feature-col:hover .loginotp-feature-signup-btn {
+  text-decoration: underline;
+}
+
+/* Clean Bottom Sign Up Footnote */
+.loginotp-bottom-footnote {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.loginotp-bottom-footnote a {
+  color: #0066f6;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+.loginotp-bottom-footnote a:hover {
+  color: #004ecc;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   OTP VERIFICATION VIEW (VIDEO SPECIFICATION)
+   ========================================================================== */
+.loginotp-verify-view {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.loginotp-verify-sub {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
+
+.loginotp-phone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.loginotp-edit-phone-btn {
+  background: none;
+  border: none;
+  color: #0066f6;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.loginotp-edit-phone-btn:hover {
+  text-decoration: underline;
+}
+
+/* 6-Box OTP Inputs */
+.loginotp-boxes-grid {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.loginotp-digit-box {
+  width: 44px;
+  height: 50px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  font-size: 21px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  outline: none;
+  transition: all 0.18s ease;
+  box-sizing: border-box;
+}
+
+.loginotp-digit-box:focus {
+  border-color: #0066f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(0, 102, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.loginotp-digit-box.is-filled {
+  border-color: #0066f6;
+  background: #ffffff;
+}
+
+/* Resend Row */
+.loginotp-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+
+.loginotp-resend-link {
+  background: none;
+  border: none;
+  color: #0066f6;
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.loginotp-resend-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.loginotp-resend-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loginotp-countdown {
+  color: #0066f6;
+  font-weight: 700;
+}
+
+/* Verified Success Screen State (Delightful Animation) */
+.loginotp-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 16px 24px;
+  animation: fadeIn 0.4s ease;
+  width: 100%;
+}
+
+.loginotp-success-icon-wrap {
+  width: 64px;
+  height: 64px;
+  background: #10b981;
+  background-image: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  margin-bottom: 18px;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+  animation: checkPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+}
+
+.loginotp-success-icon-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 26px;
+  border: 2px solid rgba(16, 185, 129, 0.35);
+  animation: pulseRing 1.8s infinite;
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(4deg); }
+  80% { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 0.2; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.loginotp-success-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+
+.loginotp-success-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0 0 18px;
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+/* Progress bar filling up smoothly during the wait */
+.loginotp-redirect-progress-bar {
+  width: 160px;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loginotp-redirect-progress-fill {
+  height: 100%;
+  background: #10b981;
+  background-image: linear-gradient(90deg, #10b981, #0066f6);
+  border-radius: 999px;
+  animation: fillProgress 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fillProgress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (Zero Overlap on Mobile)
+   ========================================================================== */
+@media (max-width: 860px) {
+  .loginotp-page {
+    height: auto;
+    min-height: 100vh;
+    padding: 20px 16px;
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .loginotp-two-cards-wrap {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+    width: 100%;
+    max-width: 440px;
+    gap: 0;
+  }
+
+  /* Completely hide the left hero artwork card on mobile to prevent any text overlapping or distortion */
+  .loginotp-left-card {
+    display: none !important;
+  }
+
+  .loginotp-right-card {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: auto;
+    border-radius: 24px;
+    padding: 24px 20px 20px;
+    overflow: visible;
+  }
+
+  .loginotp-welcome-title {
+    font-size: 20px;
+  }
+
+  .loginotp-sprout-wrap {
+    width: 44px;
+    height: 44px;
+  }
+
+  .loginotp-digit-box {
+    width: 38px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .loginotp-boxes-grid {
+    gap: 4px;
+  }
+}

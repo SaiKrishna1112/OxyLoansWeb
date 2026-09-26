@@ -4,9 +4,6 @@ import { login } from "../../imagepath";
 import { Link } from "react-router-dom";
 import ReCAPTCHA from "react-google-recaptcha";
 
-import FeatherIcon from "feather-icons-react/build/FeatherIcon";
-import { useDispatch } from "react-redux";
-import { useSelector } from "react-redux";
 import { MARKETPLACE_URL } from "../../../config";
 import { clearLastVisitedUrls } from "../../../utils/redirectUtils";
 
@@ -18,16 +15,6 @@ const PartnerRegister = () => {
   let inputRef = useRef();
   let inputRef2 = useRef();
   const captchaRef = useRef(null);
-  const showIcon = () => (
-    <i class="feather feather-eye" aria-hidden="true">
-      <FeatherIcon icon="eye" />
-    </i>
-  );
-  const hideIcon = () => (
-    <i class="feather feather-eye-slash" aria-hidden="true">
-      <FeatherIcon icon="eye-off" />
-    </i>
-  );
   const [field, setfield] = useState(true);
   const [data, setdata] = useState({
     partnername: "",
@@ -49,10 +36,6 @@ const PartnerRegister = () => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState("");
-
-  const dispatch = useDispatch();
-
-  const reduxStoreData = useSelector((data) => data.counter.userProfile);
 
   useEffect(() => {
     clearLastVisitedUrls();

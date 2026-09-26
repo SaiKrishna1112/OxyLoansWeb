@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, forwardRef } from "react";
 
-function OtpInput({ data, setwhatsappotphandler }) {
+const OtpInput = forwardRef(function OtpInput(
+  { data = 6, setwhatsappotphandler, length = 6, onOtpSubmit },
+  ref
+) {
   const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
   const inputRefs = useRef([]);
 
@@ -9,7 +12,10 @@ function OtpInput({ data, setwhatsappotphandler }) {
       const updatedOtpValues = [...otpValues];
       updatedOtpValues[index] = value;
       setOtpValues(updatedOtpValues);
-      setwhatsappotphandler(updatedOtpValues);
+      const handler = setwhatsappotphandler || onOtpSubmit;
+      if (typeof handler === "function") {
+        handler(updatedOtpValues);
+      }
       if (value !== "" && index < 5 && inputRefs.current[index + 1]) {
         inputRefs.current[index + 1].focus();
       }
@@ -17,21 +23,20 @@ function OtpInput({ data, setwhatsappotphandler }) {
   };
 
   useEffect(() => {
-    if (data === 4) {
-      console.log(data);
+    const count = data || length || 6;
+    if (count === 4) {
       setOtpValues(["", "", "", ""]);
-    } else if (data === 6) {
-      console.log(data);
+    } else if (count === 6) {
       setOtpValues(["", "", "", "", "", ""]);
     }
-  }, [data]); // Add data as a dependency to useEffect
+  }, [data, length]);
 
   useEffect(() => {
-    localStorage.setItem("otp", JSON.stringify(otpValues)); // Store otpValues as a string
+    localStorage.setItem("otp", JSON.stringify(otpValues));
   }, [otpValues]);
 
   return (
-    <div className="otp-field">
+    <div className="otp-field" ref={ref}>
       {otpValues.map((value, index) => (
         <input
           key={index}
@@ -44,6 +49,6 @@ function OtpInput({ data, setwhatsappotphandler }) {
       ))}
     </div>
   );
-}
+});
 
 export default OtpInput;

@@ -1,8 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import "owl.carousel/dist/assets/owl.carousel.css";
-import "owl.carousel/dist/assets/owl.theme.default.css";
-import ReactPasswordToggleIcon from "react-password-toggle-icon";
-import { registerImage } from "../../imagepath";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
@@ -10,13 +6,14 @@ import { BsWhatsapp } from "react-icons/bs";
 import { useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 
+import { loginHeroLeft, loginPlantCoin } from "../../imagepath";
 import { handlesenOtp, usersubmitotp, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { saveLoginSession } from "../../HttpRequest/aiAdminApi";
 import BASE_URL, { ENV, DEV_ADMIN_MOBILE, DEV_OTP } from "../../../config";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
-import { useDispatch } from "react-redux";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import Swal from "sweetalert2";
+import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
   if (msg && msg.includes("Registration step 2 is pending")) {
@@ -25,8 +22,16 @@ const cleanGoogleLoginError = (msg) => {
   return msg;
 };
 
+const GoogleIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48">
+    <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.1 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5c11 0 20.5-8 20.5-19.5 0-1.3-.1-2.7-.5-4z"/>
+    <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.2 13 24 13c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/>
+    <path fill="#FBBC05" d="M24 43.5c5.8 0 10.8-1.9 14.5-5.2l-6.7-5.5C29.8 34.7 27 35.5 24 35.5c-6 0-10.7-3.9-11.7-9.1l-7 5.4C8.5 39.5 15.7 43.5 24 43.5z"/>
+    <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.7-2.2 4.9-4.4 6.4l6.7 5.5C41.8 36.7 44.5 30.8 44.5 24c0-1.3-.1-2.7-.5-4z"/>
+  </svg>
+);
+
 const Loginotp = () => {
-  const dispatch = useDispatch();
   const history = useNavigate();
   const [userLogInInfo, setUserLoginInfo] = useState({
     email: "",
@@ -45,12 +50,15 @@ const Loginotp = () => {
     errormessage: "",
   });
 
+  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [isVerified, setIsVerified] = useState(false);
+  const otpBoxRefs = useRef([]);
+
   const [isloading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [isResending, setIsResending] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleModal, setGoogleModal] = useState(null); // { status, email, accessToken }
-
 
   const handleGoogleSuccess = async (tokenResponse) => {
     setGoogleLoading(true);
@@ -60,9 +68,8 @@ const Loginotp = () => {
         { accessToken: tokenResponse.access_token },
         { headers: { "Content-Type": "application/json" } }
       );
-      const { phoneNumberRequiredOrNot: status, signInUrl: email, mobileNumber, userId, registrationTime } = res.data;
+      const { phoneNumberRequiredOrNot: status, signInUrl: email, userId, registrationTime } = res.data;
       if (status === "LINKED" || status === "FOUND") {
-        // Email found in OxyLoans — auto-link (if needed) and login directly
         const loginRes = await axios.post(
           `${BASE_URL}/v1/user/loginWithLinkedGoogle`,
           { accessToken: tokenResponse.access_token },
@@ -76,10 +83,8 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else if (status === "STEP2_PENDING") {
-        // Registration incomplete — redirect to step 2 with fresh timestamp
         history(`/register_active_proceed?id=${userId}&time=${registrationTime}`);
       } else {
-        // NOT_FOUND — stay on page and show message with the email that wasn't found
         setGoogleModal({ status: "NOT_FOUND", email });
       }
     } catch (err) {
@@ -108,19 +113,23 @@ const Loginotp = () => {
           else history("/borrowerDashboard");
         }
       } else {
-        // FOUND — pre-fill mobile and auto-send OTP via SMS
         const mobile = googleModal.mobileNumber || "";
-        setGoogleModal(prev => ({ ...prev, pendingLink: true }));
+        setGoogleModal((prev) => ({ ...prev, pendingLink: true }));
         if (mobile) {
-          setUserLoginInfo(prev => ({ ...prev, email: mobile, emailerror: "" }));
+          setUserLoginInfo((prev) => ({ ...prev, email: mobile, emailerror: "" }));
           try {
             const otpRes = await handlesenOtp(mobile);
             if (isApiSuccess(otpRes)) {
               if (otpRes.data?.id) sessionStorage.setItem("userId", otpRes.data.id);
-              setUserLoginInfo(prev => ({ ...prev, email: mobile, sentotp: true, emailerror: "" }));
+              setUserLoginInfo((prev) => ({ ...prev, email: mobile, sentotp: true, emailerror: "" }));
               toastrSuccess("OTP sent! Enter it below to link your Google account.");
+              setTimeout(() => {
+                otpBoxRefs.current[0]?.focus();
+              }, 150);
             }
-          } catch (e) { /* user can send OTP manually */ }
+          } catch (e) {
+            /* user can send OTP manually */
+          }
         }
       }
     } catch (err) {
@@ -137,40 +146,20 @@ const Loginotp = () => {
     onError: () => WarningBackendApi("Google Login Failed", "Google authentication was cancelled or failed."),
   });
 
-  let inputRef = useRef();
-  const showIcon = () => (
-    <i className="feather feather-eye" aria-hidden="true">
-      <FeatherIcon icon="eye" />
-    </i>
-  );
-  const hideIcon = () => (
-    <i className="feather feather-eye-slash" aria-hidden="true">
-      <FeatherIcon icon="eye-off" />
-    </i>
-  );
-
-  const handlechange = (event) => {
-    const { name, value } = event.target;
-    setUserLoginInfo({
-      ...userLogInInfo,
-      [name]: value,
-    });
-  };
-
-  const submitloginhandler = async () => {
-    if (userLogInInfo.password === "") {
+  const submitloginhandler = async (overrideOtp) => {
+    const otpToUse = typeof overrideOtp === "string" ? overrideOtp : userLogInInfo.password;
+    if (!otpToUse || otpToUse.trim() === "") {
       setUserLoginInfo((prevState) => ({
         ...prevState,
-        passworderror:
-          userLogInInfo.password === "" ? "Please enter the OTP" : "",
+        passworderror: "Please enter the OTP",
       }));
       return;
     }
 
-    const { email, password } = userLogInInfo;
+    const { email } = userLogInInfo;
     setLoading(true);
     try {
-      const retriveresponse = await usersubmitotp(email, password);
+      const retriveresponse = await usersubmitotp(email, otpToUse);
 
       if (isApiSuccess(retriveresponse)) {
         if (!saveLoginSession(retriveresponse)) {
@@ -182,8 +171,8 @@ const Loginotp = () => {
           WarningBackendApi(title, message);
           return;
         }
+        setIsVerified(true);
         toastrSuccess("Login Success!");
-        // Link Google account if user came via Google flow (non-blocking)
         if (googleModal?.pendingLink && googleModal?.accessToken) {
           try {
             await axios.post(
@@ -192,32 +181,33 @@ const Loginotp = () => {
               { headers: { "Content-Type": "application/json", accessToken: sessionStorage.getItem("accessToken") } }
             );
             toastrSuccess("Google account linked! Next time you can login with Google directly.");
-          } catch (e) { /* non-blocking */ }
+          } catch (e) {
+            /* non-blocking */
+          }
           setGoogleModal(null);
         }
         const role = retriveresponse.data.primaryType;
-        Swal.fire({
-            title: "Login Success!",
-            text: `Welcome back, Valued ${role}! Your trust drives us to serve you better every day.`,
-            icon: "success",
-        });
         let defaultPath = "/borrowerDashboard/admin$";
         if (role === "LENDER") {
           defaultPath = "/lenderAIDashboard/" + retriveresponse.data.id;
-        } else if (role === "ADMIN" || role === "HELPDESKADMIN" || role === "SUPERADMIN" || role === "PRIMARYADMIN") {
+        } else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) {
           defaultPath = "/oxyloansadmindashboard";
         }
-        history(getPostLoginRedirectUrl(defaultPath, role));
+        setTimeout(() => {
+          history(getPostLoginRedirectUrl(defaultPath, role));
+        }, 2200);
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
-        // Backend: "User Registration step 2 is pending =<userId>=<email>" (DOB / PAN / address not filled yet).
-        // Send them to the step-2 form instead of a dead-end error, as the Google path does.
         const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
         if (step2) {
           toastrSuccess("Please complete your registration to continue.");
           history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}`);
           return;
         }
+        setUserLoginInfo((prev) => ({
+          ...prev,
+          passworderror: message || "Invalid OTP entered",
+        }));
         toastrWarning(message);
         WarningBackendApi(title, message);
       }
@@ -225,6 +215,72 @@ const Loginotp = () => {
       WarningBackendApi("Login failed", e?.message || "Unexpected error during login");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOtpBoxChange = (index, value) => {
+    if (value.length > 1) {
+      const clean = value.replace(/\D/g, "").slice(0, 6);
+      if (!clean) return;
+      const newDigits = [...otpDigits];
+      for (let i = 0; i < clean.length && index + i < 6; i++) {
+        newDigits[index + i] = clean[i];
+      }
+      setOtpDigits(newDigits);
+      const fullOtp = newDigits.join("");
+      setUserLoginInfo((prev) => ({ ...prev, password: fullOtp, passworderror: "" }));
+      const nextIdx = Math.min(index + clean.length, 5);
+      otpBoxRefs.current[nextIdx]?.focus();
+      if (fullOtp.length === 6) {
+        submitloginhandler(fullOtp);
+      }
+      return;
+    }
+
+    if (!/^\d*$/.test(value)) return;
+
+    const newDigits = [...otpDigits];
+    newDigits[index] = value;
+    setOtpDigits(newDigits);
+    const fullOtp = newDigits.join("");
+    setUserLoginInfo((prev) => ({ ...prev, password: fullOtp, passworderror: "" }));
+
+    if (value !== "" && index < 5) {
+      otpBoxRefs.current[index + 1]?.focus();
+    }
+
+    if (value !== "" && fullOtp.length === 6) {
+      submitloginhandler(fullOtp);
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === "Backspace") {
+      if (!otpDigits[index] && index > 0) {
+        otpBoxRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      otpBoxRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      otpBoxRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pastedData) return;
+    const newDigits = ["", "", "", "", "", ""];
+    for (let i = 0; i < pastedData.length && i < 6; i++) {
+      newDigits[i] = pastedData[i];
+    }
+    setOtpDigits(newDigits);
+    const fullOtp = newDigits.join("");
+    setUserLoginInfo((prev) => ({ ...prev, password: fullOtp, passworderror: "" }));
+    const focusIdx = Math.min(pastedData.length, 5);
+    otpBoxRefs.current[focusIdx]?.focus();
+    if (fullOtp.length === 6) {
+      submitloginhandler(fullOtp);
     }
   };
 
@@ -244,7 +300,7 @@ const Loginotp = () => {
       }
     };
     autoLogin();
-  }, []);
+  }, [history]);
 
   useEffect(() => {
     let timer;
@@ -290,8 +346,7 @@ const Loginotp = () => {
     if (userLogInInfo.email === "") {
       setUserLoginInfo((prevState) => ({
         ...prevState,
-        emailerror:
-          userLogInInfo.email === "" ? "Please enter the Mobile Number" : "",
+        emailerror: "Please enter the Mobile Number",
       }));
       return;
     }
@@ -313,8 +368,12 @@ const Loginotp = () => {
           sessionStorage.setItem("userId", response.data.id);
         }
         setUserLoginInfo({ ...userLogInInfo, sentotp: true, emailerror: "" });
+        setOtpDigits(["", "", "", "", "", ""]);
         toastrSuccess("OTP sent successfully!");
         setResendTimer(30);
+        setTimeout(() => {
+          otpBoxRefs.current[0]?.focus();
+        }, 200);
       } else {
         const { title, message } = warnApiError(response, "Send OTP failed", "Could not send OTP");
         WarningBackendApi(title, message);
@@ -327,323 +386,414 @@ const Loginotp = () => {
   };
 
   return (
-    <>
-      <div className="main-wrapper login-body">
-        <div className="login-wrapper">
-          <div className="container">
-            <div className="loginbox">
-              <div className="login-left">
-                <img
-                  className="img-fluid h-100"
-                  src={registerImage}
-                  alt="Logo"
-                />
-              </div>
-              <div className="login-right">
-                <div className="login-right-wrap">
-                  <h1>Welcome to OxyLoans</h1>
-
-                  <p className="account-subtitle">
-                    Need an account? <Link to="/register">Sign Up</Link>
-                  </p>
-                  <h2>Login With OTP</h2>
-
-                  <div className="form-group">
-                    <label htmlFor="userloginusername">
-                      Enter Mobile Number{" "}
-                      <span className="login-danger">*</span>
-                    </label>
-                    <input
-                      className="form-control"
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      value={userLogInInfo.email}
-                      name="email"
-                      onChange={(e) => {
-                        const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-                        setUserLoginInfo({ ...userLogInInfo, email: digits, emailerror: "" });
-                      }}
-                      maxLength={10}
-                      id="userloginusername"
-                      required
-                    />
-                    <span className="profile-views">
-                      <i className="fas fa-user-circle" />
-                    </span>
-                    {userLogInInfo.emailerror && (
-                      <div className="text-danger">
-                        {" "}
-                        {userLogInInfo.emailerror}
-                      </div>
-                    )}
-                  </div>
-                  {userLogInInfo.sentotp && (
-                    <>
-                      {" "}
-                      <div className="form-group">
-                        <label htmlFor="userpassword">
-                          Enter OTP <span className="login-danger">*</span>
-                        </label>
-                        <input
-                          ref={inputRef}
-                          className="form-control pass-input"
-                          type="number"
-                          name="password"
-                          id="userpassword"
-                          value={userLogInInfo.password}
-                          onChange={handlechange}
-                          required
-                        />
-                        {userLogInInfo.error && (
-                          <div className="text-danger">
-                            {userLogInInfo.errormessage}
-                          </div>
-                        )}{" "}
-                        {userLogInInfo.passworderror && (
-                          <div className="text-danger">
-                            {" "}
-                            {userLogInInfo.passworderror}
-                          </div>
-                        )}
-                        <ReactPasswordToggleIcon
-                          inputRef={inputRef}
-                          showIcon={showIcon}
-                          hideIcon={hideIcon}
-                        />
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center mt-2 mb-3">
-                        <span className="text-muted small">Didn't receive OTP?</span>
-                        {resendTimer > 0 ? (
-                          <span className="text-muted small fw-bold">
-                            Resend in <span className="text-primary">{resendTimer}s</span>
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn btn-link p-0 small fw-bold text-primary text-decoration-none"
-                            onClick={handleResendOtp}
-                            disabled={isResending}
-                          >
-                            {isResending ? "Resending..." : "Resend OTP"}
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="forgotpass">
-                    <div className="remember-me">
-                      {/* <label className="custom_check mr-2 mb-0 d-inline-flex remember-me">
-                        Remember me
-                        <input type="checkbox" name="remember" />
-                        <span className="checkmark" />
-                      </label> */}
-                      <Link to="/login" >Login with mail?</Link>
-                    </div>
-                    {/* <Link to="/forgotpassword">Forgot Password?</Link> */}
-                  </div>
-                  <div className="form-group">
-                    {userLogInInfo.sentotp ? (
-                      <>
-                        {" "}
-                        {isloading ? <> <button
-                          className="btn btn-primary btn-block"
-                          type="button"
-                        // onClick={submitloginhandler}
-                        >
-                          <div class="spinner-border text-light" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                        </button></> : <><button
-                          className="btn btn-primary btn-block"
-                          type="button"
-                          onClick={submitloginhandler}
-                        >
-                          Login
-                        </button></>}
-                      </>
-                    ) : (
-                      <>
-
-
-                        {isloading ? <> <button
-                          className="btn btn-primary btn-block"
-                          type="button"
-                        // onClick={submitloginhandler}
-                        >
-                          <div class="spinner-border text-light" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                        </button></> : <> <button
-                          className="btn btn-primary btn-block"
-                          type="button"
-                          onClick={sendtheOtp}
-                        >
-                          Send OTP
-                        </button></>}
-
-                      </>
-                    )}
-                  </div>
-
-                  <div className="login-or">
-                    <span className="or-line" />
-                    <span className="span-or">or</span>
-                  </div>
-                          {/* Social Login */}
-                            <Link
-                              to="/login"
-                              style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: 10,
-                                  width: "100%",
-                                  padding: "10px 16px",
-                                  background: "#fff",
-                                  border: "1.5px solid #ddd",
-                                  borderRadius: 8,
-                                  fontSize: 15,
-                                  fontWeight: 600,
-                                  color: "#3c4043",
-                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                                  marginBottom: 14,
-                                  height: "40px",
-                                }}
-                            >
-                              <i class="fa-solid fa-at" style={{ fontSize: 18, color: "#1E3A5F" }} />Login with Email
-                            </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => googleLogin()}
-                      disabled={googleLoading}
-                      style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 10,
-                          width: "100%",
-                          padding: "10px 16px",
-                          background: "#fff",
-                          border: "1.5px solid #ddd",
-                          borderRadius: 8,
-                          fontSize: 15,
-                          fontWeight: 600,
-                          color: "#3c4043",
-                          boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                          marginBottom: 14,
-                        }}
-                      title="Sign in with Google"
-                    >
-                      {googleLoading
-                        ? <span className="spinner-border spinner-border-sm text-danger" />
-                        : <svg width="20" height="20" viewBox="0 0 48 48">
-            <path fill="#4285F4" d="M44.5 20H24v8.5h11.7C34.7 33.1 30.1 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5 13.2 4.5 4.5 13.2 4.5 24S13.2 43.5 24 43.5c11 0 20.5-8 20.5-19.5 0-1.3-.1-2.7-.5-4z"/>
-            <path fill="#34A853" d="M6.3 14.7l7 5.1C15 16.1 19.2 13 24 13c3.1 0 5.8 1.1 8 2.9l6-6C34.5 6.5 29.6 4.5 24 4.5c-7.7 0-14.3 4.4-17.7 10.2z"/>
-            <path fill="#FBBC05" d="M24 43.5c5.8 0 10.8-1.9 14.5-5.2l-6.7-5.5C29.8 34.7 27 35.5 24 35.5c-6 0-10.7-3.9-11.7-9.1l-7 5.4C8.5 39.5 15.7 43.5 24 43.5z"/>
-            <path fill="#EA4335" d="M44.5 20H24v8.5h11.7c-.6 2.7-2.2 4.9-4.4 6.4l6.7 5.5C41.8 36.7 44.5 30.8 44.5 24c0-1.3-.1-2.7-.5-4z"/>
-          </svg>
-          } Login with Google
-                    </button>
-
-                     <Link to="/whatsapplogin" 
-                              style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: 10,
-                                  width: "100%",
-                                  // padding: "10px 16px",
-                                  background: "#fff",
-                                  border: "1.5px solid #ddd",
-                                  borderRadius: 8,
-                                  fontSize: 15,
-                                  fontWeight: 600,
-                                  color: "#3c4043",
-                                  boxShadow: "0 1px 4px rgba(0,0,0,0.10)",
-                                  marginBottom: 4,
-                                  height: "40px",
-                                }}>
-                          <BsWhatsapp style={{ fontSize: 20, color: "#25D366" }} /> Login with WhatsApp OTP
-                        </Link>
-
-                  {/* Google Login Modal Overlay */}
-                  {googleModal && (
-                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <div style={{ background: "#fff", borderRadius: 12, padding: "28px 32px", maxWidth: 400, width: "90%", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", textAlign: "center" }}>
-                        {googleModal.status === "NOT_FOUND" ? (
-                          <>
-                            <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
-                            <h5 style={{ fontWeight: 700, marginBottom: 8 }}>Not Registered</h5>
-                            <p style={{ color: "#555", fontSize: 14, marginBottom: 20 }}>
-                              <strong>{googleModal.email}</strong> is not registered on OxyLoans. Please login with your registered mobile number.</p>
-                            <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
-                            <h5 style={{ fontWeight: 700, marginBottom: 8 }}>Gmail Not Registered</h5>
-                            <p style={{ color: "#555", fontSize: 14, marginBottom: 20 }}>
-                              <strong style={{ color: "#1a1a2e" }}>{googleModal.email}</strong> is not found on OxyLoans.<br />
-                              Please login with your mobile number or sign up to create an account.
-                            </p>
-                            <button className="btn btn-primary btn-block mb-2" onClick={() => setGoogleModal(null)}>
-                              Login with Mobile OTP
-                            </button>
-                            <Link to="/register" className="btn btn-success btn-block mb-2" onClick={() => setGoogleModal(null)}>
-                              Sign Up
-                            </Link>
-                            <Link to="/whatsapplogin" className="btn btn-outline-success btn-block" onClick={() => setGoogleModal(null)}>
-                              Login with WhatsApp OTP
-                            </Link>
-                          </>
-                        ) : (
-                          <>
-                            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-                            <h5 style={{ fontWeight: 700, marginBottom: 4 }}>OxyLoans Account Found</h5>
-                            <p style={{ color: "#555", fontSize: 13, marginBottom: 4 }}>{googleModal.email}</p>
-                            {googleModal.mobileNumber && (
-                              <p style={{ fontSize: 14, marginBottom: 20 }}>
-                                Registered mobile: <strong>{googleModal.mobileNumber.slice(0, -4).replace(/\d/g, "X") + googleModal.mobileNumber.slice(-4)}</strong>
-                              </p>
-                            )}
-                            <button
-                              className="btn btn-primary btn-block mb-2"
-                              onClick={handleGoogleAllow}
-                              disabled={googleLoading}
-                            >
-                              {googleLoading ? <span className="spinner-border spinner-border-sm mr-2" /> : null}
-                              Send OTP via SMS
-                            </button>
-                            <Link
-                              to="/whatsapplogin"
-                              className="btn btn-outline-success btn-block mb-2"
-                              onClick={() => {
-                                if (googleModal.mobileNumber) sessionStorage.setItem("prefill_mobile", googleModal.mobileNumber);
-                                setGoogleModal(null);
-                              }}
-                            >
-                              Send OTP via WhatsApp
-                            </Link>
-                            <button className="btn btn-outline-secondary btn-block" onClick={() => {
-                              if (googleModal.mobileNumber) setUserLoginInfo(prev => ({ ...prev, email: googleModal.mobileNumber, emailerror: "" }));
-                              setGoogleModal(null);
-                            }}>
-                              Enter OTP Manually
-                            </button>
-                          </>
-                        )}
-                        <button style={{ marginTop: 14, background: "none", border: "none", color: "#999", fontSize: 13, cursor: "pointer" }} onClick={() => setGoogleModal(null)}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+    <div className="loginotp-page">
+      <div className="loginotp-two-cards-wrap">
+        {/* Left Card - Hero Artwork with Dynamic Micro-Animations */}
+        <div className="loginotp-left-card">
+          <img
+            src={loginHeroLeft}
+            alt="OxyLoans Quick Loans The Right Way"
+            className="loginotp-hero-img"
+          />
+          {/* Dynamic Animated Overlays */}
+          <div className="hero-animated-overlay">
+            <div className="hero-light-sweep" />
+            <div className="hero-coin-pulse" />
+            <div className="hero-shield-glow" />
+            <div className="hero-sparkle sp-1" />
+            <div className="hero-sparkle sp-2" />
+            <div className="hero-sparkle sp-3" />
           </div>
         </div>
+
+        {/* Right Card - Auth Form */}
+        <div className="loginotp-right-card">
+          {isVerified ? (
+            /* Verified Successfully View (Video Specification) */
+            <div className="loginotp-success-state">
+              <div className="loginotp-success-icon-wrap">
+                <FeatherIcon icon="check" size={32} />
+              </div>
+              <h2 className="loginotp-success-title">Verified Successfully!</h2>
+              <p className="loginotp-success-desc">
+                Your phone number has been verified. Redirecting to your dashboard...
+              </p>
+              <div className="loginotp-redirect-progress-bar">
+                <div className="loginotp-redirect-progress-fill" />
+              </div>
+            </div>
+          ) : !userLogInInfo.sentotp ? (
+            /* Initial Phone Input View (Pixel-Perfect ChatGPT Image Design) */
+            <>
+              <div className="loginotp-card-header">
+                <div className="loginotp-header-left">
+                  <h1 className="loginotp-welcome-title">
+                    Welcome to <span className="oxy-blue">Oxy</span>
+                    <span className="oxy-green">Loans</span>
+                  </h1>
+                  <p className="loginotp-welcome-sub">
+                    Login to access your account as a Lender or Borrower
+                  </p>
+                </div>
+                <div className="loginotp-sprout-wrap">
+                  <img src={loginPlantCoin} alt="OxyLoans Sprout" />
+                </div>
+              </div>
+
+              <div className="loginotp-section-heading">
+                <h2 className="loginotp-step-title">Login With OTP</h2>
+                <p className="loginotp-step-desc">
+                  Enter your mobile number to receive an OTP
+                </p>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendtheOtp();
+                }}
+              >
+                <div className={`loginotp-input-box ${userLogInInfo.emailerror ? "has-error" : ""}`}>
+                  <span className="loginotp-phone-icon">
+                    <FeatherIcon icon="smartphone" size={17} />
+                  </span>
+                  <span className="loginotp-input-divider" />
+                  <input
+                    className="loginotp-native-input"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={userLogInInfo.email}
+                    name="email"
+                    placeholder="Enter Mobile Number *"
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setUserLoginInfo({ ...userLogInInfo, email: digits, emailerror: "" });
+                    }}
+                    maxLength={10}
+                    id="userloginusername"
+                    autoComplete="tel"
+                    required
+                  />
+                </div>
+                {userLogInInfo.emailerror && (
+                  <div className="loginotp-field-error">
+                    <FeatherIcon icon="alert-circle" size={13} />
+                    {userLogInInfo.emailerror}
+                  </div>
+                )}
+
+                <button
+                  className="loginotp-send-btn"
+                  type="submit"
+                  disabled={isloading}
+                >
+                  {isloading ? (
+                    <div className="spinner-border spinner-border-sm text-light" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  ) : (
+                    <>
+                      Send OTP <FeatherIcon icon="arrow-right" size={16} className="btn-arrow-icon" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="loginotp-divider">
+                <span>OR</span>
+              </div>
+
+              <div className="loginotp-alt-btns">
+                <button
+                  type="button"
+                  className="loginotp-alt-btn"
+                  onClick={() => googleLogin()}
+                  disabled={googleLoading}
+                >
+                  {googleLoading ? (
+                    <span className="spinner-border spinner-border-sm text-primary" />
+                  ) : (
+                    <GoogleIcon />
+                  )}
+                  Continue with Google
+                </button>
+
+                <Link to="/login" className="loginotp-alt-btn">
+                  <FeatherIcon icon="mail" size={16} style={{ color: "#1e293b" }} />
+                  Login with Email
+                </Link>
+
+                <Link to="/whatsapplogin" className="loginotp-alt-btn">
+                  <BsWhatsapp size={17} style={{ color: "#25D366" }} />
+                  Login with WhatsApp OTP
+                </Link>
+              </div>
+
+              {/* Exact Light Blue Rounded Features Pill Container with Direct Sign Up Links */}
+              <div className="loginotp-features-card">
+                <Link to="/register" className="loginotp-feature-col">
+                  <div className="loginotp-feature-icon green">
+                    <FeatherIcon icon="trending-up" size={16} />
+                  </div>
+                  <span className="loginotp-feature-role">Lender</span>
+                  <p className="loginotp-feature-desc">Grow your wealth</p>
+                  <span className="loginotp-feature-signup-btn">
+                    Sign Up as Lender →
+                  </span>
+                </Link>
+                <Link to="/borrower_register" className="loginotp-feature-col">
+                  <div className="loginotp-feature-icon blue">
+                    <FeatherIcon icon="users" size={16} />
+                  </div>
+                  <span className="loginotp-feature-role">Borrower</span>
+                  <p className="loginotp-feature-desc">Quick loan access</p>
+                  <span className="loginotp-feature-signup-btn borrower">
+                    Sign Up as Borrower →
+                  </span>
+                </Link>
+              </div>
+
+              {/* Bottom Sign Up Footnote */}
+              <div className="loginotp-bottom-footnote">
+                <span>Don't have an account? </span>
+                <Link to="/register">Sign Up Now →</Link>
+              </div>
+            </>
+          ) : (
+            /* OTP Verification Screen (Video Specification) */
+            <div className="loginotp-verify-view">
+              <div className="loginotp-card-header">
+                <div className="loginotp-header-left">
+                  <h1 className="loginotp-welcome-title">Let's verify your number</h1>
+                  <p className="loginotp-verify-sub">
+                    We've sent a 6-digit code to your phone. It'll auto-verify once entered.
+                  </p>
+                  <div className="loginotp-phone-pill">
+                    <span>+91 {userLogInInfo.email}</span>
+                    <button
+                      type="button"
+                      className="loginotp-edit-phone-btn"
+                      onClick={() => {
+                        setUserLoginInfo((prev) => ({
+                          ...prev,
+                          sentotp: false,
+                          password: "",
+                          passworderror: "",
+                        }));
+                        setOtpDigits(["", "", "", "", "", ""]);
+                      }}
+                    >
+                      <FeatherIcon icon="edit-2" size={12} />
+                      Change
+                    </button>
+                  </div>
+                </div>
+                <div className="loginotp-sprout-wrap">
+                  <img src={loginPlantCoin} alt="OxyLoans Sprout" />
+                </div>
+              </div>
+
+              <div className="loginotp-boxes-grid" onPaste={handleOtpPaste}>
+                {otpDigits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => (otpBoxRefs.current[idx] = el)}
+                    className={`loginotp-digit-box ${digit ? "is-filled" : ""}`}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpBoxChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                    autoFocus={idx === 0}
+                  />
+                ))}
+              </div>
+
+              {userLogInInfo.passworderror && (
+                <div className="loginotp-field-error justify-content-center text-center">
+                  <FeatherIcon icon="alert-circle" size={14} />
+                  {userLogInInfo.passworderror}
+                </div>
+              )}
+
+              <div className="loginotp-resend-row">
+                <span>Didn't receive the code?</span>
+                {resendTimer > 0 ? (
+                  <span>
+                    Resend in <strong className="loginotp-countdown">{resendTimer}s</strong>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="loginotp-resend-link"
+                    onClick={handleResendOtp}
+                    disabled={isResending}
+                  >
+                    {isResending ? "Resending..." : "Resend"}
+                  </button>
+                )}
+              </div>
+
+              <button
+                className="loginotp-send-btn"
+                type="button"
+                onClick={() => submitloginhandler()}
+                disabled={isloading}
+              >
+                {isloading ? (
+                  <div className="spinner-border spinner-border-sm text-light" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                ) : (
+                  <>
+                    Verify &amp; Login <FeatherIcon icon="arrow-right" size={16} />
+                  </>
+                )}
+              </button>
+
+              <div className="loginotp-card-footer mt-3">
+                Need help? <Link to="/login">Login with Email</Link> or{" "}
+                <Link to="/whatsapplogin">WhatsApp</Link>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </>
+
+      {/* Google Login Modal Overlay */}
+      {googleModal && (
+            <div
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(15, 23, 42, 0.5)",
+                backdropFilter: "blur(4px)",
+                zIndex: 9999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "16px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: 20,
+                  padding: "28px 30px",
+                  maxWidth: 420,
+                  width: "100%",
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.22)",
+                  textAlign: "center",
+                }}
+              >
+                {googleModal.status === "NOT_FOUND" ? (
+                  <>
+                    <div style={{ fontSize: 38, marginBottom: 12 }}>⚠️</div>
+                    <h5 style={{ fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>
+                      Gmail Not Registered
+                    </h5>
+                    <p style={{ color: "#64748b", fontSize: 13.5, marginBottom: 20 }}>
+                      <strong style={{ color: "#0f172a" }}>{googleModal.email}</strong> is not found on OxyLoans.
+                      <br />
+                      Please login with your registered mobile number or sign up to create an account.
+                    </p>
+                    <button
+                      className="loginotp-send-btn mb-2"
+                      style={{ height: 44 }}
+                      onClick={() => setGoogleModal(null)}
+                    >
+                      Login with Mobile OTP
+                    </button>
+                    <Link
+                      to="/register"
+                      className="loginotp-alt-btn mb-2"
+                      style={{ background: "#ecfdf5", color: "#059669", borderColor: "#a7f3d0" }}
+                      onClick={() => setGoogleModal(null)}
+                    >
+                      Sign Up New Account
+                    </Link>
+                    <Link
+                      to="/whatsapplogin"
+                      className="loginotp-alt-btn"
+                      onClick={() => setGoogleModal(null)}
+                    >
+                      Login with WhatsApp OTP
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 38, marginBottom: 12 }}>✅</div>
+                    <h5 style={{ fontWeight: 800, color: "#0f172a", marginBottom: 4 }}>
+                      OxyLoans Account Found
+                    </h5>
+                    <p style={{ color: "#64748b", fontSize: 13, marginBottom: 6 }}>
+                      {googleModal.email}
+                    </p>
+                    {googleModal.mobileNumber && (
+                      <p style={{ fontSize: 13.5, color: "#334155", marginBottom: 18 }}>
+                        Registered mobile:{" "}
+                        <strong>
+                          {googleModal.mobileNumber.slice(0, -4).replace(/\d/g, "X") +
+                            googleModal.mobileNumber.slice(-4)}
+                        </strong>
+                      </p>
+                    )}
+                    <button
+                      className="loginotp-send-btn mb-2"
+                      style={{ height: 44 }}
+                      onClick={handleGoogleAllow}
+                      disabled={googleLoading}
+                    >
+                      {googleLoading ? <span className="spinner-border spinner-border-sm me-2" /> : null}
+                      Send OTP via SMS
+                    </button>
+                    <Link
+                      to="/whatsapplogin"
+                      className="loginotp-alt-btn mb-2"
+                      onClick={() => {
+                        if (googleModal.mobileNumber)
+                          sessionStorage.setItem("prefill_mobile", googleModal.mobileNumber);
+                        setGoogleModal(null);
+                      }}
+                    >
+                      Send OTP via WhatsApp
+                    </Link>
+                    <button
+                      className="loginotp-alt-btn"
+                      onClick={() => {
+                        if (googleModal.mobileNumber)
+                          setUserLoginInfo((prev) => ({
+                            ...prev,
+                            email: googleModal.mobileNumber,
+                            emailerror: "",
+                          }));
+                        setGoogleModal(null);
+                      }}
+                    >
+                      Enter OTP Manually
+                    </button>
+                  </>
+                )}
+                <button
+                  style={{
+                    marginTop: 14,
+                    background: "none",
+                    border: "none",
+                    color: "#94a3b8",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setGoogleModal(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+    </div>
   );
 };
 

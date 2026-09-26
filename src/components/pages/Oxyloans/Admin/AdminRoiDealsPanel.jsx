@@ -600,7 +600,7 @@ const intelRiskClass = (level) => {
   return "ai-intel-pill";
 };
 
-const IntelStat = ({ label, value, hint, tone }) => (
+export const IntelStat = ({ label, value, hint, tone }) => (
   <div className={`ai-intel-kpi ai-intel-kpi--${tone || "default"}`}>
     <span className="ai-intel-kpi-label">{label}</span>
     <strong className="ai-intel-kpi-value">{value}</strong>
@@ -653,7 +653,6 @@ const actionHint = (deal, action) => {
 
 export const AdminDealIntelligencePanel = () => {
   const [payload, setPayload] = useState(null);
-  const [roiBuckets, setRoiBuckets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("close");
@@ -670,13 +669,12 @@ export const AdminDealIntelligencePanel = () => {
     setLoading(true);
     setError("");
     try {
-      const [intelRes, roiRes] = await Promise.all([
+      const [intelRes] = await Promise.all([
         loadDealIntelligence(),
         loadRoiDeals({ includeDeals: false }).catch(() => null),
       ]);
       const next = intelRes?.data || intelRes || {};
       setPayload(next);
-      setRoiBuckets(Array.isArray(roiRes?.roiBuckets) ? roiRes.roiBuckets : []);
       const running = Array.isArray(next.runningDeals) ? next.runningDeals : [];
       const hasClose = running.some((d) => closureActionOf(d) === "CLOSE");
       const hasSoon = running.some((d) => closureActionOf(d) === "CLOSE_SOON");
@@ -701,12 +699,6 @@ export const AdminDealIntelligencePanel = () => {
   );
   const closeNow = useMemo(() => running.filter((d) => closureActionOf(d) === "CLOSE"), [running]);
   const closeSoon = useMemo(() => running.filter((d) => closureActionOf(d) === "CLOSE_SOON"), [running]);
-  const closeCandidates = useMemo(
-    () => (Array.isArray(payload?.closeCandidates) && payload.closeCandidates.length
-      ? payload.closeCandidates
-      : [...closeNow, ...closeSoon]),
-    [payload, closeNow, closeSoon]
-  );
   const relaunchCandidates = useMemo(
     () => (Array.isArray(payload?.relaunchCandidates) && payload.relaunchCandidates.length
       ? payload.relaunchCandidates

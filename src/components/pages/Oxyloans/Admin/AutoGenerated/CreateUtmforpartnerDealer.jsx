@@ -235,7 +235,7 @@ const CreateUtmforpartnerDealer = () => {
                             name="fav_language"
                             value="HTML"
                           />
-                            <label for="html">PI</label>
+                            <label htmlFor="html">PI</label>
                            {" "}
                           <input
                             type="radio"
@@ -243,7 +243,7 @@ const CreateUtmforpartnerDealer = () => {
                             name="fav_language"
                             value="CSS"
                           />
-                            <label for="css">INTEREST</label>
+                            <label htmlFor="css">INTEREST</label>
                            {" "}
                           <input
                             type="radio"
@@ -251,7 +251,7 @@ const CreateUtmforpartnerDealer = () => {
                             name="fav_language"
                             value="JavaScript"
                           />
-                            <label for="css">Both</label>
+                            <label htmlFor="javascript">Both</label>
                            {" "}
                           <input
                             type="radio"
@@ -269,7 +269,7 @@ const CreateUtmforpartnerDealer = () => {
                             name="fav_language"
                             value="HTML"
                           />
-                            <label for="html">yes</label>
+                            <label htmlFor="html">yes</label>
                            {" "}
                           <input
                             type="radio"
@@ -277,7 +277,7 @@ const CreateUtmforpartnerDealer = () => {
                             name="fav_language"
                             value="CSS"
                           />
-                            <label for="css">No</label>
+                            <label htmlFor="css">No</label>
                            {" "}
                           <input
                             type="radio"

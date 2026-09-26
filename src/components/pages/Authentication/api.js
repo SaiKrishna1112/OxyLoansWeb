@@ -227,7 +227,7 @@ export const vaildateotp = async (
       longitude: longitude || null,
     };
   } else {
-    var data = {
+    data = {
       mobileNumber: moblie,
       mobileOtpSession: session,
       mobileOtpValue: otp_data,

@@ -1,6 +1,11 @@
 export { default as favicon } from "../assets/img/favicon.png";
 export { default as login } from "../assets/img/login.png";
 export { default as registerImage } from "../assets/img/registerImage.png";
+export { default as lenderRegisterHero } from "../assets/img/lender_register_hero_perfect.png";
+export { default as borrowerRegisterHero } from "../assets/img/borrower_register_hero.png";
+export { default as lenderShieldBadge } from "../assets/img/lender_shield_badge_trans.png";
+export { default as loginHeroLeft } from "../assets/img/login_hero_left.png";
+export { default as loginPlantCoin } from "../assets/img/login_plant_coin.png";
 export { default as logo } from "../assets/img/logo.png";
 export { default as logosmall } from "../assets/img/logo-small.png";
 export { default as oxylogomobile } from "../assets/img/oxylogomobile.png";

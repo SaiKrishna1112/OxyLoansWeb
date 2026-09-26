@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Header from "../../../Header/Header";
 import "./InvoiceGrid.css";
 import SideBar from "../../../SideBar/SideBar";
-import { Table, Pagination, Spin, Tag } from "antd";
+import { Table, Pagination, Spin } from "antd";
 import "./InvoiceGrid.css";
 
 import {
@@ -18,7 +18,7 @@ import {
 import AlertTable from "./AlertTable";
 import ModalComponet from "../../Base UI Elements/ModalComponet";
 import MyParticipatedStatement from "../Utills/Modals/MyParticipatedStatement";
-import { handleprincipalreturnaccounttype, membershipsuccess, membershipsuccessinfo, paypendingprocessingAmount } from "../../Base UI Elements/SweetAlert";
+import { membershipsuccessinfo, paypendingprocessingAmount } from "../../Base UI Elements/SweetAlert";
 import Swal from "sweetalert2";
 import Borrowermodel from "../Utills/Modals/Borrowermodel";
 
@@ -69,35 +69,32 @@ const MyRunningDeals = () => {
     setborrowermodelopen(!borrowermodelopen);
   };
 
-  const statementHideProps = () => {
-
-    // setborrowermodelopen(!borrowermodelopen);
-  };
   const navigate = useNavigate()
+  const { status: withdrawApiStatus } = withdrawriaseapi;
   useEffect(() => {
-
-
     const withdrawriase = () => {
-      const response = withdrawriaseapipay(withdrawriaseapi.status)
+      const response = withdrawriaseapipay(withdrawApiStatus)
 
       response.then((data) => {
         console.log(data.data.status)
         if (data.status === 200) {
-          setwithdrawriaseapi({
+          setwithdrawriaseapi((prev) => ({
+            ...prev,
             message: data.data.status,
-            amount: data.data.amount
-          })
+            amount: data.data.amount,
+          }));
         } else {
-          setwithdrawriaseapi({
-            message: null
-          })
+          setwithdrawriaseapi((prev) => ({
+            ...prev,
+            message: null,
+          }));
         }
 
       });
     };
 
     withdrawriase();
-  }, [])
+  }, [withdrawApiStatus])
   const handlemodalopen = (dealId, dealInfo) => {
     setrunningdeals(prev => ({
       ...prev,
@@ -115,14 +112,14 @@ const MyRunningDeals = () => {
     });
   };
 
-  const principal_return_account_type = (type, dealId) => {
-    setrunningdeals({
-      ...runningdeals,
-      principalPayout: type == "BANKACCOUNT" ? "WALLET" : "BANKACCOUNT",
-      isModalVisible: !runningdeals.isModalVisible,
-      dealID: dealId,
-    });
-  };
+  // const principal_return_account_type = (type, dealId) => {
+  //   setrunningdeals((prev) => ({
+  //     ...prev,
+  //     principalPayout: type === "BANKACCOUNT" ? "WALLET" : "BANKACCOUNT",
+  //     isModalVisible: !prev.isModalVisible,
+  //     dealID: dealId,
+  //   }));
+  // };
 
   const handleDataFromChild = (data) => {
     setrunningdeals({
@@ -170,7 +167,7 @@ const MyRunningDeals = () => {
     setborrowermodelopen(!borrowermodelopen)
     const response = borrowerIdMappedToDealIdapi(dealId);
     response.then((data) => {
-      if (data.status == 200) {
+      if (data.status === 200) {
         setborrowerview(data.data)
         console.log(data.data);
 
@@ -246,18 +243,19 @@ const MyRunningDeals = () => {
       key: "funding",
     },
   ];
+  const { pageNo } = runningdeals;
   useEffect(() => {
-    const response = myrunnig(runningdeals);
+    const response = myrunnig({ pageNo });
     response.then((data) => {
-      setrunningdeals({
-        ...runningdeals,
+      setrunningdeals((prev) => ({
+        ...prev,
         data: data.data.lenderPaticipatedResponseDto,
         paginationCount: data.data.count,
         loader: false,
-      });
+      }));
     });
     return () => { };
-  }, [runningdeals.pageNo]);
+  }, [pageNo]);
 
 
   const handlechange = (event) => {
@@ -294,8 +292,6 @@ const MyRunningDeals = () => {
       const response = await getExtensionHistoryapicall(dealId);
       console.log(response.data);
 
-      // Retrieve the userId from localStorage
-      const userId = localStorage.getItem("userId");
       if (response.data.userMessageResponse !== null) {
         membershipsuccessinfo(response.data.userMessageResponse)
       }
@@ -385,9 +381,9 @@ const MyRunningDeals = () => {
               />
             </div>
 
-            <div class="col-md-3"><div class="input-group mb-3">
-              <input type="text" class="form-control" id="inputPassword6" aria-describedby="passwordHelpInline" name="inputserach" placeholder="Enter the Deal Name..." fdprocessedid="dn1e6b" onChange={handlechange} />
-              <button class="btn btn-outline-secondary" type="button" id="button-addon2" fdprocessedid="duzd9h" onClick={() => handlesubmitfilterdeal(searchinput)}> Search</button></div></div>
+            <div className="col-md-3"><div className="input-group mb-3">
+              <input type="text" className="form-control" id="inputPassword6" aria-describedby="passwordHelpInline" name="inputserach" placeholder="Enter the Deal Name..." onChange={handlechange} />
+              <button className="btn btn-outline-secondary" type="button" id="button-addon2" onClick={() => handlesubmitfilterdeal(searchinput)}> Search</button></div></div>
 
             <br />
 
@@ -428,7 +424,7 @@ const MyRunningDeals = () => {
                                 {data.lederReturnType === "PERDAY" && <> ROI : {(data.rateOfInterest).toFixed(2)} % P.D</>}
                               </div>
                               <div className="col-sm-12 col-lg-3" title="DS-days & MS-Months">
-                                Tenure : {data.dealDuration} {data.lederReturnType == "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
+                                Tenure : {data.dealDuration} {data.lederReturnType === "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
                               </div>
                               <div className="col-auto col-lg-3">
                                 Participated Amount: INR {data.paticipatedAmount.toLocaleString("en-IN")}
@@ -479,7 +475,7 @@ const MyRunningDeals = () => {
                                 <div className="col-sm-6 col-lg-3">
                                   <span>Deal Status</span>
                                   <h6 className="mb-0">
-                                    {data.participationStatus == "NOTATACHIEVED"
+                                    {data.participationStatus === "NOTATACHIEVED"
                                       ? "RUNNING"
                                       : data.participationStatus}
                                   </h6>
@@ -494,7 +490,7 @@ const MyRunningDeals = () => {
                                 <h6 className="mb-0">{data.accountType}    <Tag className="badge bg-info mx-2 fw-100" onClick={()=>handleprincipalreturnaccounttype(data.dealId ,data.accountType)}>Edit</Tag></h6> 
                               </div> */}
 
-                                {data.withdrawStatus == "YES" && (
+                                {data.withdrawStatus === "YES" && (
                                   <div className="col-sm-6 col-lg-2">
                                     <span>ATW ROI</span>
                                     <h6 className="mb-0">
@@ -550,7 +546,7 @@ const MyRunningDeals = () => {
                                 <div className="col-auto">
                                   <a
                                     href={
-                                      data.groupLink == "" ? "#" : data.groupLink
+                                      data.groupLink === "" ? "#" : data.groupLink
                                     }
                                     target="_self"
                                     className="badge bg-success"
@@ -580,7 +576,7 @@ const MyRunningDeals = () => {
                                   </span>
                                 </div></>}
 
-                                {data.feeStatus == "PENDING" && (
+                                {data.feeStatus === "PENDING" && (
 
                                   <div className="col-auto">
                                     <span
@@ -600,7 +596,7 @@ const MyRunningDeals = () => {
 
 
                                 {console.log(data)}
-                                {data.participationStatus != "ACHIEVED" && (
+                                {data.participationStatus !== "ACHIEVED" && (
                                   <div className="col-auto">
                                     {/* <Link
                                     to={`/participatedeal?dealId=${data.dealId}`}
@@ -637,7 +633,7 @@ const MyRunningDeals = () => {
                   </>))}
                 </> : <>
 
-                  {runningdeals.loader == true ? (
+                  {runningdeals.loader === true ? (
                     <div className="row d-flex justify-content-center">
                       <Spin
                         tip="Loading..."
@@ -678,7 +674,7 @@ const MyRunningDeals = () => {
                                 {data.lederReturnType === "PERDAY" && <> ROI : {(data.rateOfInterest).toFixed(2)} % P.D</>}
                                 </div>
                                 <div className="col-sm-12 col-lg-3" title="DS-days & MS-Months">
-                                  Tenure : {data.dealDuration} {data.lederReturnType == "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
+                                  Tenure : {data.dealDuration} {data.lederReturnType === "PERDAY" ? data.dealDuration > 1 ? "DS" : "D" : data.dealDuration > 1 ? "MS" : "M"}
                                 </div>
                                 <div className="col-auto col-lg-3">
                                   Participated Amount: INR {data.paticipatedAmount.toLocaleString("en-IN")}
@@ -730,7 +726,7 @@ const MyRunningDeals = () => {
                                   <div className="col-sm-6 col-lg-3">
                                     <span>Deal Status</span>
                                     <h6 className="mb-0">
-                                      {data.participationStatus == "NOTATACHIEVED"
+                                      {data.participationStatus === "NOTATACHIEVED"
                                         ? "RUNNING"
                                         : data.participationStatus}
                                     </h6>
@@ -745,7 +741,7 @@ const MyRunningDeals = () => {
                                 <h6 className="mb-0">{data.accountType}    <Tag className="badge bg-info mx-2 fw-100" onClick={()=>handleprincipalreturnaccounttype(data.dealId ,data.accountType)}>Edit</Tag></h6> 
                               </div> */}
 
-                                  {data.withdrawStatus == "YES" && (
+                                  {data.withdrawStatus === "YES" && (
                                     <div className="col-sm-6 col-lg-2">
                                       <span>ATW ROI</span>
                                       <h6 className="mb-0">
@@ -804,7 +800,7 @@ const MyRunningDeals = () => {
                                   <div className="col-auto">
                                     <a
                                       href={
-                                        data.groupLink == "" ? "#" : data.groupLink
+                                        data.groupLink === "" ? "#" : data.groupLink
                                       }
                                       target="_self"
                                       className="badge bg-success"
@@ -842,7 +838,7 @@ const MyRunningDeals = () => {
                                     </span>
                                   </div></>}
 
-                                  {data.feeStatus == "PENDING" && (
+                                  {data.feeStatus === "PENDING" && (
 
                                     <div className="col-auto">
                                       <span
@@ -862,7 +858,7 @@ const MyRunningDeals = () => {
 
 
                                   {/* {console.log(data)} */}
-                                  {data.participationStatus != "ACHIEVED" && (
+                                  {data.participationStatus !== "ACHIEVED" && (
                                     <div className="col-auto">
                                       {/* <Link
                                     to={`/participatedeal?dealId=${data.dealId}`}

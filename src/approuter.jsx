@@ -1,5 +1,4 @@
 import React from "react";
-import WebPushBootstrap from "./components/WebPushBootstrap";
 import { BrowserRouter, Navigate, Route, Routes, useParams,useLocation } from "react-router-dom";
 import { saveLastVisitedUrl } from "./utils/redirectUtils";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -35,10 +34,6 @@ import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDeal
 
 import AdminAIReconciliationDashboard from "./components/pages/Oxyloans/Admin/AdminAIReconciliationDashboard";
 
-const AdminAIFeatureRedirect = () => {
-  const { featureId } = useParams();
-  return <Navigate to={`/adminAIDashboard/${featureId}`} replace />;
-};
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -96,7 +91,7 @@ import AutoInvestHistory from "./components/pages/Oxyloans/Lender/AutoInvestHist
 import DashboardTransactions from "./components/pages/Oxyloans/Lender/DashboardTransactions";
 import LenderRegister from "./components/pages/Authentication/LenderRegister";
 import BorrowerRegister from "./components/pages/Authentication/BorrowerRegister";
-import Register_active_proceed from "./components/pages/Authentication/register_active_proceed";
+import RegisterActiveProceed from "./components/pages/Authentication/register_active_proceed";
 import ForgotPassword3 from "./components/pages/Authentication/ForgotPassword3";
 import Whatapplog from "./components/pages/Authentication/Whatapplog";
 import PartnerRegister from "./components/pages/Authentication/PartnerRegister";
@@ -178,7 +173,6 @@ import BorrowerMarketplaceConsent from "./components/pages/Oxyloans/Borrower/Bor
 import LenderMarketplaceConsent from "./components/pages/Oxyloans/Lender/LenderMarketplaceConsent";
 import EscalationDashboard from "./components/pages/Oxyloans/Lender/EscalationDashboard";
 import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/redesign/pages/Documents.jsx";
-import MyOffers from "./components/pages/Oxyloans/Lender/MyOffers";
 // import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings";
 import NearbyBorrowers from "./components/pages/Oxyloans/Lender/NearbyBorrowers";
 import LenderEmiDashboard from "./components/pages/Oxyloans/Lender/LenderEmiDashboard";
@@ -195,7 +189,6 @@ import FeeDisclosure from "./components/pages/Oxyloans/Borrower/FeeDisclosure";
 import RepaymentView from "./components/pages/Oxyloans/Borrower/redesign/pages/Repayment.jsx";
 import AgreementPage from "./components/pages/Oxyloans/Borrower/AgreementPage";
 import MyLoans from "./components/pages/Oxyloans/Borrower/redesign/pages/LoanDetails.jsx";
-import LenderPortfolio from "./components/pages/Oxyloans/Lender/LenderPortfolio";
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
 import AssignedUsersforCallers from "./components/pages/Oxyloans/Admin/AssignedUsersforCallers.jsx";
 import RadhaDashboard from "./components/pages/Oxyloans/Radha Admin/RadhaDashboard.jsx";
@@ -241,6 +234,11 @@ const CatchAll = () => {
   return <Navigate to="/borrowerDashboard" replace />;
 };
 
+const AdminAIFeatureRedirect = () => {
+  const { featureId } = useParams();
+  return <Navigate to={`/adminAIDashboard/${featureId}`} replace />;
+};
+
 const NavigationTracker = () => {
   const location = useLocation();
 
@@ -276,14 +274,14 @@ const AppRouter = () => {
         <Route path="/register" element={<LenderRegister />} />
         <Route path="/userType" element={<UserType />} />
         <Route path="/borrower_register" element={<BorrowerRegister />} />
-        <Route path="/register_active_proceed" element={<Register_active_proceed />} />
+        <Route path="/register_active_proceed" element={<RegisterActiveProceed />} />
         <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/forgotpassword" element={<ForgotPassword3 />} />
         <Route path="/forgotpassword2" element={<ForgotPassword />} />
         <Route path="/whatsappuser" element={<Whatappuser />} />
         <Route path="/escrowDeals" element={<EscrowDeals />} />
         <Route path="/regularEscrowDeals" element={<RegularEscrowDeals />} />
-        <Route path="top-lenders" element={<TopLendersPage />} />
+        <Route path="/top-lenders" element={<TopLendersPage />} />
         <Route
           path="/loadwalletThroughVirtualAccount"
           element={<LoadwalletThroughVirtualAccount />}

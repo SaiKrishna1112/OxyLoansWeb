@@ -21,7 +21,7 @@ const DASHBOARD_OVERVIEW_API = `${AI_BASE_URL}admin/dashboard-live`;
 const DASHBOARD_FY_STATS_API = `${AI_BASE_URL}admin/platform-stats`;
 const AI_FY_STATS_API = `${AI_USER_BASE}fy-stats`;
 const AI_ACTIVE_LENDERS_API = `${MARKETPLACE_URL}/v1/ai/admin/active-lenders`;
-const DASHBOARD_LENDERS_API = `${API_USER_URL}admin/dashboard/lenders`;
+export const DASHBOARD_LENDERS_API = `${API_USER_URL}admin/dashboard/lenders`;
 const DASHBOARD_UPCOMING_INTEREST_API = `${API_USER_URL}admin/dashboard/upcoming-interest-payments`;
 const AI_VIEW_PAYMENTS_API = `${API_USER_URL}admin/ai/view-payments`;
 const DEALS_DIRECTORY_API = `${AI_USER_BASE}deals-directory`;
@@ -823,7 +823,7 @@ export const loadWalletSummary = async () => {
 };
 
 
-const augmentBorrowerSummary = async (primary) => {
+export const augmentBorrowerSummary = async (primary) => {
   const fd = Number(primary?.totalFdAmount) || 0;
   const fees = Number(primary?.totalBorrowerFees) || 0;
   const disbursed = Number(primary?.totalFdFromSystem || primary?.totalSystemPayments) || 0;
@@ -1107,7 +1107,7 @@ const collectLiveErrors = (payload) => {
   return errors;
 };
 
-const mapOverviewToSections = (payload) => {
+export const mapOverviewToSections = (payload) => {
   const resource = payload?.resource || DASHBOARD_OVERVIEW_API;
   const generatedAt = payload?.generatedAt || new Date().toISOString();
   const wrap = (name, data) => ({

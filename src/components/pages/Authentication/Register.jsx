@@ -12,12 +12,12 @@ const Register = () => {
   let inputRef = useRef();
   let inputRef2 = useRef();
   const showIcon = () => (
-    <i class="feather feather-eye" aria-hidden="true">
+    <i className="feather feather-eye" aria-hidden="true">
       <FeatherIcon icon="eye" />
     </i>
   );
   const hideIcon = () => (
-    <i class="feather feather-eye-slash" aria-hidden="true">
+    <i className="feather feather-eye-slash" aria-hidden="true">
       <FeatherIcon icon="eye-off" />
     </i>
   );

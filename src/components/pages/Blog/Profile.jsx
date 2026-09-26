@@ -1,15 +1,13 @@
 import moment from "moment";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SideBar from "../../SideBar/SideBar";
 import Header from "../../Header/Header";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import PhoneInput from "react-phone-number-input";
-import { useState, useEffect } from "react";
-import { Success, WarningBackendApi } from "../Base UI Elements/SweetAlert";
+import { Success } from "../Base UI Elements/SweetAlert";
 import axios from "axios";
 import {
-  notifications1,
   notificationssucces,
   toastrSuccess,
   toastrWarning,
@@ -103,7 +101,6 @@ const Profile = () => {
     stateerror: "",
     whatsAppNumbererror: "",
     aadhaarNumbererror: "",
-    aadhaarNumbererror: "",
     mobileNumbererror: "",
     emailerror: "",
   });
@@ -134,7 +131,6 @@ const Profile = () => {
     ifscCodeerror: "",
     mobileOtperror: "",
     mobileOtpSessionerror: "",
-    bankAccountError: "",
     nameAtBankerror: "",
     bankCityerror: "",
     isbankprofilevaild: true,
@@ -223,13 +219,13 @@ const Profile = () => {
       }
 
       response.then((data) => {
-        if (data.request.status == 200) {
+        if (data.request.status === 200) {
           setwhatappnumber({
             ...whatappnumber,
             submit: !whatappnumber.submit,
           });
           notificationssucces();
-        } else if (data.response.data.errorCode != "200") {
+        } else if (data.response.data.errorCode !== "200") {
           // WarningBackendApi("warning", data.response.data.errorMessage);
 toastrSuccess(data.response.data.errorMessage, "top-right")
 
@@ -257,9 +253,9 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       }
 
       response.then((data) => {
-        if (data.request.status == 200) {
+        if (data.request.status === 200) {
           notificationssucces();
-        } else if (data.response.data.errorCode != "200") {
+        } else if (data.response.data.errorCode !== "200") {
           // WarningBackendApi("warning", data.response.data.errorMessage);
           toastrSuccess(data.response.data.errorMessage, "top-right")
 
@@ -282,11 +278,11 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       // }
 
       response.then((data) => {
-        if (data.request.status == 200) {
+        if (data.request.status === 200) {
           // notifications1();
           Success("Sucess", "WhatsApp OTP verified successfully")
           history("/dashboard")
-        } else if (data.response.data.errorCode != "200") {
+        } else if (data.response.data.errorCode !== "200") {
           // WarningBackendApi("warning", data.response.data.errorMessage);
           toastrSuccess(data.response.data.errorMessage, "top-right")
 
@@ -301,15 +297,15 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   };
   useEffect(() => {
     if (userProfile.aadharerror >= 12) {
-      setUserProfile({
-        ...userProfile,
+      setUserProfile((prev) => ({
+        ...prev,
         aadharerror: "aadhaar Number must be 12 digit",
-      });
+      }));
     } else {
-      setUserProfile({
-        ...userProfile,
+      setUserProfile((prev) => ({
+        ...prev,
         aadharerror: "",
-      });
+      }));
     }
   }, [userProfile.aadharerror]);
   const handlerNominee = (event) => {
@@ -322,26 +318,26 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
 
   useEffect(() => {
     const isvalid =
-      nomineeDetails.accountNo != "" &&
-      nomineeDetails.bank != "" &&
-      nomineeDetails.branch != "" &&
-      nomineeDetails.nomineeEmail != "" &&
-      nomineeDetails.nomineeIfsc != "" &&
-      nomineeDetails.nomineeMobile != "" &&
-      nomineeDetails.nomineeName != "" &&
-      nomineeDetails.relation != "" &&
-      nomineeDetails.city != "";
+      nomineeDetails.accountNo !== "" &&
+      nomineeDetails.bank !== "" &&
+      nomineeDetails.branch !== "" &&
+      nomineeDetails.nomineeEmail !== "" &&
+      nomineeDetails.nomineeIfsc !== "" &&
+      nomineeDetails.nomineeMobile !== "" &&
+      nomineeDetails.nomineeName !== "" &&
+      nomineeDetails.relation !== "" &&
+      nomineeDetails.city !== "";
     if (isvalid) {
-      setnomineeDetails({
-        ...nomineeDetails,
+      setnomineeDetails((prev) => ({
+        ...prev,
         isbtndisable: false,
         isdeatail: true,
-      });
+      }));
     } else {
-      setnomineeDetails({
-        ...nomineeDetails,
+      setnomineeDetails((prev) => ({
+        ...prev,
         isbtndisable: true,
-      });
+      }));
     }
   }, [
     nomineeDetails.accountNo,
@@ -390,17 +386,17 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       // bankaccountprofile.confirmAccountNumber !== "" &&
       // bankaccountprofile.accountNumber !== ""
     ) {
-      setBankaccountProfile({
-        ...bankaccountprofile,
+      setBankaccountProfile((prev) => ({
+        ...prev,
         confirmAccountNumbererror: "",
         isbankprofilevaild: false,
-      });
+      }));
     } else {
-      setBankaccountProfile({
-        ...bankaccountprofile,
+      setBankaccountProfile((prev) => ({
+        ...prev,
         confirmAccountNumbererror: "Account numbers do not match!",
         isbankprofilevaild: true,
-      });
+      }));
     }
   }, [
     bankaccountprofile.accountNumber,
@@ -416,9 +412,9 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       } else {
         const response = updatebankDetails(bankaccountprofile);
         response.then((data) => {
-          if (data.request.status == 200) {
+          if (data.request.status === 200) {
             Success("success", "Bank Details Saved Successfully");
-          } else if (data.response.data.errorCode != "200") {
+          } else if (data.response.data.errorCode !== "200") {
             // WarningBackendApi("warning", data.response.data.errorMessage);
             toastrSuccess(data.response.data.errorMessage, "top-right")
 
@@ -437,15 +433,15 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         nomineeDetails.nomineeName === "" ? "Enter the Nominee Name" : "",
       relationerror: nomineeDetails.relation === "" ? "Enter the Relation" : "",
       nomineeEmaileeror:
-        nomineeDetails.nomineeEmail === "" ? "Enter the Nominee Email" : "",
-      nomineeEmaileeror:
-        nomineeDetails.nomineeEmail.includes("@") ? "" : "Enter the valid Email address",
+        nomineeDetails.nomineeEmail === ""
+          ? "Enter the Nominee Email"
+          : nomineeDetails.nomineeEmail.includes("@")
+          ? ""
+          : "Enter the valid Email address",
       nomineeMobileerror:
         nomineeDetails.nomineeMobile === ""
           ? "Enter the Nominee Mobile Number"
-          : "",
-      nomineeMobileerror:
-        nomineeDetails.nomineeMobile.length === 10
+          : nomineeDetails.nomineeMobile.length === 10
           ? ""
           : "Enter the 10 Digits Mobile Number",
       accountNoerror:
@@ -453,8 +449,12 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       emailerror: nomineeDetails.nomineeEmail === "" ? "Enter the Nominee Email" : "",
       bankerror: nomineeDetails.bank === "" ? "Enter the bank" : "",
       brancherror: nomineeDetails.branch === "" ? "Enter the Branch Name" : "",
-      nomineeIfscerror: nomineeDetails.nomineeIfsc === "" ? "Enter the Ifsc" : "",
-      nomineeIfscerror: nomineeDetails.nomineeIfsc.length === 11 ? "" : "Please enter valid IFSC code",
+      nomineeIfscerror:
+        nomineeDetails.nomineeIfsc === ""
+          ? "Enter the Ifsc"
+          : nomineeDetails.nomineeIfsc.length === 11
+          ? ""
+          : "Please enter valid IFSC code",
       nomineecityerror:
         nomineeDetails.nomineecity === "" ? "Enter the city" : "",
     });
@@ -493,9 +493,9 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     ) {
       const response = savenomineeDeatailsApi(nomineeDetails);
       response.then((data) => {
-        if (data.request.status == 200) {
+        if (data.request.status === 200) {
           Success("success", "Nominee Details Save Successfully");
-        } else if (data.response.data.errorCode != "200") {
+        } else if (data.response.data.errorCode !== "200") {
           // WarningBackendApi("warning", data.response.data.errorMessage);
           toastrSuccess(data.response.data.errorMessage, "top-right")
 
@@ -504,25 +504,23 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     } else {
     }
   };
-  const submitNomineeDetails = (event) => {
-    event.preventDefault();
-    if (nomineeDetails.isdeatail == true) {
-      const response = savenomineeDeatailsApi(nomineeDetails);
-      response.then((data) => {
-        if (data.request.status == 200) {
-          Success("success", "Nominee Details Save Successfully");
-        } else if (data.response.data.errorCode != "200") {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-          toastrSuccess(data.response.data.errorMessage, "top-right")
-
-        }
-      });
-    } else {
-      // WarningBackendApi("warning");
-      toastrSuccess(data.response.data.errorMessage, "top-right")
-
-    }
-  };
+  // const submitNomineeDetails = (event) => {
+  //   event.preventDefault();
+  //   if (nomineeDetails.isdeatail == true) {
+  //     const response = savenomineeDeatailsApi(nomineeDetails);
+  //     response.then((data) => {
+  //       if (data.request.status == 200) {
+  //         Success("success", "Nominee Details Save Successfully");
+  //       } else if (data.response.data.errorCode != "200") {
+  //         // WarningBackendApi("warning", data.response.data.errorMessage);
+  //         toastrSuccess(data.response.data.errorMessage, "top-right")
+  //       }
+  //     });
+  //   } else {
+  //     // WarningBackendApi("warning");
+  //     toastrSuccess(data.response.data.errorMessage, "top-right")
+  //   }
+  // };
 
   const verifybankAccountCashfree = () => {
     setBankaccountProfile((bankaccountprofile) => ({
@@ -534,7 +532,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       moblieNumbererror:
         bankaccountprofile.moblieNumber === "" ||
           bankaccountprofile.moblieNumber === null ||
-          bankaccountprofile.moblieNumber.length != 10
+          bankaccountprofile.moblieNumber.length !== 10
           ? "Enter 10 Digits Mobile Number "
           : "",
       accountNumbererror:
@@ -549,9 +547,11 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
           ? "Enter the Confirm Account Number"
           : "",
       ifscCodeerror:
-        bankaccountprofile.ifscCode === "" ? "Enter the IFSC Code" : "",
-      ifscCodeerror:
-        bankaccountprofile.ifscCode?.length === 11 ? "" : "Please enter valid IFSC code",
+        bankaccountprofile.ifscCode === ""
+          ? "Enter the IFSC Code"
+          : bankaccountprofile.ifscCode?.length === 11
+          ? ""
+          : "Please enter valid IFSC code",
       bankNameerror:
         bankaccountprofile.bankName === ""
           || bankaccountprofile.bankName === null ? "Enter the Bank Name" : "",
@@ -642,7 +642,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
             ifscCodeerror: data.data.message, // Set the error on failure
           }));
           //  WarningBackendApi("Warning", data.response.data.errorMessage);
-toastrSuccess(data.response.data.errorMessage, "top-right")
+            toastrSuccess(data.response.data.errorMessage, "top-right")
         }
       }
       else{
@@ -654,7 +654,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     } catch (error) {
       console.error("Error verifying bank account and IFSC:", error);
           // WarningBackendApi("warning", data.response.data.errorMessage);
-toastrSuccess(data.response.data.errorMessage, "top-right")
+        toastrSuccess(error.response.data.errorMessage, "top-right")
 
     }
   };
@@ -667,9 +667,6 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       ["DD/MM/YYYY", "YYYY-MM-DD"],
       true
     );
-
-    // Calculate today's date
-    const today = moment();
 
     // Calculate the minimum date for someone to be 18 years old
     const minDate = moment().subtract(18, "years");
@@ -992,11 +989,11 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     nomineeDetails.bank,
     nomineeDetails.nomineecity,
     userProfile.mobileNumber,
-    userProfile.city,
     nomineeDetails.nomineeMobile,
     nomineeDetails.branch,
     nomineeDetails.accountN,
     bankaccountprofile.bankCity,
+    bankaccountprofile.branchName,
   ]);
 
   const handlechange = (event) => {
@@ -1101,9 +1098,11 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       firstNamrror:
         userProfile.firstName === "" || userProfile.firstName === null ? "Please enter the first Name" : "",
       panNumbererror:
-        userProfile.panNumber === "" || userProfile.panNumber === null ? "Please enter the panNumber" : "",
-      panNumbererror:
-        userProfile.panNumber.length !== 10 ? "Invalid PanNumber" : "",
+        userProfile.panNumber === "" || userProfile.panNumber === null
+          ? "Please enter the panNumber"
+          : userProfile.panNumber.length !== 10
+          ? "Invalid PanNumber"
+          : "",
 
       permanentAddresserror:
         userProfile.permanentAddress === "" || userProfile.permanentAddress === null
@@ -1154,10 +1153,10 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     ) {
       const response = profileupadate(userProfile);
       response.then((data) => {
-        if (data.request.status == 200) {
+        if (data.request.status === 200) {
           Success("success", "Personal Details Saved Successfully");
           triggerSavingGoogleDistance(data.data.userId);
-        } else if (data.response.data.errorCode != "200") {
+        } else if (data.response.data.errorCode !== "200") {
           // WarningBackendApi("warning", data.response.data.errorMessage);
           toastrSuccess(data.response.data.errorMessage, "top-right")
 
@@ -1197,7 +1196,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       ...bankaccountprofile,
       moblieNumbererror:
         bankaccountprofile.moblieNumber === "" ||
-          bankaccountprofile.moblieNumber.length != 10
+          bankaccountprofile.moblieNumber.length !== 10
           ? "Enter 10 Digit Mobile Number "
           : "",
 
@@ -1206,7 +1205,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     if (
       bankaccountprofile.moblieNumber !== null &&
       bankaccountprofile.moblieNumber !== "" &&
-      bankaccountprofile.moblieNumber.length == 10 &&
+      bankaccountprofile.moblieNumber.length === 10 &&
 
 
 
@@ -1294,16 +1293,16 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   };
 
   useEffect(() => {
-    if (userProfile?.pinCode?.length == 6) {
+    if (userProfile?.pinCode?.length === 6) {
       const response = handlepincodeapicall(userProfile.pinCode);
       response
         .then((data) => {
           if (data.request.status === 200 && data.data !== "") {
-            setUserProfile({
-              ...userProfile,
+            setUserProfile((prev) => ({
+              ...prev,
               state: data.data.state,
               city: data.data.city,
-            });
+            }));
           }
         })
         .catch((error) => {
@@ -1338,9 +1337,9 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   useEffect(() => {
     const nomineresponse = loadlendernomineeDetails();
     nomineresponse.then((data) => {
-      if (data.request.status == 200) {
-        setnomineeDetails({
-          ...nomineeDetails,
+      if (data.request.status === 200) {
+        setnomineeDetails((prev) => ({
+          ...prev,
           nomineeName: data.data.name == null ? "" : data.data.name,
           relation: data.data.relation == null ? "" : data.data.relation,
           nomineeEmail: data.data.emial == null ? "" : data.data.emial,
@@ -1352,7 +1351,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
           bank: data.data.bankName == null ? "" : data.data.bankName,
           branch: data.data.branchName == null ? "" : data.data.branchName,
           nomineecity: data.data.city == null ? "" : data.data.city,
-        });
+        }));
       }
     });
   }, []);
@@ -1360,12 +1359,12 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   useEffect(() => {
     getUserDetails().then((data) => {
       localStorage.setItem("userType", data.data.userDisplayId);
-      setdashboarddata({
-        ...dashboarddata,
+      setdashboarddata((prev) => ({
+        ...prev,
         profileData: data,
-      });
-      setUserProfile({
-        ...userProfile,
+      }));
+      setUserProfile((prev) => ({
+        ...prev,
         address: data.data.address,
         city: data.data.city,
         dob: data.data.dob,
@@ -1385,9 +1384,9 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         aadharNumber: data.data.aadharNumber,
         mobileNumber: data.data.mobileNumber,
         email: data.data.email,
-      });
-      setBankaccountProfile({
-        ...bankaccountprofile,
+      }));
+      setBankaccountProfile((prev) => ({
+        ...prev,
         accountNumber: data.data.accountNumber,
         bankAddress: data.data.bankAddress,
         bankName: data.data.bankName,
@@ -1397,7 +1396,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         nameAtBank: data.data.userName,
         bankCity: data.data.bankAddress,
         moblieNumber: data.data.mobileNumber,
-      });
+      }));
     });
   }, []);
 
@@ -1431,15 +1430,15 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     ])
       .then((responses) => {
         console.log(responses[0].value.data);
-        setKyc({
-          ...kyc,
+        setKyc((prev) => ({
+          ...prev,
           PanCard: responses[0].value.data,
           Passport: responses[1].value.data,
           CHEQUELEAF: responses[2].value.data,
           DRIVINGLICENCE: responses[3].value.data,
           VOTERID: responses[4].value.data,
           aadhar: responses[5].value.data,
-        });
+        }));
       })
       .catch((error) => { });
   }, [kyc.isValid]);
@@ -1480,7 +1479,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                       <Link to="#">
                         <img
                           className="rounded-circle"
-                          alt="User Image"
+                          alt="User"
                           src="https://cdn3.iconfinder.com/data/icons/avatars-flat/33/man_5-512.png"
                         />
                       </Link>
@@ -1489,7 +1488,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                       <h4 className="user-name mb-0">
                         {reduxStoreData?.length
                           ? reduxStoreData.firstName
-                          : dashboarddata.profileData != null
+                          : dashboarddata.profileData !== null
                             ? dashboarddata.profileData.data.firstName
                             : ""}
                       </h4>
@@ -1497,12 +1496,12 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                         LR
                         {reduxStoreData?.length
                           ? reduxStoreData.userId
-                          : dashboarddata.profileData != null
+                          : dashboarddata.profileData !== null
                             ? dashboarddata.profileData.data.userId
                             : "LR18"}
                         {`, ${reduxStoreData?.length
                           ? reduxStoreData.groupName
-                          : dashboarddata.profileData != null
+                          : dashboarddata.profileData !== null
                             ? dashboarddata.profileData.data.groupName
                             : "NewLender"
                           }`}
@@ -1511,20 +1510,20 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                         <i className="fas fa-map-marker-alt" />{" "}
                         {reduxStoreData?.length
                           ? reduxStoreData.city
-                          : dashboarddata.profileData != null
+                          : dashboarddata.profileData !== null
                             ? dashboarddata.profileData.data.city
                             : ""}
                       </div>
                       <div className="about-text">
                         {reduxStoreData?.length
                           ? reduxStoreData.address
-                          : dashboarddata.profileData != null
+                          : dashboarddata.profileData !== null
                             ? dashboarddata.profileData.data.address
                             : ""}
                       </div>
 
-                      {reduxStoreData?.groupName != "NewLender" &&
-                        reduxStoreDataDashboard?.validityDate != null ? (
+                      {reduxStoreData?.groupName !== "NewLender" &&
+                        reduxStoreDataDashboard?.validityDate !== null ? (
                         <div className="user-Location my-1">
                           <i className="fa-solid fa-calendar-days" /> Validity :
                           {reduxStoreDataDashboard.validityDate}
@@ -1604,7 +1603,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                         data-bs-toggle="tab"
                         to="#whatapp1"
                       >
-                        <i class="fa fa-whatsapp"></i> Update Your Number
+                        <i className="fa fa-whatsapp"></i> Update Your Number
                       </Link>
                     </li>
                   </ul>
@@ -2214,7 +2213,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                     type="submit"
                                     // disabled={nomineeDetails.isbtndisable}
 
-                                    onClick={() => handleNomineeclick(event)}
+                                    onClick={() => handleNomineeclick()}
                                   >
                                     Save
                                   </button>
@@ -2333,7 +2332,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   <span className="login-danger">*</span>
                                 </label>
                                 <input
-                                  type={userProfile.dob == "" ? "date" : "text"}
+                                  type={userProfile.dob === "" ? "date" : "text"}
                                   className="form-control "
                                   onChange={handlechange}
                                   value={userProfile.dob}
@@ -2622,8 +2621,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 </div>
 
                                 {console.log(kyc)}
-                                {kyc.PanCard != undefined &&
-                                  kyc.PanCard != "" ? (
+                                {kyc.PanCard !== undefined &&
+                                  kyc.PanCard !== "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.PanCard.fileName}</small>
@@ -2659,8 +2658,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                     </i>
                                   </label>
                                 </div>
-                                {kyc.CHEQUELEAF != undefined &&
-                                  kyc.CHEQUELEAF != "" ? (
+                                {kyc.CHEQUELEAF !== undefined &&
+                                  kyc.CHEQUELEAF !== "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.CHEQUELEAF.fileName}</small>
@@ -2693,7 +2692,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </label>
                                 </div>
 
-                                {kyc.aadhar != undefined && kyc.aadhar != "" ? (
+                                {kyc.aadhar !== undefined && kyc.aadhar !== "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.aadhar.fileName}</small>
@@ -2725,8 +2724,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                     </i>
                                   </label>
                                 </div>
-                                {kyc.DRIVINGLICENCE != undefined &&
-                                  kyc.DRIVINGLICENCE != "" ? (
+                                {kyc.DRIVINGLICENCE !== undefined &&
+                                  kyc.DRIVINGLICENCE !== "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.DRIVINGLICENCE.fileName}</small>
@@ -2756,8 +2755,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </label>
                                 </div>
 
-                                {kyc.VOTERID != undefined &&
-                                  kyc.VOTERID != "" ? (
+                                {kyc.VOTERID !== undefined &&
+                                  kyc.VOTERID !== "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.VOTERID.fileName}</small>
@@ -2790,8 +2789,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </label>
                                 </div>
 
-                                {kyc.Passport != undefined &&
-                                  kyc.Passport != "" ? (
+                                {kyc.Passport !== undefined &&
+                                  kyc.Passport !== "" ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.Passport.fileName}</small>

@@ -1,4 +1,4 @@
-{
+module.exports = {
     "whatsappNumber": null,
     "session": null,
     "otp": null,
@@ -18,4 +18,4 @@
     ],
     "status": null,
     "message": "Multiple users mapped with given WhatsApp number, please confirm and enter below user ID to login."
-}
+};
