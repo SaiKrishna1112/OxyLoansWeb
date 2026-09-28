@@ -14,6 +14,7 @@ const RegisterStep2Dark = () => {
   const history = useNavigate();
   const [id, setId] = useState("");
   const [time, setTime] = useState("");
+  const [signupType, setSignupType] = useState("");
   const [date1, setDate1] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,6 +37,7 @@ const RegisterStep2Dark = () => {
     const params = new URLSearchParams(window.location.search);
     setId(params.get("id") || "");
     setTime(params.get("time") || "");
+    setSignupType((params.get("signupType") || "").toUpperCase());
   }, []);
 
   useEffect(() => {
@@ -137,9 +139,17 @@ const RegisterStep2Dark = () => {
     }
     setIsSubmitting(true);
     try {
-      await api.verifypannumber(form.pannumber, form.address, time, id, date1);
+      const result = await api.verifypannumber(form.pannumber, form.address, time, id, date1);
       registersuccess("Registration successfully completed");
-      history("/");
+      const role = result?.responseData?.primaryType;
+      const uid = result?.responseData?.id;
+      if (result?.accessToken && role) {
+        if (role === "LENDER") history("/lenderAIDashboard/" + uid);
+        else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
+        else history("/borrowerDashboard");
+      } else {
+        history("/");
+      }
     } catch (error) {
       const msg = error?.response?.data?.errorMessage || "Submission failed. Try again.";
       toastrWarning(msg);
@@ -164,6 +174,12 @@ const RegisterStep2Dark = () => {
         <div className="rs2d-right">
           <div className="rs2d-header">
             <div className="rs2d-badge">STEP 2 OF 2</div>
+            {signupType && (
+              <div className="rs2d-signup-type">
+                Signed up via{" "}
+                <strong>{signupType === "GOOGLE" ? "Google" : signupType === "MOBILE" ? "Mobile OTP" : "Email"}</strong>
+              </div>
+            )}
             <h2 className="rs2d-title">Complete Your Profile</h2>
             <p className="rs2d-sub">Just a few more details to verify your identity</p>
           </div>

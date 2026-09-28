@@ -47,7 +47,7 @@ const GoogleLoginButton = () => {
           redirectAfterLogin(loginRes.data);
         }
       } else if (status === "STEP2_PENDING") {
-        history(`/register_active_proceed?id=${userId}&time=${registrationTime}`);
+        history(`/register_active_proceed?id=${userId}&time=${registrationTime}&signupType=GOOGLE`);
       } else {
         setModal({ status: "NOT_FOUND", email, accessToken: tokenResponse.access_token });
       }

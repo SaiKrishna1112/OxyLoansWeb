@@ -115,8 +115,16 @@ const Register_active_proceed = () => {
           );
           registersuccess("Registration successfully completed");
           setResponse(loginResponse);
-          history("/");
-          setLoading(false)
+          setLoading(false);
+          const role = loginResponse?.responseData?.primaryType;
+          const uid = loginResponse?.responseData?.id;
+          if (loginResponse?.accessToken && role) {
+            if (role === "LENDER") history("/lenderAIDashboard/" + uid);
+            else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
+            else history("/borrowerDashboard");
+          } else {
+            history("/");
+          }
 
           setError(null);
         } catch (error) {
@@ -194,12 +202,9 @@ const Register_active_proceed = () => {
   useEffect(() => {
     const urlemail = new URLSearchParams(window.location.search);
     const id = urlemail.get("id");
-
     const time = urlemail.get("time");
-    console.log(id , time)
     settime(time);
     setid(id);
-  
   }, []);
 
 
