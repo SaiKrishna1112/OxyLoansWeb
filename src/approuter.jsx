@@ -87,6 +87,8 @@ import LenderRegister from "./components/pages/Authentication/LenderRegister";
 import BorrowerRegister from "./components/pages/Authentication/BorrowerRegister";
 import Register_active_proceed from "./components/pages/Authentication/register_active_proceed";
 import RegisterStep2Dark from "./components/pages/Authentication/RegisterStep2Dark";
+import DarkLogin from "./components/pages/Authentication/DarkLogin";
+import DarkSignup from "./components/pages/Authentication/DarkSignup";
 import ForgotPassword3 from "./components/pages/Authentication/ForgotPassword3";
 import Whatapplog from "./components/pages/Authentication/Whatapplog";
 import PartnerRegister from "./components/pages/Authentication/PartnerRegister";
@@ -235,6 +237,8 @@ const AppRouter = () => {
           path="/register-step2-test"
           element={<RegisterStep2Dark />}
         />
+        <Route path="/dark-login" element={<DarkLogin />} />
+        <Route path="/dark-signup" element={<DarkSignup />} />
         <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/testdeals" element={<UserTestdeals />} />
