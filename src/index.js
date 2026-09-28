@@ -56,13 +56,32 @@ import Loader from "./loader.jsx";
 import ReactGA from "react-ga";
 const TRACKING_ID = "374962014"; // OUR_TRACKING_ID
 
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding:24,fontFamily:"monospace",background:"#fff",color:"#c00"}}>
+          <h3>App Error (dev diagnostic)</h3>
+          <pre style={{whiteSpace:"pre-wrap",wordBreak:"break-all"}}>{String(this.state.error)}</pre>
+          <pre style={{whiteSpace:"pre-wrap",fontSize:11,color:"#333"}}>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 ReactGA.initialize(TRACKING_ID);
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
+  <AppErrorBoundary>
   <Provider store={store}>
     <Suspense fallback={<Loader />}>
       <Approuter></Approuter>
     </Suspense>
   </Provider>
+  </AppErrorBoundary>
 );

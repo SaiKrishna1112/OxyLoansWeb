@@ -189,6 +189,7 @@ import AllReferreDetails from "./components/pages/Oxyloans/Admin/ReferreDetails/
 import MonthlyReturnedInterest from "./components/pages/Oxyloans/Admin/MonthlyReturnedInterest/MonthlyReturnedInterest.js";
 
 import ActiveLendersParticipationPage from "./components/pages/Oxyloans/Admin/ActiveLenders/ActiveLendersParticipationPage.jsx";
+import Testimonials from "./components/Testimonials";
 
 const AdminAIRouteAlias = ({ to }) => {
   const location = useLocation();
