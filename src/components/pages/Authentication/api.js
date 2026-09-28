@@ -88,8 +88,20 @@ export const verifypannumber = async (pannumber, address, time, id, date) => {
       }
     );
 
+    const accessToken = response.headers["accesstoken"] || null;
+    if (accessToken) {
+      localStorage.setItem("token", accessToken);
+    }
+    if (response.data?.primaryType) {
+      localStorage.setItem("primaryType", response.data.primaryType);
+    }
+    if (response.data?.id) {
+      localStorage.setItem("id", String(response.data.id));
+    }
+
     return {
       responseData: response.data,
+      accessToken,
     };
   } catch (error) {
     throw error;

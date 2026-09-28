@@ -150,7 +150,7 @@ const Loginsso = () => {
     const m = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
     if (!m) return false;
     toastrSuccess("Please complete your registration to continue.");
-    history(`/register_active_proceed?id=${m[1]}&time=${Date.now()}`);
+    history(`/register_active_proceed?id=${m[1]}&time=${Date.now()}&signupType=EMAIL`);
     return true;
   };
 

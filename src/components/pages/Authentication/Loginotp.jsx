@@ -77,7 +77,7 @@ const Loginotp = () => {
         }
       } else if (status === "STEP2_PENDING") {
         // Registration incomplete — redirect to step 2 with fresh timestamp
-        history(`/register_active_proceed?id=${userId}&time=${registrationTime}`);
+        history(`/register_active_proceed?id=${userId}&time=${registrationTime}&signupType=GOOGLE`);
       } else {
         // NOT_FOUND — stay on page and show message with the email that wasn't found
         setGoogleModal({ status: "NOT_FOUND", email });
@@ -211,7 +211,7 @@ const Loginotp = () => {
         const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
         if (step2) {
           toastrSuccess("Please complete your registration to continue.");
-          history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}`);
+          history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}&signupType=MOBILE`);
           return;
         }
         toastrWarning(message);
