@@ -206,7 +206,7 @@ export default function BorrowerRegister() {
           localStorage.setItem("primaryType", res.data.primaryType || "");
           localStorage.setItem("id", String(res.data.id));
           sessionStorage.removeItem("gmail_prefill");
-          navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now());
+          navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now() + "&signupType=EMAIL");
         } else {
           toastrWarning("Registration succeeded but login failed. Please login.");
           navigate("/loginotp");
@@ -316,6 +316,7 @@ export default function BorrowerRegister() {
       const session = localStorage.getItem("seesion");
 
       if (registrationField.mobileOTPNew.length === 6) {
+        localStorage.setItem("signupSource", "EMAIL");
         const response = await api.vaildateotp(
           registrationField.email,
           registrationField.mobile,
@@ -326,7 +327,8 @@ export default function BorrowerRegister() {
           registrationField.referrerId,
           "Borrower",
           userLocation.latitude,
-          userLocation.longitude
+          userLocation.longitude,
+          "EMAIL"
         );
 
         setField(false);

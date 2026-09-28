@@ -88,8 +88,32 @@ export const verifypannumber = async (pannumber, address, time, id, date) => {
       }
     );
 
+    const accessToken =
+      response.headers?.["accesstoken"] ||
+      response.headers?.["accessToken"] ||
+      response.headers?.["access-token"] ||
+      null;
+
+    if (accessToken) {
+      sessionStorage.setItem("accessToken", accessToken);
+    }
+    if (response.data?.id) {
+      sessionStorage.setItem("userId", String(response.data.id));
+      localStorage.setItem("id", String(response.data.id));
+    }
+    if (response.data?.tokenGeneratedTime) {
+      sessionStorage.setItem("tokenTime", String(response.data.tokenGeneratedTime));
+    }
+    if (response.data?.email) {
+      sessionStorage.setItem("email", response.data.email);
+    }
+    if (response.data?.primaryType) {
+      localStorage.setItem("primaryType", response.data.primaryType);
+    }
+
     return {
       responseData: response.data,
+      accessToken,
     };
   } catch (error) {
     throw error;
@@ -199,7 +223,8 @@ export const vaildateotp = async (
   referrerId,
   userType,
   latitude,
-  longitude
+  longitude,
+  signupSource
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
@@ -223,6 +248,7 @@ export const vaildateotp = async (
       finoEmployeeMobileNumber: "0",
       latitude: latitude || null,
       longitude: longitude || null,
+      signupSource: signupSource || null,
     };
   } else {
     var data = {
@@ -243,6 +269,7 @@ export const vaildateotp = async (
       // uuid: "asdfghjkl",
       latitude: latitude || null,
       longitude: longitude || null,
+      signupSource: signupSource || null,
     };
   }
   if (utmForPartner === "Borrower") {

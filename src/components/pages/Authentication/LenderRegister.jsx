@@ -244,7 +244,7 @@ export default function LenderRegister() {
           localStorage.setItem("primaryType", res.data.primaryType || "");
           localStorage.setItem("id", String(res.data.id));
           sessionStorage.removeItem("gmail_prefill");
-          navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now());
+          navigate("/register_active_proceed?id=" + res.data.id + "&time=" + Date.now() + "&signupType=EMAIL");
         } else {
           toastrWarning("Registration succeeded but login failed. Please login.");
           navigate("/loginotp");
@@ -360,6 +360,7 @@ export default function LenderRegister() {
       let session = localStorage.getItem("seesion");
 
       if (registrationField.mobileOTPNew.length == 6) {
+        localStorage.setItem("signupSource", "EMAIL");
         const response = await api.vaildateotp(
           registrationField.email,
           registrationField.moblie,
@@ -370,7 +371,8 @@ export default function LenderRegister() {
           registrationField.referrerId,
           "Lender",
           userLocation.latitude,
-          userLocation.longitude
+          userLocation.longitude,
+          "EMAIL"
         );
         setfield(false);
         setsubmitotp(true);
