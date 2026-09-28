@@ -5,6 +5,7 @@ export { default as lenderRegisterHero } from "../assets/img/lender_register_her
 export { default as borrowerRegisterHero } from "../assets/img/borrower_register_hero.png";
 export { default as lenderShieldBadge } from "../assets/img/lender_shield_badge_trans.png";
 export { default as loginHeroLeft } from "../assets/img/login_hero_left.png";
+export { default as registerActiveHero } from "../assets/img/register_active_hero.png";
 export { default as loginPlantCoin } from "../assets/img/login_plant_coin.png";
 export { default as logo } from "../assets/img/logo.png";
 export { default as logosmall } from "../assets/img/logo-small.png";

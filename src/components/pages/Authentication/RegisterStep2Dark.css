@@ -1,0 +1,256 @@
+.rs2d-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f1117 0%, #1a1d2e 100%);
+  padding: 24px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.rs2d-card {
+  display: flex;
+  background: #1e2130;
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 900px;
+  width: 100%;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.rs2d-left {
+  background: linear-gradient(160deg, #1a6c41 0%, #0e4a2c 100%);
+  flex: 0 0 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.rs2d-img {
+  max-width: 220px;
+  opacity: 0.9;
+}
+
+.rs2d-right {
+  flex: 1;
+  padding: 40px 36px;
+  overflow-y: auto;
+}
+
+.rs2d-badge {
+  display: inline-block;
+  background: rgba(100, 200, 130, 0.15);
+  color: #64c882;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(100, 200, 130, 0.3);
+  margin-bottom: 12px;
+}
+
+.rs2d-title {
+  color: #f0f4ff;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.rs2d-sub {
+  color: #8892b0;
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+
+.rs2d-field {
+  margin-bottom: 20px;
+}
+
+.rs2d-label {
+  display: block;
+  color: #ccd6f6;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.rs2d-req {
+  color: #ff6b6b;
+  margin-left: 2px;
+}
+
+.rs2d-optional {
+  color: #8892b0;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.rs2d-input {
+  width: 100%;
+  background: #252840;
+  border: 1.5px solid #373b5c;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #e0e6ff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.rs2d-input:focus {
+  border-color: #64c882;
+  box-shadow: 0 0 0 3px rgba(100, 200, 130, 0.12);
+}
+
+.rs2d-input-err {
+  border-color: #ff6b6b !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1) !important;
+}
+
+.rs2d-input-ok {
+  border-color: #64c882 !important;
+}
+
+.rs2d-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.rs2d-input::placeholder {
+  color: #4a506e;
+}
+
+.rs2d-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rs2d-field-hint {
+  min-height: 18px;
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.rs2d-hint { color: #8892b0; }
+.rs2d-error { color: #ff6b6b; }
+.rs2d-ok { color: #64c882; }
+
+/* WhatsApp row */
+.rs2d-wp-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.rs2d-wp-input {
+  flex: 1;
+}
+
+.rs2d-wp-btn {
+  background: #2a5298;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.rs2d-wp-btn:hover:not(:disabled) {
+  background: #3563bb;
+}
+
+.rs2d-wp-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rs2d-wp-badge-done {
+  color: #64c882;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rs2d-otp-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.rs2d-otp-input {
+  flex: 1;
+  letter-spacing: 6px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.rs2d-verify-btn {
+  background: #2a7a4a;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.rs2d-verify-btn:hover:not(:disabled) {
+  background: #3a9a5a;
+}
+
+.rs2d-verify-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rs2d-submit {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(90deg, #1a6c41, #2a9a5e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+  transition: opacity 0.2s;
+}
+
+.rs2d-submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.rs2d-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rs2d-test-banner {
+  margin-top: 20px;
+  background: rgba(255, 200, 50, 0.08);
+  border: 1px solid rgba(255, 200, 50, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ffc832;
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .rs2d-left { display: none; }
+  .rs2d-right { padding: 28px 20px; }
+}
