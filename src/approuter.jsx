@@ -239,7 +239,7 @@ const AppRouter = () => {
         />
         <Route path="/dark-login" element={<DarkLogin />} />
         <Route path="/dark-signup" element={<DarkSignup />} />
-        <Route path="/oxyIntro" element={<OxyIntro />} />
+        <Route path="/oxyIntro" element={<OxyIntro />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/testdeals" element={<UserTestdeals />} />
         <Route path="/forgotpassword" element={<ForgotPassword3 />} />
@@ -461,19 +461,19 @@ const AppRouter = () => {
         <Route path="/lenderLoanApplications" element={<LenderLoanApplications />} />
         <Route path="/borrowerLoanApplications" element={<BorrowerLoanApplications />} />
 
-        <Route path="/updateUserDetails" element={<RemoveCredentials />} />
+        <Route path="/updateUserDetails" element={<RemoveCredentials />} />
         <Route path="/assignedUsersforCallers" element={<AssignedUsersforCallers/>}/>
 
         <Route path="/radhaDashboard" element={<RadhaDashboard/>}/>
         <Route path="/userCommentDetails" element={<UserCommentDetails/>}/>
 
         <Route path="/myCalls" element={<CallsDataBasedOnID/>}/>
-        <Route path="/participatedAmountInfo" element={<ParticipatedAmountInfo />}/>
+        <Route path="/participatedAmountInfo" element={<ParticipatedAmountInfo />}/>
         <Route path="/uploadFile" element={<UploadFile />}/>
         <Route path="/MonthlyInterest" element={<MonthlyInterest/>}/>
         <Route path="/interestDetailsTable" element={<InterestDetailsTable/>}/>
         <Route path="/participationList" element={<ParticipationList/>}/>
-        <Route path="/userParticipationlist" element={<UserParticipationList />} />
+        <Route path="/userParticipationlist" element={<UserParticipationList />} />
         <Route path="/topLendersInfo" element={<TopLendersInfo />}/>
         <Route path="/allReferreDetails" element={<AllReferreDetails />} />
         <Route path="/monthlyReturnedInterest" element={<MonthlyReturnedInterest />} />
