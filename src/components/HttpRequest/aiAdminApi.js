@@ -2222,4 +2222,24 @@ export const loadDealRoiLenders = async (dealId, status = "ALL") => {
   return res.data?.data ?? res.data ?? [];
 };
 
+/** Live deals with tenure extensions — GET /v1/ai/admin/running-extended-deals?status=NOTYETCLOSED|CLOSED */
+export const loadRunningExtendedDeals = async (status = "NOTYETCLOSED") => {
+  const headers = requireAuth();
+  try {
+    const res = await axios.get(
+      `${AI_BASE_URL}admin/running-extended-deals?status=${encodeURIComponent(status)}`,
+      { headers, timeout: 180000 }
+    );
+    const data = res.data?.data ?? res.data;
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      throw new Error("Extended deals API not found. Rebuild backend (mvn install -pl oxyloans-service,oxyloans-rest -am) and restart on port 8181.");
+    }
+    const connHint = backendConnectionHint(err);
+    if (connHint) throw new Error(connHint);
+    throw new Error(err?.response?.data?.error || err?.message || "Running extended deals load failed");
+  }
+};
+
 export { AI_DASHBOARD_USE_STATIC } from "../../config";

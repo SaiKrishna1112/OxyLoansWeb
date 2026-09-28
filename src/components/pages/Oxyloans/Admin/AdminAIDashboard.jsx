@@ -81,6 +81,7 @@ import { OXYINSIGHTS_PATH } from "./adminAINavigation";
 import { exportTopReferrersLentTreePdf } from "./exportTopReferrersLentTreePdf";
 import { downloadTopPaidEarnedExcel } from "./AdminAITopPaidEarnedReferrersPage";
 import AdminAIYearWiseDealsPanel from "./AdminAIYearWiseDealsPanel";
+import AdminRunningExtendedDealsPanel from "./AdminRunningExtendedDealsPanel";
 
 const ADMIN_AI_DASHBOARD_CACHE_KEY = "oxyloans.adminAIDashboard.bootstrap.v2";
 const ADMIN_AI_DASHBOARD_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -3062,6 +3063,8 @@ const AdminAIDashboard = () => {
               <span className="admin-ai-pro-breadcrumb">Admin / AI Dashboard</span>
             </div>
           </header>
+
+          <AdminRunningExtendedDealsPanel />
 
           {loadError && (
             <div className="alert alert-danger d-flex justify-content-between align-items-center">
