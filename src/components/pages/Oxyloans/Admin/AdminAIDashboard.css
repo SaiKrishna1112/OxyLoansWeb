@@ -21836,3 +21836,65 @@
   .ai-cms-range-panel--full .ai-cms-hero-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ai-cms-presets { margin-left: 0; }
 }
+
+
+/* Extended Deals panel */
+.admin-ai-ext-deals-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.25rem;
+}
+.admin-ai-ext-deals-toggle {
+  display: inline-flex;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.admin-ai-ext-deals-toggle-btn {
+  border: 0;
+  background: #fff;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+}
+.admin-ai-ext-deals-toggle-btn + .admin-ai-ext-deals-toggle-btn { border-left: 1px solid #cbd5e1; }
+.admin-ai-ext-deals-toggle-btn.is-active { background: #059669; color: #fff; }
+.admin-ai-ext-deals-toggle-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.admin-ai-ext-deals-msg { font-size: 0.78rem; color: #475569; }
+.admin-ai-ext-deals-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.45rem;
+  margin: 0.5rem 0;
+}
+.admin-ai-ext-deals-kpi {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.35rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+.admin-ai-ext-deals-kpi span {
+  font-size: 0.66rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.admin-ai-ext-deals-kpi strong { font-size: 0.88rem; color: #0f172a; white-space: nowrap; }
+.admin-ai-ext-deals-kpi--accent { background: #ecfdf5; border-color: #a7f3d0; }
+.admin-ai-ext-deals-kpi--accent strong { color: #047857; }
+.admin-ai-ext-deals-table-wrap { max-height: 480px; overflow: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
+.admin-ai-ext-deals-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: #059669; color: #fff; font-size: 0.75rem; white-space: nowrap;
+}
+.admin-ai-ext-deals-table td { font-size: 0.8rem; white-space: nowrap; }
+.admin-ai-ext-deals-badge {
+  display: inline-block; min-width: 2rem; text-align: center;
+  background: #fef3c7; color: #92400e; border-radius: 999px;
+  padding: 0.05rem 0.5rem; font-weight: 600; font-size: 0.75rem;
+}
