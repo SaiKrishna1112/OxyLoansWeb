@@ -268,6 +268,20 @@ const authHeaders = () => {
   return { accessToken: token };
 };
 
+
+const backendConnectionHint = (err) => {
+  if (err?.code === "NO_TOKEN") return null;
+  const msg = String(err?.message || "");
+  if (
+    !err?.response ||
+    err?.code === "ECONNREFUSED" ||
+    err?.code === "ECONNABORTED" ||
+    /proxy|network error|504|502/i.test(msg)
+  ) {
+    return "Backend is not reachable. Check that the server is running and try again.";
+  }
+  return null;
+};
 const extractApiError = (err) => {
   const data = err?.response?.data;
   if (typeof data === "string" && data.trim()) return data;
@@ -320,7 +334,7 @@ export const getAdminAIDbHealth = async () => {
       data: {
         status: "error",
         database: "unknown",
-        error: err?.message || "Cannot reach backend (check backend on port 8181 and restart npm start)",
+        error: err?.message || "Cannot reach backend. Check that the server is running.",
       },
     };
   }
@@ -2119,7 +2133,7 @@ export const loadCmsInterestPaymentsToday = async () => {
       return loadCmsInterestPaymentsInRange(`${y}-${m}-${d}`, `${y}-${m}-${d}`, { includeUnpaid: false });
     }
     if (err?.code === "ECONNABORTED") {
-      throw new Error("CMS today request timed out. Check backend on port 8181.");
+      throw new Error("CMS today request timed out.");
     }
     if (!err?.response) {
       throw new Error("Cannot reach backend (network error). Is the server running on port 8181?");
@@ -2142,7 +2156,7 @@ export const loadCmsInterestPaymentsInRange = async (fromDate, toDate, { include
     const status = err?.response?.status;
     const serverErr = err?.response?.data?.error || err?.response?.data?.errorMessage;
     if (status === 404) {
-      throw new Error("CMS API not found. Rebuild backend: mvn install -pl oxyloans-service,oxyloans-rest -am then restart on port 8181.");
+      throw new Error("CMS API not found on server.");
     }
     if (status === 500 && !serverErr) {
       throw new Error("CMS server error. Run: mvn install -pl oxyloans-service,oxyloans-rest -am then restart backend.");
@@ -2151,7 +2165,7 @@ export const loadCmsInterestPaymentsInRange = async (fromDate, toDate, { include
       throw new Error("CMS report timed out. Try a shorter date range or turn off unpaid-lender list.");
     }
     if (!err?.response) {
-      throw new Error("Cannot reach backend (network error). Is the server running on port 8181?");
+      throw new Error("Cannot reach backend (network error).");
     }
     throw new Error(serverErr || extractApiError(err) || "CMS payout load failed");
   }
@@ -2220,6 +2234,26 @@ export const loadDealRoiLenders = async (dealId, status = "ALL") => {
     timeout: 120000,
   });
   return res.data?.data ?? res.data ?? [];
+};
+
+/** Live deals with tenure extensions — GET /v1/ai/admin/running-extended-deals?status=NOTYETCLOSED|CLOSED */
+export const loadRunningExtendedDeals = async (status = "NOTYETCLOSED") => {
+  const headers = requireAuth();
+  try {
+    const res = await axios.get(
+      `${AI_BASE_URL}admin/running-extended-deals?status=${encodeURIComponent(status)}`,
+      { headers, timeout: 180000 }
+    );
+    const data = res.data?.data ?? res.data;
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    if (err?.response?.status === 404) {
+      throw new Error("Extended deals API not found on server.");
+    }
+    const connHint = backendConnectionHint(err);
+    if (connHint) throw new Error(connHint);
+    throw new Error(err?.response?.data?.error || err?.message || "Running extended deals load failed");
+  }
 };
 
 export { AI_DASHBOARD_USE_STATIC } from "../../config";

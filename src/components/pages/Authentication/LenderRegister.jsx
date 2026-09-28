@@ -567,7 +567,8 @@ export default function LenderRegister() {
     try {
       let session = localStorage.getItem("seesion");
 
-      if (registrationField.mobileOTPNew.length === 6) {
+      if (registrationField.mobileOTPNew.length == 6) {
+        localStorage.setItem("signupSource", "EMAIL");
         const response = await api.vaildateotp(
           registrationField.email,
           registrationField.moblie,
@@ -580,7 +581,8 @@ export default function LenderRegister() {
           userLocation.latitude,
           userLocation.longitude,
           trackingId,
-          relationshipId
+          relationshipId,
+          "EMAIL"
         );
         setIsOtpVerifying(true);
         localStorage.setItem("id", response.responseData.userId);
