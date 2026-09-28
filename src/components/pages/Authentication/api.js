@@ -88,15 +88,27 @@ export const verifypannumber = async (pannumber, address, time, id, date) => {
       }
     );
 
-    const accessToken = response.headers["accesstoken"] || null;
+    const accessToken =
+      response.headers?.["accesstoken"] ||
+      response.headers?.["accessToken"] ||
+      response.headers?.["access-token"] ||
+      null;
+
     if (accessToken) {
-      localStorage.setItem("token", accessToken);
+      sessionStorage.setItem("accessToken", accessToken);
+    }
+    if (response.data?.id) {
+      sessionStorage.setItem("userId", String(response.data.id));
+      localStorage.setItem("id", String(response.data.id));
+    }
+    if (response.data?.tokenGeneratedTime) {
+      sessionStorage.setItem("tokenTime", String(response.data.tokenGeneratedTime));
+    }
+    if (response.data?.email) {
+      sessionStorage.setItem("email", response.data.email);
     }
     if (response.data?.primaryType) {
       localStorage.setItem("primaryType", response.data.primaryType);
-    }
-    if (response.data?.id) {
-      localStorage.setItem("id", String(response.data.id));
     }
 
     return {
