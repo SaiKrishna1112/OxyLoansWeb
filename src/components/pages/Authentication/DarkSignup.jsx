@@ -93,6 +93,7 @@ const DarkSignup = () => {
     setVerifying(true);
     try {
       const num = form.mobile.replace(/\D/g, "");
+      localStorage.setItem("signupSource", "MOBILE_OTP");
       const result = await api.vaildateotp(
         form.email,
         num,
@@ -103,7 +104,8 @@ const DarkSignup = () => {
         form.referrerId || "0",
         "LENDER",
         location.latitude,
-        location.longitude
+        location.longitude,
+        "MOBILE_OTP"
       );
       const data = result?.responseData;
       const userId = data?.id;
@@ -134,6 +136,7 @@ const DarkSignup = () => {
       const res = await axios.post(`${BASE_URL}/v1/user/checkGoogleEmail`, { accessToken: tokenResponse.access_token }, { headers: { "Content-Type": "application/json" } });
       const { phoneNumberRequiredOrNot: status, userId, registrationTime } = res.data;
       if (status === "STEP2_PENDING") {
+        localStorage.setItem("signupSource", "GOOGLE");
         history(`/register-step2-test?id=${userId}&time=${registrationTime}&signupType=GOOGLE`);
       } else if (status === "LINKED" || status === "FOUND") {
         // Already registered — log them in
