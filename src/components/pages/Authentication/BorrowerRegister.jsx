@@ -316,6 +316,7 @@ export default function BorrowerRegister() {
       const session = localStorage.getItem("seesion");
 
       if (registrationField.mobileOTPNew.length === 6) {
+        localStorage.setItem("signupSource", "EMAIL");
         const response = await api.vaildateotp(
           registrationField.email,
           registrationField.mobile,
@@ -326,7 +327,8 @@ export default function BorrowerRegister() {
           registrationField.referrerId,
           "Borrower",
           userLocation.latitude,
-          userLocation.longitude
+          userLocation.longitude,
+          "EMAIL"
         );
 
         setField(false);

@@ -223,7 +223,8 @@ export const vaildateotp = async (
   referrerId,
   userType,
   latitude,
-  longitude
+  longitude,
+  signupSource
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
@@ -247,6 +248,7 @@ export const vaildateotp = async (
       finoEmployeeMobileNumber: "0",
       latitude: latitude || null,
       longitude: longitude || null,
+      signupSource: signupSource || null,
     };
   } else {
     var data = {
@@ -267,6 +269,7 @@ export const vaildateotp = async (
       // uuid: "asdfghjkl",
       latitude: latitude || null,
       longitude: longitude || null,
+      signupSource: signupSource || null,
     };
   }
   if (utmForPartner === "Borrower") {
