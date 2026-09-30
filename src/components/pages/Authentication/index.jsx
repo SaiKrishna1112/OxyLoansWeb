@@ -104,7 +104,6 @@ const Login = () => {
         else {
           history("/borrowerDashboard");
         }
-        history(getPostLoginRedirectUrl(defaultPath, pType));
       } else {
         setLoading(false)
         toastrWarning(retriveresponse.response.data.errorMessage);

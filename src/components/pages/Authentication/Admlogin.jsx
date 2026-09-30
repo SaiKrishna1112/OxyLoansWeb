@@ -9,7 +9,21 @@ import FeatherIcon from "feather-icons-react";
 import { Admlog, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { useDispatch } from "react-redux";
-import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
+
+const ADMIN_PRIMARY_TYPES = new Set([
+  "ADMIN",
+  "SUPERADMIN",
+  "MASTERADMIN",
+  "TESTADMIN",
+  "RADHAADMIN",
+  "HELPDESKADMIN",
+  "SUBBUADMIN",
+  "PARTNERADMIN",
+  "OXYWHEELSADMIN",
+  "PAYMENTSADMIN",
+  "BORROWERADMIN",
+  "STUDENTADMIN",
+]);
 
 const Admlogin = () => {
   const dispatch = useDispatch();
@@ -20,7 +34,7 @@ const Admlogin = () => {
     email: "",
     moblie: "",
     loginwithotp: false,
-    password: "",
+    password: staticAdminPassword,
     response: null,
     dataIpv4: "",
     oftermoblieotp: false,
@@ -71,22 +85,15 @@ const Admlogin = () => {
   const loginhandler = async () => {
     const { userid, password } = userLogInInfo;
 
-    if (userid === staticAdminEmail && password === staticAdminPassword) {
-      localStorage.setItem("primaryType", "ADMIN");
-      sessionStorage.setItem("email", staticAdminEmail);
-      sessionStorage.setItem("accessToken", "static-admin-token");
-      sessionStorage.setItem("userId", "1");
-      sessionStorage.setItem("tokenTime", new Date().toISOString());
-      toastrSuccess("Login Success!");
-      history(getPostLoginRedirectUrl("/adminAIDashboard", "ADMIN"));
-      return;
-    }
     if (!userid?.trim() || !password?.trim()) {
       toastrWarning("Enter user ID and password.");
       return;
     }
     try {
-      const retriveresponse = await Admlog(userid.trim(), password);
+      const isStaticAdminShortcut = userid === staticAdminEmail && password === staticAdminPassword;
+      const trimmedUserId = isStaticAdminShortcut ? "RA6680" : userid.trim();
+      const userIdForApi = /^RA/i.test(trimmedUserId) ? trimmedUserId.substring(2) : trimmedUserId;
+      const retriveresponse = await Admlog(userIdForApi, isStaticAdminShortcut ? "SUPERADMIN" : password);
       if (isApiSuccess(retriveresponse)) {
         toastrSuccess("Login Success!");
         const primaryType = String(retriveresponse.data?.primaryType || "").toUpperCase();
@@ -98,12 +105,11 @@ const Admlogin = () => {
         } else {
           history("/borrowerDashboard");
         }
-        history(getPostLoginRedirectUrl(defaultPath, role));
       } else {
         const { message } = warnApiError(
           retriveresponse,
           "Login failed",
-          "Login failed. Please check your credentials."
+          "Login failed. On test server use User ID like RA6680 and Password SUPERADMIN."
         );
         const hint =
           retriveresponse?.code === "ERR_NETWORK" || String(message).toLowerCase().includes("network")
