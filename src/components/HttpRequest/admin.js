@@ -1,6 +1,10 @@
 import axios from "axios";
 import { API_USER_URL as API_BASE_URL, BASE_URL } from "../../config";
 const userisIn = "local"; //local or production
+const isLocalBrowser =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const AADHAAR_API_BASE_URL = isLocalBrowser ? "/oxyloans/v1/user/" : API_BASE_URL;
 // const API_BASE_URL =
 //   userisIn == "local"
 //     ? "http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxynew/v1/user/"
@@ -23,6 +27,61 @@ export const getEmail = () => {
 export const getUserSessionTime = () => {
   return sessionStorage.getItem("tokenTime");
 };
+
+export const verifyAadhaarSmartOcr = (file, side = "document") => {
+  const data = new FormData();
+  data.append("file", file);
+  return axios.post(`${AADHAAR_API_BASE_URL}verifyAadhaar1`, data, {
+    params: { verificationId: `aadhaar-${side}-${Date.now()}` },
+    headers: { accessToken: getToken() },
+  });
+};
+
+export const verifyAadhaarFaceMatch = (aadhaarImage, selfieImage, threshold = 0.75) => {
+  const data = new FormData();
+  data.append("aadhaarImage", aadhaarImage);
+  data.append("selfieImage", selfieImage);
+  return axios.post(`${AADHAAR_API_BASE_URL}aadhaar/face-match`, data, {
+    params: { verificationId: `face-${Date.now()}`, threshold },
+    headers: { accessToken: getToken() },
+  });
+};
+
+export const verifyPan360 = (pan, name = "") =>
+  axios.post(`${AADHAAR_API_BASE_URL}pan/360`, { pan, name }, {
+    headers: { "Content-Type": "application/json", accessToken: getToken() },
+  });
+
+export const verifyPanSmartOcr = (file) => {
+  const data = new FormData();
+  data.append("file", file);
+  return axios.post(`${AADHAAR_API_BASE_URL}pan/smart-ocr`, data, {
+    params: { verificationId: `pan-ocr-${Date.now()}` },
+    headers: { accessToken: getToken() },
+  });
+};
+
+export const verifyDigiLockerAccount = (userId, aadhaarNumber) =>
+  axios.post(`${AADHAAR_API_BASE_URL}aadhaar/digilocker/${userId}/verify-account`, { aadhaarNumber }, {
+    headers: { "Content-Type": "application/json", accessToken: getToken() },
+  });
+
+export const createDigiLockerUrl = (userId, userFlow = "signin", redirectUrl) =>
+  axios.post(`${AADHAAR_API_BASE_URL}aadhaar/digilocker/${userId}/create-url`, { userFlow, redirectUrl }, {
+    headers: { "Content-Type": "application/json", accessToken: getToken() },
+  });
+
+export const getDigiLockerStatus = (verificationId, referenceId) =>
+  axios.get(`${AADHAAR_API_BASE_URL}aadhaar/digilocker/status`, {
+    params: { verificationId, referenceId },
+    headers: { accessToken: getToken() },
+  });
+
+export const getDigiLockerAadhaarDocument = (verificationId, referenceId) =>
+  axios.get(`${AADHAAR_API_BASE_URL}aadhaar/digilocker/document`, {
+    params: { verificationId, referenceId },
+    headers: { accessToken: getToken() },
+  });
 
 const handleApiRequestAfterLoginService = async (
   baseurl,

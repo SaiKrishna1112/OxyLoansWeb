@@ -92,6 +92,13 @@ const OxyloansAdminSidebar = () => {
       type: ["ADMIN", "HELPDESKADMIN", "SUPERADMIN"],
     },
     {
+      key: "verifyAadhaarLocal",
+      label: "Verify Aadhaar",
+      link: "/verifyAadhaarLocal",
+      icon: "fa-solid fa-id-card",
+      type: ["ADMIN", "HELPDESKADMIN"],
+    },
+    {
       key: "adminAIReconciliation",
       label: "🤖 AI Reconciliation",
       link: "/adminAIReconciliation",

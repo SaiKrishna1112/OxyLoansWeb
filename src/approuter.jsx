@@ -27,6 +27,7 @@ import AdminAILifetimeFeeWaiverPage from "./components/pages/Oxyloans/Admin/Admi
 import AdminAILenderCampaignHistoryPage from "./components/pages/Oxyloans/Admin/AdminAILenderCampaignHistoryPage";
 import AdminAIYearWiseDealsListPage from "./components/pages/Oxyloans/Admin/AdminAIYearWiseDealsListPage";
 import AdminAIReferrerRefereesDetailPage from "./components/pages/Oxyloans/Admin/AdminAIReferrerRefereesDetailPage";
+import VerifyAadhaarLocal from "./components/pages/Oxyloans/Admin/VerifyAadhaarLocal";
 import UserType from "./components/pages/Authentication/UserType.jsx";
 import Login from "./components/pages/Authentication";
 import AdminDashboard from "./components/pages/Dashboard/AdminDashboard";
@@ -298,6 +299,7 @@ const AppRouter = () => {
         <Route path="/adminAIDashboard/cms-payments/lenders/:dealId" element={<AdminCmsDealLendersPage />} />
         <Route path="/adminAIDashboard/:featureId" element={<AdminAIFeaturePage />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
+        <Route path="/verifyAadhaarLocal" element={<VerifyAadhaarLocal />} />
         <Route path="/adminAIReconciliation" element={<AdminAIReconciliationDashboard />} />
         <Route path="/adminAIDeals" element={<AdminAIDealsDashboard />} />
         <Route path="/adminAllDeals" element={<AdminAIRouteAlias to="/adminAIDeals" />} />
