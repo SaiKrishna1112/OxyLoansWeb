@@ -13,6 +13,7 @@ import AdminCmsDealLendersPage from "./components/pages/Oxyloans/Admin/AdminCmsD
 import AdminAIDealsDashboard from "./components/pages/Oxyloans/Admin/AdminAIDealsDashboard";
 import AdminAICreatedDealsPage from "./components/pages/Oxyloans/Admin/AdminAICreatedDealsPage";
 import AdminAIOXYInsightsPage from "./components/pages/Oxyloans/Admin/AdminAIOXYInsightsPage";
+import AdminAIExtendedDealsPage from "./components/pages/Oxyloans/Admin/AdminAIExtendedDealsPage";
 import AdminAIActiveLendersReferralPortfolioPage from "./components/pages/Oxyloans/Admin/AdminAIActiveLendersReferralPortfolioPage";
 import AdminAILentReferralTreeMapPage from "./components/pages/Oxyloans/Admin/AdminAILentReferralTreeMapPage";
 import AdminAILentUsersDetailPage from "./components/pages/Oxyloans/Admin/AdminAILentUsersDetailPage";
@@ -305,6 +306,7 @@ const AppRouter = () => {
         <Route path="/adminAllDeals" element={<AdminAIRouteAlias to="/adminAIDeals" />} />
         <Route path="/adminAICreatedDeals" element={<AdminAICreatedDealsPage />} />
         <Route path="/adminAIOXYInsights" element={<AdminAIOXYInsightsPage />} />
+        <Route path="/adminAIExtendedDeals" element={<AdminAIExtendedDealsPage />} />
         <Route path="/adminAIActiveLendersReferralPortfolio" element={<AdminAIActiveLendersReferralPortfolioPage />} />
         <Route path="/adminAILentReferralTreeMap" element={<AdminAILentReferralTreeMapPage />} />
         <Route path="/adminAILentUsersDetail" element={<AdminAILentUsersDetailPage />} />

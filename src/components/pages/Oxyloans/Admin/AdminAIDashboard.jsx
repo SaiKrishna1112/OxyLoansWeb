@@ -76,11 +76,10 @@ import AdminAILifetimeFeeWaiverPanel from "./AdminAILifetimeFeeWaiverPanel";
 import AdminAILatestFirstParticipatedPanel from "./AdminAILatestFirstParticipatedPanel";
 import AdminAILenderCampaignModal from "./AdminAILenderCampaignModal";
 import AdminAIAutoEmailDraftModal from "./AdminAIAutoEmailDraftModal";
-import { OXYINSIGHTS_PATH } from "./adminAINavigation";
+import { EXTENDED_DEALS_PATH, OXYINSIGHTS_PATH } from "./adminAINavigation";
 import { exportTopReferrersLentTreePdf } from "./exportTopReferrersLentTreePdf";
 import { downloadTopPaidEarnedExcel } from "./AdminAITopPaidEarnedReferrersPage";
 import AdminAIYearWiseDealsPanel from "./AdminAIYearWiseDealsPanel";
-import AdminRunningExtendedDealsPanel from "./AdminRunningExtendedDealsPanel";
 
 const ADMIN_AI_DASHBOARD_CACHE_KEY = "oxyloans.adminAIDashboard.bootstrap.v2";
 const ADMIN_AI_DASHBOARD_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -3063,7 +3062,27 @@ const AdminAIDashboard = () => {
             </div>
           </header>
 
-          <AdminRunningExtendedDealsPanel />
+          <section className="admin-ai-pro-section admin-ai-ext-deals-entry">
+            <button
+              type="button"
+              className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ext-deals-entry-btn"
+              onClick={() => navigate(EXTENDED_DEALS_PATH)}
+            >
+              <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--deals">
+                <FaBriefcase />
+              </div>
+              <div className="admin-ai-yearwise-header-copy">
+                <h2>Extended Deals</h2>
+                <p>
+                  Live (non-test) deals whose tenure was extended — extensions, deal value,
+                  participation, returned, and current active amount.
+                </p>
+              </div>
+              <span className="admin-ai-yearwise-header-meta">
+                <span className="admin-ai-yearwise-header-open">Open →</span>
+              </span>
+            </button>
+          </section>
 
           {loadError && (
             <div className="alert alert-danger d-flex justify-content-between align-items-center">

@@ -14,6 +14,7 @@ export const ADMIN_AI_DASHBOARD_PATH = "/adminAIDashboard";
 export const YEAR_WISE_REFERRALS_PATH = "/adminAIDashboard?panel=yearWiseReferrals";
 export const YEAR_WISE_DEALS_PATH = "/adminAIDashboard?panel=yearWiseDeals";
 export const OXYINSIGHTS_PATH = "/adminAIOXYInsights";
+export const EXTENDED_DEALS_PATH = "/adminAIExtendedDeals";
 
 export const buildYearWiseDealsListPath = ({
   year = 0,
