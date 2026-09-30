@@ -1610,6 +1610,10 @@ const LenderPortfolioDashboard = () => {
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
+  const [timelineData, setTimelineData] = useState(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelinePopup, setTimelinePopup] = useState(null); // { dealId, col, bucket }
 
   // Tier from backend — preview cannot exceed actual paid tier
   const TIER_RANK = { FREE: 0, SMART: 1, PRO: 2 };
@@ -1688,6 +1692,16 @@ const LenderPortfolioDashboard = () => {
       .then((res) => setUpcomingData(res.data))
       .catch(() => {})
       .finally(() => setUpcomingLoading(false));
+  }, [resolvedLenderId]);
+
+  // Deal timeline — loads once on mount
+  useEffect(() => {
+    if (!resolvedLenderId) return;
+    setTimelineLoading(true);
+    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/deals-timeline`, { headers: { accessToken: getToken() } })
+      .then((res) => setTimelineData(res.data))
+      .catch(() => {})
+      .finally(() => setTimelineLoading(false));
   }, [resolvedLenderId]);
 
   const fetchTimingDetail = (bucket, page = 0) => {
@@ -3162,7 +3176,146 @@ const LenderPortfolioDashboard = () => {
                 );
               })()}
 
-              {/* ── 11. REFERRAL EARNINGS — FREE: locked, SMART: totals, PRO: full breakdown with FY filter ── */}
+              {/* ── 11. DEAL TIMELINE — interest received per deal per month/year ── */}
+              {isSmart && (() => {
+                const tl = timelineData;
+                const cols = tl?.columns || [];
+                const deals = tl?.deals || [];
+                const totalByCol = {};
+                cols.forEach(c => {
+                  totalByCol[c] = deals.reduce((s, d) => s + (d.payments?.[c]?.total || 0), 0);
+                });
+                return (
+                  <SectionCard
+                    title="Deal Timeline"
+                    collapsible
+                    isOpen={timelineOpen}
+                    onToggle={() => setTimelineOpen(o => !o)}
+                    summary={
+                      timelineLoading ? "Loading…" :
+                      tl ? `${deals.length} deals · ${cols.length} period${cols.length !== 1 ? "s" : ""}` :
+                      "Interest received by deal × month"
+                    }
+                  >
+                    {timelineLoading && (
+                      <div className="text-center py-4 text-muted">
+                        <span className="spinner-border spinner-border-sm me-2" />
+                        Building timeline…
+                      </div>
+                    )}
+                    {!timelineLoading && !tl && (
+                      <div className="text-center py-4 text-muted" style={{ fontSize: 13 }}>Could not load timeline data.</div>
+                    )}
+                    {!timelineLoading && tl && deals.length === 0 && (
+                      <div className="text-center py-4 text-muted" style={{ fontSize: 13 }}>No deals found.</div>
+                    )}
+                    {!timelineLoading && tl && deals.length > 0 && (
+                      <>
+                        {/* Transaction detail popup */}
+                        {timelinePopup && (() => {
+                          const { dealName, col, bucket } = timelinePopup;
+                          return (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center" }}
+                              onClick={() => setTimelinePopup(null)}>
+                              <div style={{ background: "#fff", borderRadius: 14, padding: "22px 26px", minWidth: 300, maxWidth: 480, boxShadow: "0 12px 40px rgba(0,0,0,0.22)" }}
+                                onClick={e => e.stopPropagation()}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                                  <div>
+                                    <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>{dealName}</div>
+                                    <div style={{ fontSize: 12, color: "#8c8c8c", marginTop: 2 }}>{col}</div>
+                                  </div>
+                                  <button onClick={() => setTimelinePopup(null)}
+                                    style={{ border: "none", background: "#f5f5f5", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 16, color: "#595959" }}>✕</button>
+                                </div>
+                                <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
+                                  {(bucket.transactions || []).map((t, i) => (
+                                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: i < bucket.transactions.length - 1 ? "1px dashed #f0f0f0" : "none" }}>
+                                      <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: "#262626" }}>₹{fmt(t.amount)}</div>
+                                        <div style={{ fontSize: 11, color: "#8c8c8c" }}>{t.date}</div>
+                                      </div>
+                                      <span style={{ fontSize: 11, color: t.type === "LENDERPRINCIPAL" ? "#1890ff" : t.type === "PRINCIPALINTEREST" ? "#722ed1" : "#52c41a", background: t.type === "LENDERPRINCIPAL" ? "#e6f7ff" : t.type === "PRINCIPALINTEREST" ? "#f9f0ff" : "#f6ffed", borderRadius: 4, padding: "2px 7px", fontWeight: 600 }}>
+                                        {t.type === "LENDERPRINCIPAL" ? "Principal" : t.type === "PRINCIPALINTEREST" ? "Principal+Interest" : "Interest"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 14 }}>
+                                    <span>Total</span>
+                                    <span style={{ color: "#52c41a" }}>₹{fmt(bucket.total)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Scrollable pivot table */}
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%", minWidth: Math.max(600, 220 + cols.length * 90) }}>
+                            <thead>
+                              <tr style={{ background: "#fafafa" }}>
+                                <th style={{ position: "sticky", left: 0, background: "#fafafa", zIndex: 1, padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #f0f0f0", whiteSpace: "nowrap", fontWeight: 700, color: "#262626" }}>Deal</th>
+                                <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #f0f0f0", whiteSpace: "nowrap", color: "#8c8c8c", fontWeight: 600 }}>Amount</th>
+                                <th style={{ padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #f0f0f0", whiteSpace: "nowrap", color: "#8c8c8c", fontWeight: 600 }}>ROI</th>
+                                {cols.map(c => (
+                                  <th key={c} style={{ padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #f0f0f0", whiteSpace: "nowrap", color: "#595959", fontWeight: 600, minWidth: 80 }}>{c}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {deals.map((deal, idx) => (
+                                <tr key={deal.dealId}
+                                  style={{ background: deal.closed ? "rgba(82,196,26,0.07)" : (idx % 2 === 0 ? "#fff" : "#fafafa"), transition: "background 0.15s" }}
+                                  onMouseEnter={e => e.currentTarget.style.background = deal.closed ? "rgba(82,196,26,0.13)" : "#f0f7ff"}
+                                  onMouseLeave={e => e.currentTarget.style.background = deal.closed ? "rgba(82,196,26,0.07)" : (idx % 2 === 0 ? "#fff" : "#fafafa")}
+                                >
+                                  <td style={{ position: "sticky", left: 0, background: "inherit", zIndex: 1, padding: "7px 12px", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
+                                    <span style={{ fontWeight: 600, color: "#262626" }}>{deal.dealName || `Deal #${deal.dealId}`}</span>
+                                    {deal.closed && <span style={{ marginLeft: 6, fontSize: 10, color: "#52c41a", background: "#f6ffed", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>Closed</span>}
+                                    <div style={{ fontSize: 10, color: "#8c8c8c" }}>{deal.investmentDate} · {deal.returnsType}</div>
+                                  </td>
+                                  <td style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap", color: "#1890ff", fontWeight: 600 }}>₹{fmt(deal.amount)}</td>
+                                  <td style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap", color: "#595959" }}>{deal.roi ? `${deal.roi.toFixed(2)}%` : "—"}</td>
+                                  {cols.map(c => {
+                                    const bucket = deal.payments?.[c];
+                                    return (
+                                      <td key={c} style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap" }}>
+                                        {bucket ? (
+                                          <button
+                                            onClick={() => setTimelinePopup({ dealName: deal.dealName || `Deal #${deal.dealId}`, col: c, bucket })}
+                                            style={{ background: "none", border: "none", cursor: "pointer", color: "#52c41a", fontWeight: 700, fontSize: 12, padding: 0, textDecoration: "underline dotted" }}
+                                            title="Click for transaction details"
+                                          >
+                                            ₹{fmt(bucket.total)}
+                                          </button>
+                                        ) : (
+                                          <span style={{ color: "#e8e8e8" }}>—</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
+                              {/* Totals row */}
+                              <tr style={{ background: "#f0f7ff", fontWeight: 700 }}>
+                                <td style={{ position: "sticky", left: 0, background: "#f0f7ff", zIndex: 1, padding: "8px 12px", borderTop: "2px solid #d6e4ff", fontSize: 12, color: "#1a237e" }} colSpan={3}>Total Received</td>
+                                {cols.map(c => (
+                                  <td key={c} style={{ padding: "8px 10px", textAlign: "right", borderTop: "2px solid #d6e4ff", color: totalByCol[c] > 0 ? "#1a237e" : "#e8e8e8", fontSize: 12 }}>
+                                    {totalByCol[c] > 0 ? `₹${fmt(totalByCol[c])}` : "—"}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 8 }}>Click any amount to see transaction details. Green rows = closed deals. Past years shown as annual totals.</div>
+                      </>
+                    )}
+                  </SectionCard>
+                );
+              })()}
+
+              {/* ── 12. REFERRAL EARNINGS — FREE: locked, SMART: totals, PRO: full breakdown with FY filter ── */}
               {!isSmart && (
                 <LockCard title="Referral Earnings" requiredTier="SMART" />
               )}
