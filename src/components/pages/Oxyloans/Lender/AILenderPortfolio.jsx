@@ -1579,6 +1579,10 @@ const LenderPortfolioDashboard = () => {
   if (resolvedLenderId) sessionStorage.setItem("activeLenderId", resolvedLenderId);
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
+  // ?demo=true — masks real name/LR for screen recordings
+  const demoMode = new URLSearchParams(window.location.search).get("demo") === "true";
+  const demoName = new URLSearchParams(window.location.search).get("name") || "Test User";
+  const demoLR   = new URLSearchParams(window.location.search).get("lr")   || "LR1234";
 
   const earningsCache = useRef({});
   const [data, setData] = useState(null);
@@ -1849,10 +1853,10 @@ const LenderPortfolioDashboard = () => {
                       <div className="d-flex align-items-start mb-3" style={{ flexWrap: "wrap", gap: 12 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                            <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{data.lenderName}</h4>
+                            <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{demoMode ? demoName : data.lenderName}</h4>
                             {data.membershipBadge && <MembershipBadge badge={data.membershipBadge} />}
                           </div>
-                          {data.email && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{data.email}</span>}
+                          {!demoMode && data.email && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{data.email}</span>}
                           <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
                             {[
                               { label: "Member Since", value: data.memberSince ? new Date(data.memberSince).getFullYear() : "—" },
@@ -1895,7 +1899,7 @@ const LenderPortfolioDashboard = () => {
                         )}
                       </div>
                       {(() => {
-                          const firstName = (data.lenderName || "").split(" ")[0];
+                          const firstName = demoMode ? demoName.split(" ")[0] : (data.lenderName || "").split(" ")[0];
                           const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
                           const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
                           const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
@@ -3451,7 +3455,7 @@ const LenderPortfolioDashboard = () => {
       </div>
 
       {/* AI Chat Widget — SMART+ only */}
-      {data && isSmart && <AIChatWidget lenderId={resolvedLenderId} lenderName={data.lenderName?.split(" ")[0]} />}
+      {data && isSmart && <AIChatWidget lenderId={resolvedLenderId} lenderName={demoMode ? demoName.split(" ")[0] : data.lenderName?.split(" ")[0]} />}
     </div>
   );
 };
