@@ -660,7 +660,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 
   const toCsv = (rows) => {
     const csv = rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
-    return new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    return new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
   };
 
   // Use cached data if available, otherwise fetch (fallback)
@@ -1003,8 +1003,12 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 };
 
 // ── UPCOMING PAYOUTS SECTION (loads independently) ─────────────────────────
+const UPCOMING_FILTERS = ["ALL", "MONTHLY", "QUARTERLY", "HALFYEARLY", "YEARLY"];
+const UPCOMING_WINDOW  = { ALL: "", MONTHLY: "60 Days", QUARTERLY: "100 Days", HALFYEARLY: "200 Days", YEARLY: "400 Days" };
+
 const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
   const [expanded, setExpanded] = React.useState(false);
+  const [upcomingFilter, setUpcomingFilter] = React.useState("ALL");
   const detailRef = React.useRef(null);
 
   const expandAndScroll = () => {
@@ -1023,8 +1027,10 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
 
   if (!upcomingData) return null;
 
-  const total   = upcomingData.upcomingTotal   || 0;
-  const payouts = upcomingData.upcomingPayouts || [];
+  const allPayouts = upcomingData.upcomingPayouts || [];
+  const payouts = upcomingFilter === "ALL"
+    ? allPayouts
+    : allPayouts.filter(p => (p.returnType || "MONTHLY").toUpperCase() === upcomingFilter);
 
   const payoutsByDate = payouts.reduce((acc, p) => {
     const d = p.dueDate;
@@ -1039,15 +1045,31 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
   const hiddenTotal = tooMany
     ? allSortedDates.slice(MAX_DATES).reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
     : 0;
-  const displayTotal = tooMany
-    ? sortedDates.reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
-    : total;
+  const displayTotal = sortedDates.reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0);
+  const windowLabel = UPCOMING_WINDOW[upcomingFilter];
   const heading = tooMany
-    ? `Next 10 Payment Dates (${allSortedDates.length} total in 60 days)`
-    : "Upcoming Payments — Next 60 Days";
+    ? `Next 10 Payment Dates (${allSortedDates.length} total${windowLabel ? " in " + windowLabel : ""})`
+    : `Upcoming Payments${windowLabel ? " — Next " + windowLabel : ""}`;
 
   return (
     <div style={{ background: "#fff7e6", borderRadius: 14, padding: "16px 20px", marginBottom: 20, border: "1px solid #ffd591" }}>
+      {/* Frequency filter tabs */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {UPCOMING_FILTERS.map(f => (
+          <button
+            key={f}
+            onClick={() => { setUpcomingFilter(f); setExpanded(false); }}
+            style={{
+              padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer",
+              background: upcomingFilter === f ? "#fa8c16" : "#fff",
+              color: upcomingFilter === f ? "#fff" : "#d46b08",
+              border: "1px solid #fa8c16",
+            }}
+          >
+            {f === "HALFYEARLY" ? "Half-Yearly" : f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+          </button>
+        ))}
+      </div>
       {/* Brief summary — always visible */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         <div>
@@ -1070,7 +1092,7 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
               })}
             </div>
           ) : (
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>No payments due in the next 60 days</div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>No {upcomingFilter === "ALL" ? "" : upcomingFilter.charAt(0) + upcomingFilter.slice(1).toLowerCase() + " "}payments due{windowLabel ? " in the next " + windowLabel : ""}</div>
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -1126,8 +1148,15 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
                   )}
                 </div>
                 {ps.map((p, i) => (
-                  <div key={i} style={{ fontSize: 11, color: "#595959", display: "flex", justifyContent: "space-between", paddingLeft: 8, borderLeft: "2px solid #ffd591", marginBottom: 3 }}>
-                    <span><span style={{ fontWeight: 700, color: "#8c8c8c" }}>#{p.dealId}</span> {p.dealName || ""}</span>
+                  <div key={i} style={{ fontSize: 11, color: "#595959", display: "flex", justifyContent: "space-between", alignItems: "center", paddingLeft: 8, borderLeft: "2px solid #ffd591", marginBottom: 3 }}>
+                    <span>
+                      <span style={{ fontWeight: 700, color: "#8c8c8c" }}>#{p.dealId}</span> {p.dealName || ""}
+                      {p.returnType && p.returnType !== "MONTHLY" && (
+                        <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, background: "#fff2cc", color: "#ad6800", borderRadius: 3, padding: "1px 4px", textTransform: "capitalize" }}>
+                          {p.returnType === "HALFYEARLY" ? "Half-Yrly" : p.returnType.charAt(0) + p.returnType.slice(1).toLowerCase()}
+                        </span>
+                      )}
+                    </span>
                     <span style={{ fontWeight: 600 }}>₹{fmt(p.totalAmount)}</span>
                   </div>
                 ))}
@@ -1580,6 +1609,10 @@ const LenderPortfolioDashboard = () => {
   if (resolvedLenderId) sessionStorage.setItem("activeLenderId", resolvedLenderId);
   // ?tier=FREE|SMART|PRO — demo/testing override (bypasses backend tier)
   const tierOverride = new URLSearchParams(window.location.search).get("tier")?.toUpperCase() || null;
+  // ?demo=true — masks real name/LR for screen recordings
+  const demoMode = new URLSearchParams(window.location.search).get("demo") === "true";
+  const demoName = new URLSearchParams(window.location.search).get("name") || "Test User";
+  const demoLR   = new URLSearchParams(window.location.search).get("lr")   || "LR1234";
 
   const earningsCache = useRef({});
   const [data, setData] = useState(null);
@@ -1611,6 +1644,11 @@ const LenderPortfolioDashboard = () => {
   const [remindedDeals, setRemindedDeals] = useState(new Set()); // dealIds where reminder was sent
   const [momFilter, setMomFilter] = useState("6M");
   const [momData, setMomData] = useState(null);
+  const [timelineData, setTimelineData] = useState(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelinePopup, setTimelinePopup] = useState(null); // { dealId, col, bucket }
+  const [timelineFilter, setTimelineFilter] = useState("ALL"); // ALL | ACTIVE | CLOSED
 
   // Tier from backend — preview cannot exceed actual paid tier
   const TIER_RANK = { FREE: 0, SMART: 1, PRO: 2 };
@@ -1689,6 +1727,16 @@ const LenderPortfolioDashboard = () => {
       .then((res) => setUpcomingData(res.data))
       .catch(() => {})
       .finally(() => setUpcomingLoading(false));
+  }, [resolvedLenderId]);
+
+  // Deal timeline — loads once on mount
+  useEffect(() => {
+    if (!resolvedLenderId) return;
+    setTimelineLoading(true);
+    axios.get(`${MARKETPLACE_URL}/v1/ai/lender/${resolvedLenderId}/deals-timeline`, { headers: { accessToken: getToken() } })
+      .then((res) => setTimelineData(res.data))
+      .catch(() => {})
+      .finally(() => setTimelineLoading(false));
   }, [resolvedLenderId]);
 
   const fetchTimingDetail = (bucket, page = 0) => {
@@ -1856,10 +1904,10 @@ const LenderPortfolioDashboard = () => {
                       <div className="d-flex align-items-start mb-3" style={{ flexWrap: "wrap", gap: 12 }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                            <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{data.lenderName}</h4>
+                            <h4 style={{ color: "#fff", margin: 0, fontWeight: 700, fontSize: 22 }}>{demoMode ? demoName : data.lenderName}</h4>
                             {data.membershipBadge && <MembershipBadge badge={data.membershipBadge} />}
                           </div>
-                          {data.email && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{data.email}</span>}
+                          {!demoMode && data.email && <span style={{ color: "rgba(255,255,255,0.6)", fontSize: 13 }}>{data.email}</span>}
                           <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
                             {[
                               { label: "Member Since", value: data.memberSince ? new Date(data.memberSince).getFullYear() : "—" },
@@ -1902,7 +1950,7 @@ const LenderPortfolioDashboard = () => {
                         )}
                       </div>
                       {(() => {
-                          const firstName = (data.lenderName || "").split(" ")[0];
+                          const firstName = demoMode ? demoName.split(" ")[0] : (data.lenderName || "").split(" ")[0];
                           const allLines = (data.narrative || data.aiNarrative || "").split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
                           const visibleLines = narrativeExpanded ? allLines : allLines.slice(0, 3);
                           const icons = isPro ? ["🎯", "💰", "♻️", "📈", "💡", "⚠️"] : ["📊", "💰", "♻️", "📈", "💡"];
@@ -3144,7 +3192,10 @@ const LenderPortfolioDashboard = () => {
                             const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency, deal.annualRate);
                             return (
                               <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
-                                <td><strong>#{deal.dealId}</strong></td>
+                                <td>
+                                  <strong>#{deal.dealId}</strong>
+                                  {deal.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 1, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deal.dealName}</div>}
+                                </td>
                                 <td>₹{fmt(deal.amount)}</td>
                                 <td>{annualRoi}</td>
                                 <td>
@@ -3183,7 +3234,183 @@ const LenderPortfolioDashboard = () => {
                 );
               })()}
 
-              {/* ── 11. REFERRAL EARNINGS — FREE: locked, SMART: totals, PRO: full breakdown with FY filter ── */}
+              {/* ── 11. DEAL TIMELINE — interest received per deal per month/year ── */}
+              {isSmart && (() => {
+                const tl = timelineData;
+                const cols = tl?.columns || [];
+                const allDeals = tl?.deals || [];
+                const filteredDeals = timelineFilter === "ACTIVE" ? allDeals.filter(d => !d.closed)
+                                    : timelineFilter === "CLOSED" ? allDeals.filter(d => d.closed)
+                                    : allDeals;
+                const activeCount = allDeals.filter(d => !d.closed).length;
+                const closedCount = allDeals.filter(d => d.closed).length;
+                const deals = filteredDeals;
+                const totalByCol = {};
+                cols.forEach(c => {
+                  totalByCol[c] = deals.reduce((s, d) => s + (d.payments?.[c]?.total || 0), 0);
+                });
+                const tlFilterColors = { ALL: { a: "#1890ff", b: "#e6f7ff" }, ACTIVE: { a: "#52c41a", b: "#f6ffed" }, CLOSED: { a: "#595959", b: "#f5f5f5" } };
+                return (
+                  <SectionCard
+                    title="Deal Timeline"
+                    collapsible
+                    isOpen={timelineOpen}
+                    onToggle={() => setTimelineOpen(o => !o)}
+                    summary={
+                      timelineLoading ? "Loading…" :
+                      tl ? `${allDeals.length} deals · ${activeCount} active · ${cols.length} period${cols.length !== 1 ? "s" : ""}` :
+                      "Interest received by deal × month"
+                    }
+                    badge={tl && !timelineLoading && (
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {["ALL", "ACTIVE", "CLOSED"].map(f => {
+                          const c = tlFilterColors[f];
+                          const isActive = timelineFilter === f;
+                          const label = f === "ALL" ? `All (${allDeals.length})` : f === "ACTIVE" ? `Active (${activeCount})` : `Closed (${closedCount})`;
+                          return (
+                            <button key={f} onClick={e => { e.stopPropagation(); setTimelineFilter(f); }}
+                              style={{ fontSize: 11, padding: "2px 10px", borderRadius: 6, border: `1px solid ${isActive ? c.a : "#d9d9d9"}`, background: isActive ? c.b : "#fff", color: isActive ? c.a : "#8c8c8c", cursor: "pointer", fontWeight: isActive ? 700 : 400 }}>
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  >
+                    {timelineLoading && (
+                      <div className="text-center py-4 text-muted">
+                        <span className="spinner-border spinner-border-sm me-2" />
+                        Building timeline…
+                      </div>
+                    )}
+                    {!timelineLoading && !tl && (
+                      <div className="text-center py-4 text-muted" style={{ fontSize: 13 }}>Could not load timeline data.</div>
+                    )}
+                    {!timelineLoading && tl && deals.length === 0 && (
+                      <div className="text-center py-4 text-muted" style={{ fontSize: 13 }}>No deals found.</div>
+                    )}
+                    {!timelineLoading && tl && deals.length > 0 && (
+                      <>
+                        {/* Transaction detail popup */}
+                        {timelinePopup && (() => {
+                          const { dealName, col, bucket } = timelinePopup;
+                          return (
+                            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center" }}
+                              onClick={() => setTimelinePopup(null)}>
+                              <div style={{ background: "#fff", borderRadius: 14, padding: "22px 26px", minWidth: 300, maxWidth: 480, boxShadow: "0 12px 40px rgba(0,0,0,0.22)" }}
+                                onClick={e => e.stopPropagation()}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                                  <div>
+                                    <div style={{ fontWeight: 700, fontSize: 14, color: "#262626" }}>{dealName}</div>
+                                    <div style={{ fontSize: 12, color: "#8c8c8c", marginTop: 2 }}>{col}</div>
+                                  </div>
+                                  <button onClick={() => setTimelinePopup(null)}
+                                    style={{ border: "none", background: "#f5f5f5", borderRadius: 6, width: 28, height: 28, cursor: "pointer", fontSize: 16, color: "#595959" }}>✕</button>
+                                </div>
+                                <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
+                                  {(bucket.transactions || []).map((t, i) => (
+                                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: i < bucket.transactions.length - 1 ? "1px dashed #f0f0f0" : "none" }}>
+                                      <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: "#262626" }}>₹{fmt(t.amount)}</div>
+                                        <div style={{ fontSize: 11, color: "#8c8c8c" }}>{t.date}</div>
+                                      </div>
+                                      <span style={{ fontSize: 11, color: t.type === "LENDERPRINCIPAL" ? "#1890ff" : t.type === "PRINCIPALINTEREST" ? "#722ed1" : "#52c41a", background: t.type === "LENDERPRINCIPAL" ? "#e6f7ff" : t.type === "PRINCIPALINTEREST" ? "#f9f0ff" : "#f6ffed", borderRadius: 4, padding: "2px 7px", fontWeight: 600 }}>
+                                        {t.type === "LENDERPRINCIPAL" ? "Principal" : t.type === "PRINCIPALINTEREST" ? "Principal+Interest" : "Interest"}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 14 }}>
+                                    <span>Total</span>
+                                    <span style={{ color: "#52c41a" }}>₹{fmt(bucket.total)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Scrollable pivot table — freeze panes: Deal(220)+Amount(100)+Date(100)+ROI(70) all sticky */}
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 12, tableLayout: "fixed", minWidth: 490 + cols.length * 90 }}>
+                            <colgroup>
+                              <col style={{ width: 220 }} />
+                              <col style={{ width: 100 }} />
+                              <col style={{ width: 100 }} />
+                              <col style={{ width: 70 }} />
+                              {cols.map(c => <col key={c} style={{ width: 90 }} />)}
+                            </colgroup>
+                            <thead>
+                              <tr>
+                                <th style={{ position: "sticky", left: 0,   zIndex: 3, background: "#fafafa", padding: "8px 12px", textAlign: "left",  borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 700, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Deal</th>
+                                <th style={{ position: "sticky", left: 220, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c" }}>Amount</th>
+                                <th style={{ position: "sticky", left: 320, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c", whiteSpace: "nowrap" }}>Invested On</th>
+                                <th style={{ position: "sticky", left: 420, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "3px solid #bdbdbd", fontWeight: 600, color: "#8c8c8c" }}>ROI</th>
+                                {cols.map(c => (
+                                  <th key={c} style={{ background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #f0f0f0", fontWeight: 600, color: "#595959" }}>{c}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {deals.map((deal, idx) => {
+                                const rowBg = deal.closed ? "#edfce8" : (idx % 2 === 0 ? "#fff" : "#fafafa");
+                                const rowBgHover = deal.closed ? "#d6f5ce" : "#e8f0fe";
+                                return (
+                                <tr key={deal.dealId}
+                                  onMouseEnter={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background = rowBgHover)}
+                                  onMouseLeave={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background = rowBg)}
+                                >
+                                  <td style={{ position: "sticky", left: 0,   zIndex: 2, background: rowBg, padding: "7px 12px", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <span style={{ fontWeight: 600, color: "#262626" }}>{deal.dealName || `Deal #${deal.dealId}`}</span>
+                                    {deal.closed && <span style={{ marginLeft: 6, fontSize: 10, color: "#52c41a", background: "#f6ffed", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>Closed</span>}
+                                    <div style={{ fontSize: 10, color: "#8c8c8c" }}>{deal.returnsType}</div>
+                                  </td>
+                                  <td style={{ position: "sticky", left: 220, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", color: "#1890ff", fontWeight: 600, whiteSpace: "nowrap" }}>₹{fmt(deal.amount)}</td>
+                                  <td style={{ position: "sticky", left: 320, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", color: "#8c8c8c", fontSize: 11, whiteSpace: "nowrap" }}>{deal.investmentDate || "—"}</td>
+                                  <td style={{ position: "sticky", left: 420, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "3px solid #bdbdbd", color: "#595959", whiteSpace: "nowrap" }}>{deal.roi ? `${deal.roi.toFixed(2)}%` : "—"}</td>
+                                  {cols.map(c => {
+                                    const bucket = deal.payments?.[c];
+                                    return (
+                                      <td key={c} style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap" }}>
+                                        {bucket ? (
+                                          <button
+                                            onClick={() => setTimelinePopup({ dealName: deal.dealName || `Deal #${deal.dealId}`, col: c, bucket })}
+                                            style={{ background: "none", border: "none", cursor: "pointer", color: "#52c41a", fontWeight: 700, fontSize: 12, padding: 0, textDecoration: "underline dotted" }}
+                                            title="Click for transaction details"
+                                          >
+                                            ₹{fmt(bucket.total)}
+                                          </button>
+                                        ) : (
+                                          <span style={{ color: "#e8e8e8" }}>—</span>
+                                        )}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                                );
+                              })}
+                              {/* Totals row */}
+                              <tr>
+                                <td style={{ position: "sticky", left: 0,   zIndex: 2, background: "#e8f0fe", padding: "8px 12px", borderTop: "2px solid #c5d6f5", borderRight: "1px solid #e0e0e0", fontSize: 12, fontWeight: 700, color: "#1a237e" }}>Total Received</td>
+                                <td style={{ position: "sticky", left: 220, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "1px solid #e0e0e0" }} />
+                                <td style={{ position: "sticky", left: 320, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "1px solid #e0e0e0" }} />
+                                <td style={{ position: "sticky", left: 420, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "3px solid #bdbdbd" }} />
+                                {cols.map(c => (
+                                  <td key={c} style={{ padding: "8px 10px", textAlign: "right", borderTop: "2px solid #d6e4ff", color: totalByCol[c] > 0 ? "#1a237e" : "#e8e8e8", fontSize: 12 }}>
+                                    {totalByCol[c] > 0 ? `₹${fmt(totalByCol[c])}` : "—"}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 8 }}>Click any amount to see transaction details. Green rows = closed deals. Past years shown as annual totals.</div>
+                      </>
+                    )}
+                  </SectionCard>
+                );
+              })()}
+
+              {/* ── 12. REFERRAL EARNINGS — FREE: locked, SMART: totals, PRO: full breakdown with FY filter ── */}
               {!isSmart && (
                 <LockCard title="Referral Earnings" requiredTier="SMART" />
               )}
@@ -3319,7 +3546,7 @@ const LenderPortfolioDashboard = () => {
       </div>
 
       {/* AI Chat Widget — SMART+ only */}
-      {data && isSmart && <AIChatWidget lenderId={resolvedLenderId} lenderName={data.lenderName?.split(" ")[0]} />}
+      {data && isSmart && <AIChatWidget lenderId={resolvedLenderId} lenderName={demoMode ? demoName.split(" ")[0] : data.lenderName?.split(" ")[0]} />}
     </div>
   );
 };
