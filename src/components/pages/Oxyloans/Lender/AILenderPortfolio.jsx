@@ -659,7 +659,7 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 
   const toCsv = (rows) => {
     const csv = rows.map(r => r.map(c => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
-    return new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    return new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
   };
 
   // Use cached data if available, otherwise fetch (fallback)
