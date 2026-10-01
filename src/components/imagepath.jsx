@@ -7,6 +7,7 @@ export { default as lenderShieldBadge } from "../assets/img/lender_shield_badge_
 export { default as loginHeroLeft } from "../assets/img/login_hero_left.png";
 export { default as registerActiveHero } from "../assets/img/register_active_hero.png";
 export { default as loginPlantCoin } from "../assets/img/login_plant_coin.png";
+export { default as lenderWelcome10Years } from "../assets/img/lender_welcome_10years.png";
 export { default as logo } from "../assets/img/logo.png";
 export { default as logosmall } from "../assets/img/logo-small.png";
 export { default as oxylogomobile } from "../assets/img/oxylogomobile.png";

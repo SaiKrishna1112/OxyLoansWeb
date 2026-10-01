@@ -245,6 +245,7 @@ export const saveLoginSession = (response) => {
   sessionStorage.setItem("tokenTime", response.data.tokenGeneratedTime || "");
   sessionStorage.setItem("email", response.data.email || "");
   localStorage.setItem("primaryType", response.data.primaryType || "");
+  sessionStorage.removeItem("oxy_lender_welcome_dismissed");
   return true;
 };
 

@@ -1,0 +1,407 @@
+/* ─── LENDER WELCOME MODAL (10 YEARS OF OXYLOANS) ─── */
+
+.lender-welcome-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 16px;
+  overflow-y: auto;
+  animation: lenderWelcomeBackdropFade 0.3s ease-out forwards;
+}
+
+@keyframes lenderWelcomeBackdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lender-welcome-container {
+  position: relative;
+  width: 100%;
+  max-width: 490px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: lenderWelcomeScaleUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes lenderWelcomeScaleUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Modal Card Wrapper */
+.lender-welcome-card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1039 / 1246;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 
+    0 25px 60px -12px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.25),
+    0 0 40px rgba(16, 185, 129, 0.18);
+  background: #ffffff;
+  user-select: none;
+}
+
+/* Auto-Close Progress Bar Track & Fill */
+.lender-welcome-progress-bar-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.05);
+  z-index: 15;
+  overflow: hidden;
+}
+
+.lender-welcome-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  width: 100%;
+  transform-origin: left center;
+  animation: lenderWelcomeAutoCloseProgress 10s linear forwards;
+}
+
+@keyframes lenderWelcomeAutoCloseProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Auto-Close Countdown Pill Badge */
+.lender-welcome-countdown-pill {
+  position: absolute;
+  top: 2.8%;
+  left: 3.5%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  z-index: 12;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.lender-welcome-countdown-pill .timer-icon {
+  width: 13px;
+  height: 13px;
+  stroke: #059669;
+}
+
+/* Artwork Image */
+.lender-welcome-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+/* Close Button Hotspot */
+.lender-welcome-close-btn {
+  position: absolute;
+  top: 2.8%;
+  right: 2.8%;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.lender-welcome-close-btn:hover {
+  background: rgba(0, 0, 0, 0.07);
+  transform: scale(1.12);
+}
+
+.lender-welcome-close-btn:active {
+  transform: scale(0.94);
+}
+
+.lender-welcome-close-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: #475569;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.2s ease;
+}
+
+.lender-welcome-close-btn:hover svg {
+  stroke: #0f172a;
+}
+
+/* Continue to Dashboard CTA Button Hotspot */
+.lender-welcome-cta-btn {
+  position: absolute;
+  left: 15.6%;
+  right: 15.6%;
+  bottom: 3.8%;
+  height: 7.4%;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lender-welcome-cta-btn:hover {
+  transform: translateY(-1.5px) scale(1.015);
+  box-shadow: 0 10px 24px -4px rgba(16, 185, 129, 0.5);
+}
+
+.lender-welcome-cta-btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* Light Sheen Sweep on CTA */
+.lender-welcome-cta-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 70%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
+  transform: skewX(-25deg);
+  animation: lenderWelcomeSheen 4.5s ease-in-out infinite;
+}
+
+@keyframes lenderWelcomeSheen {
+  0%, 65% {
+    left: -120%;
+  }
+  100% {
+    left: 200%;
+  }
+}
+
+/* Interactive Pill Badges Hotspots */
+.lender-welcome-badge-hotspot {
+  position: absolute;
+  top: 73.8%;
+  height: 11.2%;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.22s ease;
+  background: transparent;
+}
+
+.lender-welcome-badge-hotspot:hover {
+  background: rgba(16, 185, 129, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.badge-pos-1 {
+  left: 8.5%;
+  width: 19.5%;
+}
+
+.badge-pos-2 {
+  left: 29.5%;
+  width: 19.5%;
+}
+
+.badge-pos-3 {
+  left: 50.5%;
+  width: 19.5%;
+}
+
+.badge-pos-4 {
+  left: 71.5%;
+  width: 20%;
+}
+
+/* Tooltip on hover for badges */
+.lender-welcome-badge-tooltip {
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+}
+
+.lender-welcome-badge-hotspot:hover .lender-welcome-badge-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Floating Confetti Particles around Card */
+.lender-welcome-sparkles {
+  position: absolute;
+  inset: -24px;
+  pointer-events: none;
+  z-index: -1;
+  overflow: visible;
+}
+
+.lender-sparkle {
+  position: absolute;
+  border-radius: 4px;
+  animation: floatSparkle 4s ease-in-out infinite alternate;
+}
+
+.sp-gold-1 {
+  top: 10%;
+  left: -12px;
+  width: 12px;
+  height: 8px;
+  background: #f59e0b;
+  transform: rotate(25deg);
+  animation-duration: 3.2s;
+}
+
+.sp-gold-2 {
+  top: 25%;
+  right: -14px;
+  width: 14px;
+  height: 10px;
+  background: #fbbf24;
+  transform: rotate(-35deg);
+  animation-duration: 4.1s;
+}
+
+.sp-green-1 {
+  bottom: 20%;
+  left: -16px;
+  width: 14px;
+  height: 10px;
+  background: #10b981;
+  transform: rotate(15deg);
+  animation-duration: 3.8s;
+}
+
+.sp-green-2 {
+  bottom: 15%;
+  right: -10px;
+  width: 10px;
+  height: 12px;
+  background: #059669;
+  transform: rotate(45deg);
+  animation-duration: 4.5s;
+}
+
+.sp-circle-1 {
+  top: -8px;
+  left: 25%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  animation-duration: 2.8s;
+}
+
+.sp-circle-2 {
+  bottom: -10px;
+  right: 28%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ec4899;
+  animation-duration: 3.5s;
+}
+
+@keyframes floatSparkle {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-16px) rotate(25deg) scale(1.15);
+    opacity: 1;
+  }
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 576px) {
+  .lender-welcome-container {
+    max-width: 95vw;
+  }
+
+  .lender-welcome-card {
+    border-radius: 20px;
+  }
+
+  .lender-welcome-close-btn {
+    top: 2%;
+    right: 2%;
+    width: 32px;
+    height: 32px;
+  }
+
+  .lender-welcome-close-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .lender-welcome-countdown-pill {
+    top: 2%;
+    left: 2.5%;
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}

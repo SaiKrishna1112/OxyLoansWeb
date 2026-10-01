@@ -48,6 +48,7 @@ import {
 } from "../../../../../HttpRequest/afterlogin";
 
 import LoadingState from "../components/LoadingState";
+import KYCModal from "../components/KYCModal";
 import "../redesign.css";
 import { Button } from "antd";
 import {
@@ -71,6 +72,17 @@ const Profile = () => {
   // Edit Modal State: null | "personal" | "bank" | "nominee" | "kyc" | "references" | "pan"
   const [editSection, setEditSection] = useState(null);
   const [hasRunningLoans, setHasRunningLoans] = useState(false);
+
+  // KYC Production Modal State
+  const [kycModal, setKycModal] = useState({
+    open: false,
+    mode: "preview",
+    documentType: "",
+    fileUrl: "",
+    title: "",
+    fileName: "",
+  });
+  const [modalUploading, setModalUploading] = useState(false);
 
   const handleOpenEditSection = (section) => {
     if (hasRunningLoans) {
@@ -519,6 +531,7 @@ const Profile = () => {
           updatedDocs[key] = null;
         }
       });
+      console.log("Fetched KYC files status:", updatedDocs);
       setKycDocs(updatedDocs);
       await fetchBorrowerAnalysisData();
     } catch (e) {
@@ -1825,6 +1838,118 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
     }
   };
 
+  const openKYCModal = (docType, mode = null) => {
+    if (!docType) return;
+    const docKeyMap = {
+      pan: "PanCard",
+      PanCard: "PanCard",
+      CREDITREPORT: "creditReport",
+      creditReport: "creditReport",
+      CHEQUELEAF: "CHEQUELEAF",
+      BANKSTATEMENT: "bankStatement",
+      bankStatement: "bankStatement",
+      AADHAR: "aadhar",
+      aadhar: "aadhar",
+      DRIVINGLICENCE: "DRIVINGLICENCE",
+      VOTERID: "VOTERID",
+      PASSPORT: "Passport",
+      Passport: "Passport",
+      PAYSLIPS: "paySlips",
+      paySlips: "paySlips",
+      INTERMEDIATE: "intermediate",
+      intermediate: "intermediate",
+      TENTH: "tenth",
+      tenth: "tenth",
+      GRADUATION: "graduation",
+      graduation: "graduation",
+      OFFERLETTER: "offerletter",
+      offerletter: "offerletter",
+      FEERECEIPT: "feereceipt",
+      feereceipt: "feereceipt",
+    };
+    const kycKey = docKeyMap[docType] || docType;
+    const docObj = kycDocs?.[kycKey];
+    const downloadUrl = docObj?.downloadUrl || "";
+    const fileName = docObj?.fileName || "";
+    const title = documentNames[docType] || docType;
+
+    setKycModal({
+      open: true,
+      mode: mode || (downloadUrl ? "preview" : "upload"),
+      documentType: docType,
+      fileUrl: downloadUrl,
+      title: title,
+      fileName: fileName,
+    });
+  };
+
+  const closeKYCModal = () => {
+    setKycModal((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
+
+  const viewKYCFile = (fileUrl, title = "", docType = "", fileName = "") => {
+    if (!fileUrl) {
+      Swal.fire("File Not Found", "The requested KYC file is not available.", "error");
+      return;
+    }
+    setKycModal({
+      open: true,
+      mode: "preview",
+      documentType: docType,
+      fileUrl: fileUrl,
+      title: title || (docType && documentNames[docType]) || "Document Preview",
+      fileName: fileName,
+    });
+  };
+
+  const handleModalUploadFile = async (file, docType, password) => {
+    setModalUploading(true);
+    try {
+      const syntheticEvent = {
+        target: {
+          name: docType,
+          files: [file],
+        },
+      };
+
+      if (docType === "BANKSTATEMENT") {
+        const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+        if (password) {
+          setSecureInfo((prev) => ({ ...prev, bankStatementPassword: password }));
+        }
+        try {
+          await analyzeBorrowerBankStatement(userId, file, password || "");
+        } catch (aErr) {
+          console.log("Bank analysis notice:", aErr);
+        }
+        await uploadkyc(syntheticEvent, password || "");
+        Swal.fire("Upload Successful", "Bank statement uploaded and analyzed successfully!", "success");
+        await fetchKycFiles();
+        await fetchBorrowerAnalysisData();
+      } else if (docType === "CREDITREPORT" || docType === "creditReport") {
+        if (password) {
+          setSecureInfo((prev) => ({ ...prev, creditReportPassword: password, cibilPassword: password }));
+        }
+        await uploadkyc(syntheticEvent, password || "");
+        Swal.fire("Upload Successful", "Credit Bureau Report uploaded successfully.", "success");
+        await fetchKycFiles();
+      } else {
+        await uploadkyc(syntheticEvent, password || "");
+        Swal.fire("Upload Successful", `${documentNames[docType] || "Document"} uploaded successfully.`, "success");
+        await fetchKycFiles();
+      }
+
+      closeKYCModal();
+    } catch (err) {
+      console.error("KYC modal upload failed:", err);
+      Swal.fire("Upload Failed", err?.response?.data?.errorMessage || "An error occurred during upload.", "error");
+    } finally {
+      setModalUploading(false);
+    }
+  };
 
   return (
     <div className="main-wrapper">
@@ -2226,7 +2351,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                           <div className="col-6">
                             <span className="text-muted d-block small">Uploaded Files</span>
                             <span className="fw-bold text-dark" style={{ fontSize: "15px" }}>
-                              {Object.values(kycDocs).filter(v => v !== null).length} Files
+                              {Object.values(kycDocs).filter(v => v?.downloadUrl != null).length} Files
                             </span>
                           </div>
                           <div className="col-6">
@@ -2679,23 +2804,23 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         <Modal.Body className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
           <div className="row g-4">
           {[
-              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, passwordField: "panPassword" },
-              { label: "Credit Bureau Report", name: "CREDITREPORT", value: kycDocs.creditReport, passwordField: "creditReportPassword" },
-              { label: "Cancelled Cheque Leaf", name: "CHEQUELEAF", value: kycDocs.CHEQUELEAF },
-              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, passwordField: "bankStatementPassword" },
-              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar, passwordField: "aadharPassword" },
-              { label: "Driving Licence Scan", name: "DRIVINGLICENCE", value: kycDocs.DRIVINGLICENCE },
-              { label: "Voter Identity Card", name: "VOTERID", value: kycDocs.VOTERID },
-              { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport },
-              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword" },
+              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, passwordField: "panPassword", downloadUrl: kycDocs.PanCard?.downloadUrl },
+              { label: "Credit Bureau Report", name: "CREDITREPORT", value: kycDocs.creditReport, passwordField: "creditReportPassword", downloadUrl: kycDocs.creditReport?.downloadUrl },
+              { label: "Cancelled Cheque Leaf", name: "CHEQUELEAF", value: kycDocs.CHEQUELEAF, downloadUrl: kycDocs.CHEQUELEAF?.downloadUrl },
+              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, passwordField: "bankStatementPassword", downloadUrl: kycDocs.bankStatement?.downloadUrl },
+              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar, passwordField: "aadharPassword", downloadUrl: kycDocs.aadhar?.downloadUrl },
+              { label: "Driving Licence Scan", name: "DRIVINGLICENCE", value: kycDocs.DRIVINGLICENCE, downloadUrl: kycDocs.DRIVINGLICENCE?.downloadUrl },
+              { label: "Voter Identity Card", name: "VOTERID", value: kycDocs.VOTERID, downloadUrl: kycDocs.VOTERID?.downloadUrl },
+              { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport, downloadUrl: kycDocs.Passport?.downloadUrl },
+              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword", downloadUrl: kycDocs.paySlips?.downloadUrl },
 
               ...(category === "STUDENT"
                 ? [
-                    { label: "Intermediate", name: "INTERMEDIATE", value: kycDocs.intermediate },
-                    { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth },
-                    { label: "Graduation Marksheet", name: "GRADUATION", value: kycDocs.graduation },
-                    { label: "Offer Letter", name: "OFFERLETTER", value: kycDocs.offerLetter },
-                    { label: "Fee Receipt", name: "FEERECEIPT", value: kycDocs.feeReceipt },
+                    { label: "Intermediate", name: "INTERMEDIATE", value: kycDocs.intermediate, downloadUrl: kycDocs.intermediate?.downloadUrl },
+                    { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth, downloadUrl: kycDocs.tenth?.downloadUrl },
+                    { label: "Graduation Marksheet", name: "GRADUATION", value: kycDocs.graduation, downloadUrl: kycDocs.graduation?.downloadUrl },
+                    { label: "Offer Letter", name: "OFFERLETTER", value: kycDocs.offerletter, downloadUrl: kycDocs.offerletter?.downloadUrl },
+                    { label: "Fee Receipt", name: "FEERECEIPT", value: kycDocs.feereceipt, downloadUrl: kycDocs.feereceipt?.downloadUrl },
                   ]
                 : [])
             ].map((doc) => (
@@ -2704,22 +2829,41 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <div>
                       <span className="fw-bold d-block text-dark small">{doc.label}</span>
-                      {doc.value ? (
-                        <span className="text-success small" style={{ fontSize: "11px" }}>✓ {doc.value.fileName || "Uploaded"}</span>
+                      {doc.downloadUrl != null ? (
+                        <span
+                          onClick={() => viewKYCFile(doc.downloadUrl, doc.label, doc.name, doc.value?.fileName)}
+                          className="text-success small"
+                          style={{ fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}
+                          title="Click to preview document"
+                        >
+                          ✓ {doc.value?.fileName || "Uploaded"}
+                        </span>
                       ) : (
                         <span className="text-muted small" style={{ fontSize: "11px" }}>No file uploaded</span>
                       )}
                     </div>
-                    <label className="btn btn-outline-primary btn-xs mb-0" style={{ minWidth: "46px" }}>
-                      {processingDocument[doc.name === "BANKSTATEMENT" ? "bankStatement" : doc.name === "CREDITREPORT" || doc.name === "creditReport" ? "creditReport" : ""] ? (
-                        <span className="spinner-border spinner-border-sm" role="status" aria-label="loading"></span>
-                      ) : (
-                        <>
-                          <i className="fa-solid fa-cloud-arrow-up"></i>
-                        </>
+                    <div className="d-flex align-items-center gap-1">
+                      {doc.downloadUrl != null && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary btn-xs py-1 px-2 cursor-pointer"
+                          style={{ fontSize: "11px" }}
+                          onClick={() => viewKYCFile(doc.downloadUrl, doc.label, doc.name, doc.value?.fileName)}
+                          title="Preview Document"
+                        >
+                          <i className="fa-solid fa-eye"></i>
+                        </button>
                       )}
-                      <input type="file" name={doc.name} onChange={handleFileUploadInput} style={{ display: "none" }} disabled={processingDocument[doc.name === "BANKSTATEMENT" ? "bankStatement" : doc.name === "CREDITREPORT" || doc.name === "creditReport" ? "creditReport" : ""]} />
-                    </label>
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-xs py-1 px-2 cursor-pointer"
+                        style={{ fontSize: "11px" }}
+                        onClick={() => openKYCModal(doc.name, "upload")}
+                        title="Upload Document"
+                      >
+                        <i className="fa-solid fa-cloud-arrow-up"></i>
+                      </button>
+                    </div>
                   </div>
                   {/* {doc.passwordField && (
                     <div className="mt-2 pt-2 border-top">
@@ -2865,6 +3009,19 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
           <button className="oxy-btn-secondary" onClick={() => setEditSection(null)}>Close</button>
         </Modal.Footer>
       </Modal>
+ 
+      {/* 6. Production-Grade KYC Document Viewer & Manager Modal */}
+      <KYCModal
+        isOpen={kycModal.open}
+        onClose={closeKYCModal}
+        mode={kycModal.mode}
+        documentType={kycModal.documentType}
+        fileUrl={kycModal.fileUrl}
+        fileName={kycModal.fileName}
+        title={kycModal.title}
+        onUploadFile={handleModalUploadFile}
+        isUploading={modalUploading}
+      />
 
     </div>
   );

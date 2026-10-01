@@ -9,6 +9,7 @@ import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/aft
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
+import { openLenderWelcomeModal } from "./LenderWelcomeModal";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -1730,9 +1731,29 @@ const LenderPortfolioDashboard = () => {
       <SideBar />
       <div className="page-wrapper">
         <div className="content container-fluid">
-          <div className="page-header mb-4">
-            <h3 className="page-title">My Investment Portfolio</h3>
-            <p className="text-muted mb-0">AI-powered personal wealth summary</p>
+          <div className="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h3 className="page-title">My Investment Portfolio</h3>
+              <p className="text-muted mb-0">AI-powered personal wealth summary</p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm d-flex align-items-center gap-2"
+              onClick={openLenderWelcomeModal}
+              style={{
+                borderRadius: 20,
+                fontWeight: 600,
+                borderColor: "#10b981",
+                color: "#059669",
+                background: "#ecfdf5",
+                padding: "6px 14px",
+                border: "1px solid #10b981",
+                cursor: "pointer"
+              }}
+              title="View 10 Years of OxyLoans Anniversary Note"
+            >
+              🎉 10 Years of OxyLoans
+            </button>
           </div>
 
           {loading && (

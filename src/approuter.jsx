@@ -6,6 +6,7 @@ import PrivacyPolicy from "./components/pages/Static/PrivacyPolicy";
 import TermsOfService from "./components/pages/Static/TermsOfService";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
+import LenderWelcomeModal from "./components/pages/Oxyloans/Lender/LenderWelcomeModal";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
 import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSuccess";
@@ -263,6 +264,7 @@ const AppRouter = () => {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <BrowserRouter>
       <NavigationTracker />
+      <LenderWelcomeModal />
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
         <Route path="/login" element={<Login />} />

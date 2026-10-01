@@ -9,6 +9,7 @@ import "../Oxyloans/Lender/table.css";
 import FloatingAssistant from "../../FloatingAssistant"
 import logo from "../../../assets/img/avtarimage.png"
 import { formatAmountWithCommas, amountToWords } from '../../../utils/formatAmount';
+import { openLenderWelcomeModal } from "../Oxyloans/Lender/LenderWelcomeModal";
 
 import {
   getDashboardInvestment,
@@ -554,8 +555,30 @@ const getFinancialYear = () => {
                             position: "absolute",
                             right: "1rem",
                             flexWrap: "wrap",
+                            alignItems: "center",
+                            gap: "6px",
                           }}
                         >
+                          <button
+                            type="button"
+                            onClick={openLenderWelcomeModal}
+                            style={{
+                              borderRadius: 20,
+                              fontWeight: 600,
+                              borderColor: "#10b981",
+                              color: "#059669",
+                              background: "#ecfdf5",
+                              padding: "4px 12px",
+                              border: "1px solid #10b981",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                            title="View 10 Years of OxyLoans Anniversary Note"
+                          >
+                            🎉 10 Years of OxyLoans
+                          </button>
                           <Link to="/todaydeal">
                             <Tag
                               style={{

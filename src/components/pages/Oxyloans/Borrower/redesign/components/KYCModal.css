@@ -1,0 +1,807 @@
+/* ==========================================================================
+   KYC Production-Grade Modal Component Styles
+   Visual Direction: Modern, Premium, Minimal, Highly Usable SaaS UI
+   Motion Direction: Subtle, Responsive, Performant & Accessible Transitions
+   ========================================================================== */
+
+/* 1. Backdrop Overlay */
+.kyc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2050; /* Sits above Bootstrap modals (1050/1055) */
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+/* Ensure SweetAlert alerts appear above the KYC modal */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+.kyc-modal-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 2. Modal Window / Card */
+.kyc-modal-container {
+  width: 100%;
+  max-width: 840px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 
+    0 25px 60px -15px rgba(15, 23, 42, 0.25),
+    0 0 0 1px rgba(226, 232, 240, 0.8),
+    0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 32px);
+  height: auto;
+  overflow: hidden;
+  position: relative;
+  transform: scale(0.96) translateY(12px);
+  opacity: 0;
+  transition: 
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.kyc-modal-backdrop.is-open .kyc-modal-container {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+/* Fullscreen Mode */
+.kyc-modal-container.is-fullscreen {
+  max-width: 98vw;
+  height: 96vh;
+  max-height: 96vh;
+  border-radius: 12px;
+}
+
+/* 3. Modal Header */
+.kyc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  gap: 16px;
+}
+
+.kyc-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.kyc-modal-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.kyc-modal-container:hover .kyc-modal-icon-badge {
+  transform: scale(1.05);
+}
+
+.kyc-modal-title-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kyc-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kyc-modal-subtitle {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kyc-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.kyc-status-pill.pending {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fef3c7;
+}
+
+/* 4. Toolbar Controls */
+.kyc-modal-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.kyc-tool-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  outline: none;
+}
+
+.kyc-tool-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.kyc-tool-btn:active:not(:disabled) {
+  transform: translateY(0);
+  background: #f1f5f9;
+}
+
+.kyc-tool-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  border-color: #2563eb;
+}
+
+.kyc-tool-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.kyc-tool-zoom-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  padding: 0 6px;
+  min-width: 44px;
+  text-align: center;
+  user-select: none;
+}
+
+.kyc-tool-divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
+
+.kyc-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.kyc-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  transform: rotate(90deg);
+}
+
+.kyc-close-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+/* 5. Navigation Tabs (View vs Upload) */
+.kyc-modal-tabs {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 20px;
+}
+
+.kyc-tab-btn {
+  padding: 12px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kyc-tab-btn:hover {
+  color: #0f172a;
+}
+
+.kyc-tab-btn.is-active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+/* 6. Modal Body / Content Canvas */
+.kyc-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  position: relative;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+/* Slim scrollbar */
+.kyc-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.kyc-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.kyc-modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.kyc-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 7. Image & PDF Preview Canvas */
+.kyc-preview-viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  min-height: 400px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.kyc-preview-img-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.kyc-preview-img {
+  max-width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: center center;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.kyc-iframe-viewer {
+  width: 100%;
+  height: 65vh;
+  border: none;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+/* 8. Loading Skeleton */
+.kyc-loading-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  z-index: 5;
+  gap: 12px;
+}
+
+.kyc-spinner-ring {
+  width: 42px;
+  height: 42px;
+  border: 3.5px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: kycSpin 0.75s linear infinite;
+}
+
+@keyframes kycSpin {
+  to { transform: rotate(360deg); }
+}
+
+.kyc-loading-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+/* 9. Error State */
+.kyc-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+  gap: 14px;
+}
+
+.kyc-error-icon-box {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  animation: kycPulse 2s infinite ease-in-out;
+}
+
+@keyframes kycPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.kyc-error-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.kyc-error-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  max-width: 380px;
+  line-height: 1.45;
+}
+
+/* 10. Upload Section UI */
+.kyc-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Current Document Summary Card */
+.kyc-current-doc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  gap: 12px;
+}
+
+.kyc-current-doc-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.kyc-current-doc-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.kyc-current-doc-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kyc-current-doc-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kyc-current-doc-date {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+/* Dropzone */
+.kyc-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 36px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.kyc-dropzone:hover,
+.kyc-dropzone.is-dragging {
+  border-color: #2563eb;
+  background: #f0f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+}
+
+.kyc-dropzone-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  margin-bottom: 12px;
+  transition: transform 0.2s ease;
+}
+
+.kyc-dropzone:hover .kyc-dropzone-icon {
+  transform: translateY(-2px) scale(1.08);
+}
+
+.kyc-dropzone-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.kyc-dropzone-title .link-accent {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.kyc-dropzone-sub {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0 0 12px;
+}
+
+.kyc-dropzone-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.kyc-format-tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* File Selected Pill */
+.kyc-selected-file-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  gap: 12px;
+  animation: kycSlideDown 0.25s ease forwards;
+}
+
+@keyframes kycSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kyc-file-info-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kyc-file-chip-icon {
+  color: #16a34a;
+  font-size: 18px;
+}
+
+.kyc-file-chip-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kyc-file-chip-size {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.kyc-remove-file-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.kyc-remove-file-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* Password Input */
+.kyc-password-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kyc-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.kyc-input-shell {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 42px;
+  transition: all 0.2s ease;
+}
+
+.kyc-input-shell:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.kyc-input-native {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13.5px;
+  color: #0f172a;
+  background: transparent;
+  height: 100%;
+}
+
+.kyc-input-toggle-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  outline: none;
+}
+
+.kyc-input-toggle-btn:hover {
+  color: #475569;
+}
+
+.kyc-input-hint {
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* 11. Modal Footer */
+.kyc-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  gap: 12px;
+}
+
+.kyc-btn-secondary {
+  height: 42px;
+  padding: 0 18px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 10px;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kyc-btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.kyc-btn-primary {
+  height: 42px;
+  padding: 0 22px;
+  border: none;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kyc-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+.kyc-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.kyc-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 12. Responsive Design (Mobile / Tablet) */
+@media (max-width: 640px) {
+  .kyc-modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .kyc-modal-container {
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    max-height: 92vh;
+  }
+
+  .kyc-modal-header {
+    padding: 14px 16px;
+  }
+
+  .kyc-modal-title {
+    font-size: 15px;
+  }
+
+  .kyc-modal-body {
+    padding: 16px;
+    min-height: 280px;
+  }
+
+  .kyc-preview-viewport {
+    min-height: 300px;
+  }
+
+  .kyc-modal-footer {
+    padding: 12px 16px;
+  }
+
+  .kyc-tool-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+}
