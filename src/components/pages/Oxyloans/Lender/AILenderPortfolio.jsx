@@ -3255,7 +3255,7 @@ const LenderPortfolioDashboard = () => {
 
                         {/* Scrollable pivot table */}
                         <div style={{ overflowX: "auto" }}>
-                          <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%", minWidth: Math.max(600, 340 + cols.length * 90) }}>
+                          <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 12, width: "100%", minWidth: Math.max(600, 340 + cols.length * 90) }}>
                             <thead>
                               <tr style={{ background: "#fafafa" }}>
                                 <th style={{ position: "sticky", left: 0, zIndex: 3, background: "#fafafa", padding: "8px 12px", textAlign: "left", borderBottom: "2px solid #f0f0f0", borderRight: "2px solid #e8e8e8", whiteSpace: "nowrap", fontWeight: 700, color: "#262626", minWidth: 200 }}>Deal</th>
