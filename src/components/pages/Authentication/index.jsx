@@ -12,6 +12,7 @@ import BASE_URL from "../../../config";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
+import { handleStep2PendingFromLogin } from "./step2Handler";
 import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
@@ -153,17 +154,20 @@ const Login = () => {
         history(getPostLoginRedirectUrl(defaultPath, pType));
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid credentials");
-        const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
-        if (step2) {
-          toastrSuccess("Please complete your registration to continue.");
-          history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}`);
-          return;
-        }
+        const errData = retriveresponse?.response?.data || retriveresponse?.data;
+        const handled = await handleStep2PendingFromLogin(errData, message, history);
+        if (handled) return;
+
         toastrWarning(message);
         WarningBackendApi(title, message);
       }
     } catch (err) {
-      WarningBackendApi("Login Failed", err?.message || "Unexpected error occurred during login");
+      const errData = err?.response?.data;
+      const raw = errData?.errorMessage || err?.message || "Unexpected error occurred during login";
+      const handled = await handleStep2PendingFromLogin(errData, raw, history);
+      if (handled) return;
+
+      WarningBackendApi("Login Failed", raw);
     } finally {
       setLoading(false);
     }

@@ -13,6 +13,7 @@ import BASE_URL, { ENV, DEV_ADMIN_MOBILE, DEV_OTP } from "../../../config";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import Swal from "sweetalert2";
+import { handleStep2PendingFromLogin } from "./step2Handler";
 import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
@@ -89,7 +90,11 @@ const Loginotp = () => {
         setGoogleModal({ status: "NOT_FOUND", email });
       }
     } catch (err) {
-      const raw = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
+      const errData = err?.response?.data;
+      const raw = errData?.errorMessage || "Could not verify Google account. Please try OTP login.";
+      const handled = await handleStep2PendingFromLogin(errData, raw, history);
+      if (handled) return;
+
       WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
     } finally {
       setGoogleLoading(false);
@@ -134,7 +139,11 @@ const Loginotp = () => {
         }
       }
     } catch (err) {
-      const raw = err?.response?.data?.errorMessage || "Google login failed. Please use mobile OTP.";
+      const errData = err?.response?.data;
+      const raw = errData?.errorMessage || "Google login failed. Please use mobile OTP.";
+      const handled = await handleStep2PendingFromLogin(errData, raw, history);
+      if (handled) return;
+
       WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
     } finally {
       setGoogleLoading(false);
@@ -199,12 +208,10 @@ const Loginotp = () => {
         }, 2200);
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
-        const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
-        if (step2) {
-          toastrSuccess("Please complete your registration to continue.");
-          history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}&signupType=MOBILE`);
-          return;
-        }
+        const errData = retriveresponse?.response?.data || retriveresponse?.data;
+        const handled = await handleStep2PendingFromLogin(errData, message, history);
+        if (handled) return;
+
         setUserLoginInfo((prev) => ({
           ...prev,
           passworderror: message || "Invalid OTP entered",

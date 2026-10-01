@@ -9,6 +9,7 @@ import { registerImage } from "../../imagepath";
 import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
+import { handleStep2PendingFromLogin } from "./step2Handler";
 import "./DarkAuth.css";
 
 const GoogleIcon = () => (
@@ -79,16 +80,19 @@ const DarkLogin = () => {
         history(getPostLoginRedirectUrl(defaultPath, role));
       } else {
         const { message } = warnApiError(res, "Login failed", "Invalid OTP. Please try again.");
-        const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(message || "");
-        if (step2) {
-          toastrSuccess("Please complete your registration to continue.");
-          history(`/register-step2-test?id=${step2[1]}&time=${Date.now()}&signupType=MOBILE`);
-          return;
-        }
+        const errData = res?.response?.data || res?.data;
+        const handled = await handleStep2PendingFromLogin(errData, message, history);
+        if (handled) return;
+
         toastrWarning(message);
       }
     } catch (e) {
-      toastrWarning(e?.response?.data?.errorMessage || "Login failed. Please try again.");
+      const errData = e?.response?.data;
+      const raw = errData?.errorMessage || e?.message || "Login failed. Please try again.";
+      const handled = await handleStep2PendingFromLogin(errData, raw, history);
+      if (handled) return;
+
+      toastrWarning(raw);
     } finally {
       setVerifying(false);
     }
