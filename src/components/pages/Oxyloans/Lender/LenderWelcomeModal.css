@@ -132,34 +132,39 @@
   position: absolute;
   top: 2.8%;
   right: 2.8%;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 10;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   padding: 0;
 }
 
 .lender-welcome-close-btn:hover {
-  background: rgba(0, 0, 0, 0.07);
-  transform: scale(1.12);
+  background: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .lender-welcome-close-btn:active {
-  transform: scale(0.94);
+  transform: scale(0.95);
 }
 
 .lender-welcome-close-btn svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   stroke: #475569;
-  stroke-width: 2.4;
+  stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   transition: stroke 0.2s ease;
