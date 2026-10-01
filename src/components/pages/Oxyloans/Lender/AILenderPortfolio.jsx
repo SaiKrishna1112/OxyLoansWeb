@@ -1618,6 +1618,7 @@ const LenderPortfolioDashboard = () => {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelinePopup, setTimelinePopup] = useState(null); // { dealId, col, bucket }
+  const [timelineFilter, setTimelineFilter] = useState("ALL"); // ALL | ACTIVE | CLOSED
 
   // Tier from backend — preview cannot exceed actual paid tier
   const TIER_RANK = { FREE: 0, SMART: 1, PRO: 2 };
@@ -3184,11 +3185,18 @@ const LenderPortfolioDashboard = () => {
               {isSmart && (() => {
                 const tl = timelineData;
                 const cols = tl?.columns || [];
-                const deals = tl?.deals || [];
+                const allDeals = tl?.deals || [];
+                const filteredDeals = timelineFilter === "ACTIVE" ? allDeals.filter(d => !d.closed)
+                                    : timelineFilter === "CLOSED" ? allDeals.filter(d => d.closed)
+                                    : allDeals;
+                const activeCount = allDeals.filter(d => !d.closed).length;
+                const closedCount = allDeals.filter(d => d.closed).length;
+                const deals = filteredDeals;
                 const totalByCol = {};
                 cols.forEach(c => {
                   totalByCol[c] = deals.reduce((s, d) => s + (d.payments?.[c]?.total || 0), 0);
                 });
+                const tlFilterColors = { ALL: { a: "#1890ff", b: "#e6f7ff" }, ACTIVE: { a: "#52c41a", b: "#f6ffed" }, CLOSED: { a: "#595959", b: "#f5f5f5" } };
                 return (
                   <SectionCard
                     title="Deal Timeline"
@@ -3197,9 +3205,24 @@ const LenderPortfolioDashboard = () => {
                     onToggle={() => setTimelineOpen(o => !o)}
                     summary={
                       timelineLoading ? "Loading…" :
-                      tl ? `${deals.length} deals · ${cols.length} period${cols.length !== 1 ? "s" : ""}` :
+                      tl ? `${allDeals.length} deals · ${activeCount} active · ${cols.length} period${cols.length !== 1 ? "s" : ""}` :
                       "Interest received by deal × month"
                     }
+                    badge={tl && !timelineLoading && (
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        {["ALL", "ACTIVE", "CLOSED"].map(f => {
+                          const c = tlFilterColors[f];
+                          const isActive = timelineFilter === f;
+                          const label = f === "ALL" ? `All (${allDeals.length})` : f === "ACTIVE" ? `Active (${activeCount})` : `Closed (${closedCount})`;
+                          return (
+                            <button key={f} onClick={e => { e.stopPropagation(); setTimelineFilter(f); }}
+                              style={{ fontSize: 11, padding: "2px 10px", borderRadius: 6, border: `1px solid ${isActive ? c.a : "#d9d9d9"}`, background: isActive ? c.b : "#fff", color: isActive ? c.a : "#8c8c8c", cursor: "pointer", fontWeight: isActive ? 700 : 400 }}>
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   >
                     {timelineLoading && (
                       <div className="text-center py-4 text-muted">
@@ -3253,11 +3276,12 @@ const LenderPortfolioDashboard = () => {
                           );
                         })()}
 
-                        {/* Scrollable pivot table — freeze panes: Deal(220) + Amount(100) + ROI(70) sticky */}
+                        {/* Scrollable pivot table — freeze panes: Deal(220)+Amount(100)+Date(100)+ROI(70) all sticky */}
                         <div style={{ overflowX: "auto" }}>
-                          <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 12, tableLayout: "fixed", minWidth: 390 + cols.length * 90 }}>
+                          <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 12, tableLayout: "fixed", minWidth: 490 + cols.length * 90 }}>
                             <colgroup>
                               <col style={{ width: 220 }} />
+                              <col style={{ width: 100 }} />
                               <col style={{ width: 100 }} />
                               <col style={{ width: 70 }} />
                               {cols.map(c => <col key={c} style={{ width: 90 }} />)}
@@ -3266,7 +3290,8 @@ const LenderPortfolioDashboard = () => {
                               <tr>
                                 <th style={{ position: "sticky", left: 0,   zIndex: 3, background: "#fafafa", padding: "8px 12px", textAlign: "left",  borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 700, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Deal</th>
                                 <th style={{ position: "sticky", left: 220, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c" }}>Amount</th>
-                                <th style={{ position: "sticky", left: 320, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "3px solid #bdbdbd", fontWeight: 600, color: "#8c8c8c" }}>ROI</th>
+                                <th style={{ position: "sticky", left: 320, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c", whiteSpace: "nowrap" }}>Since</th>
+                                <th style={{ position: "sticky", left: 420, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "3px solid #bdbdbd", fontWeight: 600, color: "#8c8c8c" }}>ROI</th>
                                 {cols.map(c => (
                                   <th key={c} style={{ background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #f0f0f0", fontWeight: 600, color: "#595959" }}>{c}</th>
                                 ))}
@@ -3284,10 +3309,11 @@ const LenderPortfolioDashboard = () => {
                                   <td style={{ position: "sticky", left: 0,   zIndex: 2, background: rowBg, padding: "7px 12px", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                     <span style={{ fontWeight: 600, color: "#262626" }}>{deal.dealName || `Deal #${deal.dealId}`}</span>
                                     {deal.closed && <span style={{ marginLeft: 6, fontSize: 10, color: "#52c41a", background: "#f6ffed", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>Closed</span>}
-                                    <div style={{ fontSize: 10, color: "#8c8c8c" }}>{deal.investmentDate} · {deal.returnsType}</div>
+                                    <div style={{ fontSize: 10, color: "#8c8c8c" }}>{deal.returnsType}</div>
                                   </td>
                                   <td style={{ position: "sticky", left: 220, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", color: "#1890ff", fontWeight: 600, whiteSpace: "nowrap" }}>₹{fmt(deal.amount)}</td>
-                                  <td style={{ position: "sticky", left: 320, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "3px solid #bdbdbd", color: "#595959", whiteSpace: "nowrap" }}>{deal.roi ? `${deal.roi.toFixed(2)}%` : "—"}</td>
+                                  <td style={{ position: "sticky", left: 320, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", color: "#8c8c8c", fontSize: 11, whiteSpace: "nowrap" }}>{deal.investmentDate || "—"}</td>
+                                  <td style={{ position: "sticky", left: 420, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "3px solid #bdbdbd", color: "#595959", whiteSpace: "nowrap" }}>{deal.roi ? `${deal.roi.toFixed(2)}%` : "—"}</td>
                                   {cols.map(c => {
                                     const bucket = deal.payments?.[c];
                                     return (
@@ -3313,7 +3339,8 @@ const LenderPortfolioDashboard = () => {
                               <tr>
                                 <td style={{ position: "sticky", left: 0,   zIndex: 2, background: "#e8f0fe", padding: "8px 12px", borderTop: "2px solid #c5d6f5", borderRight: "1px solid #e0e0e0", fontSize: 12, fontWeight: 700, color: "#1a237e" }}>Total Received</td>
                                 <td style={{ position: "sticky", left: 220, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "1px solid #e0e0e0" }} />
-                                <td style={{ position: "sticky", left: 320, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "3px solid #bdbdbd" }} />
+                                <td style={{ position: "sticky", left: 320, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "1px solid #e0e0e0" }} />
+                                <td style={{ position: "sticky", left: 420, zIndex: 2, background: "#e8f0fe", padding: "8px 10px", borderTop: "2px solid #c5d6f5", borderRight: "3px solid #bdbdbd" }} />
                                 {cols.map(c => (
                                   <td key={c} style={{ padding: "8px 10px", textAlign: "right", borderTop: "2px solid #d6e4ff", color: totalByCol[c] > 0 ? "#1a237e" : "#e8e8e8", fontSize: 12 }}>
                                     {totalByCol[c] > 0 ? `₹${fmt(totalByCol[c])}` : "—"}
