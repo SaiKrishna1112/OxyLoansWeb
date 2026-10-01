@@ -1002,8 +1002,12 @@ const EarningsPeriodSummary = ({ earningsData, loading, onEarningsTileClick, fyF
 };
 
 // ── UPCOMING PAYOUTS SECTION (loads independently) ─────────────────────────
+const UPCOMING_FILTERS = ["ALL", "MONTHLY", "QUARTERLY", "HALFYEARLY", "YEARLY"];
+const UPCOMING_WINDOW  = { ALL: "", MONTHLY: "60 Days", QUARTERLY: "100 Days", HALFYEARLY: "200 Days", YEARLY: "400 Days" };
+
 const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
   const [expanded, setExpanded] = React.useState(false);
+  const [upcomingFilter, setUpcomingFilter] = React.useState("ALL");
   const detailRef = React.useRef(null);
 
   const expandAndScroll = () => {
@@ -1022,8 +1026,10 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
 
   if (!upcomingData) return null;
 
-  const total   = upcomingData.upcomingTotal   || 0;
-  const payouts = upcomingData.upcomingPayouts || [];
+  const allPayouts = upcomingData.upcomingPayouts || [];
+  const payouts = upcomingFilter === "ALL"
+    ? allPayouts
+    : allPayouts.filter(p => (p.returnType || "MONTHLY").toUpperCase() === upcomingFilter);
 
   const payoutsByDate = payouts.reduce((acc, p) => {
     const d = p.dueDate;
@@ -1038,15 +1044,31 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
   const hiddenTotal = tooMany
     ? allSortedDates.slice(MAX_DATES).reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
     : 0;
-  const displayTotal = tooMany
-    ? sortedDates.reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0)
-    : total;
+  const displayTotal = sortedDates.reduce((s, d) => s + payoutsByDate[d].reduce((ss, p) => ss + (p.totalAmount || 0), 0), 0);
+  const windowLabel = UPCOMING_WINDOW[upcomingFilter];
   const heading = tooMany
-    ? `Next 10 Payment Dates (${allSortedDates.length} total in 60 days)`
-    : "Upcoming Payments — Next 60 Days";
+    ? `Next 10 Payment Dates (${allSortedDates.length} total${windowLabel ? " in " + windowLabel : ""})`
+    : `Upcoming Payments${windowLabel ? " — Next " + windowLabel : ""}`;
 
   return (
     <div style={{ background: "#fff7e6", borderRadius: 14, padding: "16px 20px", marginBottom: 20, border: "1px solid #ffd591" }}>
+      {/* Frequency filter tabs */}
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+        {UPCOMING_FILTERS.map(f => (
+          <button
+            key={f}
+            onClick={() => { setUpcomingFilter(f); setExpanded(false); }}
+            style={{
+              padding: "3px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer",
+              background: upcomingFilter === f ? "#fa8c16" : "#fff",
+              color: upcomingFilter === f ? "#fff" : "#d46b08",
+              border: "1px solid #fa8c16",
+            }}
+          >
+            {f === "HALFYEARLY" ? "Half-Yearly" : f === "ALL" ? "All" : f.charAt(0) + f.slice(1).toLowerCase()}
+          </button>
+        ))}
+      </div>
       {/* Brief summary — always visible */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
         <div>
@@ -1069,7 +1091,7 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
               })}
             </div>
           ) : (
-            <div style={{ fontSize: 12, color: "#8c8c8c" }}>No payments due in the next 60 days</div>
+            <div style={{ fontSize: 12, color: "#8c8c8c" }}>No {upcomingFilter === "ALL" ? "" : upcomingFilter.charAt(0) + upcomingFilter.slice(1).toLowerCase() + " "}payments due{windowLabel ? " in the next " + windowLabel : ""}</div>
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -1125,8 +1147,15 @@ const UpcomingPayoutsSection = ({ upcomingData, loading }) => {
                   )}
                 </div>
                 {ps.map((p, i) => (
-                  <div key={i} style={{ fontSize: 11, color: "#595959", display: "flex", justifyContent: "space-between", paddingLeft: 8, borderLeft: "2px solid #ffd591", marginBottom: 3 }}>
-                    <span><span style={{ fontWeight: 700, color: "#8c8c8c" }}>#{p.dealId}</span> {p.dealName || ""}</span>
+                  <div key={i} style={{ fontSize: 11, color: "#595959", display: "flex", justifyContent: "space-between", alignItems: "center", paddingLeft: 8, borderLeft: "2px solid #ffd591", marginBottom: 3 }}>
+                    <span>
+                      <span style={{ fontWeight: 700, color: "#8c8c8c" }}>#{p.dealId}</span> {p.dealName || ""}
+                      {p.returnType && p.returnType !== "MONTHLY" && (
+                        <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, background: "#fff2cc", color: "#ad6800", borderRadius: 3, padding: "1px 4px", textTransform: "capitalize" }}>
+                          {p.returnType === "HALFYEARLY" ? "Half-Yrly" : p.returnType.charAt(0) + p.returnType.slice(1).toLowerCase()}
+                        </span>
+                      )}
+                    </span>
                     <span style={{ fontWeight: 600 }}>₹{fmt(p.totalAmount)}</span>
                   </div>
                 ))}
