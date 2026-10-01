@@ -3171,7 +3171,7 @@ const LenderPortfolioDashboard = () => {
                             const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency, deal.annualRate);
                             return (
                               <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
-                                <td><strong>#{deal.dealId}</strong></td>
+                                <td title={deal.dealName || `Deal #${deal.dealId}`} style={{ cursor: "help" }}><strong>#{deal.dealId}</strong></td>
                                 <td>₹{fmt(deal.amount)}</td>
                                 <td>{annualRoi}</td>
                                 <td>
