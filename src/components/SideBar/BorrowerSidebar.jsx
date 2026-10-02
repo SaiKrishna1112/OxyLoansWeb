@@ -178,9 +178,9 @@ const BorrowerSidebar = (props) => {
                       802
                     </span>
                   </Link>
-                </li> */}
+                </li>
 
-                {/* <li
+                <li
                   className={`${
                     pathName.includes("/borrower/instant-loan") || pathName.includes("/borrower-instant-flow")
                       ? "active"

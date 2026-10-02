@@ -20,14 +20,14 @@ const QuickActions = () => {
       bgColor: "rgba(0, 98, 66, 0.08)",
       desc: "Apply for a new loan limit"
     },
-    {
-      title: "Credit Report",
-      icon: "fa-solid fa-chart-pie",
-      path: "/borrower-credit-report",
-      color: "#059669",
-      bgColor: "rgba(5, 150, 105, 0.08)",
-      desc: "Score: 802 (Excellent)"
-    },
+    // {
+    //   title: "Credit Report",
+    //   icon: "fa-solid fa-chart-pie",
+    //   path: "/borrower-credit-report",
+    //   color: "#059669",
+    //   bgColor: "rgba(5, 150, 105, 0.08)",
+    //   desc: "Score: 802 (Excellent)"
+    // },
     {
       title: "Agreed Loans",
       icon: "fa-solid fa-file-contract",

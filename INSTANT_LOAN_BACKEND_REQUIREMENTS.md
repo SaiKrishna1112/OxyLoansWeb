@@ -102,6 +102,8 @@ sequenceDiagram
     ]
   }
   ```
+> **Note on Marital Status:** `spouseName` and `spouseDob` are only collected, validated, and stored when `maritalStatus === "Married"`. When `maritalStatus` is `"Single"`, `"Divorced"`, or `"Widowed"`, spouse fields are automatically excluded/cleared to empty strings.
+
 * **Response (200 OK):**
   ```json
   {
@@ -343,9 +345,9 @@ CREATE TABLE instant_loan_applications (
     office_mail_id VARCHAR(100),
     office_landline VARCHAR(30),
     mother_name VARCHAR(100),
-    marital_status VARCHAR(30) DEFAULT 'Married',
-    spouse_name VARCHAR(100),
-    spouse_dob VARCHAR(30),
+    marital_status VARCHAR(30) DEFAULT 'Single', -- 'Single', 'Married', 'Divorced', 'Widowed'
+    spouse_name VARCHAR(100), -- Populated only if marital_status = 'Married'
+    spouse_dob VARCHAR(30),  -- Populated only if marital_status = 'Married'
     pan_number VARCHAR(10) NOT NULL,
     date_of_birth DATE NOT NULL,
     platform_fee_paid BOOLEAN DEFAULT FALSE,

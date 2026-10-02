@@ -166,10 +166,10 @@ const Profile = () => {
     lastName: "",
     middleName: "",
     fatherName: "",
-    motherName: "abc",
-    maritalStatus: "Married",
-    spouseName: "Non",
-    spouseDob: "20/10/2003",
+    motherName: "",
+    maritalStatus: "",
+    spouseName: "",
+    spouseDob: "",
     dob: "",
     panNumber: "",
     aadharNumber: "",
@@ -182,10 +182,10 @@ const Profile = () => {
     pinCode: "",
     city: "",
     state: "",
-    designation: "Senior Software Engineer",
-    officeAddress: "oxyloans",
-    officeMailId: "nanan@gmail.com",
-    officeLandLine: "12254655",
+    designation: "",
+    officeAddress: "",
+    officeMailId: "",
+    officeLandLine: "",
     facebookUrl: "",
     linkedinUrl: "",
     twitterUrl: "",
@@ -351,10 +351,10 @@ const Profile = () => {
           lastName: d.lastName || "",
           middleName: d.middleName || "",
           fatherName: d.fatherName || "",
-          motherName: d.motherName || "abc",
-          maritalStatus: d.maritalStatus || "Married",
-          spouseName: d.spouseName || "Non",
-          spouseDob: d.spouseDob || "20/10/2003",
+          motherName: d.motherName || "",
+          maritalStatus: d.maritalStatus || "",
+          spouseName: d.maritalStatus === "Married" ? (d.spouseName || "") : "",
+          spouseDob: d.maritalStatus === "Married" ? (d.spouseDob || "") : "",
           dob: d.dob || "",
           panNumber: d.panNumber || "",
           aadharNumber: d.aadharNumber || "",
@@ -367,10 +367,10 @@ const Profile = () => {
           pinCode: d.pinCode || "",
           city: d.city || "",
           state: d.state || "",
-          designation: d.designation || "Senior Software Engineer",
-          officeAddress: d.officeAddress || "oxyloans",
-          officeMailId: d.officeMailId || "nanan@gmail.com",
-          officeLandLine: d.officeLandLine || "12254655",
+          designation: d.designation || "",
+          officeAddress: d.officeAddress || "",
+          officeMailId: d.officeMailId || "",
+          officeLandLine: d.officeLandLine || "",
           facebookUrl: d.urlsDto?.faceBookUrl || "",
           linkedinUrl: d.urlsDto?.linkdinUrl || "",
           twitterUrl: d.urlsDto?.twitterUrl || "",
@@ -1029,6 +1029,15 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
     const { name, value } = e.target;
     let sanitizedValue = value;
 
+    if (name === "maritalStatus") {
+      setProfileData((prev) => ({
+        ...prev,
+        maritalStatus: value,
+        ...(value !== "Married" ? { spouseName: "", spouseDob: "" } : {}),
+      }));
+      return;
+    }
+
     if (name === "firstName" || name === "lastName" || name === "fatherName" || name === "motherName" || name === "spouseName" || name === "city" || name === "state") {
       sanitizedValue = value.replace(/[^a-zA-Z\s.-]/g, "").slice(0, 50);
     } else if (name === "officeLandLine") {
@@ -1578,8 +1587,8 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         fatherName: profileData.fatherName,
         motherName: profileData.motherName,
         maritalStatus: profileData.maritalStatus,
-        spouseName: profileData.spouseName,
-        spouseDob: profileData.spouseDob,
+        spouseName: profileData.maritalStatus === "Married" ? profileData.spouseName : "",
+        spouseDob: profileData.maritalStatus === "Married" ? profileData.spouseDob : "",
         dob: profileData.dob,
         panNumber: profileData.panNumber,
         residenceAddress: profileData.residenceAddress,
@@ -2201,7 +2210,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                           <span className="personal-info-label">Marital Status</span>
                           <span className="personal-info-value">{profileData.maritalStatus || "—"}</span>
                         </div>
-                        {(profileData.maritalStatus === "Married" || (profileData.spouseName && profileData.spouseName !== "Non")) && (
+                        {profileData.maritalStatus === "Married" && profileData.spouseName && (
                           <>
                             <div className="personal-info-row">
                               <span className="personal-info-label">Spouse Name</span>
@@ -2579,14 +2588,18 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                 <option value="Widowed">Widowed</option>
               </select>
             </div>
-            <div className="col-md-6">
-              <label className="form-label text-muted small">Spouse Name</label>
-              <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName} onChange={handleprofileInput} placeholder="e.g. Non" />
-            </div>
-            <div className="col-md-6">
-              <label className="form-label text-muted small">Spouse Date of Birth</label>
-              <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" />
-            </div>
+            {profileData.maritalStatus === "Married" && (
+              <>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Spouse Name</label>
+                  <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName} onChange={handleprofileInput} placeholder="Enter spouse full name" />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Spouse Date of Birth</label>
+                  <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" />
+                </div>
+              </>
+            )}
             <div className="col-md-6">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <label className="form-label text-muted small mb-0">PAN Card Number <span className="text-danger">*</span></label>

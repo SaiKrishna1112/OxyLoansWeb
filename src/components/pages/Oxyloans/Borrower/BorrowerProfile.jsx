@@ -112,14 +112,14 @@ const BorrowerProfile = () => {
     dob: "",
     facebookUrl: "",
     fatherName: "",
-    motherName: "abc",
-    maritalStatus: "Married",
-    spouseName: "Non",
-    spouseDob: "20/10/2003",
-    officeMailId: "nanan@gmail.com",
-    officeLandLine: "12254655",
-    officeAddress: "oxyloans",
-    designation: "Senior Software Engineer",
+    motherName: "",
+    maritalStatus: "",
+    spouseName: "",
+    spouseDob: "",
+    officeMailId: "",
+    officeLandLine: "",
+    officeAddress: "",
+    designation: "",
     firstName: "",
     lastName: "",
     linkedinUrl: "",
@@ -1275,6 +1275,14 @@ const BorrowerProfile = () => {
   };
   const handlechange = async(event) => {
     let { name, value } = event.target;
+    if (name === "maritalStatus") {
+      setUserProfile((prev) => ({
+        ...prev,
+        maritalStatus: value,
+        ...(value !== "Married" ? { spouseName: "", spouseDob: "" } : {}),
+      }));
+      return;
+    }
     if (name === "panNumber" && value) {
       value = value.toUpperCase();
     }
@@ -1534,7 +1542,12 @@ const BorrowerProfile = () => {
       userProfile.city !== null &&
       userProfile.city !== ""
     ) {
-      const response = profileupadate(userProfile,formData,category);
+      const sanitizedUserProfile = {
+        ...userProfile,
+        spouseName: userProfile.maritalStatus === "Married" ? userProfile.spouseName : "",
+        spouseDob: userProfile.maritalStatus === "Married" ? userProfile.spouseDob : "",
+      };
+      const response = profileupadate(sanitizedUserProfile, formData, category);
       response.then((data) => {
         console.log({data})
         if (data.request.status == 200) {
@@ -1883,14 +1896,14 @@ const BorrowerProfile = () => {
         dob: data.data.dob,
         facebookUrl: data.data.urlsDto.faceBookUrl,
         fatherName: data.data.fatherName,
-        motherName: data.data.motherName || userProfile.motherName || "abc",
-        maritalStatus: data.data.maritalStatus || userProfile.maritalStatus || "Married",
-        spouseName: data.data.spouseName || userProfile.spouseName || "Non",
-        spouseDob: data.data.spouseDob || userProfile.spouseDob || "20/10/2003",
-        officeMailId: data.data.officeMailId || userProfile.officeMailId || "nanan@gmail.com",
-        officeLandLine: data.data.officeLandLine || userProfile.officeLandLine || "12254655",
-        officeAddress: data.data.officeAddress || userProfile.officeAddress || "oxyloans",
-        designation: data.data.designation || userProfile.designation || "Senior Software Engineer",
+        motherName: data.data.motherName || userProfile.motherName,
+        maritalStatus: data.data.maritalStatus || userProfile.maritalStatus || "Single",
+        spouseName: (data.data.maritalStatus || userProfile.maritalStatus) === "Married" ? (data.data.spouseName || userProfile.spouseName || "") : "",
+        spouseDob: (data.data.maritalStatus || userProfile.maritalStatus) === "Married" ? (data.data.spouseDob || userProfile.spouseDob || "") : "",
+        officeMailId: data.data.officeMailId || userProfile.officeMailId,
+        officeLandLine: data.data.officeLandLine || userProfile.officeLandLine,
+        officeAddress: data.data.officeAddress || userProfile.officeAddress,
+        designation: data.data.designation || userProfile.designation,
         firstName: data.data.firstName,
         lastName: data.data.lastName,
         linkedinUrl: data.data.urlsDto.linkdinUrl,
@@ -3120,30 +3133,34 @@ console.log("data",data.status);
                                 </select>
                               </div>
 
-                              <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>Spouse Name</label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  onKeyPress={handleKeyPress}
-                                  placeholder="Enter Spouse Name"
-                                  onChange={handlechange}
-                                  value={userProfile.spouseName}
-                                  name="spouseName"
-                                />
-                              </div>
+                              {userProfile.maritalStatus === "Married" && (
+                                <>
+                                  <div className="form-group col-12 col-sm-4 local-forms">
+                                    <label>Spouse Name</label>
+                                    <input
+                                      type="text"
+                                      className="form-control"
+                                      onKeyPress={handleKeyPress}
+                                      placeholder="Enter Spouse Name"
+                                      onChange={handlechange}
+                                      value={userProfile.spouseName}
+                                      name="spouseName"
+                                    />
+                                  </div>
 
-                              <div className="form-group col-12 col-sm-4 local-forms">
-                                <label>Spouse Date of Birth</label>
-                                <input
-                                  type="text"
-                                  className="form-control"
-                                  placeholder="DD/MM/YYYY or YYYY-MM-DD"
-                                  onChange={handlechange}
-                                  value={userProfile.spouseDob}
-                                  name="spouseDob"
-                                />
-                              </div>
+                                  <div className="form-group col-12 col-sm-4 local-forms">
+                                    <label>Spouse Date of Birth</label>
+                                    <input
+                                      type="text"
+                                      className="form-control"
+                                      placeholder="DD/MM/YYYY or YYYY-MM-DD"
+                                      onChange={handlechange}
+                                      value={userProfile.spouseDob}
+                                      name="spouseDob"
+                                    />
+                                  </div>
+                                </>
+                              )}
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
                                   Mobile No

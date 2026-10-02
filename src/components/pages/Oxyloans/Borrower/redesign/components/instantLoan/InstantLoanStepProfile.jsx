@@ -13,15 +13,16 @@ const RELATIONSHIPS = [
 ];
 
 const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
+  const initialMaritalStatus = initialData.maritalStatus || "Single";
   const [formData, setFormData] = useState({
     name: initialData.name || "narendra kumar b",
     mobile: initialData.mobile || "9492902990",
     panNumber: initialData.panNumber || initialData.documentId || "CDBPB2737H",
     dateOfBirth: initialData.dateOfBirth || initialData.dob || "1994-08-08",
     motherName: initialData.motherName || "abc",
-    maritalStatus: initialData.maritalStatus || "Married",
-    spouseName: initialData.spouseName || "Non",
-    spouseDob: initialData.spouseDob || "2003-10-20",
+    maritalStatus: initialMaritalStatus,
+    spouseName: initialMaritalStatus === "Married" ? (initialData.spouseName || "") : "",
+    spouseDob: initialMaritalStatus === "Married" ? (initialData.spouseDob || "") : "",
     monthlySalary: initialData.monthlySalary || initialData.salary || "65000",
     employmentType: initialData.employmentType || "SALARIED",
     companyName: initialData.companyName || "SRS Fintech Labs Pvt Ltd",
@@ -66,6 +67,14 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
+    if (name === "maritalStatus") {
+      setFormData((prev) => ({
+        ...prev,
+        maritalStatus: value,
+        ...(value !== "Married" ? { spouseName: "", spouseDob: "" } : {}),
+      }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: name === "panNumber" ? value.toUpperCase().slice(0, 10) : value,
@@ -120,6 +129,8 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
 
       onNext({
         ...formData,
+        spouseName: formData.maritalStatus === "Married" ? formData.spouseName : "",
+        spouseDob: formData.maritalStatus === "Married" ? formData.spouseDob : "",
         panNumber: cleanPan,
         ref1,
         ref2,
@@ -354,7 +365,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
             </div>
           </div>
 
-          {(formData.maritalStatus === "Married" || (formData.spouseName && formData.spouseName !== "Non")) && (
+          {formData.maritalStatus === "Married" && (
             <>
               <div className="col-md-4">
                 <label className="form-label small fw-bold text-dark mb-1">
@@ -370,7 +381,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                     value={formData.spouseName}
                     onChange={handleFormChange}
                     className="form-control instant-form-control border-start-0 rounded-end-3"
-                    placeholder="e.g. Non"
+                    placeholder="Enter spouse full name"
                   />
                 </div>
               </div>

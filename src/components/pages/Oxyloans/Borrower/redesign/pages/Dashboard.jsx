@@ -495,7 +495,7 @@ const Dashboard = () => {
                       <i className="fa-solid fa-clock-rotate-left fa-xl text-warning opacity-50"></i>
                     </div>
 
-                    <div className="p-3 rounded-3 border bg-white shadow-xs d-flex justify-content-between align-items-center" style={{ borderLeft: "4px solid #059669 !important" }}>
+                    {/* <div className="p-3 rounded-3 border bg-white shadow-xs d-flex justify-content-between align-items-center" style={{ borderLeft: "4px solid #059669 !important" }}>
                       <div>
                         <div className="d-flex align-items-center gap-2 mb-1">
                           <span className="text-muted small">Credit Bureau Score</span>
@@ -513,7 +513,7 @@ const Dashboard = () => {
                       >
                         View Report →
                       </Link>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
