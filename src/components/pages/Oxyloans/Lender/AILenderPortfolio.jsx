@@ -2783,7 +2783,7 @@ const LenderPortfolioDashboard = () => {
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
                                 <td style={{ overflow: "hidden" }}>
-                                  <span onClick={() => { setDealHistoryFilter("ALL"); setDealSectionOpen(true); setHighlightDealId(m.dealId); setTimeout(() => { const el = document.getElementById(`deal-row-${m.dealId}`); if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); } else { scrollTo("section-deal-history"); } }, 400); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
+                                  <span onClick={() => { setDealHistoryFilter("ALL"); setDealsShown(999); setDealSectionOpen(true); setHighlightDealId(m.dealId); setTimeout(() => { const el = document.getElementById(`deal-row-${m.dealId}`); if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); } else { scrollTo("section-deal-history"); } }, 500); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
                                   {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
                                 </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
