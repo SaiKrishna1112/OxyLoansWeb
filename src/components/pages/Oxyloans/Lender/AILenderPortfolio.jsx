@@ -190,7 +190,15 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
-  const toggle = () => { if (isControlled) onToggle?.(); else setInternalOpen(o => !o); };
+  const toggle = () => {
+    if (isControlled) {
+      if (typeof onToggle === "function") {
+        onToggle(!isOpen);
+      }
+    } else {
+      setInternalOpen(o => !o);
+    }
+  };
   return (
     <div className="card mb-4" style={{ borderRadius: 14, border: "1px solid #f0f0f0", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
       <div
@@ -1628,7 +1636,17 @@ const LenderPortfolioDashboard = () => {
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
+  const [activeDealsSectionOpen, setActiveDealsSectionOpen] = useState(true);
   const [highlightDealId, setHighlightDealId] = useState(null);
+
+  const handleDealClick = (dealId) => {
+    setActiveDealsSectionOpen(true);
+    setShowAllDeals(true);
+    setHighlightDealId(null);
+    setTimeout(() => {
+      setHighlightDealId(dealId);
+    }, 50);
+  };
 
   useEffect(() => {
     if (!highlightDealId) return;
@@ -1638,14 +1656,22 @@ const LenderPortfolioDashboard = () => {
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         clearInterval(interval);
-      } else if (++attempts > 20) {
+      } else if (++attempts > 25) {
         clearInterval(interval);
-        const section = document.querySelector('[data-section="active-deals"]');
-        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+        const rowEl = document.getElementById(`deal-row-${highlightDealId}`);
+        if (rowEl) {
+          setDealSectionOpen(true);
+          setTimeout(() => {
+            rowEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+        } else {
+          const section = document.querySelector('[data-section="active-deals"]');
+          if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       }
-    }, 100);
+    }, 80);
     return () => clearInterval(interval);
-  }, [highlightDealId, showAllDeals]);
+  }, [highlightDealId, showAllDeals, activeDealsSectionOpen]);
 
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [refFilter, setRefFilter] = useState("ALL"); // ALL | PAID | PENDING
@@ -2454,7 +2480,11 @@ const LenderPortfolioDashboard = () => {
                                   <tbody>
                                     {rows.map((d, i) => (
                                       <tr key={i} style={{ borderBottom: "1px solid #f0f0f0", background: i % 2 === 0 ? "#fff" : "#fafafa" }}>
-                                        <td style={{ padding: "8px 12px", color: "#8c8c8c", whiteSpace: "nowrap" }}>#{d.dealId}</td>
+                                        <td style={{ padding: "8px 12px", color: "#8c8c8c", whiteSpace: "nowrap" }}>
+                                          <span onClick={() => handleDealClick(d.dealId)} style={{ fontWeight: 600, color: "#1890ff", cursor: "pointer", textDecoration: "underline" }} title={`View Active Deal #${d.dealId}`}>
+                                            #{d.dealId}
+                                          </span>
+                                        </td>
                                         <td style={{ padding: "8px 12px", color: headerColor, fontWeight: 500 }}>{d.dealName || d.name || ("Deal #" + d.dealId)}</td>
                                         <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
                                         {interestExpanded && (
@@ -2522,12 +2552,22 @@ const LenderPortfolioDashboard = () => {
                   <SectionCard
                     title={`Active Deals (${data.activeDeals ?? allActive.length})`}
                     badge={<span style={{ background: "#f6ffed", color: "#52c41a", border: "1px solid #b7eb8f", borderRadius: 6, padding: "2px 10px", fontSize: 12 }}>Live</span>}
-                    collapsible defaultOpen={true} summary={`${data.activeDeals ?? allActive.length} deals running`}
+                    collapsible
+                    isOpen={activeDealsSectionOpen}
+                    onToggle={() => setActiveDealsSectionOpen(o => !o)}
+                    summary={`${data.activeDeals ?? allActive.length} deals running`}
                   >
                     <div className="row">
                       {shownDeals.map((deal, idx) => (
                         <div key={idx} className="col-12 col-md-6 mb-3" id={`active-deal-${deal.dealId}`}>
-                          <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: highlightDealId === deal.dealId ? "2px solid #fa8c16" : "1px solid #f0f0f0", boxShadow: highlightDealId === deal.dealId ? "0 0 10px rgba(250,140,22,0.3)" : "none" }}>
+                          <div style={{
+                            background: highlightDealId === deal.dealId ? "#fffbe6" : "#fafafa",
+                            borderRadius: 10,
+                            padding: 16,
+                            border: highlightDealId === deal.dealId ? "2px solid #fa8c16" : "1px solid #f0f0f0",
+                            boxShadow: highlightDealId === deal.dealId ? "0 0 14px rgba(250,140,22,0.4)" : "none",
+                            transition: "all 0.3s ease",
+                          }}>
                             <div className="d-flex justify-content-between align-items-center mb-2">
                               <div>
                                 <span style={{ fontWeight: 700, color: "#262626" }}>Deal #{deal.dealId}</span>
@@ -2826,7 +2866,7 @@ const LenderPortfolioDashboard = () => {
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
                                 <td style={{ overflow: "hidden" }}>
-                                  <span onClick={() => { setShowAllDeals(true); setHighlightDealId(m.dealId); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
+                                  <span onClick={() => handleDealClick(m.dealId)} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }} title={`View Active Deal #${m.dealId}`}>#{m.dealId}</span>
                                   {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
                                 </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
