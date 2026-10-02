@@ -2781,7 +2781,10 @@ const LenderPortfolioDashboard = () => {
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td style={{ overflow: "hidden" }}><strong>#{m.dealId}</strong></td>
+                                <td style={{ overflow: "hidden" }}>
+                                  <strong>#{m.dealId}</strong>
+                                  {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
+                                </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>₹{fmt(m.principalAmount)}</td>
                                 <td style={{ overflow: "hidden" }}><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600, fontSize: 12 }}>{m.daysToMaturity}d</span></td>
