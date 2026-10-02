@@ -2508,7 +2508,10 @@ const LenderPortfolioDashboard = () => {
                         <div key={idx} className="col-12 col-md-6 mb-3" id={`active-deal-${deal.dealId}`}>
                           <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: highlightDealId === deal.dealId ? "2px solid #fa8c16" : "1px solid #f0f0f0", boxShadow: highlightDealId === deal.dealId ? "0 0 10px rgba(250,140,22,0.3)" : "none" }}>
                             <div className="d-flex justify-content-between align-items-center mb-2">
-                              <span style={{ fontWeight: 700, color: "#262626" }}>Deal #{deal.dealId}</span>
+                              <div>
+                                <span style={{ fontWeight: 700, color: "#262626" }}>Deal #{deal.dealId}</span>
+                                {deal.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deal.dealName}</div>}
+                              </div>
                               <span style={{ color: "#1890ff", fontWeight: 600 }}>₹{fmt(deal.amount)}</span>
                             </div>
                             <div className="d-flex justify-content-between mb-1">
