@@ -185,7 +185,7 @@ const InterestBreakdownCard = ({ data }) => {
   );
 };
 
-const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen = true, summary = null, isOpen: controlledOpen, onToggle }) => {
+const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen = true, summary = null, alwaysShowSummary = false, isOpen: controlledOpen, onToggle }) => {
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -199,7 +199,7 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <h6 style={{ margin: 0, fontWeight: 700, color: "#262626" }}>{title}</h6>
-          {collapsible && !isOpen && summary && (
+          {collapsible && (alwaysShowSummary || !isOpen) && summary && (
             <span style={{ fontSize: 12, color: "#8c8c8c", background: "#f5f5f5", borderRadius: 10, padding: "1px 8px" }}>{summary}</span>
           )}
         </div>
@@ -2722,7 +2722,7 @@ const LenderPortfolioDashboard = () => {
                   ? `${allMat.length} upcoming · ₹${fmt(maturingAmt)} maturing this month`
                   : `${allMat.length} upcoming maturities`;
                 return (
-                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={maturitySummary}>
+                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} alwaysShowSummary isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={maturitySummary}>
                     <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 12, color: "#874d00" }}>
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
