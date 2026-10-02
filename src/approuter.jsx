@@ -182,6 +182,8 @@ import NearbyBorrowers from "./components/pages/Oxyloans/Lender/NearbyBorrowers"
 import LenderEmiDashboard from "./components/pages/Oxyloans/Lender/LenderEmiDashboard";
 import BorrowerEmiSchedule from "./components/pages/Oxyloans/Borrower/BorrowerEmiSchedule";
 import MyOxyScore from "./components/pages/Oxyloans/Borrower/MyOxyScore";
+import BorrowerCreditReport from "./components/pages/Oxyloans/Borrower/redesign/pages/CreditReport.jsx";
+import InstantLoanFlow from "./components/pages/Oxyloans/Borrower/redesign/pages/InstantLoanFlow.jsx";
 import MarketplaceEsign from "./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEsign";
 import MarketplaceEnach from "./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEnach";
 import MarketplaceAdminDashboard from "./components/pages/Oxyloans/Admin/MarketplaceAdminDashboard";
@@ -575,7 +577,12 @@ const AppRouter = () => {
         <Route path="/nearby-borrowers" element={<PrivateRoute element={<NearbyBorrowers />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
-        <Route path="/my-oxyscore" element={<PrivateRoute element={<MyOxyScore />} />} />
+        <Route path="/borrower-credit-report" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
+        <Route path="/my-oxyscore" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
+        <Route path="/borrower/instant-loan/:id" element={<PrivateRoute element={<InstantLoanFlow />} />} />
+        <Route path="/borrower/instant-loan" element={<PrivateRoute element={<InstantLoanFlow />} />} />
+        <Route path="/borrower-instant-flow/:id" element={<PrivateRoute element={<InstantLoanFlow />} />} />
+        <Route path="/instant-loan/:id" element={<PrivateRoute element={<InstantLoanFlow />} />} />
         <Route path="/esign/:loanRequestId" element={<PrivateRoute element={<MarketplaceEsign />} />} />
         <Route path="/esign/:loanRequestId/" element={<PrivateRoute element={<MarketplaceEsign />} />} />
         <Route path="/enach/:loanRequestId" element={<PrivateRoute element={<MarketplaceEnach />} />} />

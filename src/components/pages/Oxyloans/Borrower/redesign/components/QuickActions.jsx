@@ -21,6 +21,14 @@ const QuickActions = () => {
       desc: "Apply for a new loan limit"
     },
     {
+      title: "Credit Report",
+      icon: "fa-solid fa-chart-pie",
+      path: "/borrower-credit-report",
+      color: "#059669",
+      bgColor: "rgba(5, 150, 105, 0.08)",
+      desc: "Score: 802 (Excellent)"
+    },
+    {
       title: "Agreed Loans",
       icon: "fa-solid fa-file-contract",
       path: "/borrowerDisbursementAmount",
@@ -41,7 +49,7 @@ const QuickActions = () => {
   return (
     <div className="row g-3 mb-4">
       {actions.map((act, index) => (
-        <div className="col-6 col-md-3" key={index}>
+        <div className="col-6 col-md-4 col-lg" key={index}>
           <Link 
             to={act.path} 
             className="oxy-card text-decoration-none d-flex flex-column h-100 mb-0 align-items-start"

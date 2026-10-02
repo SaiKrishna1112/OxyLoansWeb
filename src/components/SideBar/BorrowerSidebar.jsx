@@ -161,6 +161,44 @@ const BorrowerSidebar = (props) => {
                   </Link>
                 </li>
 
+                {/* <li
+                  className={`${
+                    "/borrower-credit-report" === pathName || "/my-oxyscore" === pathName
+                      ? "active"
+                      : ""
+                  }`}
+                >
+                  <Link to="/borrower-credit-report" className="d-flex align-items-center">
+                    <i className="fa-solid fa-chart-pie"></i>
+                    <span> Credit Report </span>
+                    <span
+                      className="badge bg-success bg-opacity-10 text-success ms-auto"
+                      style={{ fontSize: "10px", padding: "3px 6px" }}
+                    >
+                      802
+                    </span>
+                  </Link>
+                </li> */}
+
+                {/* <li
+                  className={`${
+                    pathName.includes("/borrower/instant-loan") || pathName.includes("/borrower-instant-flow")
+                      ? "active"
+                      : ""
+                  }`}
+                >
+                  <Link to="/borrower/instant-loan/41682" className="d-flex align-items-center">
+                    <i className="fa-solid fa-bolt text-warning"></i>
+                    <span> Instant Loan Flow </span>
+                    <span
+                      className="badge bg-primary text-white ms-auto"
+                      style={{ fontSize: "10px", padding: "2px 6px" }}
+                    >
+                      #41682
+                    </span>
+                  </Link>
+                </li> */}
+
                 <li
                   className={`${
                     "/borrowerLoanRequestCreate" === pathName ||

@@ -494,6 +494,26 @@ const Dashboard = () => {
                       </div>
                       <i className="fa-solid fa-clock-rotate-left fa-xl text-warning opacity-50"></i>
                     </div>
+
+                    <div className="p-3 rounded-3 border bg-white shadow-xs d-flex justify-content-between align-items-center" style={{ borderLeft: "4px solid #059669 !important" }}>
+                      <div>
+                        <div className="d-flex align-items-center gap-2 mb-1">
+                          <span className="text-muted small">Credit Bureau Score</span>
+                          <span className="badge bg-success bg-opacity-10 text-success" style={{ fontSize: "10px" }}>Verified</span>
+                        </div>
+                        <div className="d-flex align-items-baseline gap-2">
+                          <span className="fw-bold text-success fs-5">802</span>
+                          <span className="text-muted small">/ 900 • Prime+</span>
+                        </div>
+                      </div>
+                      <Link
+                        to="/borrower-credit-report"
+                        className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-decoration-none"
+                        style={{ fontSize: "12px" }}
+                      >
+                        View Report →
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>

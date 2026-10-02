@@ -434,6 +434,58 @@ export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", user
 
     if (savedUrl && !isAuthOrExcludedPath(savedUrl)) {
       if (isUrlCompatibleWithRole(savedUrl, activeRole)) {
+        // If last visit screen params have lenderId where /lenderAIDashboard/:lenderId,
+        // check the id with the present login id (just for lenderid only)
+        const lenderPathMatch = savedUrl.match(/\/lenderAIDashboard\/([^\/\?#]+)/i);
+        let lastVisitLenderId = lenderPathMatch ? lenderPathMatch[1] : null;
+        let isQueryParam = false;
+
+        if (!lastVisitLenderId && savedUrl.toLowerCase().includes("/lenderaidashboard")) {
+          try {
+            const searchIndex = savedUrl.indexOf("?");
+            if (searchIndex !== -1) {
+              const qParams = new URLSearchParams(savedUrl.slice(searchIndex));
+              const qId = qParams.get("lenderId") || qParams.get("id");
+              if (qId) {
+                lastVisitLenderId = qId;
+                isQueryParam = true;
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        if (lastVisitLenderId) {
+          const presentLoginId =
+            getItemSafely("sessionStorage", "userId") ||
+            getItemSafely("localStorage", "userId") ||
+            (defaultPath ? defaultPath.match(/\/lenderAIDashboard\/([^\/\?#]+)/i)?.[1] : null);
+
+          const ID_ALIASES = { "72271": "27127" };
+          const resolvedLastVisitId = ID_ALIASES[lastVisitLenderId] || lastVisitLenderId;
+          const resolvedPresentId = presentLoginId
+            ? (ID_ALIASES[String(presentLoginId)] || String(presentLoginId))
+            : null;
+
+          if (resolvedPresentId && String(resolvedLastVisitId) !== String(resolvedPresentId)) {
+            // Last visit screen param id does not match present login id:
+            // Update to use the present login id
+            if (isQueryParam) {
+              const [base, query] = savedUrl.split("?");
+              const qParams = new URLSearchParams(query);
+              if (qParams.has("lenderId")) qParams.set("lenderId", resolvedPresentId);
+              if (qParams.has("id")) qParams.set("id", resolvedPresentId);
+              savedUrl = `${base}?${qParams.toString()}`;
+            } else {
+              savedUrl = savedUrl.replace(
+                new RegExp(`/lenderAIDashboard/${lastVisitLenderId}`, "i"),
+                `/lenderAIDashboard/${resolvedPresentId}`
+              );
+            }
+          }
+        }
+
         return savedUrl;
       }
     }

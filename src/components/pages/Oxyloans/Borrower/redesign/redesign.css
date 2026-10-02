@@ -418,3 +418,568 @@ body.oxy-redesign-active {
   font-weight: 600 !important;
 }
 
+/* ========================================================================= */
+/* CREDIT REPORT & BUREAU HEALTH ENHANCEMENTS */
+/* ========================================================================= */
+.credit-score-gauge-container {
+  min-height: 220px;
+}
+
+.credit-score-gauge-svg {
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.04));
+  transition: transform 0.3s ease;
+}
+
+.credit-score-gauge-container:hover .credit-score-gauge-svg {
+  transform: scale(1.02);
+}
+
+.pulse-dot {
+  animation: oxyPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes oxyPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.25);
+  }
+}
+
+.shadow-xs {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.letter-spacing-1 {
+  letter-spacing: 1px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Print Stylesheet for Official Bureau Statement */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+  }
+
+  .d-print-none,
+  #sidebar,
+  .sidebar,
+  .header,
+  .footer,
+  .page-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .page-wrapper {
+    left: 0 !important;
+  }
+
+  .oxy-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ========================================================================= */
+/* INSTANT LOAN PRODUCTION-GRADE SUITE */
+/* ========================================================================= */
+
+.instant-loan-shell {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.instant-stepper-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  padding: 16px 20px;
+}
+
+.stepper-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.stepper-bubble-active {
+  background: #0040e0;
+  color: #ffffff;
+  box-shadow: 0 0 0 5px rgba(0, 64, 224, 0.18);
+  transform: scale(1.05);
+}
+
+.stepper-bubble-done {
+  background: #059669;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+}
+
+.stepper-bubble-pending {
+  background: #f8fafc;
+  color: #94a3b8;
+  border: 1.5px solid #cbd5e1;
+}
+
+/* Luxury Offer Cards */
+.offer-tier-card {
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.offer-tier-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 64, 224, 0.08);
+  border-color: #93c5fd;
+}
+
+.offer-tier-card-selected {
+  border-color: #0040e0 !important;
+  background: linear-gradient(180deg, rgba(0, 64, 224, 0.03) 0%, #ffffff 100%) !important;
+  box-shadow: 0 10px 30px rgba(0, 64, 224, 0.12) !important;
+}
+
+.offer-tier-card-selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0040e0, #2563eb);
+}
+
+/* Radar Scan animation for bureau check */
+.radar-sweep-container {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 64, 224, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(0, 64, 224, 0.06) 0%, transparent 70%);
+}
+
+.radar-sweep-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 64, 224, 0.35) 90deg, transparent 95deg);
+  animation: radarRotate 2s linear infinite;
+}
+
+@keyframes radarRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Realistic Bank Card Preview */
+.bank-metallic-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  border-radius: 18px;
+  padding: 24px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.bank-metallic-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.card-chip {
+  width: 44px;
+  height: 32px;
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+  border-radius: 6px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Modern Input Groups */
+.instant-form-control {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background-color: #fafcff;
+}
+
+.instant-form-control:focus {
+  border-color: #0040e0;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3.5px rgba(0, 64, 224, 0.12);
+  outline: none;
+}
+
+/* Status Pill Glow */
+.status-pill-glowing {
+  box-shadow: 0 0 12px rgba(5, 150, 105, 0.4);
+}
+
+/* Executive Fintech Container */
+.fintech-shell {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.fintech-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 24px;
+  box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.06);
+  padding: 32px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Executive Stepper */
+.fintech-stepper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 16px 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.fintech-step-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.fintech-step-pill.active {
+  background: #0040e0;
+  color: #ffffff;
+  border-color: #0040e0;
+  box-shadow: 0 4px 14px rgba(0, 64, 224, 0.25);
+}
+
+.fintech-step-pill.completed {
+  background: rgba(5, 150, 105, 0.08);
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+/* Executive Hero Gradient Cards */
+.fintech-hero-indigo {
+  background: linear-gradient(135deg, #091a3e 0%, #0040e0 70%, #2563eb 100%);
+  border-radius: 24px;
+  padding: 32px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 64, 224, 0.22);
+}
+
+.fintech-hero-indigo::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.fintech-hero-dark {
+  background: linear-gradient(135deg, #070d18 0%, #0f1f3d 50%, #162a52 100%);
+  border-radius: 24px;
+  padding: 32px;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(11, 23, 48, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Luxury Interactive UPI Buttons */
+.upi-method-btn {
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px 18px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upi-method-btn:hover {
+  border-color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 64, 224, 0.08);
+}
+
+.upi-method-btn.selected {
+  border-color: #0040e0;
+  background: rgba(0, 64, 224, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 64, 224, 0.12);
+}
+
+/* Custom Range Slider */
+.fintech-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  outline: none;
+  transition: background 0.2s;
+}
+
+.fintech-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #0040e0;
+  cursor: pointer;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 64, 224, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.fintech-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+/* Live Terminal Log for Bureau Checks */
+.fintech-terminal {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 16px 20px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.7;
+}
+
+.fintech-terminal .log-success {
+  color: #10b981;
+}
+
+.fintech-terminal .log-highlight {
+  color: #38bdf8;
+}
+
+.fintech-terminal .log-accent {
+  color: #fbbf24;
+}
+
+/* Hologram Seal & Banking Badges */
+.banking-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* QR Code Mockup Frame */
+.qr-frame {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto;
+  padding: 12px;
+  background: #ffffff;
+  border: 2px dashed #0040e0;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Micro-Pulse Disbursal Radar Beacon */
+.pulse-beacon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10b981;
+  position: relative;
+  display: inline-block;
+}
+
+.pulse-beacon::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  animation: pulseBeaconAnim 1.6s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+@keyframes pulseBeaconAnim {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* ========================================================================= */
+/* BULLETPROOF HIGH-CONTRAST FINTECH BADGES & BUTTONS */
+/* Overrides style.css legacy template color collisions */
+/* ========================================================================= */
+
+body.oxy-redesign-active .bg-primary,
+.fintech-shell .bg-primary {
+  background-color: #0040e0 !important;
+  color: #ffffff !important;
+}
+
+body.oxy-redesign-active .bg-success,
+.fintech-shell .bg-success {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+.badge-fintech-primary {
+  background-color: #0040e0 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.badge-fintech-primary-soft {
+  background-color: #eff4ff !important;
+  color: #0040e0 !important;
+  border: 1px solid #bfdbfe !important;
+  font-weight: 600 !important;
+}
+
+.badge-fintech-success {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.badge-fintech-success-soft {
+  background-color: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 600 !important;
+}
+
+.badge-fintech-warning {
+  background-color: #f59e0b !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.badge-fintech-warning-soft {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1px solid #fde68a !important;
+  font-weight: 600 !important;
+}
+
+.badge-fintech-danger-soft {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
+  font-weight: 600 !important;
+}
+
+.badge-fintech-dark {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.badge-fintech-neutral {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 600 !important;
+}
+
+.badge-fintech-white-translucent {
+  background-color: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+.stepper-circle-active {
+  background-color: #0040e0 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 0 0 5px rgba(0, 64, 224, 0.22) !important;
+}
+
+.stepper-circle-done {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
+}
+
+.stepper-circle-pending {
+  background-color: #ffffff !important;
+  color: #64748b !important;
+  border: 1.5px solid #cbd5e1 !important;
+}
+
+
+
+
+

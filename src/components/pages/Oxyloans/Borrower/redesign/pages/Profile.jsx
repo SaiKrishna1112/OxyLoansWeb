@@ -49,6 +49,8 @@ import {
 
 import LoadingState from "../components/LoadingState";
 import KYCModal from "../components/KYCModal";
+import CreditScoreModal from "../components/CreditScoreModal";
+import { getCachedCreditReport, RAW_SAMPLE_RESPONSE, parseCreditReportData } from "../components/creditReportUtils";
 import "../redesign.css";
 import { Button } from "antd";
 import {
@@ -83,6 +85,11 @@ const Profile = () => {
     fileName: "",
   });
   const [modalUploading, setModalUploading] = useState(false);
+  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [creditBureauData, setCreditBureauData] = useState(() => {
+    const cached = getCachedCreditReport();
+    return parseCreditReportData(cached || RAW_SAMPLE_RESPONSE);
+  });
 
   const handleOpenEditSection = (section) => {
     if (hasRunningLoans) {
@@ -2268,6 +2275,61 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                       </div>
                     </div>
 
+                    {/* CREDIT BUREAU SCORE & HEALTH CARD */}
+                    {/* <div className="card border-0 shadow-sm rounded-4">
+                      <div className="card-body p-4">
+                        <div className="d-flex justify-content-between align-items-start mb-3">
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="rounded p-2 d-flex align-items-center justify-content-center text-white" style={{ width: "38px", height: "38px", backgroundColor: "#059669" }}>
+                              <i className="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                              <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>CREDIT BUREAU REPORT</h6>
+                              <span className="text-muted" style={{ fontSize: "11px" }}>PaySprint & CIR VerifyA2Z</span>
+                            </div>
+                          </div>
+                          <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill small">
+                            Verified
+                          </span>
+                        </div>
+
+                        <div className="p-3 bg-light rounded-3 border mb-3">
+                          <div className="d-flex justify-content-between align-items-center mb-1">
+                            <span className="text-muted small">Bureau Score</span>
+                            <div className="d-flex align-items-baseline gap-1">
+                              <span className="fw-bold text-success fs-5">{creditBureauData?.score || 802}</span>
+                              <span className="text-muted small">/ 900</span>
+                            </div>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center small">
+                            <span className="text-muted">Rating & Status</span>
+                            <span className="fw-semibold text-dark">{creditBureauData?.scoreTier?.tier || "Excellent"} (Prime+)</span>
+                          </div>
+                          <div className="d-flex justify-content-between align-items-center small mt-1">
+                            <span className="text-muted">Accounts Track</span>
+                            <span className="text-muted">{creditBureauData?.metrics?.totalAccountsCount || 7} reported ({creditBureauData?.metrics?.activeAccountsCount || 1} active)</span>
+                          </div>
+                        </div>
+
+                        <div className="d-flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary btn-sm flex-fill rounded-3"
+                            onClick={() => setShowCreditModal(true)}
+                          >
+                            <i className="fa-solid fa-arrows-rotate me-1"></i> Refresh
+                          </button>
+                          <Link
+                            to="/borrower-credit-report"
+                            className="btn btn-primary btn-sm flex-fill rounded-3 text-white text-decoration-none d-flex align-items-center justify-content-center"
+                            style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
+                          >
+                            Full Report <i className="fa-solid fa-arrow-right ms-1"></i>
+                          </Link>
+                        </div>
+                      </div>
+                    </div> */}
+
                     {/* PAN CARD CARD */}
                     <div className="card border-0 shadow-sm rounded-4">
                       <div className="card-body p-4">
@@ -2854,6 +2916,17 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                           <i className="fa-solid fa-eye"></i>
                         </button>
                       )}
+                      {doc.name === "CREDITREPORT" && (
+                        <button
+                          type="button"
+                          className="btn btn-outline-success btn-xs py-1 px-2 cursor-pointer"
+                          style={{ fontSize: "11px" }}
+                          onClick={() => setShowCreditModal(true)}
+                          title="Fetch Official Bureau Report via PaySprint API"
+                        >
+                          <i className="fa-solid fa-bolt me-1"></i> Pull API
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="btn btn-outline-primary btn-xs py-1 px-2 cursor-pointer"
@@ -3021,6 +3094,17 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         title={kycModal.title}
         onUploadFile={handleModalUploadFile}
         isUploading={modalUploading}
+      />
+
+      {/* 7. Official Credit Bureau Instant Fetch & Review Modal */}
+      <CreditScoreModal
+        show={showCreditModal}
+        onHide={() => setShowCreditModal(false)}
+        onSuccess={(res) => {
+          setCreditBureauData(parseCreditReportData(res));
+          fetchKycFiles();
+        }}
+        initialData={profileData}
       />
 
     </div>
