@@ -1627,6 +1627,7 @@ const LenderPortfolioDashboard = () => {
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
+  const [highlightDealId, setHighlightDealId] = useState(null);
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [refFilter, setRefFilter] = useState("ALL"); // ALL | PAID | PENDING
   const [previewTier, setPreviewTier] = useState(null);
@@ -2782,7 +2783,7 @@ const LenderPortfolioDashboard = () => {
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
                                 <td style={{ overflow: "hidden" }}>
-                                  <a href={`/participatedeal?dealId=${m.dealId}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: "#1890ff", textDecoration: "none" }}>#{m.dealId}</a>
+                                  <span onClick={() => { setDealHistoryFilter("ALL"); setDealSectionOpen(true); setHighlightDealId(m.dealId); setTimeout(() => { const el = document.getElementById(`deal-row-${m.dealId}`); if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); } else { scrollTo("section-deal-history"); } }, 400); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
                                   {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
                                 </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
@@ -3177,9 +3178,9 @@ const LenderPortfolioDashboard = () => {
                             const isActive = (deal.status || "").toUpperCase() === "ACTIVE";
                             const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency, deal.annualRate);
                             return (
-                              <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
+                              <tr key={idx} id={`deal-row-${deal.dealId}`} style={highlightDealId === deal.dealId ? { background: "#fff7e6", outline: "2px solid #fa8c16", borderRadius: 6 } : isActive ? { background: "#f6ffed" } : {}}>
                                 <td>
-                                  <a href={`/participatedeal?dealId=${deal.dealId}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: "#1890ff", textDecoration: "none" }}>#{deal.dealId}</a>
+                                  <span style={{ fontWeight: 700, color: highlightDealId === deal.dealId ? "#fa8c16" : "#262626" }}>#{deal.dealId}</span>
                                   {deal.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 1, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deal.dealName}</div>}
                                 </td>
                                 <td>₹{fmt(deal.amount)}</td>
