@@ -2717,8 +2717,12 @@ const LenderPortfolioDashboard = () => {
                 const LIMIT = 10;
                 const shown = showAllMaturities ? allMat : allMat.slice(0, LIMIT);
                 const remaining = allMat.length - LIMIT;
+                const maturingAmt = data.maturingThisMonthAmount || 0;
+                const maturitySummary = maturingAmt > 0
+                  ? `${allMat.length} upcoming · ₹${fmt(maturingAmt)} maturing this month`
+                  : `${allMat.length} upcoming maturities`;
                 return (
-                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={`${allMat.length} upcoming maturities`}>
+                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={maturitySummary}>
                     <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 12, color: "#874d00" }}>
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
