@@ -16,8 +16,13 @@ const PROJECT_TYPES = [
   { id: "oxyloans-team", label: "oxyloans (team@oxyloans.in)", displayName: "OxyLoans" },
   { id: "bmv", label: "bmv (anil@askoxy.ai)", displayName: "BMV" },
   { id: "oxybricks", label: "oxybricks (radha@oxybricks.world)", displayName: "Oxybricks" },
-  { id: "erice", label: "erice (ceo@oxyglobaltech.net)", displayName: "Erice" },
-  { id: "rotary", label: "rotary (Rotaryaihub@rotary3150.com)", displayName: "Rotary AI Hub" },
+  { id: "erice", label: "ASKOXY.AI (ceo@oxyglobaltech.net)", displayName: "ASKOXY.AI" },
+  { id: "askoxy-support", label: "ASKOXY.AI (support@askoxy.ai)", displayName: "ASKOXY.AI" },
+  { id: "rotary", label: "rotary (rotaryaihub@rotary3150.com)", displayName: "Rotary AI Hub" },
+  { id: "oxygold", label: "OXYGOLD.AI (VThatavarti16@oxygold.ai)", displayName: "OXYGOLD.AI" },
+  { id: "gccmate", label: "GCC Mate (VThatavarti16@gccmate.com)", displayName: "GCC Mate" },
+  { id: "oxyglobal-sales", label: "OxyGlobal Tech (sales@oxyglobaltech.xyz)", displayName: "OxyGlobal Tech" },
+  { id: "oxyglobal-marketing", label: "OxyGlobal Tech (marketing@oxyglobaltech.info)", displayName: "OxyGlobal Tech" },
 ];
 
 const isOxyloansBrand = (projectId) =>
