@@ -2782,7 +2782,7 @@ const LenderPortfolioDashboard = () => {
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
                                 <td style={{ overflow: "hidden" }}>
-                                  <strong>#{m.dealId}</strong>
+                                  <a href={`/participatedeal?dealId=${m.dealId}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: "#1890ff", textDecoration: "none" }}>#{m.dealId}</a>
                                   {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
                                 </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
@@ -3179,7 +3179,7 @@ const LenderPortfolioDashboard = () => {
                             return (
                               <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
                                 <td>
-                                  <strong>#{deal.dealId}</strong>
+                                  <a href={`/participatedeal?dealId=${deal.dealId}`} target="_blank" rel="noreferrer" style={{ fontWeight: 700, color: "#1890ff", textDecoration: "none" }}>#{deal.dealId}</a>
                                   {deal.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 1, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deal.dealName}</div>}
                                 </td>
                                 <td>₹{fmt(deal.amount)}</td>
