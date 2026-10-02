@@ -1633,17 +1633,18 @@ const LenderPortfolioDashboard = () => {
     if (!highlightDealId) return;
     let attempts = 0;
     const interval = setInterval(() => {
-      const el = document.getElementById(`deal-row-${highlightDealId}`);
+      const el = document.getElementById(`active-deal-${highlightDealId}`);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "center" });
         clearInterval(interval);
       } else if (++attempts > 20) {
         clearInterval(interval);
-        scrollTo("section-deal-history");
+        const section = document.querySelector('[data-section="active-deals"]');
+        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }, 100);
     return () => clearInterval(interval);
-  }, [highlightDealId, dealsShown]);
+  }, [highlightDealId, showAllDeals]);
 
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [refFilter, setRefFilter] = useState("ALL"); // ALL | PAID | PENDING
@@ -2491,6 +2492,7 @@ const LenderPortfolioDashboard = () => {
               {isPro && <div id="monthly-earnings-detail"><DealAnalyticsCharts data={data} earningsData={momData || earningsData} collapsible defaultOpen={false} /></div>}
 
               {/* ── 5. ACTIVE DEALS ── */}
+              <div data-section="active-deals" />
               {(data.activeDealsWithProgress || []).length > 0 && (() => {
                 const allActive = data.activeDealsWithProgress || [];
                 const shownDeals = showAllDeals ? allActive : allActive.slice(0, DEAL_LIMIT);
@@ -2503,8 +2505,8 @@ const LenderPortfolioDashboard = () => {
                   >
                     <div className="row">
                       {shownDeals.map((deal, idx) => (
-                        <div key={idx} className="col-12 col-md-6 mb-3">
-                          <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: "1px solid #f0f0f0" }}>
+                        <div key={idx} className="col-12 col-md-6 mb-3" id={`active-deal-${deal.dealId}`}>
+                          <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: highlightDealId === deal.dealId ? "2px solid #fa8c16" : "1px solid #f0f0f0", boxShadow: highlightDealId === deal.dealId ? "0 0 10px rgba(250,140,22,0.3)" : "none" }}>
                             <div className="d-flex justify-content-between align-items-center mb-2">
                               <span style={{ fontWeight: 700, color: "#262626" }}>Deal #{deal.dealId}</span>
                               <span style={{ color: "#1890ff", fontWeight: 600 }}>₹{fmt(deal.amount)}</span>
@@ -2800,7 +2802,7 @@ const LenderPortfolioDashboard = () => {
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
                                 <td style={{ overflow: "hidden" }}>
-                                  <span onClick={() => { setDealHistoryFilter("ALL"); setDealsShown(999); setDealSectionOpen(true); setHighlightDealId(m.dealId); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
+                                  <span onClick={() => { setShowAllDeals(true); setHighlightDealId(m.dealId); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
                                   {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
                                 </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
