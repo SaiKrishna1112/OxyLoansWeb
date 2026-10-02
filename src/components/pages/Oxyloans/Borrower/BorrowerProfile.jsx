@@ -112,6 +112,14 @@ const BorrowerProfile = () => {
     dob: "",
     facebookUrl: "",
     fatherName: "",
+    motherName: "abc",
+    maritalStatus: "Married",
+    spouseName: "Non",
+    spouseDob: "20/10/2003",
+    officeMailId: "nanan@gmail.com",
+    officeLandLine: "12254655",
+    officeAddress: "oxyloans",
+    designation: "Senior Software Engineer",
     firstName: "",
     lastName: "",
     linkedinUrl: "",
@@ -263,6 +271,10 @@ const BorrowerProfile = () => {
     totalExperience: "",
     company: "",
     salary: "",
+    designation: "Senior Software Engineer",
+    officeAddress: "oxyloans",
+    officeMailId: "nanan@gmail.com",
+    officeLandLine: "12254655",
     // occupation: "",
     // income: "",
     country: "",
@@ -1871,6 +1883,14 @@ const BorrowerProfile = () => {
         dob: data.data.dob,
         facebookUrl: data.data.urlsDto.faceBookUrl,
         fatherName: data.data.fatherName,
+        motherName: data.data.motherName || userProfile.motherName || "abc",
+        maritalStatus: data.data.maritalStatus || userProfile.maritalStatus || "Married",
+        spouseName: data.data.spouseName || userProfile.spouseName || "Non",
+        spouseDob: data.data.spouseDob || userProfile.spouseDob || "20/10/2003",
+        officeMailId: data.data.officeMailId || userProfile.officeMailId || "nanan@gmail.com",
+        officeLandLine: data.data.officeLandLine || userProfile.officeLandLine || "12254655",
+        officeAddress: data.data.officeAddress || userProfile.officeAddress || "oxyloans",
+        designation: data.data.designation || userProfile.designation || "Senior Software Engineer",
         firstName: data.data.firstName,
         lastName: data.data.lastName,
         linkedinUrl: data.data.urlsDto.linkdinUrl,
@@ -1896,11 +1916,14 @@ const BorrowerProfile = () => {
       }
       console.log("Employemnt",data.data.employment)
       setCategory(data.data.studentOrNot==true?"STUDENT":data.data.employment);
-      setFormData
-({
+      setFormData({
         totalExperience: data.data.workExperience,
         company: data.data.companyName,
         salary: data.data.salary,
+        designation: data.data.designation || formData.designation || "Senior Software Engineer",
+        officeAddress: data.data.officeAddress || formData.officeAddress || "oxyloans",
+        officeMailId: data.data.officeMailId || formData.officeMailId || "nanan@gmail.com",
+        officeLandLine: data.data.officeLandLine || formData.officeLandLine || "12254655",
         country: data.data.country,
         universityName: data.data.universityName,
         universityLocation: data.data.location,
@@ -3062,6 +3085,65 @@ console.log("data",data.status);
                                   </div>
                                 )}
                               </div>
+
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Mother Name
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  onKeyPress={handleKeyPress}
+                                  placeholder="Enter Mother Name"
+                                  onChange={handlechange}
+                                  value={userProfile.motherName}
+                                  name="motherName"
+                                />
+                              </div>
+
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>
+                                  Marital Status
+                                  <span className="login-danger">*</span>
+                                </label>
+                                <select
+                                  className="form-control"
+                                  name="maritalStatus"
+                                  value={userProfile.maritalStatus}
+                                  onChange={handlechange}
+                                >
+                                  <option value="Single">Single</option>
+                                  <option value="Married">Married</option>
+                                  <option value="Divorced">Divorced</option>
+                                  <option value="Widowed">Widowed</option>
+                                </select>
+                              </div>
+
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>Spouse Name</label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  onKeyPress={handleKeyPress}
+                                  placeholder="Enter Spouse Name"
+                                  onChange={handlechange}
+                                  value={userProfile.spouseName}
+                                  name="spouseName"
+                                />
+                              </div>
+
+                              <div className="form-group col-12 col-sm-4 local-forms">
+                                <label>Spouse Date of Birth</label>
+                                <input
+                                  type="text"
+                                  className="form-control"
+                                  placeholder="DD/MM/YYYY or YYYY-MM-DD"
+                                  onChange={handlechange}
+                                  value={userProfile.spouseDob}
+                                  name="spouseDob"
+                                />
+                              </div>
                               <div className="form-group col-12 col-sm-4 local-forms">
                                 <label>
                                   Mobile No
@@ -3495,6 +3577,46 @@ console.log("data",data.status);
                                           value={formData.salary}
                                         />
                                       </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="designation"
+                                          placeholder="Designation"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.designation}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="email"
+                                          name="officeMailId"
+                                          placeholder="Official Email Id"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.officeMailId}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="officeLandLine"
+                                          placeholder="Office Landline"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.officeLandLine}
+                                        />
+                                      </div>
+                                      <div className="col-12 mb-2">
+                                        <input
+                                          type="text"
+                                          name="officeAddress"
+                                          placeholder="Office Address"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.officeAddress}
+                                        />
+                                      </div>
                                     </>
                                   )}
 
@@ -3530,6 +3652,46 @@ console.log("data",data.status);
                                           onChange={handleChange}
                                           onKeyPress={handleKeyPressNumber}
                                           value={formData.salary}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="designation"
+                                          placeholder="Designation"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.designation}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="email"
+                                          name="officeMailId"
+                                          placeholder="Official Email Id"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.officeMailId}
+                                        />
+                                      </div>
+                                      <div className="col-md-4 mb-2">
+                                        <input
+                                          type="text"
+                                          name="officeLandLine"
+                                          placeholder="Office Landline"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.officeLandLine}
+                                        />
+                                      </div>
+                                      <div className="col-12 mb-2">
+                                        <input
+                                          type="text"
+                                          name="officeAddress"
+                                          placeholder="Office Address"
+                                          className="form-control"
+                                          onChange={handleChange}
+                                          value={formData.officeAddress}
                                         />
                                       </div>
                                     </>

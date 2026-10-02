@@ -18,9 +18,17 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
     mobile: initialData.mobile || "9492902990",
     panNumber: initialData.panNumber || initialData.documentId || "CDBPB2737H",
     dateOfBirth: initialData.dateOfBirth || initialData.dob || "1994-08-08",
+    motherName: initialData.motherName || "abc",
+    maritalStatus: initialData.maritalStatus || "Married",
+    spouseName: initialData.spouseName || "Non",
+    spouseDob: initialData.spouseDob || "2003-10-20",
     monthlySalary: initialData.monthlySalary || initialData.salary || "65000",
     employmentType: initialData.employmentType || "SALARIED",
     companyName: initialData.companyName || "SRS Fintech Labs Pvt Ltd",
+    designation: initialData.designation || "Senior Software Engineer",
+    officeAddress: initialData.officeAddress || "oxyloans",
+    officeMailId: initialData.officeMailId || "nanan@gmail.com",
+    officeLandLine: initialData.officeLandLine || "12254655",
     address: initialData.address || "KPHB, Hyderabad",
     pincode: initialData.pincode || "500072",
   });
@@ -302,6 +310,94 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
 
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
+              Mother's Full Name <span className="text-danger">*</span>
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                <i className="fa-solid fa-person-breastfeeding"></i>
+              </span>
+              <input
+                type="text"
+                name="motherName"
+                value={formData.motherName}
+                onChange={handleFormChange}
+                className="form-control instant-form-control border-start-0 rounded-end-3"
+                placeholder="e.g. abc"
+                required
+              />
+            </div>
+            <small className="text-muted" style={{ fontSize: "11px" }}>
+              Required for Bureau security verification.
+            </small>
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Marital Status <span className="text-danger">*</span>
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                <i className="fa-solid fa-heart"></i>
+              </span>
+              <select
+                name="maritalStatus"
+                value={formData.maritalStatus}
+                onChange={handleFormChange}
+                className="form-select instant-form-control border-start-0 rounded-end-3"
+                required
+              >
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Widowed">Widowed</option>
+              </select>
+            </div>
+          </div>
+
+          {(formData.maritalStatus === "Married" || (formData.spouseName && formData.spouseName !== "Non")) && (
+            <>
+              <div className="col-md-4">
+                <label className="form-label small fw-bold text-dark mb-1">
+                  Spouse Full Name
+                </label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                    <i className="fa-solid fa-user-group"></i>
+                  </span>
+                  <input
+                    type="text"
+                    name="spouseName"
+                    value={formData.spouseName}
+                    onChange={handleFormChange}
+                    className="form-control instant-form-control border-start-0 rounded-end-3"
+                    placeholder="e.g. Non"
+                  />
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <label className="form-label small fw-bold text-dark mb-1">
+                  Spouse Date of Birth
+                </label>
+                <div className="input-group">
+                  <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                    <i className="fa-solid fa-calendar"></i>
+                  </span>
+                  <input
+                    type="text"
+                    name="spouseDob"
+                    value={formData.spouseDob}
+                    onChange={handleFormChange}
+                    className="form-control instant-form-control border-start-0 rounded-end-3"
+                    placeholder="e.g. 20/10/2003"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
               Net Monthly Salary (in INR) <span className="text-danger">*</span>
             </label>
             <div className="input-group">
@@ -324,7 +420,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
             </small>
           </div>
 
-          <div className="col-md-6">
+          <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
               Employer / Organization Name
             </label>
@@ -335,6 +431,62 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
               onChange={handleFormChange}
               className="form-control instant-form-control"
               placeholder="e.g. SRS Fintech Labs Pvt Ltd"
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Designation / Role
+            </label>
+            <input
+              type="text"
+              name="designation"
+              value={formData.designation}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. Senior Software Engineer"
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Official Work Email
+            </label>
+            <input
+              type="email"
+              name="officeMailId"
+              value={formData.officeMailId}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. nanan@gmail.com"
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Office Landline No.
+            </label>
+            <input
+              type="text"
+              name="officeLandLine"
+              value={formData.officeLandLine}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. 12254655"
+            />
+          </div>
+
+          <div className="col-md-8">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Office / Workplace Address
+            </label>
+            <input
+              type="text"
+              name="officeAddress"
+              value={formData.officeAddress}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. oxyloans"
             />
           </div>
 

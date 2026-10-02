@@ -166,6 +166,10 @@ const Profile = () => {
     lastName: "",
     middleName: "",
     fatherName: "",
+    motherName: "abc",
+    maritalStatus: "Married",
+    spouseName: "Non",
+    spouseDob: "20/10/2003",
     dob: "",
     panNumber: "",
     aadharNumber: "",
@@ -178,6 +182,10 @@ const Profile = () => {
     pinCode: "",
     city: "",
     state: "",
+    designation: "Senior Software Engineer",
+    officeAddress: "oxyloans",
+    officeMailId: "nanan@gmail.com",
+    officeLandLine: "12254655",
     facebookUrl: "",
     linkedinUrl: "",
     twitterUrl: "",
@@ -343,6 +351,10 @@ const Profile = () => {
           lastName: d.lastName || "",
           middleName: d.middleName || "",
           fatherName: d.fatherName || "",
+          motherName: d.motherName || "abc",
+          maritalStatus: d.maritalStatus || "Married",
+          spouseName: d.spouseName || "Non",
+          spouseDob: d.spouseDob || "20/10/2003",
           dob: d.dob || "",
           panNumber: d.panNumber || "",
           aadharNumber: d.aadharNumber || "",
@@ -355,6 +367,10 @@ const Profile = () => {
           pinCode: d.pinCode || "",
           city: d.city || "",
           state: d.state || "",
+          designation: d.designation || "Senior Software Engineer",
+          officeAddress: d.officeAddress || "oxyloans",
+          officeMailId: d.officeMailId || "nanan@gmail.com",
+          officeLandLine: d.officeLandLine || "12254655",
           facebookUrl: d.urlsDto?.faceBookUrl || "",
           linkedinUrl: d.urlsDto?.linkdinUrl || "",
           twitterUrl: d.urlsDto?.twitterUrl || "",
@@ -1013,8 +1029,10 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
     const { name, value } = e.target;
     let sanitizedValue = value;
 
-    if (name === "firstName" || name === "lastName" || name === "fatherName" || name === "city" || name === "state") {
+    if (name === "firstName" || name === "lastName" || name === "fatherName" || name === "motherName" || name === "spouseName" || name === "city" || name === "state") {
       sanitizedValue = value.replace(/[^a-zA-Z\s.-]/g, "").slice(0, 50);
+    } else if (name === "officeLandLine") {
+      sanitizedValue = value.replace(/\D/g, "").slice(0, 15);
     } else if (name === "whatsAppNumber") {
       sanitizedValue = value.replace(/\D/g, "").slice(0, 10);
     } else if (name === "pinCode") {
@@ -1558,6 +1576,10 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         lastName: profileData.lastName,
         middleName: profileData.middleName,
         fatherName: profileData.fatherName,
+        motherName: profileData.motherName,
+        maritalStatus: profileData.maritalStatus,
+        spouseName: profileData.spouseName,
+        spouseDob: profileData.spouseDob,
         dob: profileData.dob,
         panNumber: profileData.panNumber,
         residenceAddress: profileData.residenceAddress,
@@ -1571,12 +1593,20 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
         twitterUrl: profileData.twitterUrl,
         whatsAppNumber: profileData.whatsAppNumber,
         aadharNumber: profileData.aadharNumber,
+        designation: profileData.designation,
+        officeAddress: profileData.officeAddress,
+        officeMailId: profileData.officeMailId,
+        officeLandLine: profileData.officeLandLine,
       };
 
       const formDataPayload = {
         totalExperience: profileData.workExperience,
         company: profileData.companyName,
         salary: profileData.salary,
+        designation: profileData.designation,
+        officeAddress: profileData.officeAddress,
+        officeMailId: profileData.officeMailId,
+        officeLandLine: profileData.officeLandLine,
         country: profileData.country,
         universityName: profileData.universityName,
         universityLocation: profileData.location,
@@ -2164,6 +2194,26 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                           </span>
                         </div>
                         <div className="personal-info-row">
+                          <span className="personal-info-label">Mother's Name</span>
+                          <span className="personal-info-value">{profileData.motherName || "—"}</span>
+                        </div>
+                        <div className="personal-info-row">
+                          <span className="personal-info-label">Marital Status</span>
+                          <span className="personal-info-value">{profileData.maritalStatus || "—"}</span>
+                        </div>
+                        {(profileData.maritalStatus === "Married" || (profileData.spouseName && profileData.spouseName !== "Non")) && (
+                          <>
+                            <div className="personal-info-row">
+                              <span className="personal-info-label">Spouse Name</span>
+                              <span className="personal-info-value">{profileData.spouseName || "—"}</span>
+                            </div>
+                            <div className="personal-info-row">
+                              <span className="personal-info-label">Spouse DOB</span>
+                              <span className="personal-info-value">{profileData.spouseDob || "—"}</span>
+                            </div>
+                          </>
+                        )}
+                        <div className="personal-info-row">
                           <span className="personal-info-label">Occupation Category</span>
                           <span className="personal-info-value" style={{ fontSize: "12px" }}>{category}</span>
                         </div>
@@ -2176,6 +2226,24 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                             <div className="personal-info-row">
                               <span className="personal-info-label">Company Name</span>
                               <span className="personal-info-value text-lowercase">{profileData.companyName || "—"}</span>
+                            </div>
+                            <div className="personal-info-row">
+                              <span className="personal-info-label">Designation</span>
+                              <span className="personal-info-value">{profileData.designation || "—"}</span>
+                            </div>
+                            <div className="personal-info-row" style={{ alignItems: "flex-start" }}>
+                              <span className="personal-info-label pt-1">Office Address</span>
+                              <span className="personal-info-value text-end" style={{ maxWidth: "280px", lineHeight: "1.4" }}>
+                                {profileData.officeAddress || "—"}
+                              </span>
+                            </div>
+                            <div className="personal-info-row">
+                              <span className="personal-info-label">Office Email</span>
+                              <span className="personal-info-value">{profileData.officeMailId || "—"}</span>
+                            </div>
+                            <div className="personal-info-row">
+                              <span className="personal-info-label">Office Landline</span>
+                              <span className="personal-info-value">{profileData.officeLandLine || "—"}</span>
                             </div>
                           </>
                         ) : (
@@ -2495,8 +2563,29 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
               <input type="text" className="form-control rounded-3" name="fatherName" value={profileData.fatherName} onChange={handleprofileInput} />
             </div>
             <div className="col-md-6">
+              <label className="form-label text-muted small">Mother's Name <span className="text-danger">*</span></label>
+              <input type="text" className="form-control rounded-3" name="motherName" value={profileData.motherName} onChange={handleprofileInput} placeholder="e.g. abc" />
+            </div>
+            <div className="col-md-6">
               <label className="form-label text-muted small">Date of Birth (YYYY-MM-DD) <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="dob" value={profileData.dob} onChange={handleprofileInput} placeholder="YYYY-MM-DD" />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label text-muted small">Marital Status</label>
+              <select className="form-select rounded-3" name="maritalStatus" value={profileData.maritalStatus} onChange={handleprofileInput}>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Widowed">Widowed</option>
+              </select>
+            </div>
+            <div className="col-md-6">
+              <label className="form-label text-muted small">Spouse Name</label>
+              <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName} onChange={handleprofileInput} placeholder="e.g. Non" />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label text-muted small">Spouse Date of Birth</label>
+              <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" />
             </div>
             <div className="col-md-6">
               <div className="d-flex justify-content-between align-items-center mb-1">
@@ -2658,6 +2747,22 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Monthly Net Salary (₹)<span className="text-danger">*</span></label>
                   <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Designation / Role</label>
+                  <input type="text" className="form-control rounded-3" name="designation" value={profileData.designation} onChange={handleprofileInput} placeholder="e.g. Software Engineer" />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Official / Work Email</label>
+                  <input type="email" className="form-control rounded-3" name="officeMailId" value={profileData.officeMailId} onChange={handleprofileInput} placeholder="e.g. nanan@gmail.com" />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label text-muted small">Office Landline No.</label>
+                  <input type="text" className="form-control rounded-3" name="officeLandLine" value={profileData.officeLandLine} onChange={handleprofileInput} placeholder="e.g. 12254655" />
+                </div>
+                <div className="col-12">
+                  <label className="form-label text-muted small">Office / Company Address</label>
+                  <input type="text" className="form-control rounded-3" name="officeAddress" value={profileData.officeAddress} onChange={handleprofileInput} placeholder="e.g. oxyloans" />
                 </div>
               </>
             ) : (

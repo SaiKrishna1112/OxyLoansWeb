@@ -613,6 +613,10 @@ export const profileupadate = async (userProfile, formData, category) => {
     lastName: userProfile.lastName,
     middleName: userProfile.middleName,
     fatherName: userProfile.fatherName,
+    motherName: userProfile.motherName,
+    maritalStatus: userProfile.maritalStatus,
+    spouseName: userProfile.spouseName,
+    spouseDob: userProfile.spouseDob,
     dob: formattedDate,
     panNumber: userProfile.panNumber,
     address: userProfile.residenceAddress,
@@ -626,11 +630,19 @@ export const profileupadate = async (userProfile, formData, category) => {
     twitterUrl: userProfile.twitterUrl,
     whatsAppNumber: userProfile.whatsAppNumber,
     aadharNumber: userProfile.aadharNumber,
+    designation: userProfile.designation || formData.designation,
+    officeAddress: userProfile.officeAddress || formData.officeAddress,
+    officeMailId: userProfile.officeMailId || formData.officeMailId,
+    officeLandLine: userProfile.officeLandLine || formData.officeLandLine,
     employment: category === "SELFEMPLOYED" ? "SELFEMPLOYED" : "SALARIED",
     ...(category !== "STUDENT" && {
       workExperience: formData.totalExperience,
       salary: formData.salary,
       companyName: formData.company,
+      designation: formData.designation || userProfile.designation,
+      officeAddress: formData.officeAddress || userProfile.officeAddress,
+      officeMailId: formData.officeMailId || userProfile.officeMailId,
+      officeLandLine: formData.officeLandLine || userProfile.officeLandLine,
     }),
     studentOrNot: category === "STUDENT",
   });
@@ -641,6 +653,10 @@ export const profileupadate = async (userProfile, formData, category) => {
     lastName: userProfile.lastName,
     middleName: userProfile.middleName,
     fatherName: userProfile.fatherName,
+    motherName: userProfile.motherName,
+    maritalStatus: userProfile.maritalStatus,
+    spouseName: userProfile.spouseName,
+    spouseDob: userProfile.spouseDob,
     dob: formattedDate,
     panNumber: userProfile.panNumber,
     address: userProfile.residenceAddress,
@@ -654,7 +670,10 @@ export const profileupadate = async (userProfile, formData, category) => {
     twitterUrl: userProfile.twitterUrl,
     whatsAppNumber: userProfile.whatsAppNumber,
     aadharNumber: userProfile.aadharNumber,
-   
+    designation: userProfile.designation,
+    officeAddress: userProfile.officeAddress,
+    officeMailId: userProfile.officeMailId,
+    officeLandLine: userProfile.officeLandLine,
   });
   }
  
