@@ -186,7 +186,7 @@ const InterestBreakdownCard = ({ data }) => {
   );
 };
 
-const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen = true, summary = null, isOpen: controlledOpen, onToggle }) => {
+const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen = true, summary = null, alwaysShowSummary = false, isOpen: controlledOpen, onToggle }) => {
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
@@ -200,7 +200,7 @@ const SectionCard = ({ title, badge, children, collapsible = false, defaultOpen 
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <h6 style={{ margin: 0, fontWeight: 700, color: "#262626" }}>{title}</h6>
-          {collapsible && !isOpen && summary && (
+          {collapsible && (alwaysShowSummary || !isOpen) && summary && (
             <span style={{ fontSize: 12, color: "#8c8c8c", background: "#f5f5f5", borderRadius: 10, padding: "1px 8px" }}>{summary}</span>
           )}
         </div>
@@ -1628,6 +1628,25 @@ const LenderPortfolioDashboard = () => {
   const [showAllDeals, setShowAllDeals] = useState(false);
   const [dealHistoryFilter, setDealHistoryFilter] = useState("ALL");
   const [dealSectionOpen, setDealSectionOpen] = useState(false);
+  const [highlightDealId, setHighlightDealId] = useState(null);
+
+  useEffect(() => {
+    if (!highlightDealId) return;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const el = document.getElementById(`active-deal-${highlightDealId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        clearInterval(interval);
+      } else if (++attempts > 20) {
+        clearInterval(interval);
+        const section = document.querySelector('[data-section="active-deals"]');
+        if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, [highlightDealId, showAllDeals]);
+
   const [refMonthsShown, setRefMonthsShown] = useState(10);
   const [refFilter, setRefFilter] = useState("ALL"); // ALL | PAID | PENDING
   const [previewTier, setPreviewTier] = useState(null);
@@ -2494,6 +2513,7 @@ const LenderPortfolioDashboard = () => {
               {isPro && <div id="monthly-earnings-detail"><DealAnalyticsCharts data={data} earningsData={momData || earningsData} collapsible defaultOpen={false} /></div>}
 
               {/* ── 5. ACTIVE DEALS ── */}
+              <div data-section="active-deals" />
               {(data.activeDealsWithProgress || []).length > 0 && (() => {
                 const allActive = data.activeDealsWithProgress || [];
                 const shownDeals = showAllDeals ? allActive : allActive.slice(0, DEAL_LIMIT);
@@ -2506,10 +2526,13 @@ const LenderPortfolioDashboard = () => {
                   >
                     <div className="row">
                       {shownDeals.map((deal, idx) => (
-                        <div key={idx} className="col-12 col-md-6 mb-3">
-                          <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: "1px solid #f0f0f0" }}>
+                        <div key={idx} className="col-12 col-md-6 mb-3" id={`active-deal-${deal.dealId}`}>
+                          <div style={{ background: "#fafafa", borderRadius: 10, padding: 16, border: highlightDealId === deal.dealId ? "2px solid #fa8c16" : "1px solid #f0f0f0", boxShadow: highlightDealId === deal.dealId ? "0 0 10px rgba(250,140,22,0.3)" : "none" }}>
                             <div className="d-flex justify-content-between align-items-center mb-2">
-                              <span style={{ fontWeight: 700, color: "#262626" }}>Deal #{deal.dealId}</span>
+                              <div>
+                                <span style={{ fontWeight: 700, color: "#262626" }}>Deal #{deal.dealId}</span>
+                                {deal.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deal.dealName}</div>}
+                              </div>
                               <span style={{ color: "#1890ff", fontWeight: 600 }}>₹{fmt(deal.amount)}</span>
                             </div>
                             <div className="d-flex justify-content-between mb-1">
@@ -2738,8 +2761,12 @@ const LenderPortfolioDashboard = () => {
                 const LIMIT = 10;
                 const shown = showAllMaturities ? allMat : allMat.slice(0, LIMIT);
                 const remaining = allMat.length - LIMIT;
+                const maturingAmt = data.maturingThisMonthAmount || 0;
+                const maturitySummary = maturingAmt > 0
+                  ? `${allMat.length} upcoming · ₹${fmt(maturingAmt)} maturing this month`
+                  : `${allMat.length} upcoming maturities`;
                 return (
-                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={`${allMat.length} upcoming maturities`}>
+                  <SectionCard title={`Smart Maturity Planner (${allMat.length})`} collapsible defaultOpen={false} alwaysShowSummary isOpen={maturitySectionOpen || undefined} onToggle={setMaturitySectionOpen} summary={maturitySummary}>
                     <div style={{ background: "#fff7e6", border: "1px solid #ffd591", borderRadius: 8, padding: "8px 14px", marginBottom: 12, fontSize: 12, color: "#874d00" }}>
                       🔔 Deals maturing within 4 days — you'll receive daily reminders automatically. Click <strong>Remind Me</strong> on deals within 10 days for an instant notification now.
                     </div>
@@ -2798,7 +2825,10 @@ const LenderPortfolioDashboard = () => {
                             };
                             return (
                               <tr key={idx} style={m.actionNeeded ? { background: "#fff7e6" } : {}}>
-                                <td style={{ overflow: "hidden" }}><strong>#{m.dealId}</strong></td>
+                                <td style={{ overflow: "hidden" }}>
+                                  <span onClick={() => { setShowAllDeals(true); setHighlightDealId(m.dealId); }} style={{ fontWeight: 700, color: "#1890ff", textDecoration: "underline", cursor: "pointer" }}>#{m.dealId}</span>
+                                  {m.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 2, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.dealName}</div>}
+                                </td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>{fmtDate(m.maturityDate)}</td>
                                 <td style={{ overflow: "hidden", fontSize: 12 }}>₹{fmt(m.principalAmount)}</td>
                                 <td style={{ overflow: "hidden" }}><span style={{ color: m.daysToMaturity <= 10 ? "#ff4d4f" : m.daysToMaturity <= 30 ? "#faad14" : "#52c41a", fontWeight: 600, fontSize: 12 }}>{m.daysToMaturity}d</span></td>
@@ -3191,9 +3221,9 @@ const LenderPortfolioDashboard = () => {
                             const isActive = (deal.status || "").toUpperCase() === "ACTIVE";
                             const annualRoi = fmtRoi(deal.rateOfInterest, deal.payoutFrequency, deal.annualRate);
                             return (
-                              <tr key={idx} style={isActive ? { background: "#f6ffed" } : {}}>
+                              <tr key={idx} id={`deal-row-${deal.dealId}`} style={highlightDealId === deal.dealId ? { background: "#fff7e6", outline: "2px solid #fa8c16", borderRadius: 6 } : isActive ? { background: "#f6ffed" } : {}}>
                                 <td>
-                                  <strong>#{deal.dealId}</strong>
+                                  <span style={{ fontWeight: 700, color: highlightDealId === deal.dealId ? "#fa8c16" : "#262626" }}>#{deal.dealId}</span>
                                   {deal.dealName && <div style={{ fontSize: 10, color: "#8c8c8c", marginTop: 1, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{deal.dealName}</div>}
                                 </td>
                                 <td>₹{fmt(deal.amount)}</td>
