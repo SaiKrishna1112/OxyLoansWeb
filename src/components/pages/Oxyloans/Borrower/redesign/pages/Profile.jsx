@@ -2580,8 +2580,8 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
               <input type="text" className="form-control rounded-3" name="dob" value={profileData.dob} onChange={handleprofileInput} placeholder="YYYY-MM-DD" />
             </div>
             <div className="col-md-6">
-              <label className="form-label text-muted small">Marital Status</label>
-              <select className="form-select rounded-3" name="maritalStatus" value={profileData.maritalStatus} onChange={handleprofileInput}>
+              <label className="form-label text-muted small">Marital Status <span className="text-danger">*</span></label>
+              <select className="form-select rounded-3" name="maritalStatus" value={profileData.maritalStatus} onChange={handleprofileInput} required>
                 <option value="Single">Single</option>
                 <option value="Married">Married</option>
                 <option value="Divorced">Divorced</option>
@@ -2591,12 +2591,12 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
             {profileData.maritalStatus === "Married" && (
               <>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Spouse Name</label>
-                  <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName} onChange={handleprofileInput} placeholder="Enter spouse full name" />
+                  <label className="form-label text-muted small">Spouse Name <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName} onChange={handleprofileInput} placeholder="Enter spouse full name" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Spouse Date of Birth</label>
-                  <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" />
+                  <label className="form-label text-muted small">Spouse Date of Birth <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" required />
                 </div>
               </>
             )}
@@ -2639,7 +2639,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
               <input type="text" className="form-control rounded-3" name="aadharNumber" value={profileData.aadharNumber} onChange={handleprofileInput} />
             </div>
             <div className="col-md-6">
-              <label className="form-label text-muted small">WhatsApp Number</label>
+              <label className="form-label text-muted small">WhatsApp Number <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="whatsAppNumber" value={profileData.whatsAppNumber} onChange={handleprofileInput} />
             </div>
             <div className="col-12">
@@ -2740,7 +2740,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
             <hr className="my-3 opacity-10" />
             <h6 className="fw-bold text-dark">Occupation & Category Details</h6>
             <div className="col-md-6">
-              <label className="form-label text-muted small">Employment Category</label>
+              <label className="form-label text-muted small">Employment Category <span className="text-danger">*</span></label>
               <select className="form-select rounded-3" value={category} onChange={(e) => setCategory(e.target.value)}>
                 <option value="SALARIED">Salaried Employee</option>
                 <option value="SELFEMPLOYED">Self-Employed</option>
@@ -2750,16 +2750,16 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
             {category !== "STUDENT" ? (
               <>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Work Experience (Years)</label>
-                  <input type="text" className="form-control rounded-3" name="workExperience" value={profileData.workExperience} onChange={handleprofileInput} />
+                  <label className="form-label text-muted small">Work Experience (Years) <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control rounded-3" name="workExperience" value={profileData.workExperience} onChange={handleprofileInput} placeholder="e.g. 3" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Company Name</label>
-                  <input type="text" className="form-control rounded-3" name="companyName" value={profileData.companyName} onChange={handleprofileInput} />
+                  <label className="form-label text-muted small">Company Name <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control rounded-3" name="companyName" value={profileData.companyName} onChange={handleprofileInput} placeholder="e.g. Acme Corp" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Monthly Net Salary (₹)<span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} />
+                  <label className="form-label text-muted small">Monthly Net Salary (₹) <span className="text-danger">*</span></label>
+                  <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} placeholder="e.g. 50000" required />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Designation / Role</label>
@@ -2770,7 +2770,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                   <input type="email" className="form-control rounded-3" name="officeMailId" value={profileData.officeMailId} onChange={handleprofileInput} placeholder="e.g. nanan@gmail.com" />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Office Landline No.</label>
+                  <label className="form-label text-muted small">Office Landline No. <span className="text-muted">(Optional)</span></label>
                   <input type="text" className="form-control rounded-3" name="officeLandLine" value={profileData.officeLandLine} onChange={handleprofileInput} placeholder="e.g. 12254655" />
                 </div>
                 <div className="col-12">

@@ -284,9 +284,28 @@ export const validateBorrowerPersonalDetails = (profileData, category = "SALARIE
   const fatherNameCheck = validateName(profileData.fatherName, "Father's Name");
   if (!fatherNameCheck.valid) return fatherNameCheck;
 
-  // 4. Date of Birth & Age
+  // 4. Mother's Name
+  const motherNameCheck = validateName(profileData.motherName, "Mother's Name");
+  if (!motherNameCheck.valid) return motherNameCheck;
+
+  // 5. Date of Birth & Age
   const dobCheck = validateDob(profileData.dob);
   if (!dobCheck.valid) return dobCheck;
+
+  // 6. Marital Status
+  if (!profileData.maritalStatus || !profileData.maritalStatus.toString().trim()) {
+    return { valid: false, message: "Marital Status is required." };
+  }
+
+  // 7. Spouse Details (Mandatory if Married)
+  if (profileData.maritalStatus === "Married") {
+    const spouseNameCheck = validateName(profileData.spouseName, "Spouse Name");
+    if (!spouseNameCheck.valid) return spouseNameCheck;
+
+    if (!profileData.spouseDob || !profileData.spouseDob.toString().trim()) {
+      return { valid: false, message: "Spouse Date of Birth is required when Married." };
+    }
+  }
 
   // 5. PAN Number
   const panCheck = validatePanNumber(profileData.panNumber);

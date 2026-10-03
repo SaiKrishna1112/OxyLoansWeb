@@ -1490,6 +1490,10 @@ const BorrowerProfile = () => {
       firstName: userProfile.firstName,
       lastName: userProfile.lastName,
       fatherName: userProfile.fatherName,
+      motherName: userProfile.motherName,
+      maritalStatus: userProfile.maritalStatus,
+      spouseName: userProfile.spouseName,
+      spouseDob: userProfile.spouseDob,
       dob: userProfile.dob,
       panNumber: userProfile.panNumber,
       whatsAppNumber: userProfile.whatsAppNumber,
@@ -1525,15 +1529,20 @@ const BorrowerProfile = () => {
       userProfile.mobileNumber?.length >= 10 &&
       userProfile.whatsAppNumber !== null &&
       userProfile.whatsAppNumber !== "" &&
+      userProfile.whatsAppNumber?.length >= 10 &&
       userProfile.pinCode !== null &&
       userProfile.pinCode !== "" &&
       userProfile.fatherName !== null &&
+      userProfile.fatherName !== "" &&
+      userProfile.motherName !== null &&
+      userProfile.motherName !== "" &&
+      userProfile.maritalStatus !== null &&
+      userProfile.maritalStatus !== "" &&
+      (userProfile.maritalStatus !== "Married" || (userProfile.spouseName && userProfile.spouseName.trim() !== "")) &&
       userProfile.residenceAddress !== null &&
       userProfile.residenceAddress !== "" &&
       userProfile.permanentAddress !== null &&
       userProfile.permanentAddress !== "" &&
-      userProfile.whatsAppNumber?.length >= 10 &&
-      userProfile.fatherName !== "" &&
       userProfile.state !== null &&
       userProfile.state !== "" &&
       userProfile.panNumber !== null &&
@@ -3136,7 +3145,10 @@ console.log("data",data.status);
                               {userProfile.maritalStatus === "Married" && (
                                 <>
                                   <div className="form-group col-12 col-sm-4 local-forms">
-                                    <label>Spouse Name</label>
+                                    <label>
+                                      Spouse Name
+                                      <span className="login-danger">*</span>
+                                    </label>
                                     <input
                                       type="text"
                                       className="form-control"
@@ -3145,11 +3157,15 @@ console.log("data",data.status);
                                       onChange={handlechange}
                                       value={userProfile.spouseName}
                                       name="spouseName"
+                                      required
                                     />
                                   </div>
 
                                   <div className="form-group col-12 col-sm-4 local-forms">
-                                    <label>Spouse Date of Birth</label>
+                                    <label>
+                                      Spouse Date of Birth
+                                      <span className="login-danger">*</span>
+                                    </label>
                                     <input
                                       type="text"
                                       className="form-control"
@@ -3157,6 +3173,7 @@ console.log("data",data.status);
                                       onChange={handlechange}
                                       value={userProfile.spouseDob}
                                       name="spouseDob"
+                                      required
                                     />
                                   </div>
                                 </>
@@ -3566,32 +3583,35 @@ console.log("data",data.status);
                                         <input
                                           type="text"
                                           name="totalExperience"
-                                          placeholder="Total Experience"
+                                          placeholder="Total Experience *"
                                           className="form-control"
                                           onChange={handleChange}
                                           onKeyPress={handleKeyPressNumber}
                                           value={formData.totalExperience}
+                                          required
                                         />
                                       </div>
                                       <div className="col-md-4 mb-2">
                                         <input
                                           type="text"
                                           name="company"
-                                          placeholder="Company"
+                                          placeholder="Company *"
                                           className="form-control"
                                           onChange={handleChange}
                                           value={formData.company}
+                                          required
                                         />
                                       </div>
                                       <div className="col-md-4 mb-2">
                                         <input
                                           type="text"
                                           name="salary"
-                                          placeholder="Salary"
+                                          placeholder="Salary *"
                                           className="form-control"
                                           onChange={handleChange}
                                           onKeyPress={handleKeyPressNumber}
                                           value={formData.salary}
+                                          required
                                         />
                                       </div>
                                       <div className="col-md-4 mb-2">
@@ -3643,32 +3663,35 @@ console.log("data",data.status);
                                         <input
                                           type="text"
                                           name="totalExperience"
-                                          placeholder="Total Experience"
+                                          placeholder="Total Experience *"
                                           className="form-control"
                                           onChange={handleChange}
                                           onKeyPress={handleKeyPressNumber}
                                           value={formData.totalExperience}
+                                          required
                                         />
                                       </div>
                                       <div className="col-md-4 mb-2">
                                         <input
                                           type="text"
                                           name="company"
-                                          placeholder="Organization"
+                                          placeholder="Organization *"
                                           className="form-control"
                                           onChange={handleChange}
                                           value={formData.company}
+                                          required
                                         />
                                       </div>
                                       <div className="col-md-4 mb-2">
                                         <input
                                           type="text"
                                           name="salary"
-                                          placeholder="Income"
+                                          placeholder="Income *"
                                           className="form-control"
                                           onChange={handleChange}
                                           onKeyPress={handleKeyPressNumber}
                                           value={formData.salary}
+                                          required
                                         />
                                       </div>
                                       <div className="col-md-4 mb-2">

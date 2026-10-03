@@ -89,6 +89,20 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
       setErrorMessage("Please enter borrower legal name.");
       return;
     }
+    if (!formData.motherName || !formData.motherName.trim()) {
+      setErrorMessage("Please enter borrower mother's name.");
+      return;
+    }
+    if (formData.maritalStatus === "Married") {
+      if (!formData.spouseName || !formData.spouseName.trim()) {
+        setErrorMessage("Please enter spouse full name.");
+        return;
+      }
+      if (!formData.spouseDob || !formData.spouseDob.trim()) {
+        setErrorMessage("Please enter spouse date of birth.");
+        return;
+      }
+    }
     if (!formData.mobile || formData.mobile.replace(/\D/g, "").length < 10) {
       setErrorMessage("Please enter a valid 10-digit mobile number.");
       return;
@@ -100,6 +114,10 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
     }
     if (salaryNum < 10000) {
       setErrorMessage("Minimum monthly income requirement is ₹10,000.");
+      return;
+    }
+    if (!formData.companyName || !formData.companyName.trim()) {
+      setErrorMessage("Please enter employer / organization name.");
       return;
     }
     if (!ref1.name.trim() || ref1.mobile.replace(/\D/g, "").length < 10) {
@@ -369,7 +387,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
             <>
               <div className="col-md-4">
                 <label className="form-label small fw-bold text-dark mb-1">
-                  Spouse Full Name
+                  Spouse Full Name <span className="text-danger">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
@@ -382,13 +400,14 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                     onChange={handleFormChange}
                     className="form-control instant-form-control border-start-0 rounded-end-3"
                     placeholder="Enter spouse full name"
+                    required
                   />
                 </div>
               </div>
 
               <div className="col-md-4">
                 <label className="form-label small fw-bold text-dark mb-1">
-                  Spouse Date of Birth
+                  Spouse Date of Birth <span className="text-danger">*</span>
                 </label>
                 <div className="input-group">
                   <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
@@ -400,7 +419,8 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                     value={formData.spouseDob}
                     onChange={handleFormChange}
                     className="form-control instant-form-control border-start-0 rounded-end-3"
-                    placeholder="e.g. 20/10/2003"
+                    placeholder="DD/MM/YYYY or YYYY-MM-DD"
+                    required
                   />
                 </div>
               </div>
@@ -433,7 +453,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
 
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
-              Employer / Organization Name
+              Employer / Organization Name <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -442,6 +462,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
               onChange={handleFormChange}
               className="form-control instant-form-control"
               placeholder="e.g. SRS Fintech Labs Pvt Ltd"
+              required
             />
           </div>
 
