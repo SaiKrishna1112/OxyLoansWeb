@@ -14,9 +14,7 @@ import {
 const PROJECT_TYPES = [
   { id: "oxyloans", label: "oxyloans (admin@oxyloans.com)", displayName: "OxyLoans" },
   { id: "oxyloans-team", label: "oxyloans (team@oxyloans.in)", displayName: "OxyLoans" },
-  { id: "bmv", label: "bmv (anil@askoxy.ai)", displayName: "BMV" },
   { id: "bmv-hi", label: "bmv (hi@bmv.money)", displayName: "BMV" },
-  { id: "oxybricks", label: "oxybricks (radha@oxybricks.world)", displayName: "Oxybricks" },
   { id: "erice", label: "ASKOXY.AI (ceo@oxyglobaltech.net)", displayName: "ASKOXY.AI" },
   { id: "askoxy-support", label: "ASKOXY.AI (support@askoxy.ai)", displayName: "ASKOXY.AI" },
   { id: "rotary", label: "rotary (rotaryaihub@rotary3150.com)", displayName: "Rotary AI Hub" },
@@ -26,8 +24,13 @@ const PROJECT_TYPES = [
   { id: "oxyglobal-marketing", label: "OxyGlobal Tech (marketing@oxyglobaltech.info)", displayName: "OxyGlobal Tech" },
 ];
 
-const isOxyloansBrand = (projectId) =>
-  projectId === "oxyloans" || projectId === "oxyloans-team" || projectId === "rotary";
+const OXYLOANS_LOGO_PROJECTS = ["oxyloans", "oxyloans-team", "rotary", "gccmate", "oxyglobal-sales", "oxyglobal-marketing"];
+
+const isOxyloansBrand = (projectId) => OXYLOANS_LOGO_PROJECTS.includes(projectId);
+
+const OXYGOLD_LOGO = "https://oxyloanstestv1.s3.ap-south-1.amazonaws.com/BULKINVITE_oxygold-logo.png";
+const ASKOXY_LOGO =
+  "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/PAN_askoxylogoblack.56dbb158b7a0beaf4fbe.png";
 
 // Clean OxyLoans logo without the mark above the final S (local preview asset only).
 const OXYLOANS_UI_LOGO = `${process.env.PUBLIC_URL || ""}/assets/img/oxyloans-campaign-logo.png`;
@@ -41,8 +44,13 @@ const DEFAULT_LOGOS = {
   bmv: "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/PAN_askoxylogoblack.56dbb158b7a0beaf4fbe.png",
   "bmv-hi": "https://oxyloansv1.s3.ap-south-1.amazonaws.com/8134/PAN_askoxylogoblack.56dbb158b7a0beaf4fbe.png",
   oxybricks: "https://oxyloanstestv1.s3.ap-south-1.amazonaws.com/BULKINVITE_logo%20(1).png",
-  erice: "https://oxyloansv1.s3.ap-south-1.amazonaws.com/BULKINVITE_Oxyrice%20logo.png",
+  erice: ASKOXY_LOGO,
+  "askoxy-support": ASKOXY_LOGO,
   rotary: OXYLOANS_UI_LOGO,
+  oxygold: OXYGOLD_LOGO,
+  gccmate: OXYLOANS_UI_LOGO,
+  "oxyglobal-sales": OXYLOANS_UI_LOGO,
+  "oxyglobal-marketing": OXYLOANS_UI_LOGO,
 };
 
 const defaultLogoForProject = (projectId) =>
@@ -59,8 +67,7 @@ const isFragileEmailLogoUrl = (value) => {
     url.includes("x-amz-") ||
     url.includes("signature=") ||
     url.includes("awsaccesskeyid=") ||
-    url.includes("oxyloansv1.s3.") ||
-    url.includes("oxyloanstestv1.s3.")
+    url.includes("oxyloansv1.s3.")
   );
 };
 
@@ -1562,7 +1569,8 @@ const AdminAILenderCampaignModal = ({
         mailSubject,
         whatsappSubject,
         imageUrl: channel === "email" ? (imageUrl || undefined) : undefined,
-        logoUrl: deliverableLogo || undefined,
+        // Only send uploaded logos; the backend picks each brand's own default (ASKOXY.AI falls back to a text header).
+        logoUrl: logoUrl ? (deliverableLogo || undefined) : undefined,
         testEmail: dryRun && channel === "email" && !isExcelCampaign ? testEmail.trim() : undefined,
         testMobile: channel === "whatsapp" && (dryRun || isScheduledWhatsApp) ? testMobile.trim() : undefined,
         dryRun: dryRun && !isScheduledWhatsApp,
@@ -1767,9 +1775,11 @@ const AdminAILenderCampaignModal = ({
                 if (matched?.displayName) {
                   setMailDisplayName(matched.displayName);
                 }
-                // Reset to that project's default logo (OxyLoans → OxyLoans logo).
+                // Reset to that project's default logo and drop the previous brand's banner image.
                 setLogoUrl("");
                 setLogoFileName("");
+                setImageUrl("");
+                setImageFileName("");
                 setError("");
               }}
             >
