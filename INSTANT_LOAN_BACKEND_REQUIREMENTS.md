@@ -116,6 +116,51 @@ sequenceDiagram
   }
   ```
 
+### 2.1.1 Borrower Reference Contacts API (Mandatory 2 Contacts)
+* **Save/Update References:**
+  * **Method:** `PATCH`
+  * **URL:** `https://fintech.oxyloans.com/oxyloans/v1/user/borrowerReferenceDetails`
+  * **Headers:**
+    ```http
+    accessToken: {{accessToken}}
+    Content-Type: application/json
+    ```
+  * **Payload:**
+    ```json
+    {
+      "userId": 67358,
+      "updateReferenceDetails": true,
+      "referenceDto": [
+        {
+          "referenceNumber": "9876543210",
+          "name": "Reference One",
+          "address": "12 MG Road, Bangalore",
+          "landMark": "Near metro"
+        },
+        {
+          "referenceNumber": "9123456780",
+          "name": "Reference Two",
+          "address": "45 Park Street, Kolkata",
+          "landMark": "Opposite mall"
+        },
+        {
+          "referenceNumber": "9988776655",
+          "name": "Reference Three",
+          "address": "78 Anna Salai, Chennai",
+          "landMark": "Bus stop"
+        }
+      ]
+    }
+    ```
+  * **Validation Rule:** Any two reference contact numbers (`referenceNumber`) are strictly mandatory. Each contact number must be 10 digits starting with 6-9, distinct from each other, and not identical to the borrower's registered mobile number.
+* **Fetch References:**
+  * **Method:** `GET`
+  * **URL:** `https://fintech.oxyloans.com/oxyloans/v1/user/{userId}/borrowerReferenceDetails`
+  * **Headers:**
+    ```http
+    accessToken: {{accessToken}}
+    ```
+
 ---
 
 ### 2.2 Create Platform Assessment Fee Order (₹150 INR)

@@ -39,6 +39,8 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
       name: "Balijepalli Venkata",
       mobile: "9848022338",
       relation: "Parent",
+      address: "12 MG Road, Bangalore",
+      landMark: "Near metro",
     }
   );
 
@@ -47,6 +49,8 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
       name: "Kiran Sharma",
       mobile: "9121234567",
       relation: "Colleague",
+      address: "45 Park Street, Kolkata",
+      landMark: "Opposite mall",
     }
   );
 
@@ -625,6 +629,29 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                   </select>
                 </div>
               </div>
+
+              <div className="row g-2 mt-1">
+                <div className="col-6">
+                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Address</label>
+                  <input
+                    type="text"
+                    value={ref1.address || ""}
+                    onChange={(e) => setRef1({ ...ref1, address: e.target.value })}
+                    className="form-control form-control-sm instant-form-control"
+                    placeholder="e.g. 12 MG Road, Bangalore"
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Landmark</label>
+                  <input
+                    type="text"
+                    value={ref1.landMark || ""}
+                    onChange={(e) => setRef1({ ...ref1, landMark: e.target.value })}
+                    className="form-control form-control-sm instant-form-control"
+                    placeholder="e.g. Near metro"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -678,6 +705,29 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                       <option key={rel} value={rel}>{rel}</option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="row g-2 mt-1">
+                <div className="col-6">
+                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Address</label>
+                  <input
+                    type="text"
+                    value={ref2.address || ""}
+                    onChange={(e) => setRef2({ ...ref2, address: e.target.value })}
+                    className="form-control form-control-sm instant-form-control"
+                    placeholder="e.g. 45 Park Street, Kolkata"
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Landmark</label>
+                  <input
+                    type="text"
+                    value={ref2.landMark || ""}
+                    onChange={(e) => setRef2({ ...ref2, landMark: e.target.value })}
+                    className="form-control form-control-sm instant-form-control"
+                    placeholder="e.g. Opposite mall"
+                  />
                 </div>
               </div>
             </div>

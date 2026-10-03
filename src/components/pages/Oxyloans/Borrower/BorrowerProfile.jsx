@@ -49,6 +49,7 @@ import {
   borrowerSecureInfo,
   getBorrowerSecureInfo,
   saveBorrowerReferenceDetails,
+  getBorrowerReferenceDetails,
   base_url,
 } from "../../../HttpRequest/afterlogin";
 
@@ -91,18 +92,12 @@ const BorrowerProfile = () => {
   });
 
 
-  const [referenceDetails, setReferenceDetails] = useState({
-    reference1: "",
-    reference2: "",
-    reference3: "",
-    reference4: "",
-    reference5: "",
-    reference6: "",
-    reference7: "",
-    reference8: "",
-    loading: false,
-    errors: {}
-  });
+  const [referenceList, setReferenceList] = useState([
+    { name: "", referenceNumber: "", address: "", landMark: "" },
+    { name: "", referenceNumber: "", address: "", landMark: "" },
+  ]);
+  const [referenceLoading, setReferenceLoading] = useState(false);
+  const [referenceErrors, setReferenceErrors] = useState({});
 
   const [value, setValue] = useState("");
 
@@ -357,81 +352,182 @@ const BorrowerProfile = () => {
     }
   };
 
-  const handleReferenceChange = (e) => {
-    const { name, value } = e.target;
-    if (value !== "" && (!/^\d+$/.test(value) || value.length > 10)) {
-      return;
+  const normalizeReferenceList = (raw) => {
+    if (!raw) return [];
+    let list = [];
+    if (Array.isArray(raw)) {
+      list = raw;
+    } else if (Array.isArray(raw.referenceDto)) {
+      list = raw.referenceDto;
+    } else if (Array.isArray(raw.referenceDetailsResponseDto)) {
+      list = raw.referenceDetailsResponseDto;
+    } else if (Array.isArray(raw.references)) {
+      list = raw.references;
+    } else if (typeof raw === "object") {
+      const legacyRefs = [];
+      for (let i = 1; i <= 8; i++) {
+        const val = raw[`reference${i}`];
+        if (val && String(val).trim()) {
+          const str = String(val).trim();
+          const phoneMatch = str.match(/[6-9]\d{9}/);
+          const phone = phoneMatch ? phoneMatch[0] : "";
+          let name = str.replace(/[6-9]\d{9}/, "").replace(/[-–()]/g, "").trim();
+          if (!name) name = `Reference ${i}`;
+          legacyRefs.push({
+            name,
+            referenceNumber: phone || str,
+            address: "",
+            landMark: "",
+          });
+        }
+      }
+      if (legacyRefs.length > 0) {
+        list = legacyRefs;
+      }
     }
-    setReferenceDetails(prev => ({
-      ...prev,
-      [name]: value,
-      errors: { ...prev.errors, [name]: "" }
+
+    return list.map((item) => ({
+      name: item.name || item.referenceName || "",
+      referenceNumber: (item.referenceNumber || item.mobileNumber || item.number || "")
+        .toString()
+        .replace(/\D/g, "")
+        .slice(0, 10),
+      address: item.address || "",
+      landMark: item.landMark || item.landmark || "",
     }));
+  };
+
+  const handleReferenceFieldChange = (index, field, value) => {
+    setReferenceList((prev) => {
+      const updated = [...prev];
+      let sanitized = value;
+      if (field === "referenceNumber") {
+        sanitized = value.replace(/\D/g, "").slice(0, 10);
+      }
+      updated[index] = { ...updated[index], [field]: sanitized };
+      return updated;
+    });
+    setReferenceErrors({});
+  };
+
+  const handleAddReference = () => {
+    setReferenceList((prev) => [
+      ...prev,
+      { name: "", referenceNumber: "", address: "", landMark: "" },
+    ]);
+  };
+
+  const handleRemoveReference = (index) => {
+    setReferenceList((prev) => {
+      if (prev.length <= 2) {
+        const updated = [...prev];
+        updated[index] = { name: "", referenceNumber: "", address: "", landMark: "" };
+        return updated;
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
   };
 
   const handleReferenceSave = async (e) => {
     e.preventDefault();
-    
-    const newErrors = {};
-    const refKeys = [
-      { key: "reference1", label: "Father Mobile Number" },
-      { key: "reference2", label: "Mother Mobile Number" },
-      { key: "reference3", label: "Brother Mobile Number" },
-      { key: "reference4", label: "Sister Mobile Number" },
-      { key: "reference5", label: "Wife Mobile Number" },
-      { key: "reference6", label: "First Friend Mobile Number" },
-      { key: "reference7", label: "Second Friend Mobile Number" },
-      { key: "reference8", label: "Third Friend Mobile Number" }
-    ];
 
-    refKeys.forEach(ref => {
-      const val = referenceDetails[ref.key];
-      if (!val || val.trim() === "") {
-        newErrors[ref.key] = `${ref.label} is required`;
-      } else if (val.length !== 10) {
-        newErrors[ref.key] = `${ref.label} must be exactly 10 digits`;
-      }
-    });
+    const borrowerMobile = personalDetails?.mobileNumber || userProfile?.mobileNumber || sessionStorage.getItem("mobileNumber") || "";
+    const cleanBorrowerMobile = String(borrowerMobile).replace(/\D/g, "");
 
-    if (Object.keys(newErrors).length > 0) {
-      setReferenceDetails(prev => ({ ...prev, errors: newErrors }));
+    const filledEntries = referenceList.filter(
+      (item) =>
+        (item.name && item.name.trim() !== "") ||
+        (item.referenceNumber && item.referenceNumber.trim() !== "") ||
+        (item.address && item.address.trim() !== "") ||
+        (item.landMark && item.landMark.trim() !== "")
+    );
+
+    if (filledEntries.length < 2) {
       Swal.fire({
         icon: "warning",
         title: "Validation Error",
-        text: "Please enter valid 10-digit mobile numbers for all references.",
-        confirmButtonColor: "#3d5ee1"
+        text: "At least 2 reference contacts with valid 10-digit mobile numbers are mandatory.",
+        confirmButtonColor: "#3d5ee1",
       });
       return;
     }
 
-    setReferenceDetails(prev => ({ ...prev, loading: true }));
+    const validContacts = [];
+    const mobileSet = new Set();
+    const newErrors = {};
+
+    for (let i = 0; i < filledEntries.length; i++) {
+      const item = filledEntries[i];
+      const cleanNum = String(item.referenceNumber || "").replace(/\D/g, "");
+      const cleanName = String(item.name || "").trim();
+
+      if (!cleanName) {
+        newErrors[`name_${i}`] = `Contact name is required`;
+      }
+      if (!cleanNum || cleanNum.length !== 10 || !/^[6-9]\d{9}$/.test(cleanNum)) {
+        newErrors[`mobile_${i}`] = `Enter valid 10-digit mobile starting with 6-9`;
+      } else if (cleanBorrowerMobile && cleanNum === cleanBorrowerMobile) {
+        newErrors[`mobile_${i}`] = `Cannot be borrower's registered mobile number`;
+      } else if (mobileSet.has(cleanNum)) {
+        newErrors[`mobile_${i}`] = `Duplicate mobile number`;
+      } else {
+        mobileSet.add(cleanNum);
+      }
+
+      validContacts.push({
+        referenceNumber: cleanNum,
+        name: cleanName,
+        address: String(item.address || "").trim(),
+        landMark: String(item.landMark || "").trim(),
+      });
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setReferenceErrors(newErrors);
+      Swal.fire({
+        icon: "warning",
+        title: "Validation Error",
+        text: Object.values(newErrors)[0] || "Please check all reference entries.",
+        confirmButtonColor: "#3d5ee1",
+      });
+      return;
+    }
+
+    setReferenceLoading(true);
     try {
+      const uId = Number(sessionStorage.getItem("userId"));
       const payload = {
-        reference1: referenceDetails.reference1,
-        reference2: referenceDetails.reference2,
-        reference3: referenceDetails.reference3,
-        reference4: referenceDetails.reference4,
-        reference5: referenceDetails.reference5,
-        reference6: referenceDetails.reference6,
-        reference7: referenceDetails.reference7,
-        reference8: referenceDetails.reference8,
-        userId: sessionStorage.getItem("userId")
+        userId: uId,
+        updateReferenceDetails: true,
+        referenceDto: validContacts,
       };
 
       const res = await saveBorrowerReferenceDetails(payload);
-      if (res.status === 200) {
+      if (res.status === 200 || res?.request?.status === 200) {
         Swal.fire({
           icon: "success",
           title: "Success",
-          text: "Given Details Saved Successfully",
-          confirmButtonColor: "#3d5ee1"
+          text: "Given Reference Details Saved Successfully",
+          confirmButtonColor: "#3d5ee1",
         });
+        try {
+          const refRes = await getBorrowerReferenceDetails(uId);
+          if (refRes?.data) {
+            const parsed = normalizeReferenceList(refRes.data);
+            while (parsed.length < 2) {
+              parsed.push({ name: "", referenceNumber: "", address: "", landMark: "" });
+            }
+            setReferenceList(parsed);
+          }
+        } catch {
+          // ignore
+        }
       } else {
         Swal.fire({
           icon: "error",
           title: "Oops...",
           text: res.data?.errorMessage || "Failed to save details. Please try again.",
-          confirmButtonColor: "#3d5ee1"
+          confirmButtonColor: "#3d5ee1",
         });
       }
     } catch (error) {
@@ -440,10 +536,10 @@ const BorrowerProfile = () => {
         icon: "error",
         title: "Oops...",
         text: error.response?.data?.errorMessage || "Failed to save details. Please try again.",
-        confirmButtonColor: "#3d5ee1"
+        confirmButtonColor: "#3d5ee1",
       });
     } finally {
-      setReferenceDetails(prev => ({ ...prev, loading: false }));
+      setReferenceLoading(false);
     }
   };
 
@@ -1886,7 +1982,7 @@ const BorrowerProfile = () => {
   }, []);
 
   useEffect(() => {
-    getUserDetails().then((data) => {
+    getUserDetails().then(async (data) => {
 
       if (data.status == 200) {
       localStorage.setItem("userType", data.data.userDisplayId);
@@ -1963,19 +2059,29 @@ const BorrowerProfile = () => {
         bankCity: data.data.bankAddress,
         moblieNumber: data.data.mobileNumber,
       });
-      if (data.data.referenceDetailsResponseDto) {
-        setReferenceDetails({
-          reference1: data.data.referenceDetailsResponseDto.reference1 || "",
-          reference2: data.data.referenceDetailsResponseDto.reference2 || "",
-          reference3: data.data.referenceDetailsResponseDto.reference3 || "",
-          reference4: data.data.referenceDetailsResponseDto.reference4 || "",
-          reference5: data.data.referenceDetailsResponseDto.reference5 || "",
-          reference6: data.data.referenceDetailsResponseDto.reference6 || "",
-          reference7: data.data.referenceDetailsResponseDto.reference7 || "",
-          reference8: data.data.referenceDetailsResponseDto.reference8 || "",
-          loading: false,
-          errors: {}
-        });
+      const uId = sessionStorage.getItem("userId") || data.data.userId;
+      try {
+        if (uId) {
+          const refRes = await getBorrowerReferenceDetails(uId);
+          if (refRes?.data) {
+            const parsed = normalizeReferenceList(refRes.data);
+            if (parsed.length > 0) {
+              while (parsed.length < 2) {
+                parsed.push({ name: "", referenceNumber: "", address: "", landMark: "" });
+              }
+              setReferenceList(parsed);
+            }
+          }
+        }
+      } catch (refErr) {
+        console.warn("Could not fetch borrowerReferenceDetails via GET endpoint:", refErr);
+        if (data.data.referenceDetailsResponseDto) {
+          const parsed = normalizeReferenceList(data.data.referenceDetailsResponseDto);
+          while (parsed.length < 2) {
+            parsed.push({ name: "", referenceNumber: "", address: "", landMark: "" });
+          }
+          setReferenceList(parsed);
+        }
       }
     }
     else{
@@ -4692,137 +4798,124 @@ console.log("data",data.status);
                   <div id="references_tab" className="tab-pane fade References">
                     <div className="card">
                       <div className="card-body">
-                        <h5 className="card-title mb-4">Reference Details</h5>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <div>
+                            <h5 className="card-title mb-1">Reference Details</h5>
+                            <small className="text-muted">
+                              Any two reference contact numbers are mandatory (<span className="text-danger">*</span>).
+                            </small>
+                          </div>
+                          {referenceList.length < 8 && (
+                            <button
+                              type="button"
+                              className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                              onClick={handleAddReference}
+                            >
+                              <i className="fa-solid fa-plus me-1"></i> Add Another Reference
+                            </button>
+                          )}
+                        </div>
+
                         <form onSubmit={handleReferenceSave}>
-                          <div className="row g-3">
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Father Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference1"
-                                value={referenceDetails.reference1}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Father Number"
-                              />
-                              {referenceDetails.errors.reference1 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference1}</div>
-                              )}
-                            </div>
+                          <div className="d-flex flex-column gap-3 mb-4">
+                            {referenceList.map((ref, idx) => {
+                              const isMandatory = idx < 2;
+                              return (
+                                <div key={idx} className="card border rounded-3 p-3 bg-light-subtle shadow-none">
+                                  <div className="d-flex justify-content-between align-items-center mb-2">
+                                    <div className="d-flex align-items-center gap-2">
+                                      <span className="badge bg-primary rounded-pill px-2 py-1 small">
+                                        #{idx + 1}
+                                      </span>
+                                      <strong className="text-dark">
+                                        Reference Contact {idx + 1}
+                                      </strong>
+                                      {isMandatory ? (
+                                        <span className="badge bg-danger-subtle text-danger border border-danger-subtle small">
+                                          Mandatory Contact
+                                        </span>
+                                      ) : (
+                                        <span className="badge bg-secondary-subtle text-secondary small">
+                                          Additional Contact
+                                        </span>
+                                      )}
+                                    </div>
+                                    {referenceList.length > 2 && (
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-danger btn-sm py-0 px-2"
+                                        onClick={() => handleRemoveReference(idx)}
+                                        title="Remove contact"
+                                      >
+                                        <i className="fa-solid fa-trash-can small me-1"></i> Remove
+                                      </button>
+                                    )}
+                                  </div>
 
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Mother Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference2"
-                                value={referenceDetails.reference2}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Mother Number"
-                              />
-                              {referenceDetails.errors.reference2 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference2}</div>
-                              )}
-                            </div>
+                                  <div className="row g-3">
+                                    <div className="col-12 col-md-6 local-forms">
+                                      <label>Contact Name {isMandatory && <span className="login-danger">*</span>}</label>
+                                      <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="e.g. Reference One"
+                                        value={ref.name}
+                                        onChange={(e) => handleReferenceFieldChange(idx, "name", e.target.value)}
+                                      />
+                                      {referenceErrors[`name_${idx}`] && (
+                                        <div className="text-danger small">{referenceErrors[`name_${idx}`]}</div>
+                                      )}
+                                    </div>
 
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Brother Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference3"
-                                value={referenceDetails.reference3}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Brother Number"
-                              />
-                              {referenceDetails.errors.reference3 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference3}</div>
-                              )}
-                            </div>
+                                    <div className="col-12 col-md-6 local-forms">
+                                      <label>Mobile Number {isMandatory && <span className="login-danger">*</span>}</label>
+                                      <input
+                                        type="text"
+                                        maxLength={10}
+                                        className="form-control"
+                                        placeholder="10-digit mobile number"
+                                        value={ref.referenceNumber}
+                                        onChange={(e) => handleReferenceFieldChange(idx, "referenceNumber", e.target.value)}
+                                      />
+                                      {referenceErrors[`mobile_${idx}`] && (
+                                        <div className="text-danger small">{referenceErrors[`mobile_${idx}`]}</div>
+                                      )}
+                                    </div>
 
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Sister Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference4"
-                                value={referenceDetails.reference4}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Sister Number"
-                              />
-                              {referenceDetails.errors.reference4 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference4}</div>
-                              )}
-                            </div>
+                                    <div className="col-12 col-md-6 local-forms">
+                                      <label>Address</label>
+                                      <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="e.g. 12 MG Road, Bangalore"
+                                        value={ref.address}
+                                        onChange={(e) => handleReferenceFieldChange(idx, "address", e.target.value)}
+                                      />
+                                    </div>
 
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Wife Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference5"
-                                value={referenceDetails.reference5}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Wife Number"
-                              />
-                              {referenceDetails.errors.reference5 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference5}</div>
-                              )}
-                            </div>
-
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>First Friend Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference6"
-                                value={referenceDetails.reference6}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter First Friend Number"
-                              />
-                              {referenceDetails.errors.reference6 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference6}</div>
-                              )}
-                            </div>
-
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Second Friend Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference7"
-                                value={referenceDetails.reference7}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Second Friend Number"
-                              />
-                              {referenceDetails.errors.reference7 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference7}</div>
-                              )}
-                            </div>
-
-                            <div className="form-group col-12 col-md-4 local-forms mb-3">
-                              <label>Third Friend Mobile Number <span className="login-danger">*</span></label>
-                              <input
-                                type="text"
-                                className="form-control"
-                                name="reference8"
-                                value={referenceDetails.reference8}
-                                onChange={handleReferenceChange}
-                                placeholder="Enter Third Friend Number"
-                              />
-                              {referenceDetails.errors.reference8 && (
-                                <div className="text-danger small">{referenceDetails.errors.reference8}</div>
-                              )}
-                            </div>
+                                    <div className="col-12 col-md-6 local-forms">
+                                      <label>Landmark</label>
+                                      <input
+                                        type="text"
+                                        className="form-control"
+                                        placeholder="e.g. Near metro station"
+                                        value={ref.landMark}
+                                        onChange={(e) => handleReferenceFieldChange(idx, "landMark", e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
 
                           <div className="text-start mt-3">
                             <button
                               type="submit"
                               className="btn btn-primary"
-                              disabled={referenceDetails.loading}
+                              disabled={referenceLoading}
                             >
-                              {referenceDetails.loading ? "Saving..." : "Save Reference Details"}
+                              {referenceLoading ? "Saving..." : "Save Reference Details"}
                             </button>
                           </div>
                         </form>

@@ -4317,6 +4317,13 @@ export const saveBorrowerReferenceDetails = (payload) =>
     headers: { accessToken: getToken(), "Content-Type": "application/json" },
   });
 
+export const getBorrowerReferenceDetails = (userId) => {
+  const uId = userId || getUserId();
+  return axios.get(`${API_BASE_URL}${uId}/borrowerReferenceDetails`, {
+    headers: { accessToken: getToken() },
+  });
+};
+
 export const lenderBorrowerEsign = async (loanId, aadharNumber, assignmentId, redirectUrl) => {
   const token = getToken();
   const userId = getUserId();

@@ -16,6 +16,7 @@ import {
   loadlendernomineeDetails,
   savenomineeDeatailsApi,
   saveBorrowerReferenceDetails,
+  getBorrowerReferenceDetails,
   uploadkyc,
   getuploadCredit,
   borrowerSecureInfo,
@@ -250,17 +251,11 @@ const Profile = () => {
     nomineecity: "",
   });
 
-  // Reference Details State (1 to 8)
-  const [references, setReferences] = useState({
-    reference1: "",
-    reference2: "",
-    reference3: "",
-    reference4: "",
-    reference5: "",
-    reference6: "",
-    reference7: "",
-    reference8: "",
-  });
+  // Reference Contacts State (minimum 2 mandatory contacts)
+  const [referenceList, setReferenceList] = useState([
+    { name: "", referenceNumber: "", address: "", landMark: "" },
+    { name: "", referenceNumber: "", address: "", landMark: "" },
+  ]);
 
   // Secure Passwords State
   const [secureInfo, setSecureInfo] = useState({
@@ -416,19 +411,30 @@ const Profile = () => {
           setPanVerificationStatus("PAN card verified successfully!");
         }
 
-        // Set references
-        if (d.referenceDetailsResponseDto) {
-          const rDto = d.referenceDetailsResponseDto;
-          setReferences({
-            reference1: rDto.reference1 || "",
-            reference2: rDto.reference2 || "",
-            reference3: rDto.reference3 || "",
-            reference4: rDto.reference4 || "",
-            reference5: rDto.reference5 || "",
-            reference6: rDto.reference6 || "",
-            reference7: rDto.reference7 || "",
-            reference8: rDto.reference8 || "",
-          });
+        // Set references via getBorrowerReferenceDetails API
+        try {
+          const uId = d.userId || sessionStorage.getItem("userId");
+          if (uId) {
+            const refRes = await getBorrowerReferenceDetails(uId);
+            if (refRes?.data) {
+              const parsed = normalizeReferenceList(refRes.data);
+              if (parsed.length > 0) {
+                while (parsed.length < 2) {
+                  parsed.push({ name: "", referenceNumber: "", address: "", landMark: "" });
+                }
+                setReferenceList(parsed);
+              }
+            }
+          }
+        } catch (refErr) {
+          console.warn("Could not fetch borrower reference details via GET API:", refErr);
+          if (d.referenceDetailsResponseDto) {
+            const parsed = normalizeReferenceList(d.referenceDetailsResponseDto);
+            while (parsed.length < 2) {
+              parsed.push({ name: "", referenceNumber: "", address: "", landMark: "" });
+            }
+            setReferenceList(parsed);
+          }
         }
       }
         console.log("Loaded personal profile data:", userRes.data);
@@ -783,44 +789,121 @@ const validateNomineeDetails = (nominee) => {
   return { valid: true };
 };
 
-const validateReferenceDetails = (references, borrowerMobile = "") => {
-  const filledReferences = Object.entries(references || {})
-    .filter(([key, val]) => key.startsWith("reference") && val && String(val).trim() !== "")
-    .map(([key, val]) => String(val).trim());
-
-  if (filledReferences.length < 2) {
-    return { valid: false, message: "At least 2 reference contacts are required." };
+const normalizeReferenceList = (raw) => {
+  if (!raw) return [];
+  let list = [];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (Array.isArray(raw.referenceDto)) {
+    list = raw.referenceDto;
+  } else if (Array.isArray(raw.referenceDetailsResponseDto)) {
+    list = raw.referenceDetailsResponseDto;
+  } else if (Array.isArray(raw.references)) {
+    list = raw.references;
+  } else if (typeof raw === "object") {
+    const legacyRefs = [];
+    for (let i = 1; i <= 8; i++) {
+      const val = raw[`reference${i}`];
+      if (val && String(val).trim()) {
+        const str = String(val).trim();
+        const phoneMatch = str.match(/[6-9]\d{9}/);
+        const phone = phoneMatch ? phoneMatch[0] : "";
+        let name = str.replace(/[6-9]\d{9}/, "").replace(/[-–()]/g, "").trim();
+        if (!name) name = `Reference ${i}`;
+        legacyRefs.push({
+          name,
+          referenceNumber: phone || str,
+          address: "",
+          landMark: "",
+        });
+      }
+    }
+    if (legacyRefs.length > 0) {
+      list = legacyRefs;
+    }
   }
 
-  const mobileSet = new Set();
-
-  for (let i = 0; i < filledReferences.length; i++) {
-    const refStr = filledReferences[i];
-    const match = refStr.match(/[6-9]\d{9}/);
-    if (!match) {
-      return {
-        valid: false,
-        message: `Reference contact ${i + 1} ("${refStr}") must include a valid 10-digit mobile number starting with 6-9.`,
-      };
-    }
-    const refMobile = match[0];
-    if (borrowerMobile && refMobile === String(borrowerMobile).trim()) {
-      return {
-        valid: false,
-        message: `Reference mobile number (${refMobile}) cannot be your own registered mobile number.`,
-      };
-    }
-    if (mobileSet.has(refMobile)) {
-      return {
-        valid: false,
-        message: `Duplicate reference mobile number detected: ${refMobile}. Each reference contact must be unique.`,
-      };
-    }
-    mobileSet.add(refMobile);
-  }
-
-  return { valid: true };
+  return list.map((item) => ({
+    name: item.name || item.referenceName || "",
+    referenceNumber: (item.referenceNumber || item.mobileNumber || item.number || "")
+      .toString()
+      .replace(/\D/g, "")
+      .slice(0, 10),
+    address: item.address || "",
+    landMark: item.landMark || item.landmark || "",
+  }));
 };
+
+const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
+  if (!Array.isArray(referenceList)) {
+    return { valid: false, message: "Invalid reference details provided." };
+  }
+
+  // Filter entries that have any field filled
+  const filledEntries = referenceList.filter(
+    (item) =>
+      (item.name && item.name.trim() !== "") ||
+      (item.referenceNumber && item.referenceNumber.trim() !== "") ||
+      (item.address && item.address.trim() !== "") ||
+      (item.landMark && item.landMark.trim() !== "")
+  );
+
+  if (filledEntries.length < 2) {
+    return {
+      valid: false,
+      message: "At least 2 reference contacts with valid 10-digit mobile numbers are mandatory.",
+    };
+  }
+
+  const validContacts = [];
+  const mobileSet = new Set();
+  const cleanBorrowerMobile = String(borrowerMobile || "").replace(/\D/g, "");
+
+  for (let i = 0; i < filledEntries.length; i++) {
+    const item = filledEntries[i];
+    const cleanNum = String(item.referenceNumber || "").replace(/\D/g, "");
+    const cleanName = String(item.name || "").trim();
+
+    if (!cleanName) {
+      return {
+        valid: false,
+        message: `Please enter a name for Reference Contact ${i + 1}.`,
+      };
+    }
+
+    if (!cleanNum || cleanNum.length !== 10 || !/^[6-9]\d{9}$/.test(cleanNum)) {
+      return {
+        valid: false,
+        message: `Reference Contact ${i + 1} (${cleanName}) must have a valid 10-digit mobile number starting with 6-9.`,
+      };
+    }
+
+    if (cleanBorrowerMobile && cleanNum === cleanBorrowerMobile) {
+      return {
+        valid: false,
+        message: `Reference mobile number (${cleanNum}) cannot be your own registered mobile number.`,
+      };
+    }
+
+    if (mobileSet.has(cleanNum)) {
+      return {
+        valid: false,
+        message: `Duplicate reference mobile number detected: ${cleanNum}. Each reference contact must be unique.`,
+      };
+    }
+
+    mobileSet.add(cleanNum);
+    validContacts.push({
+      referenceNumber: cleanNum,
+      name: cleanName,
+      address: String(item.address || "").trim(),
+      landMark: String(item.landMark || "").trim(),
+    });
+  }
+
+  return { valid: true, sanitizedDto: validContacts };
+};
+
 
   const [localityOptions, setLocalityOptions] = useState([]);
   const [cityOptions, setCityOptions] = useState([]);
@@ -1106,9 +1189,34 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
     setNominee((prev) => ({ ...prev, [name]: sanitized }));
   };
 
-  const handleReferenceInput = (e) => {
-    const { name, value } = e.target;
-    setReferences((prev) => ({ ...prev, [name]: value }));
+  const handleReferenceChange = (index, field, value) => {
+    setReferenceList((prev) => {
+      const updated = [...prev];
+      let sanitizedVal = value;
+      if (field === "referenceNumber") {
+        sanitizedVal = value.replace(/\D/g, "").slice(0, 10);
+      }
+      updated[index] = { ...updated[index], [field]: sanitizedVal };
+      return updated;
+    });
+  };
+
+  const handleAddReference = () => {
+    setReferenceList((prev) => [
+      ...prev,
+      { name: "", referenceNumber: "", address: "", landMark: "" },
+    ]);
+  };
+
+  const handleRemoveReference = (index) => {
+    setReferenceList((prev) => {
+      if (prev.length <= 2) {
+        const updated = [...prev];
+        updated[index] = { name: "", referenceNumber: "", address: "", landMark: "" };
+        return updated;
+      }
+      return prev.filter((_, idx) => idx !== index);
+    });
   };
 
   const handleSecureInput = (e) => {
@@ -1851,7 +1959,7 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
 
   // Save reference details
   const saveReferenceDetails = async () => {
-    const valRes = validateReferenceDetails(references, profileData.mobileNumber);
+    const valRes = validateReferenceDetails(referenceList, profileData.mobileNumber);
     if (!valRes.valid) {
       Swal.fire("Validation Error", valRes.message, "warning");
       return;
@@ -1859,26 +1967,37 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
 
     setSubmitting(true);
     try {
+      const currentUserId = Number(profileData.userId || sessionStorage.getItem("userId"));
       const payload = {
-        reference1: references.reference1,
-        reference2: references.reference2,
-        reference3: references.reference3,
-        reference4: references.reference4,
-        reference5: references.reference5,
-        reference6: references.reference6,
-        reference7: references.reference7,
-        reference8: references.reference8,
-        userId: profileData.userId,
+        userId: currentUserId,
+        updateReferenceDetails: true,
+        referenceDto: valRes.sanitizedDto,
       };
       const res = await saveBorrowerReferenceDetails(payload);
       if (res?.status === 200 || res?.request?.status === 200) {
         Swal.fire("Success", "Reference contacts updated successfully.", "success");
         setEditSection(null);
+        // Refresh reference details from GET API
+        try {
+          const refRes = await getBorrowerReferenceDetails(currentUserId);
+          if (refRes?.data) {
+            const parsed = normalizeReferenceList(refRes.data);
+            while (parsed.length < 2) {
+              parsed.push({ name: "", referenceNumber: "", address: "", landMark: "" });
+            }
+            setReferenceList(parsed);
+          }
+        } catch {
+          // ignore
+        }
       } else {
-        Swal.fire("Save Failure", "Unable to update reference details.", "error");
+        const msg = res?.data?.errorMessage || "Unable to update reference details.";
+        Swal.fire("Save Failure", msg, "error");
       }
-    } catch {
-      Swal.fire("Save Failure", "Unable to update reference details.", "error");
+    } catch (err) {
+      console.error("Error saving reference details:", err);
+      const msg = err?.response?.data?.errorMessage || "Unable to update reference details.";
+      Swal.fire("Save Failure", msg, "error");
     } finally {
       setSubmitting(false);
     }
@@ -2279,7 +2398,9 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
                           <div className="shortcut-box" onClick={() => setEditSection("references")} style={{ cursor: "pointer" }}>
                             <span className="text-muted d-block small mb-1">References</span>
                             <span className="fw-bold text-primary small d-flex align-items-center gap-1">
-                              Manage Contacts <i className="fa-solid fa-arrow-right-long"></i>
+                              {referenceList.filter(r => r.name?.trim() && r.referenceNumber?.trim()).length >= 2
+                                ? `${referenceList.filter(r => r.name?.trim() && r.referenceNumber?.trim()).length} Added`
+                                : "Add (Min 2)"} <i className="fa-solid fa-arrow-right-long"></i>
                             </span>
                           </div>
                         </div>
@@ -2949,24 +3070,123 @@ const validateReferenceDetails = (references, borrowerMobile = "") => {
       {/* 4. REFERENCES EDIT MODAL */}
       <Modal show={editSection === "references"} onHide={() => setEditSection(null)} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title className="fw-bold text-dark h5">Reference Contacts</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="p-4">
-          <div className="row g-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
-              <div className="col-md-6" key={num}>
-                <label className="form-label text-muted small">Reference Contact {num}</label>
-                <input 
-                  type="text" 
-                  className="form-control rounded-3" 
-                  name={`reference${num}`} 
-                  placeholder="Name - Mobile Number" 
-                  value={references[`reference${num}`]} 
-                  onChange={handleReferenceInput} 
-                />
-              </div>
-            ))}
+          <div>
+            <Modal.Title className="fw-bold text-dark h5 mb-0">Emergency Reference Contacts</Modal.Title>
+            <small className="text-muted">
+              Any two reference contact numbers are mandatory (<span className="text-danger">*</span>).
+            </small>
           </div>
+        </Modal.Header>
+        <Modal.Body className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
+          <div className="alert alert-light border d-flex align-items-center gap-2 py-2 px-3 mb-4 rounded-3 text-secondary small">
+            <i className="fa-solid fa-circle-info text-primary fs-6"></i>
+            <span>
+              Please provide at least <strong>2 valid reference contacts</strong> with their name, 10-digit mobile number, address, and landmark.
+            </span>
+          </div>
+
+          <div className="d-flex flex-column gap-3">
+            {referenceList.map((ref, index) => {
+              const isMandatory = index < 2;
+              return (
+                <div key={index} className="card border rounded-3 p-3 bg-light-subtle shadow-none">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="badge bg-primary rounded-pill px-2 py-1 small">
+                        #{index + 1}
+                      </span>
+                      <strong className="text-dark">
+                        Reference Contact {index + 1}
+                      </strong>
+                      {isMandatory ? (
+                        <span className="badge bg-danger-subtle text-danger border border-danger-subtle small">
+                          Mandatory Contact
+                        </span>
+                      ) : (
+                        <span className="badge bg-secondary-subtle text-secondary small">
+                          Additional Contact
+                        </span>
+                      )}
+                    </div>
+                    {referenceList.length > 2 && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger btn-sm py-0 px-2"
+                        onClick={() => handleRemoveReference(index)}
+                        title="Remove contact"
+                      >
+                        <i className="fa-solid fa-trash-can small me-1"></i> Remove
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label text-muted small mb-1">
+                        Contact Name {isMandatory && <span className="text-danger">*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control rounded-3"
+                        placeholder="e.g. Reference One"
+                        value={ref.name}
+                        onChange={(e) => handleReferenceChange(index, "name", e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label text-muted small mb-1">
+                        Mobile Number {isMandatory && <span className="text-danger">*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={10}
+                        className="form-control rounded-3"
+                        placeholder="10-digit mobile number"
+                        value={ref.referenceNumber}
+                        onChange={(e) => handleReferenceChange(index, "referenceNumber", e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label text-muted small mb-1">
+                        Address
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control rounded-3"
+                        placeholder="e.g. 12 MG Road, Bangalore"
+                        value={ref.address}
+                        onChange={(e) => handleReferenceChange(index, "address", e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label text-muted small mb-1">
+                        Landmark
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control rounded-3"
+                        placeholder="e.g. Near metro station"
+                        value={ref.landMark}
+                        onChange={(e) => handleReferenceChange(index, "landMark", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {referenceList.length < 8 && (
+            <div className="mt-3 text-end">
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                onClick={handleAddReference}
+              >
+                <i className="fa-solid fa-plus me-1"></i> Add Another Reference
+              </button>
+            </div>
+          )}
         </Modal.Body>
         <Modal.Footer>
           <button className="oxy-btn-secondary" onClick={() => setEditSection(null)}>Cancel</button>

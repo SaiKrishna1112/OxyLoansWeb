@@ -185,11 +185,25 @@ export const verifyBureauAndIdentity = async (formData) => {
 export const submitEmergencyReferences = async (ref1, ref2) => {
   try {
     const payload = {
-      reference1: `${ref1.name} - ${ref1.mobile} (${ref1.relation})`,
-      reference2: `${ref2.name} - ${ref2.mobile} (${ref2.relation})`,
+      userId: Number(sessionStorage.getItem("userId")),
+      updateReferenceDetails: true,
+      referenceDto: [
+        {
+          referenceNumber: (ref1.mobile || ref1.referenceNumber || "").toString().replace(/\D/g, ""),
+          name: ref1.name || "",
+          address: ref1.address || "",
+          landMark: ref1.landMark || ref1.landmark || ref1.relation || "",
+        },
+        {
+          referenceNumber: (ref2.mobile || ref2.referenceNumber || "").toString().replace(/\D/g, ""),
+          name: ref2.name || "",
+          address: ref2.address || "",
+          landMark: ref2.landMark || ref2.landmark || ref2.relation || "",
+        },
+      ],
     };
     const res = await saveBorrowerReferenceDetails(payload);
-    if (res?.status === 200) {
+    if (res?.status === 200 || res?.request?.status === 200) {
       return { success: true, isMock: false };
     }
   } catch (e) {
