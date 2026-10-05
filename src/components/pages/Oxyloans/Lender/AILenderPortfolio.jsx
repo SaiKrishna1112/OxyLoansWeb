@@ -3465,19 +3465,28 @@ const LenderPortfolioDashboard = () => {
                                   <td style={{ position: "sticky", left: 420, zIndex: 2, background: rowBg, padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f0f0f0", borderRight: "3px solid #bdbdbd", color: "#595959", whiteSpace: "nowrap" }}>{deal.roi ? `${deal.roi.toFixed(2)}%` : "—"}</td>
                                   {cols.map(c => {
                                     const bucket = deal.payments?.[c];
+                                    if (!bucket) return <td key={c} style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap" }}><span style={{ color: "#e8e8e8" }}>—</span></td>;
+                                    const INTEREST_TYPES = new Set(['LENDERINTEREST','PRINCIPALINTEREST','WITHDRAWALINTEREST']);
+                                    const PRINCIPAL_TYPES = new Set(['LENDERPRINCIPAL','LENDERPRICIPAL','LENDERWITHDRAW']);
+                                    const intAmt = (bucket.transactions || []).filter(t => INTEREST_TYPES.has(t.type)).reduce((s, t) => s + (t.amount || 0), 0);
+                                    const prinAmt = (bucket.transactions || []).filter(t => PRINCIPAL_TYPES.has(t.type)).reduce((s, t) => s + (t.amount || 0), 0);
+                                    const hasBoth = intAmt > 0 && prinAmt > 0;
                                     return (
                                       <td key={c} style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid #f5f5f5", whiteSpace: "nowrap" }}>
-                                        {bucket ? (
-                                          <button
-                                            onClick={() => setTimelinePopup({ dealName: deal.dealName || `Deal #${deal.dealId}`, col: c, bucket })}
-                                            style={{ background: "none", border: "none", cursor: "pointer", color: "#52c41a", fontWeight: 700, fontSize: 12, padding: 0, textDecoration: "underline dotted" }}
-                                            title="Click for transaction details"
-                                          >
-                                            ₹{fmt(bucket.total)}
-                                          </button>
-                                        ) : (
-                                          <span style={{ color: "#e8e8e8" }}>—</span>
-                                        )}
+                                        <button
+                                          onClick={() => setTimelinePopup({ dealName: deal.dealName || `Deal #${deal.dealId}`, col: c, bucket })}
+                                          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "right" }}
+                                          title="Click for transaction details"
+                                        >
+                                          {hasBoth ? (
+                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
+                                              <span style={{ color: "#52c41a", fontWeight: 700, fontSize: 12, textDecoration: "underline dotted" }}>₹{fmt(intAmt)}</span>
+                                              <span style={{ color: "#1890ff", fontWeight: 700, fontSize: 11, textDecoration: "underline dotted" }}>+₹{fmt(prinAmt)} P</span>
+                                            </div>
+                                          ) : (
+                                            <span style={{ color: prinAmt > 0 ? "#1890ff" : "#52c41a", fontWeight: 700, fontSize: 12, textDecoration: "underline dotted" }}>₹{fmt(bucket.total)}</span>
+                                          )}
+                                        </button>
                                       </td>
                                     );
                                   })}
