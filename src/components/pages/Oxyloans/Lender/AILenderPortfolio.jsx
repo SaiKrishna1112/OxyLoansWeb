@@ -7,6 +7,7 @@ import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
 import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
 import { saveAs } from "file-saver";
+import * as XLSX from "xlsx";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 
@@ -3338,29 +3339,66 @@ const LenderPortfolioDashboard = () => {
                           );
                         })()}
 
-                        {/* Download CSV button */}
+                        {/* Download Excel button */}
                         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
                           <button
                             onClick={() => {
-                              const headers = ["Deal ID", "Deal", "Amount", "Invested On", "ROI", ...cols];
-                              const rows = deals.map(d => [
-                                d.dealId,
-                                `"${(d.dealName || "").replace(/"/g, '""')}"`,
-                                d.amount,
-                                d.investmentDate || "",
-                                d.roi ? d.roi.toFixed(2) + "%" : "",
-                                ...cols.map(c => d.payments?.[c]?.total || "")
-                              ]);
-                              const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-                              const blob = new Blob([csv], { type: "text/csv" });
+                              const INTEREST_TYPES = new Set(['LENDERINTEREST','PRINCIPALINTEREST','WITHDRAWALINTEREST']);
+                              const PRINCIPAL_TYPES = new Set(['LENDERPRINCIPAL','LENDERPRICIPAL','LENDERWITHDRAW']);
+                              const fmtN = n => n ? n.toLocaleString('en-IN') : '';
+                              const headerCols = ["Deal ID", "Deal", "Status", "Amount (₹)", "Invested On", "ROI (%)", ...cols];
+                              const headerCells = headerCols.map(h =>
+                                `<td style="background:#1a6b3c;color:#fff;font-weight:bold;padding:6px 10px;border:1px solid #145a32;white-space:nowrap;">${h}</td>`
+                              ).join('');
+                              const dataRows = deals.map(d => {
+                                const isClosed = !!d.closed;
+                                const rowBg = isClosed ? '#e6f7ff' : '#f6ffed';
+                                const statusColor = isClosed ? '#1890ff' : '#52c41a';
+                                const baseCells = [
+                                  `<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:center;">${d.dealId}</td>`,
+                                  `<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;">${d.dealName || `Deal #${d.dealId}`}</td>`,
+                                  `<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;color:${statusColor};font-weight:bold;text-align:center;">${isClosed ? 'Closed' : 'Active'}</td>`,
+                                  `<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;">${fmtN(d.amount)}</td>`,
+                                  `<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:center;">${d.investmentDate || ''}</td>`,
+                                  `<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:center;">${d.roi ? d.roi.toFixed(2) : ''}</td>`
+                                ];
+                                cols.forEach(c => {
+                                  const b = d.payments?.[c];
+                                  if (!b) { baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;"></td>`); return; }
+                                  const intAmt = (b.transactions||[]).filter(t=>INTEREST_TYPES.has(t.type)).reduce((s,t)=>s+(t.amount||0),0);
+                                  const prinAmt = (b.transactions||[]).filter(t=>PRINCIPAL_TYPES.has(t.type)).reduce((s,t)=>s+(t.amount||0),0);
+                                  if (intAmt > 0 && prinAmt > 0) {
+                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;"><span style="color:#389e0d;font-weight:bold;">₹${fmtN(intAmt)}</span><br/><span style="color:#1890ff;">+₹${fmtN(prinAmt)} P</span></td>`);
+                                  } else if (prinAmt > 0) {
+                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;color:#1890ff;font-weight:bold;">₹${fmtN(prinAmt)}</td>`);
+                                  } else {
+                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;color:#389e0d;">₹${fmtN(b.total)}</td>`);
+                                  }
+                                });
+                                return `<tr>${baseCells.join('')}</tr>`;
+                              });
+                              const totalsData = cols.map(c => { let t=0; deals.forEach(d=>{t+=d.payments?.[c]?.total||0;}); return t; });
+                              const totalsCells = [
+                                `<td colspan="3" style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;font-weight:bold;color:#d46b08;">TOTAL</td>`,
+                                `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:#d46b08;">${fmtN(deals.reduce((s,d)=>s+(d.amount||0),0))}</td>`,
+                                `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;"></td>`,
+                                `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;"></td>`,
+                                ...totalsData.map(t => `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:#d46b08;">${t ? '₹'+fmtN(t) : ''}</td>`)
+                              ];
+                              const html = `<html><head><meta charset="UTF-8"></head><body>
+                                <table border="1" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;">
+                                  <thead><tr>${headerCells}</tr></thead>
+                                  <tbody>${dataRows.join('')}<tr>${totalsCells.join('')}</tr></tbody>
+                                </table></body></html>`;
+                              const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
                               const url = URL.createObjectURL(blob);
-                              const a = document.createElement("a");
-                              a.href = url; a.download = "deal-timeline.csv"; a.click();
+                              const a = document.createElement('a');
+                              a.href = url; a.download = 'deal-timeline.xls'; a.click();
                               URL.revokeObjectURL(url);
                             }}
-                            style={{ fontSize: 12, padding: "5px 14px", borderRadius: 6, border: "1px solid #d9d9d9", background: "#fff", cursor: "pointer", color: "#595959", display: "flex", alignItems: "center", gap: 5 }}
+                            style={{ fontSize: 12, padding: "5px 14px", borderRadius: 6, border: "1px solid #52c41a", background: "#f6ffed", cursor: "pointer", color: "#389e0d", display: "flex", alignItems: "center", gap: 5, fontWeight: 600 }}
                           >
-                            ⬇ Download CSV
+                            ⬇ Download Excel
                           </button>
                         </div>
                         {/* Scrollable pivot table — freeze panes: Deal(220)+Amount(100)+Date(100)+ROI(70) all sticky */}
