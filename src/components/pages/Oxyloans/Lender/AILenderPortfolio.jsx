@@ -3338,8 +3338,33 @@ const LenderPortfolioDashboard = () => {
                           );
                         })()}
 
+                        {/* Download CSV button */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+                          <button
+                            onClick={() => {
+                              const headers = ["Deal ID", "Deal", "Amount", "Invested On", "ROI", ...cols];
+                              const rows = deals.map(d => [
+                                d.dealId,
+                                `"${(d.dealName || "").replace(/"/g, '""')}"`,
+                                d.amount,
+                                d.investmentDate || "",
+                                d.roi ? d.roi.toFixed(2) + "%" : "",
+                                ...cols.map(c => d.payments?.[c]?.total || "")
+                              ]);
+                              const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+                              const blob = new Blob([csv], { type: "text/csv" });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url; a.download = "deal-timeline.csv"; a.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                            style={{ fontSize: 12, padding: "5px 14px", borderRadius: 6, border: "1px solid #d9d9d9", background: "#fff", cursor: "pointer", color: "#595959", display: "flex", alignItems: "center", gap: 5 }}
+                          >
+                            ⬇ Download CSV
+                          </button>
+                        </div>
                         {/* Scrollable pivot table — freeze panes: Deal(220)+Amount(100)+Date(100)+ROI(70) all sticky */}
-                        <div style={{ overflowX: "auto" }}>
+                        <div style={{ overflowX: "auto", maxHeight: 520, overflowY: "auto" }}>
                           <table style={{ borderCollapse: "separate", borderSpacing: 0, fontSize: 12, tableLayout: "fixed", minWidth: 490 + cols.length * 90 }}>
                             <colgroup>
                               <col style={{ width: 220 }} />
@@ -3348,14 +3373,14 @@ const LenderPortfolioDashboard = () => {
                               <col style={{ width: 70 }} />
                               {cols.map(c => <col key={c} style={{ width: 90 }} />)}
                             </colgroup>
-                            <thead>
+                            <thead style={{ position: "sticky", top: 0, zIndex: 4 }}>
                               <tr>
-                                <th style={{ position: "sticky", left: 0,   zIndex: 3, background: "#fafafa", padding: "8px 12px", textAlign: "left",  borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 700, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Deal</th>
-                                <th style={{ position: "sticky", left: 220, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c" }}>Amount</th>
-                                <th style={{ position: "sticky", left: 320, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c", whiteSpace: "nowrap" }}>Invested On</th>
-                                <th style={{ position: "sticky", left: 420, zIndex: 3, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "3px solid #bdbdbd", fontWeight: 600, color: "#8c8c8c" }}>ROI</th>
+                                <th style={{ position: "sticky", left: 0,   top: 0, zIndex: 5, background: "#fafafa", padding: "8px 12px", textAlign: "left",  borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 700, color: "#262626", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Deal</th>
+                                <th style={{ position: "sticky", left: 220, top: 0, zIndex: 5, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c" }}>Amount</th>
+                                <th style={{ position: "sticky", left: 320, top: 0, zIndex: 5, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #e0e0e0", fontWeight: 600, color: "#8c8c8c", whiteSpace: "nowrap" }}>Invested On</th>
+                                <th style={{ position: "sticky", left: 420, top: 0, zIndex: 5, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "3px solid #bdbdbd", fontWeight: 600, color: "#8c8c8c" }}>ROI</th>
                                 {cols.map(c => (
-                                  <th key={c} style={{ background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #f0f0f0", fontWeight: 600, color: "#595959" }}>{c}</th>
+                                  <th key={c} style={{ position: "sticky", top: 0, zIndex: 4, background: "#fafafa", padding: "8px 10px", textAlign: "right", borderBottom: "2px solid #e0e0e0", borderRight: "1px solid #f0f0f0", fontWeight: 600, color: "#595959" }}>{c}</th>
                                 ))}
                               </tr>
                             </thead>
@@ -3369,6 +3394,7 @@ const LenderPortfolioDashboard = () => {
                                   onMouseLeave={e => e.currentTarget.querySelectorAll("td").forEach(td => td.style.background = rowBg)}
                                 >
                                   <td style={{ position: "sticky", left: 0,   zIndex: 2, background: rowBg, padding: "7px 12px", borderBottom: "1px solid #f0f0f0", borderRight: "1px solid #e0e0e0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <div style={{ fontSize: 10, color: "#1890ff", fontWeight: 700, marginBottom: 1 }}>#{deal.dealId}</div>
                                     <span style={{ fontWeight: 600, color: "#262626" }}>{deal.dealName || `Deal #${deal.dealId}`}</span>
                                     {deal.closed && <span style={{ marginLeft: 6, fontSize: 10, color: "#52c41a", background: "#f6ffed", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>Closed</span>}
                                     <div style={{ fontSize: 10, color: "#8c8c8c" }}>{deal.returnsType}</div>
