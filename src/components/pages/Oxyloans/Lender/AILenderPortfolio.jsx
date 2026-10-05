@@ -3363,8 +3363,9 @@ const LenderPortfolioDashboard = () => {
                             onClick={() => {
                               const INTEREST_TYPES = new Set(['LENDERINTEREST','PRINCIPALINTEREST','WITHDRAWALINTEREST']);
                               const PRINCIPAL_TYPES = new Set(['LENDERPRINCIPAL','LENDERPRICIPAL','LENDERWITHDRAW']);
+                              const RS = '&#8377;'; // ₹ as HTML entity — avoids Excel encoding garble
                               const fmtN = n => n ? n.toLocaleString('en-IN') : '';
-                              const headerCols = ["Deal ID", "Deal", "Status", "Amount (₹)", "Invested On", "ROI (%)", ...cols];
+                              const headerCols = ["Deal ID", "Deal", "Status", `Amount (${RS})`, "Invested On", "ROI (%)", ...cols];
                               const headerCells = headerCols.map(h =>
                                 `<td style="background:#1a6b3c;color:#fff;font-weight:bold;padding:6px 10px;border:1px solid #145a32;white-space:nowrap;">${h}</td>`
                               ).join('');
@@ -3386,11 +3387,11 @@ const LenderPortfolioDashboard = () => {
                                   const intAmt = (b.transactions||[]).filter(t=>INTEREST_TYPES.has(t.type)).reduce((s,t)=>s+(t.amount||0),0);
                                   const prinAmt = (b.transactions||[]).filter(t=>PRINCIPAL_TYPES.has(t.type)).reduce((s,t)=>s+(t.amount||0),0);
                                   if (intAmt > 0 && prinAmt > 0) {
-                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;"><span style="color:#389e0d;font-weight:bold;">₹${fmtN(intAmt)}</span><br/><span style="color:#1890ff;">+₹${fmtN(prinAmt)} P</span></td>`);
+                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;"><span style="color:#389e0d;font-weight:bold;">${RS}${fmtN(intAmt)}</span><br/><span style="color:#1890ff;">+${RS}${fmtN(prinAmt)} P</span></td>`);
                                   } else if (prinAmt > 0) {
-                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;color:#1890ff;font-weight:bold;">₹${fmtN(prinAmt)}</td>`);
+                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;color:#1890ff;font-weight:bold;">${RS}${fmtN(prinAmt)}</td>`);
                                   } else {
-                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;color:#389e0d;">₹${fmtN(b.total)}</td>`);
+                                    baseCells.push(`<td style="background:${rowBg};padding:5px 8px;border:1px solid #ddd;text-align:right;color:#389e0d;">${RS}${fmtN(b.total)}</td>`);
                                   }
                                 });
                                 return `<tr>${baseCells.join('')}</tr>`;
@@ -3401,14 +3402,14 @@ const LenderPortfolioDashboard = () => {
                                 `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:#d46b08;">${fmtN(deals.reduce((s,d)=>s+(d.amount||0),0))}</td>`,
                                 `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;"></td>`,
                                 `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;"></td>`,
-                                ...totalsData.map(t => `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:#d46b08;">${t ? '₹'+fmtN(t) : ''}</td>`)
+                                ...totalsData.map(t => `<td style="background:#fff7e6;padding:5px 8px;border:1px solid #ddd;text-align:right;font-weight:bold;color:#d46b08;">${t ? RS+fmtN(t) : ''}</td>`)
                               ];
-                              const html = `<html><head><meta charset="UTF-8"></head><body>
+                              const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Deal Timeline</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml></head><body>
                                 <table border="1" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;">
                                   <thead><tr>${headerCells}</tr></thead>
                                   <tbody>${dataRows.join('')}<tr>${totalsCells.join('')}</tr></tbody>
                                 </table></body></html>`;
-                              const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                              const blob = new Blob(['﻿' + html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
                               const url = URL.createObjectURL(blob);
                               const a = document.createElement('a');
                               a.href = url; a.download = 'deal-timeline.xls'; a.click();
