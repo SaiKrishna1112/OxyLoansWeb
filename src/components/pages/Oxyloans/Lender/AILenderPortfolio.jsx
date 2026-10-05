@@ -2439,9 +2439,16 @@ const LenderPortfolioDashboard = () => {
                                         <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: headerColor, whiteSpace: "nowrap" }}>₹{fmt(d.amount)}</td>
                                         {interestExpanded && (
                                           <td style={{ padding: "8px 12px", textAlign: "center" }}>
-                                            <span style={{ background: d.status === "projected" ? "#fff7e6" : "#f6ffed", color: d.status === "projected" ? "#d46b08" : "#389e0d", border: `1px solid ${d.status === "projected" ? "#ffd591" : "#b7eb8f"}`, borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>
-                                              {d.status === "projected" ? "Projected" : "Paid"}
-                                            </span>
+                                            {d.status === "projected" ? (
+                                              <span style={{ background: "#fff7e6", color: "#d46b08", border: "1px solid #ffd591", borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 600 }}>Projected</span>
+                                            ) : (
+                                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                                {d.scheduledDate && (
+                                                  <div style={{ fontSize: 10, color: "#fa8c16" }}><b>Due:</b> {d.scheduledDate}</div>
+                                                )}
+                                                <div style={{ fontSize: 10, color: "#389e0d" }}><b>Paid:</b> {d.paidDate}</div>
+                                              </div>
+                                            )}
                                           </td>
                                         )}
                                         {dealParticipationExpanded && <td style={{ padding: "8px 12px", fontSize: 12, color: "#595959" }}>{fmtDate(d.startDate)}</td>}
@@ -3319,12 +3326,23 @@ const LenderPortfolioDashboard = () => {
                                 </div>
                                 <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 12 }}>
                                   {(bucket.transactions || []).map((t, i) => (
-                                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: i < bucket.transactions.length - 1 ? "1px dashed #f0f0f0" : "none" }}>
+                                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "8px 0", borderBottom: i < bucket.transactions.length - 1 ? "1px dashed #f0f0f0" : "none" }}>
                                       <div>
                                         <div style={{ fontSize: 13, fontWeight: 600, color: "#262626" }}>₹{fmt(t.amount)}</div>
-                                        <div style={{ fontSize: 11, color: "#8c8c8c" }}>{t.date}</div>
+                                        {t.scheduledDate ? (
+                                          <>
+                                            <div style={{ fontSize: 11, color: "#fa8c16", marginTop: 2 }}>
+                                              <span style={{ fontWeight: 600 }}>Due:</span> {t.scheduledDate}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: "#8c8c8c" }}>
+                                              <span style={{ fontWeight: 600 }}>Paid:</span> {t.date}
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div style={{ fontSize: 11, color: "#8c8c8c" }}>{t.date}</div>
+                                        )}
                                       </div>
-                                      <span style={{ fontSize: 11, color: t.type === "LENDERPRINCIPAL" ? "#1890ff" : t.type === "PRINCIPALINTEREST" ? "#722ed1" : "#52c41a", background: t.type === "LENDERPRINCIPAL" ? "#e6f7ff" : t.type === "PRINCIPALINTEREST" ? "#f9f0ff" : "#f6ffed", borderRadius: 4, padding: "2px 7px", fontWeight: 600 }}>
+                                      <span style={{ fontSize: 11, color: t.type === "LENDERPRINCIPAL" ? "#1890ff" : t.type === "PRINCIPALINTEREST" ? "#722ed1" : "#52c41a", background: t.type === "LENDERPRINCIPAL" ? "#e6f7ff" : t.type === "PRINCIPALINTEREST" ? "#f9f0ff" : "#f6ffed", borderRadius: 4, padding: "2px 7px", fontWeight: 600, marginTop: 2, whiteSpace: "nowrap" }}>
                                         {t.type === "LENDERPRINCIPAL" ? "Principal" : t.type === "PRINCIPALINTEREST" ? "Principal+Interest" : "Interest"}
                                       </span>
                                     </div>
