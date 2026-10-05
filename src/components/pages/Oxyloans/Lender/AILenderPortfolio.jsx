@@ -7,7 +7,6 @@ import Footer from "../../../Footer/Footer";
 import { MARKETPLACE_URL } from "../../../../config";
 import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/afterlogin";
 import { saveAs } from "file-saver";
-import * as XLSX from "xlsx";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
 import { openLenderWelcomeModal } from "./LenderWelcomeModal";
