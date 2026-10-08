@@ -81,8 +81,47 @@ const API_BASE_URL = API_USER_URL;
 //   }
 // );
 
+// Prevents concurrent silent refresh calls
+let isRefreshing = false;
+
+// Silently refresh token when user is active but token is getting old (80% of 30-min TTL = 24 min)
+const SILENT_REFRESH_AFTER_MS = 1440000;
+
 axios.interceptors.response.use(
-  (response) => response,
+  async (response) => {
+    try {
+      const tokenTime = sessionStorage.getItem("tokenTime");
+      const token = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
+      const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+      const path = window.location.pathname;
+      const onAuthPage = path.includes("login") || path.includes("register") || path === "/";
+      if (tokenTime && token && userId && !isRefreshing && !onAuthPage) {
+        const age = Date.now() - parseInt(tokenTime, 10);
+        if (age > SILENT_REFRESH_AFTER_MS) {
+          isRefreshing = true;
+          axios.get(`${API_BASE_URL}${userId}/USER/accessTokenGeneration`, {
+            headers: { accessToken: token }
+          }).then(res => {
+            const newToken = res.headers["accesstoken"] || res.headers["accessToken"];
+            if (newToken) {
+              sessionStorage.setItem("accessToken", newToken);
+              localStorage.setItem("accessToken", newToken);
+            }
+            if (res.data?.tokenGeneratedTime) {
+              sessionStorage.setItem("tokenTime", res.data.tokenGeneratedTime);
+            }
+          }).catch(err => {
+            console.error("Silent token refresh failed", err);
+          }).finally(() => {
+            isRefreshing = false;
+          });
+        }
+      }
+    } catch (e) {
+      // never break the response chain
+    }
+    return response;
+  },
   (error) => {
     if (error?.response?.status === 401) {
       const hasToken = sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken");
