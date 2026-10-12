@@ -58,7 +58,7 @@ export default function LenderUpgradePortal() {
 
   const [currentTier, setCurrentTier] = useState("FREE");
   const [onTrial, setOnTrial] = useState(false);
-  const [trialEndsOn, setTrialEndsOn] = useState("2026-08-01");
+  const [trialEndsOn, setTrialEndsOn] = useState("2026-10-19");
   const [validUntil, setValidUntil] = useState(null);
   const [pendingOrderId, setPendingOrderId] = useState(null);
   const [plansLoading, setPlansLoading] = useState(false);
@@ -318,7 +318,7 @@ export default function LenderUpgradePortal() {
           }}>
             <div>
               <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                🎁 Free PRO trial — ends August 1st
+                🎁 Free PRO trial — ends October 19th
               </div>
               <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 3 }}>
                 Subscribe now and your plan stays valid until <strong>August 1, 2027</strong>
