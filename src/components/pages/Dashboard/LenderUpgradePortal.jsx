@@ -334,7 +334,7 @@ export default function LenderUpgradePortal() {
               >
                 <div>
                   <div style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>
-                    🎁 Free PRO trial — ends August 1st
+                    🎁 Free PRO trial — ends October 19th
                   </div>
                   <div
                     style={{

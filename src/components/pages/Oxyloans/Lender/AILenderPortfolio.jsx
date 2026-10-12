@@ -1477,7 +1477,7 @@ const TierPreviewBanner = ({ activeTier, onSelect, actualTier, onTrial }) => {
               {isPaidPro
                 ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro</strong> — paid &amp; active</>
                 : onTrial
-                ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro (free trial)</strong> — <span style={{ color: "#cf1322", fontWeight: 600 }}>ends Aug 1st</span></>
+                ? <><strong style={{ color: "#722ed1" }}>✦ OXY Pro (free trial)</strong> — <span style={{ color: "#cf1322", fontWeight: 600 }}>ends Oct 19th</span></>
                 : <>Your plan: <strong style={{ color: tierInfo.color }}>{tierInfo.icon} OXY {tierInfo.label}</strong>
                     <span style={{ marginLeft: 8, color: "#722ed1" }}>— upgrade to unlock AI features</span></>
               }
@@ -1816,7 +1816,7 @@ const LenderPortfolioDashboard = () => {
             <>
               {/* ── 0a. TRIAL / UPGRADE BANNER ── */}
               {data?.onTrial ? (
-                /* Free PRO trial — ends Aug 1 */
+                /* Free PRO trial — ends Oct 19 */
                 <div style={{
                   background: "linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%)",
                   borderRadius: 14, padding: "18px 24px", marginBottom: 20,
@@ -1824,7 +1824,7 @@ const LenderPortfolioDashboard = () => {
                 }}>
                   <div>
                     <div style={{ color: "#fff", fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-                      🎁 Free PRO trial ends <strong>August 1st</strong> — Subscribe now to keep your access
+                      🎁 Free PRO trial ends <strong>October 19th</strong> — Subscribe now to keep your access
                     </div>
                     <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 13 }}>
                       OXY Smart ₹500/year &nbsp;|&nbsp; OXY Pro ₹1,000/year &nbsp;·&nbsp; Early subscribers get validity until <strong>August 1, 2027</strong>
