@@ -113,7 +113,12 @@ const Todaydeal = () => {
 
       response.then((data) => {
         console.log(data.data);
-        setRegularRunningDeal(data.data);
+        const deals = data.data;
+        if (!deals || (Array.isArray(deals) && deals.length === 0)) {
+          navigate("/regularRunningDeal");
+          return;
+        }
+        setRegularRunningDeal(deals);
       });
     };
 
