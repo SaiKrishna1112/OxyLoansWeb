@@ -1402,6 +1402,27 @@ export const getAdminAIActiveLenders = async (pageNo = 1, pageSize = 10, filters
   return response.data;
 };
 
+export const getAdminAIWalletLoadedUsers = async (date) => {
+  const response = await axios.get(`${API_BASE_URL}admin/registered-users/wallet-loaded-users`, {
+    headers: adminRegisteredUsersHeaders(),
+    params: { date: date || undefined },
+    timeout: 120000,
+  });
+  return response.data;
+};
+
+export const analyzeAdminAIPayslip = async (file, password = "") => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("fileName", file?.name || "payslip.pdf");
+  if (password) formData.append("password", password);
+  const response = await axios.post(`${API_BASE_URL}payslip/analyze`, formData, {
+    headers: { ...adminRegisteredUsersHeaders(), "Content-Type": "multipart/form-data" },
+    timeout: 180000,
+  });
+  return response.data;
+};
+
 /** Latest first-time / newly participated lenders (default last 12). Optional date or fromDate/toDate. */
 export const getAdminAILatestFirstParticipations = async ({
   date = "",

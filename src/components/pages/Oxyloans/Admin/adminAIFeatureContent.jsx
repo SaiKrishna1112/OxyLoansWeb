@@ -27,6 +27,8 @@ import AdminBorrowerOverview from "./AdminBorrowerOverview";
 import AdminFdStatistics from "./AdminFdStatistics";
 import AdminWalletBreakdown from "./AdminWalletBreakdown";
 import AdminWalletHubPanel from "./AdminWalletHubPanel";
+import AdminAIWalletLoadedUsers from "./AdminAIWalletLoadedUsers";
+import AdminAIPayslipReader from "./AdminAIPayslipReader";
 import {
   CmsPayoutsFullReport,
   RoiBasedDealsFullReport,
@@ -439,6 +441,12 @@ export const FeatureContent = ({
 
     case "deal-intelligence":
       return <DealIntelligenceFullReport key={refreshNonce} />;
+
+    case "wallet-loaded-users":
+      return <AdminAIWalletLoadedUsers />;
+
+    case "payslip-reader":
+      return <AdminAIPayslipReader />;
 
     case "top-lenders":
       return (

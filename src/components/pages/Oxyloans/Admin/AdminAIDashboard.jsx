@@ -20,6 +20,8 @@ import {
   FaFilter,
   FaUserCheck,
   FaUniversity,
+  FaWallet,
+  FaFileInvoice,
   FaMoneyCheckAlt,
   FaPercent,
   FaUserPlus,
@@ -3307,6 +3309,38 @@ const AdminAIDashboard = () => {
                   <div className="admin-ai-yearwise-header-copy">
                     <h2>Shared Bank Accounts</h2>
                     <p>Find active lenders using the same bank account, matching referral names, or changed bank details.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry"
+                  onClick={() => navigate("/adminAIDashboard/wallet-loaded-users", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaWallet />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>Wallet Loaded Users Data</h2>
+                    <p>Select a date to view lenders whose wallets were loaded, including profile and amount details.</p>
+                  </div>
+                  <span className="admin-ai-yearwise-header-meta">
+                    <span className="admin-ai-yearwise-header-open">Open →</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="admin-ai-pro-section-head admin-ai-yearwise-header admin-ai-ref-portfolio-entry"
+                  onClick={() => navigate("/adminAIDashboard/payslip-reader", { state: { from: "/adminAIDashboard" } })}
+                >
+                  <div className="admin-ai-pro-section-icon admin-ai-pro-section-icon--yearwise">
+                    <FaFileInvoice />
+                  </div>
+                  <div className="admin-ai-yearwise-header-copy">
+                    <h2>AI Payslip Document Reader</h2>
+                    <p>Upload a payslip PDF and extract employee, employer, and salary details.</p>
                   </div>
                   <span className="admin-ai-yearwise-header-meta">
                     <span className="admin-ai-yearwise-header-open">Open →</span>
