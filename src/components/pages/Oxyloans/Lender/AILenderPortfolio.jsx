@@ -2540,7 +2540,7 @@ const LenderPortfolioDashboard = () => {
                               </span>
                               <span style={{ fontSize: 12, color: "#8c8c8c" }}>
                                 {deal.daysTotal > 0 && deal.daysPassed === 0 && deal.startDate && new Date(deal.startDate) > new Date()
-                                  ? `Starts in ${Math.ceil((new Date(deal.startDate) - new Date()) / 86400000)}d (${fmtDate(deal.startDate)})`
+                                  ? `First payout in ${Math.ceil((new Date(deal.startDate) - new Date()) / 86400000)}d (${fmtDate(deal.startDate)})`
                                   : deal.daysTotal > 0
                                     ? `${deal.daysPassed || 0} / ${deal.daysTotal} days`
                                     : (deal.startDate || deal.endDate)
