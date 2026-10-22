@@ -230,7 +230,7 @@ export const vaildateotp = async (
 ) => {
   const uniqnumber = localStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
-  
+  const utmSource = localStorage.getItem("utmSource") === null ? localStorage.getItem("utmSource") : "WEB";
 
   if (uniqnumber === null) {
     var data = {
@@ -244,7 +244,7 @@ export const vaildateotp = async (
       citizenship: "NONNRI",
       projectType: "REACT",
       uniqueNumber: "0",
-      utm: "WEB",
+      utm: utmSource || "WEB",
       // uuid: "asdfghjkl",
       cifNumber: null,
       finoEmployeeMobileNumber: "0",
@@ -265,7 +265,7 @@ export const vaildateotp = async (
       uniqueNumber: uniqnumber,
       projectType: "REACT",
       utmForPartner: "",
-      utm: "WEB",
+      utm: utmSource || "WEB",
       cifNumber: null,
       finoEmployeeMobileNumber: null,
       // uuid: "asdfghjkl",

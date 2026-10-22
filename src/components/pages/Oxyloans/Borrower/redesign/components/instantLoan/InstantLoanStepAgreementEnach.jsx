@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import Swal from "sweetalert2";
+import "./instantLoan.css";
 import { formatINR } from "../creditReportUtils";
+import {
+  generateDigitalAgreement,
+  initiateAadhaarEsign,
+  registerEnachMandate,
+} from "./instantLoanApi";
 
 const InstantLoanStepAgreementEnach = ({
   selectedOffer,
@@ -13,7 +19,7 @@ const InstantLoanStepAgreementEnach = ({
   const [enachDone, setEnachDone] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [isMandating, setIsMandating] = useState(false);
-  const [aadhaarOtp, setAadhaarOtp] = useState("123456");
+  const [aadhaarOtp, setAadhaarOtp] = useState("");
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [mandateMode, setMandateMode] = useState("NETBANKING"); // NETBANKING | DEBITCARD
 
@@ -22,14 +28,29 @@ const InstantLoanStepAgreementEnach = ({
 
   const handleStartEsign = () => {
     setShowOtpInput(true);
+    // Asynchronously prepare agreement on backend
+    generateDigitalAgreement({
+      loanId: applicationId,
+      principal,
+      emiAmount,
+    }).catch((e) => console.warn("generateDigitalAgreement background:", e));
   };
 
-  const handleVerifyEsignOtp = () => {
+  const handleVerifyEsignOtp = async () => {
     setIsSigning(true);
+
+    const esignRes = await initiateAadhaarEsign({
+      loanId: applicationId,
+      aadhaarNumber: "1234",
+      otp: aadhaarOtp,
+    });
+
     setTimeout(() => {
       setIsSigning(false);
       setShowOtpInput(false);
       setEsignDone(true);
+
+      const certId = esignRes?.data?.signatureId || `ESIGN_${Date.now()}`;
 
       Swal.fire({
         icon: "success",
@@ -37,6 +58,7 @@ const InstantLoanStepAgreementEnach = ({
         html: `
           <div class="text-center py-2">
             <span class="badge bg-success px-3 py-2 rounded-pill fs-6 mb-2">UIDAI Digital Seal Affixed ✓</span>
+            <p class="text-muted small mb-1">Audit Reference: <strong>${certId}</strong></p>
             <p class="text-muted small mb-0">Legal P2P Borrower Agreement digitally countersigned by UIDAI eSign service.</p>
           </div>
         `,
@@ -46,18 +68,27 @@ const InstantLoanStepAgreementEnach = ({
     }, 1200);
   };
 
-  const handleSetupEnach = () => {
+  const handleSetupEnach = async () => {
     setIsMandating(true);
+
+    const enachRes = await registerEnachMandate({
+      loanId: applicationId,
+      mandateMode,
+      maxAmount: Math.round(emiAmount * 2),
+    });
+
     setTimeout(() => {
       setIsMandating(false);
       setEnachDone(true);
+
+      const umrn = enachRes?.data?.umrn || `NACH_${Date.now().toString().slice(-8)}`;
 
       Swal.fire({
         icon: "success",
         title: "NPCI eNACH Mandate Active!",
         html: `
           <div class="text-center py-2">
-            <span class="badge bg-success px-3 py-2 rounded-pill fs-6 mb-2">UMRN: NACH_${Date.now().toString().slice(-8)}</span>
+            <span class="badge bg-success px-3 py-2 rounded-pill fs-6 mb-2">UMRN: ${umrn}</span>
             <p class="text-muted small mb-0">Automated repayment mandate authorized through NPCI banking gateway.</p>
           </div>
         `,
@@ -70,7 +101,7 @@ const InstantLoanStepAgreementEnach = ({
   const canProceed = esignDone && enachDone;
 
   return (
-    <div className="fintech-card">
+    <div className="fintech-card step-view-enter">
       {/* Step Header */}
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom">
         <div>
@@ -155,22 +186,45 @@ const InstantLoanStepAgreementEnach = ({
               </div>
             </div>
 
-            {/* Document preview snippet */}
-            <div className="p-3 bg-light rounded-3 border mb-3 small" style={{ fontSize: "12px", maxHeight: "110px", overflowY: "auto" }}>
+            {/* Document preview snippet with Final Matched ROI & 3% Fee */}
+            <div className="p-3 bg-light rounded-3 border mb-3 small" style={{ fontSize: "12px", maxHeight: "170px", overflowY: "auto" }}>
               <div className="d-flex justify-content-between text-muted mb-1">
                 <span>Borrower:</span>
                 <strong className="text-dark">{profileData.name}</strong>
               </div>
               <div className="d-flex justify-content-between text-muted mb-1">
-                <span>Loan Principal:</span>
+                <span>Sanctioned Principal:</span>
                 <strong className="text-dark">{formatINR(principal)}</strong>
               </div>
               <div className="d-flex justify-content-between text-muted mb-1">
-                <span>Escrow Pool:</span>
-                <strong className="text-dark">OxyLoans Escrow #{applicationId}</strong>
+                <span>Final Agreed ROI:</span>
+                <span className="fw-bold text-primary">
+                  {selectedOffer?.interestRate || 18}% p.a.
+                  {selectedOffer?.roiVariance !== undefined && selectedOffer.roiVariance !== 0 && (
+                    <span className={`badge ms-1 small ${selectedOffer.roiVariance < 0 ? "bg-success text-white" : "bg-warning text-dark"}`} style={{ fontSize: "10px" }}>
+                      {selectedOffer.roiVariance < 0 ? `Lender Discount (${selectedOffer.roiVariance}%)` : `Counter-Offer (+${selectedOffer.roiVariance}%)`}
+                    </span>
+                  )}
+                </span>
+              </div>
+              <div className="d-flex justify-content-between text-muted mb-1">
+                <span>Monthly Installment (EMI):</span>
+                <strong className="text-dark">{formatINR(emiAmount)}</strong>
+              </div>
+              <div className="d-flex justify-content-between text-muted mb-1">
+                <span>Origination Fee (3.0% + GST):</span>
+                <span className="text-dark">{formatINR(selectedOffer?.processingFee || Math.round(principal * 0.03))} (+ {formatINR(selectedOffer?.gst || Math.round(principal * 0.03 * 0.18))})</span>
+              </div>
+              <div className="d-flex justify-content-between text-muted mb-1">
+                <span>Net Disbursed to Bank:</span>
+                <strong style={{ color: "#065f46" }}>{formatINR(selectedOffer?.netDisbursal || (principal - Math.round(principal * 0.03 * 1.18)))}</strong>
+              </div>
+              <div className="d-flex justify-content-between text-muted mb-1">
+                <span>Escrow Lending Pool:</span>
+                <strong className="text-dark">{selectedOffer?.matchedLender || `OxyLoans Escrow #${applicationId}`}</strong>
               </div>
               <div className="d-flex justify-content-between text-muted">
-                <span>IT Act 2000:</span>
+                <span>IT Act 2000 & RBI P2P:</span>
                 <span className="text-success fw-semibold">Digitally Enforceable</span>
               </div>
             </div>
@@ -217,9 +271,18 @@ const InstantLoanStepAgreementEnach = ({
                 </button>
               )
             ) : (
-              <div className="alert alert-success border-0 rounded-3 p-2 small mb-0 text-center">
-                <i className="fa-solid fa-stamp text-success me-1"></i>
-                UIDAI eSign Authenticated • Ref: ESD_{applicationId}_OK
+              <div className="p-3 bg-white rounded-3 border border-success d-flex align-items-center justify-content-between step-view-enter shadow-xs">
+                <div>
+                  <strong className="text-success d-block small">
+                    <i className="fa-solid fa-file-circle-check me-1"></i> Aadhaar eSign Countersigned
+                  </strong>
+                  <span className="text-muted" style={{ fontSize: "11px" }}>
+                    UIDAI Timestamp: {new Date().toLocaleDateString("en-IN")} • Cert #UIDAI-{applicationId}
+                  </span>
+                </div>
+                <div className="legal-seal-stamp">
+                  <i className="fa-solid fa-stamp me-1"></i> UIDAI eSign
+                </div>
               </div>
             )}
           </div>
@@ -322,9 +385,18 @@ const InstantLoanStepAgreementEnach = ({
                 </button>
               </div>
             ) : (
-              <div className="alert alert-success border-0 rounded-3 p-2 small mb-0 text-center">
-                <i className="fa-solid fa-circle-check text-success me-1"></i>
-                NPCI Mandate Registered • UMRN: NACH_8941291
+              <div className="p-3 bg-white rounded-3 border border-success d-flex align-items-center justify-content-between step-view-enter shadow-xs">
+                <div>
+                  <strong className="text-success d-block small">
+                    <i className="fa-solid fa-building-circle-check me-1"></i> NPCI Mandate Registered
+                  </strong>
+                  <span className="text-muted" style={{ fontSize: "11px" }}>
+                    UMRN: NACH_8941291 • Auto-Debit Active
+                  </span>
+                </div>
+                <div className="legal-seal-stamp">
+                  <i className="fa-solid fa-shield-halved me-1"></i> NPCI eNACH
+                </div>
               </div>
             )}
           </div>

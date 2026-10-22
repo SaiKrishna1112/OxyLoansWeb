@@ -161,11 +161,22 @@ export default function InterestRateNegotiation() {
         {loan && (
           <div className="card mb-3 border-primary">
             <div className="card-body">
-              <div className="row">
+              <div className="row align-items-center">
                 <div className="col-md-3"><strong>Amount:</strong> ₹{Number(loan.loanAmount).toLocaleString("en-IN")}</div>
                 <div className="col-md-3"><strong>Purpose:</strong> {loan.loanPurpose}</div>
-                <div className="col-md-3"><strong>Duration:</strong> {loan.durationMonths} months</div>
-                <div className="col-md-3"><strong>Status:</strong> {loan.loanStatus}</div>
+                <div className="col-md-2"><strong>Duration:</strong> {loan.durationMonths} months</div>
+                <div className="col-md-2"><strong>Status:</strong> {loan.loanStatus}</div>
+                <div className="col-md-2 text-end">
+                  {loan.borrowerUserId && (
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => navigate(`/lender/borrower-profile/${loan.borrowerUserId}`)}
+                      title="View Complete Borrower Profile"
+                    >
+                      <i className="fa fa-user me-1" /> View Profile
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -238,6 +238,15 @@ export default function OpenMarketLoanListings() {
                         >
                           Make Offer
                         </button>
+                        {loan.borrowerUserId && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => navigate(`/lender/borrower-profile/${loan.borrowerUserId}`)}
+                            title="View Borrower Profile"
+                          >
+                            <i className="fa fa-user me-1" /> Profile
+                          </button>
+                        )}
                         <button
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => navigate(`/negotiation/${loan.loanRequestId}`)}

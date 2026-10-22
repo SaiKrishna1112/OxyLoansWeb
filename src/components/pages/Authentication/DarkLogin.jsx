@@ -36,9 +36,10 @@ const DarkLogin = () => {
   const redirectToDashboard = (data) => {
     const role = data?.primaryType;
     const uid = data?.id;
-    if (role === "LENDER") history("/lenderAIDashboard/" + uid);
-    else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
-    else history("/borrowerDashboard");
+    let defaultPath = "/borrowerDashboard";
+    if (role === "LENDER") defaultPath = "/lenderAIDashboard/" + uid;
+    else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) defaultPath = "/oxyloansadmindashboard";
+    history(getPostLoginRedirectUrl(defaultPath, role, uid));
   };
 
   const sendOtp = async () => {
@@ -77,7 +78,7 @@ const DarkLogin = () => {
         toastrSuccess("Login successful!");
         const role = res.data?.primaryType;
         const defaultPath = role === "LENDER" ? "/lenderAIDashboard/" + res.data?.id : "/borrowerDashboard";
-        history(getPostLoginRedirectUrl(defaultPath, role));
+        history(getPostLoginRedirectUrl(defaultPath, role, res.data?.id));
       } else {
         const { message } = warnApiError(res, "Login failed", "Invalid OTP. Please try again.");
         const errData = res?.response?.data || res?.data;

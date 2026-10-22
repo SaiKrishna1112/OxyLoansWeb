@@ -18,6 +18,8 @@ import Timeline from "../components/Timeline";
 import EmptyState from "../components/EmptyState";
 import LoadingState from "../components/LoadingState";
 import ErrorState from "../components/ErrorState";
+import BorrowerLoanDecisionStatus from "../components/BorrowerLoanDecisionStatus";
+import { calculateBorrowerProfileCompleteness } from "../../../../../../utils/borrowerValidation";
 
 // HTTP Requests from codebase
 import { 
@@ -99,6 +101,11 @@ const Dashboard = () => {
   // States
   const [profileDetails, setProfileDetails] = useState(null);
   const [eligibleInfo, setEligibleInfo] = useState({ amount: 0, loading: true });
+
+  const profileCompleteness = useMemo(() => {
+    return calculateBorrowerProfileCompleteness(profileDetails);
+  }, [profileDetails]);
+  const isProfileEligible = profileCompleteness.isEligibleToRaiseLoan;
   const [hasActiveRequest, setHasActiveRequest] = useState(false);
   const [loanRequests, setLoanRequests] = useState([]);
   const [showCityModal, setShowCityModal] = useState(false);
@@ -364,9 +371,13 @@ const Dashboard = () => {
                 </p>
               </div>
               <div className="mt-3 mt-md-0 d-flex gap-2" style={{ position: "relative", zIndex: 2 }}>
-                {eligibleInfo.amount > 0 && !hasActiveRequest ? (
-                  <Link to="/borrowerLoanRequestCreate" className="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 text-decoration-none">
+                {isProfileEligible && eligibleInfo.amount > 0 && !hasActiveRequest ? (
+                  <Link to="/borrower/instant-loan/41682" className="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 text-decoration-none">
                     Apply Now →
+                  </Link>
+                ) : !isProfileEligible ? (
+                  <Link to="/instant-borrower-profile" className="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 text-decoration-none">
+                    Complete Profile ({profileCompleteness.percentage}%) →
                   </Link>
                 ) : (
                   <Link to="/borrowerLoansInitiated" className="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 text-decoration-none">
@@ -384,6 +395,8 @@ const Dashboard = () => {
               hasActiveRequest={hasActiveRequest}
               loading={!profileDetails || loansData.loading}
             />
+
+            <BorrowerLoanDecisionStatus />
 
             {/* Loan Portfolio Overview strip */}
             {/* <LoanSummary 
@@ -416,8 +429,8 @@ const Dashboard = () => {
                       </div>
                       <div>
                         <h6 className="fw-bold mb-1 text-dark">
-                          {profileDetails?.personalDetailsInfo !== true && profileDetails?.kycStatus !== true 
-                            ? "Complete Profile & Verification" 
+                          {!isProfileEligible
+                            ? `Complete Profile (${profileCompleteness.percentage}% / 90% Required)`
                             : !hasActiveRequest 
                             ? "Apply for a Loan Limit" 
                             : loansData.apiData?.length > 0 
@@ -425,8 +438,8 @@ const Dashboard = () => {
                             : "Set Up Auto-Pay Mandate"}
                         </h6>
                         <p className="text-muted small mb-3">
-                          {profileDetails?.personalDetailsInfo !== true && profileDetails?.kycStatus !== true 
-                            ? "Fill personal details, address, and verify your KYC documents." 
+                          {!isProfileEligible
+                            ? `Your profile is ${profileCompleteness.percentage}% complete. Reach at least 90% completeness to raise loan requests.` 
                             : !hasActiveRequest 
                             ? "Select a required amount within your eligible limit and submit your request." 
                             : loansData.apiData?.length > 0 
@@ -437,13 +450,13 @@ const Dashboard = () => {
                         <button 
                           className="oxy-btn-primary py-2 px-4" 
                           onClick={() => {
-                            if (profileDetails?.personalDetailsInfo !== true && profileDetails?.kycStatus !== true) navigate("/borrowerProfile");
-                            else if (!hasActiveRequest) navigate("/borrowerLoanRequestCreate");
+                            if (!isProfileEligible) navigate("/instant-borrower-profile");
+                            else if (!hasActiveRequest) navigate("/borrower/instant-loan/41682");
                             else if (loansData.apiData?.length > 0) navigate("/borrowerLoansInitiated");
                             else navigate("/borrowerLoansInitiated");
                           }}
                         >
-                          Continue Flow →
+                          {!isProfileEligible ? "Complete Profile →" : "Continue Flow →"}
                         </button>
                       </div>
                     </div>

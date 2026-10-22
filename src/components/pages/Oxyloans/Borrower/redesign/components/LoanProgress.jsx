@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { calculateBorrowerProfileCompleteness } from "../../../../../../utils/borrowerValidation";
 import "../redesign.css";
 
 const LoanProgress = ({ 
@@ -11,21 +12,11 @@ const LoanProgress = ({
 }) => {
   const navigate = useNavigate();
 
-  const profileCompletionPct = useMemo(() => {
-    if (!profileDetails) return 0;
-    const fields = [
-      profileDetails.firstName,
-      profileDetails.lastName,
-      profileDetails.panNumber,
-      profileDetails.aadharNumber,
-      profileDetails.city,
-      profileDetails.state,
-      profileDetails.address || profileDetails.residenceAddress,
-      profileDetails.whatsAppNumber || profileDetails.mobileNumber,
-    ];
-    const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
-    return Math.round((filledFields.length / fields.length) * 100);
+  const profileCompleteness = useMemo(() => {
+    return calculateBorrowerProfileCompleteness(profileDetails);
   }, [profileDetails]);
+
+  const profileCompletionPct = profileCompleteness.percentage;
 
   const journey = useMemo(() => {
     const profileDetailsObj = profileDetails || {};
@@ -49,13 +40,13 @@ const LoanProgress = ({
     let activeLoan = null;
 
     // STEP 1: PROFILE
-    const isProfileCompleted = profileDetailsObj.personalDetailsInfo === true;
+    const isProfileCompleted = profileDetailsObj.personalDetailsInfo === true || profileCompleteness.isEligibleToRaiseLoan;
     if (isProfileCompleted) {
       steps[0].status = "COMPLETED";
       steps[0].statusText = "Profile completed";
     } else {
       steps[0].status = "ACTIVE";
-      steps[0].statusText = "Complete your profile";
+      steps[0].statusText = `Profile (${profileCompletionPct}%)`;
       currentStep = "Profile";
       nextStep = "Profile";
     }
@@ -345,7 +336,7 @@ const LoanProgress = ({
       activeLoanId,
       steps,
     };
-  }, [profileDetails, loans, loanRequests]);
+  }, [profileDetails, loans, loanRequests, profileCompleteness, profileCompletionPct]);
 
   const activeStageIndex = useMemo(() => {
     const idx = journey.steps.findIndex((s) => s.status === "ACTIVE");
@@ -365,12 +356,12 @@ const LoanProgress = ({
       return;
     }
 
-    if (step.key === "LOAN_REQUEST" && profileCompletionPct < 75) {
+    if (step.key === "LOAN_REQUEST" && !profileCompleteness.isEligibleToRaiseLoan) {
       e.preventDefault();
       Swal.fire({
         icon: "warning",
-        title: "Profile Incomplete",
-        text: `Please fill in at least 75% of your profile setup (currently ${profileCompletionPct}%) before applying for a loan request.`,
+        title: "Profile Incomplete (90% Required)",
+        text: `Please fill in at least 90% of your profile setup (currently ${profileCompletionPct}%) before applying for a loan request.`,
         confirmButtonText: "Go to Profile",
         confirmButtonColor: "#0040e0",
       }).then((result) => {

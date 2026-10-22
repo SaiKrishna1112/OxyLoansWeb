@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
-import { Myreferal, downloadreferal } from "../../../HttpRequest/afterlogin";
+import { Myreferal, downloadreferal, getUserId } from "../../../HttpRequest/afterlogin";
 import Footer from "../../../Footer/Footer";
 import { Table } from "antd";
 import { onShowSizeChange } from "../../../Pagination";
@@ -87,9 +87,9 @@ const MyreferalStatus = () => {
   };
 
   const Invitelender = async () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.user.oxyloans.com/register?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/register?ref=LR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");
@@ -136,9 +136,9 @@ const MyreferalStatus = () => {
   ];
 
   const handlenriinvite = () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=${userId}`;
+    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=LR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");
@@ -149,9 +149,9 @@ const MyreferalStatus = () => {
     });
   };
   const Inviteborrower = () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.user.oxyloans.com/borrower_register?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/borrower_register?ref=LR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");

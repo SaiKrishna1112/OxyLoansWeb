@@ -198,7 +198,12 @@ export default function NearbyBorrowers() {
                           <div className="card-body">
                             <div className="d-flex justify-content-between align-items-start mb-2">
                               <div>
-                                <div className="fw-bold text-truncate" style={{ maxWidth: 150 }}>
+                                <div
+                                  className="fw-bold text-truncate text-primary"
+                                  style={{ maxWidth: 150, cursor: "pointer" }}
+                                  title="View Borrower Profile"
+                                  onClick={() => navigate(`/lender/borrower-profile/${b.userId}`)}
+                                >
                                   {b.name || `Borrower #${b.userId}`}
                                 </div>
                                 <small className="text-muted">
@@ -222,12 +227,20 @@ export default function NearbyBorrowers() {
                               </div>
                             )}
 
-                            <button
-                              className="btn btn-sm btn-outline-primary w-100"
-                              onClick={() => navigate("/marketplace-loans")}
-                            >
-                              View Their Loans
-                            </button>
+                            <div className="d-flex gap-2">
+                              <button
+                                className="btn btn-sm btn-primary flex-fill"
+                                onClick={() => navigate(`/lender/borrower-profile/${b.userId}`)}
+                              >
+                                <i className="fa fa-user me-1" /> View Profile
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-secondary flex-fill"
+                                onClick={() => navigate("/marketplace-loans")}
+                              >
+                                View Loans
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

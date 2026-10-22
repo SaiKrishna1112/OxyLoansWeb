@@ -40,6 +40,7 @@ export default function BorrowerRegister() {
   const [relationshipId, setRelationshipId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState("");
+  const [utmSourceParam, setUtmSourceParam] = useState(null);
 
   const [registrationField, setRegistrationField] = useState({
     email: "",
@@ -104,7 +105,7 @@ export default function BorrowerRegister() {
     } catch (err) {
       const errMsg = err.response?.data?.errorMessage || "Failed to resend OTP";
       setError(errMsg);
-      toastrWarning(errMsg);
+      // toastrWarning(errMsg);
     } finally {
       setLoadingResend(false);
     }
@@ -284,7 +285,7 @@ export default function BorrowerRegister() {
     } catch (e) {
       const msg = e?.response?.data?.errorMessage || "Google sign-up failed. Please try again.";
       setError(msg);
-      toastrWarning(msg);
+      // toastrWarning(msg);
     } finally {
       setGoogleLoading(false);
     }
@@ -312,16 +313,16 @@ export default function BorrowerRegister() {
         toastrSuccess("OTP sent to " + mob);
       } else if (status === "ALREADY_REGISTERED") {
         setGrMobileError("This mobile number is already registered. Please login instead.");
-        toastrWarning("This mobile number is already registered. Please login instead.");
+        // toastrWarning("This mobile number is already registered. Please login instead.");
       } else {
         const msg = res.data?.errorMessage || "Could not send OTP. Please try again.";
         setGrMobileError(msg);
-        toastrWarning(msg);
+        // toastrWarning(msg);
       }
     } catch (e) {
       const msg = e?.response?.data?.errorMessage || "Failed to send OTP. Please try again.";
       setGrMobileError(msg);
-      toastrWarning(msg);
+      // toastrWarning(msg);
     } finally {
       setGrLoading(false);
     }
@@ -342,7 +343,7 @@ export default function BorrowerRegister() {
       });
       if (!verifyRes.data?.valid) {
         setGrOtpError("Invalid OTP. Please try again.");
-        toastrWarning("Invalid OTP. Please try again.");
+        // toastrWarning("Invalid OTP. Please try again.");
         return;
       }
       setIsGrOtpVerifying(true);
@@ -369,7 +370,7 @@ export default function BorrowerRegister() {
     } catch (e) {
       const msg = e?.response?.data?.errorMessage || "Failed to verify OTP. Please try again.";
       setGrOtpError(msg);
-      toastrWarning(msg);
+      // toastrWarning(msg);
     } finally {
       setGrLoading(false);
     }
@@ -420,7 +421,7 @@ export default function BorrowerRegister() {
       if (!isValidRef) {
         const refErrMsg = registrationField.referrerIderror || "Invalid Referrer ID";
         setError(refErrMsg);
-        toastrWarning(refErrMsg);
+        // toastrWarning(refErrMsg);
         return;
       }
     }
@@ -455,7 +456,7 @@ export default function BorrowerRegister() {
       } catch (err) {
         const errMsg = err?.response?.data?.errorMessage || "Registration failed. Please try again.";
         setError(errMsg);
-        toastrWarning(errMsg);
+        // toastrWarning(errMsg);
       }
       return;
     }
@@ -553,7 +554,7 @@ export default function BorrowerRegister() {
         } else {
           const errMsg = errData?.errorMessage || "Registration failed. Please try again.";
           setError(errMsg);
-          toastrWarning(errMsg);
+          // toastrWarning(errMsg);
         }
       }
     }
@@ -591,12 +592,12 @@ export default function BorrowerRegister() {
         }, 2200);
       } else {
         setError("Please enter a valid OTP");
-        toastrWarning("Please enter a valid OTP");
+        // toastrWarning("Please enter a valid OTP");
       }
     } catch (error) {
       const errMsg = error.response?.data?.errorMessage || "An error occurred during OTP validation";
       setError(errMsg);
-      toastrWarning(errMsg);
+      // toastrWarning(errMsg);
     }
   };
 
@@ -622,10 +623,13 @@ export default function BorrowerRegister() {
     const refParam = searchParams.get("ref");
     const trackingIdParam = searchParams.get("trackingId");
     const relationshipIdParam = searchParams.get("relationshipId");
+    const utmSource = searchParams.get("utm");
     if (trackingIdParam) localStorage.setItem("trackingId", trackingIdParam);
     if (relationshipIdParam) localStorage.setItem("relationshipId", relationshipIdParam);
+    if (utmSource) localStorage.setItem("utmSource", utmSource);
     if (trackingIdParam) setTrackingId(trackingIdParam);
     if (relationshipIdParam) setRelationshipId(relationshipIdParam);
+    if (utmSource) setUtmSourceParam(utmSource);
 
     if (refParam) {
       setRegistrationField((prev) => ({
@@ -1018,10 +1022,11 @@ export default function BorrowerRegister() {
                       <span>{registrationField.passworderror}</span>
                     </div>
                   )}
-
+                  {!utmSourceParam ? (
+                    <>
                   {/* Referrer Hint */}
                   <div className="reg-referrer-hint">
-                    If you are referred by an existing borrower, please enter his/her referrer id
+                    If you are referred by an existing borrower or lender, please enter his/her referrer id
                   </div>
 
                   {/* Referrer ID */}
@@ -1047,6 +1052,39 @@ export default function BorrowerRegister() {
                       onChange={handlechange}
                     />
                   </div>
+                  </>
+                  ):(
+                    <>
+                  {/* Referrer Hint */}
+                  <div className="reg-referrer-hint">
+                    You are referred by a partner. Please enter the referrer id provided to you.
+                  </div>
+
+                  {/* Referrer ID */}
+                  <div
+                    className={`reg-input-shell ${
+                      focusedField === "referrerId" ? "focused" : ""
+                    } ${registrationField.referrerIderror ? "has-error" : ""}`}
+                  >
+                    <span className="reg-field-icon">
+                      <FeatherIcon icon="users" size={17} />
+                    </span>
+                    <input
+                      type="text"
+                      name="referrerId"
+                      className="reg-field-input"
+                      placeholder="Enter the referrer ID (Ex : OXY_PARTNER123)"
+                      value={utmSourceParam}
+                      // onFocus={() => setFocusedField("referrerId")}
+                      onBlur={(e) => {
+                        setFocusedField("");
+                      }}
+                      onChange={()=>{setUtmSourceParam(e.target.value)}}
+                    />
+                  </div>
+                  </>
+                  )}
+                  
                   {registrationField.referrerIderror && (
                     <div className="reg-field-error">
                       <FeatherIcon icon="alert-circle" size={13} />

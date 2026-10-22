@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
 import { saveAs } from "file-saver";
@@ -2925,7 +2925,7 @@ const AdminAIDashboard = () => {
             </div>
           </header>
 
-          <AdminRunningExtendedDealsPanel />
+          {/* <AdminRunningExtendedDealsPanel /> */}
 
           {loadError && (
             <div className="alert alert-danger d-flex justify-content-between align-items-center">

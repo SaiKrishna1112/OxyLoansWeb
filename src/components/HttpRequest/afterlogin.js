@@ -627,14 +627,14 @@ export const sendMoblieOtp = async (bankaccountprofile) => {
   );
   return response;
 };
-export const profileupadate = async (userProfile, formData, category) => {
+export const profileupadate = async (userProfile = {}, formData = {}, category = "SALARIED") => {
   const token = getToken();
   const userId = getUserId();
 
   // Format date
-  let formattedDate = userProfile.dob;
-  if (userProfile.dob.includes("-")) {
-    const dateComponents = userProfile.dob.split("-");
+  let formattedDate = userProfile.dob || "";
+  if (formattedDate && typeof formattedDate === "string" && formattedDate.includes("-")) {
+    const dateComponents = formattedDate.split("-");
     formattedDate = `${dateComponents[2]}/${dateComponents[1]}/${dateComponents[0]}`;
     if (formattedDate.includes("undefined/undefined/")) {
       const startIndex =
@@ -645,75 +645,79 @@ export const profileupadate = async (userProfile, formData, category) => {
   }
 
   console.log("Primary Type :", localStorage.getItem("primaryType"));
-  if(localStorage.getItem("primaryType")=="BORROWER"){
- // Prepare personal API payload
-   var personalData = JSON.stringify({
-    firstName: userProfile.firstName,
-    lastName: userProfile.lastName,
-    middleName: userProfile.middleName,
-    fatherName: userProfile.fatherName,
-    motherName: userProfile.motherName,
-    maritalStatus: userProfile.maritalStatus,
-    spouseName: userProfile.maritalStatus === "Married" ? (userProfile.spouseName || "") : "",
-    spouseDob: userProfile.maritalStatus === "Married" ? (userProfile.spouseDob || "") : "",
-    dob: formattedDate,
-    panNumber: userProfile.panNumber,
-    address: userProfile.residenceAddress,
-    permanentAddress: userProfile.permanentAddress,
-    pinCode: userProfile.pinCode,
-    city: userProfile.city,
-    state: userProfile.state,
-    locality: userProfile.locality,
-    facebookUrl: userProfile.facebookUrl,
-    linkedinUrl: userProfile.linkedinUrl,
-    twitterUrl: userProfile.twitterUrl,
-    whatsAppNumber: userProfile.whatsAppNumber,
-    aadharNumber: userProfile.aadharNumber,
-    designation: userProfile.designation || formData.designation,
-    officeAddress: userProfile.officeAddress || formData.officeAddress,
-    officeMailId: userProfile.officeMailId || formData.officeMailId,
-    officeLandLine: userProfile.officeLandLine || formData.officeLandLine,
-    employment: category === "SELFEMPLOYED" ? "SELFEMPLOYED" : "SALARIED",
-    ...(category !== "STUDENT" && {
-      workExperience: formData.totalExperience,
-      salary: formData.salary,
-      companyName: formData.company,
-      designation: formData.designation || userProfile.designation,
-      officeAddress: formData.officeAddress || userProfile.officeAddress,
-      officeMailId: formData.officeMailId || userProfile.officeMailId,
-      officeLandLine: formData.officeLandLine || userProfile.officeLandLine,
-    }),
-    studentOrNot: category === "STUDENT",
-  });
-  }
-  else{
-      var personalData = JSON.stringify ({
-    firstName: userProfile.firstName,
-    lastName: userProfile.lastName,
-    middleName: userProfile.middleName,
-    fatherName: userProfile.fatherName,
-    motherName: userProfile.motherName,
-    maritalStatus: userProfile.maritalStatus,
-    spouseName: userProfile.maritalStatus === "Married" ? (userProfile.spouseName || "") : "",
-    spouseDob: userProfile.maritalStatus === "Married" ? (userProfile.spouseDob || "") : "",
-    dob: formattedDate,
-    panNumber: userProfile.panNumber,
-    address: userProfile.residenceAddress,
-    permanentAddress: userProfile.permanentAddress,
-    pinCode: userProfile.pinCode,
-    city: userProfile.city,
-    state: userProfile.state,
-    locality: userProfile.locality,
-    facebookUrl: userProfile.facebookUrl,
-    linkedinUrl: userProfile.linkedinUrl,
-    twitterUrl: userProfile.twitterUrl,
-    whatsAppNumber: userProfile.whatsAppNumber,
-    aadharNumber: userProfile.aadharNumber,
-    designation: userProfile.designation,
-    officeAddress: userProfile.officeAddress,
-    officeMailId: userProfile.officeMailId,
-    officeLandLine: userProfile.officeLandLine,
-  });
+  if (localStorage.getItem("primaryType") === "BORROWER") {
+    // Prepare personal API payload
+    var personalData = JSON.stringify({
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      middleName: userProfile.middleName,
+      fatherName: userProfile.fatherName,
+      motherName: userProfile.motherName,
+      gender: userProfile.gender,
+      maritalStatus: userProfile.maritalStatus || "Single",
+      spouseName: (userProfile.maritalStatus || "Single") === "Married" ? (userProfile.spouseName || "") : "",
+      spouseDob: (userProfile.maritalStatus || "Single") === "Married" && userProfile.spouseDob && userProfile.spouseDob.toString().trim()
+        ? userProfile.spouseDob.toString().trim()
+        : null,
+      dob: formattedDate,
+      panNumber: userProfile.panNumber,
+      address: userProfile.residenceAddress,
+      permanentAddress: userProfile.permanentAddress,
+      pinCode: userProfile.pinCode,
+      city: userProfile.city,
+      state: userProfile.state,
+      locality: userProfile.locality,
+      facebookUrl: userProfile.facebookUrl,
+      linkedinUrl: userProfile.linkedinUrl,
+      twitterUrl: userProfile.twitterUrl,
+      whatsAppNumber: userProfile.whatsAppNumber,
+      aadharNumber: userProfile.aadharNumber,
+      designation: userProfile.designation || formData?.designation,
+      officeAddress: userProfile.officeAddress || formData?.officeAddress,
+      officeMailId: userProfile.officeMailId || formData?.officeMailId,
+      officeLandLine: userProfile.officeLandLine || formData?.officeLandLine,
+      employment: category === "SELFEMPLOYED" ? "SELFEMPLOYED" : "SALARIED",
+      ...(category !== "STUDENT" && {
+        workExperience: formData?.totalExperience != null ? formData.totalExperience : userProfile.workExperience,
+        salary: formData?.salary != null ? formData.salary : userProfile.salary,
+        companyName: formData?.company != null ? formData.company : (userProfile.companyName || userProfile.company),
+        designation: formData?.designation || userProfile.designation,
+        officeAddress: formData?.officeAddress || userProfile.officeAddress,
+        officeMailId: formData?.officeMailId || userProfile.officeMailId,
+        officeLandLine: formData?.officeLandLine || userProfile.officeLandLine,
+      }),
+      studentOrNot: category === "STUDENT",
+    });
+  } else {
+    var personalData = JSON.stringify({
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      middleName: userProfile.middleName,
+      fatherName: userProfile.fatherName,
+      motherName: userProfile.motherName,
+      maritalStatus: userProfile.maritalStatus || "Single",
+      spouseName: (userProfile.maritalStatus || "Single") === "Married" ? (userProfile.spouseName || "") : "",
+      spouseDob: (userProfile.maritalStatus || "Single") === "Married" && userProfile.spouseDob && userProfile.spouseDob.toString().trim()
+        ? userProfile.spouseDob.toString().trim()
+        : null,
+      dob: formattedDate,
+      panNumber: userProfile.panNumber,
+      address: userProfile.residenceAddress,
+      permanentAddress: userProfile.permanentAddress,
+      pinCode: userProfile.pinCode,
+      city: userProfile.city,
+      state: userProfile.state,
+      locality: userProfile.locality,
+      facebookUrl: userProfile.facebookUrl,
+      linkedinUrl: userProfile.linkedinUrl,
+      twitterUrl: userProfile.twitterUrl,
+      whatsAppNumber: userProfile.whatsAppNumber,
+      aadharNumber: userProfile.aadharNumber,
+      designation: userProfile.designation,
+      officeAddress: userProfile.officeAddress,
+      officeMailId: userProfile.officeMailId,
+      officeLandLine: userProfile.officeLandLine,
+    });
   }
  
   // Always call personal API first
@@ -1242,6 +1246,8 @@ export const writequery = async (userdata) => {
   const token = getToken();
   const userId = getUserId();
 
+  console.log("userdata", userdata);
+
   if (userdata.id == null) {
     var postwritequerydata = {
       query: userdata.query + userdata.urlquery,
@@ -1473,19 +1479,6 @@ export const uploadapicall = async (event, emailcontentdata) => {
     {
       "Content-Type": "multipart/form-data",
     }
-  );
-
-  return response;
-};
-export const ticketcommentapi = async (id) => {
-  const token = getToken();
-  const userId = getUserId();
-
-  const response = handleApiRequestAfterLoginService(
-    API_BASE_URL,
-    `${id}/pendingQueriesBasedOnId`,
-    "GET",
-    token
   );
 
   return response;
@@ -3036,6 +3029,33 @@ export const getListOfBorrowerLoansInitiated = async () => {
     token
   );
   return response;
+};
+
+// This is a read-only status lookup. Keep concurrent calls for the same
+// borrower on one request so dashboard remounts do not create duplicate calls.
+const rejectOrApproveRequests = new Map();
+
+export const getUserRejectOrApprove = async (userId = getUserId()) => {
+  if (userId === null || userId === undefined || String(userId).trim() === "") {
+    return Promise.reject(new Error("Authenticated borrower user ID is missing."));
+  }
+
+  const requestedBorrowerId = String(userId).trim();
+  const existingRequest = rejectOrApproveRequests.get(requestedBorrowerId);
+  if (existingRequest) return existingRequest;
+
+  const token = getToken();
+  const request = handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${encodeURIComponent(requestedBorrowerId)}/updateUserRejectOrApprove`,
+    "GET",
+    token
+  ).finally(() => {
+    rejectOrApproveRequests.delete(requestedBorrowerId);
+  });
+
+  rejectOrApproveRequests.set(requestedBorrowerId, request);
+  return request;
 };
 
 export const borrowerLoanAcceptOrReject = async (payload) => {
@@ -4854,6 +4874,26 @@ export const fetchPaysprintCreditReport = async (payload) => {
     }
   );
 };
+
+/**
+ * Upload & Analyze Payslip for Borrower to validate salary and company
+ * Endpoint: POST payslip/analyze1
+ * Payload: multipart/form-data with 'file'
+ */
+export const analyzePayslipApi = async (file) => {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return await axios.post(`${API_BASE_URL}payslip/analyze1`, formData, {
+    headers: {
+      accessToken: token,
+      accesstoken: token,
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};
+
 
 
 

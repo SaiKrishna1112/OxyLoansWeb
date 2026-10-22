@@ -14,15 +14,16 @@ const BorrowerWriteToUs = () => {
 
   const [writetous, setWriteTous] = useState({
     query: "",
-    documentId: "",
+    documentId: 0,
     email: "",
     mobileNumber: "",
-    id: "",
+    id: null,
     respondedBy: "USER",
     profiledata: [],
     urlquery: "",
     isval: false,
     isVaild: true,
+    status:null
   });
 
   const [queryresponse, setqueryresponse] = useState({
@@ -96,10 +97,14 @@ const BorrowerWriteToUs = () => {
     response.then((data) => {
       if (data.request.status == 200) {
         Success("success", "You have sucessfully submitted the query");
+        setWriteTous({
+          ...writetous,
+          query: "",
+        });
       } else if (data.response.data.errorCode != "200") {
         WarningBackendApi("warning", `${data.response.data.errorMessage}`);
       }
-    });
+    }); 
   };
   return (
     <>

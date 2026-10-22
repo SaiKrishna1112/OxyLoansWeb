@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
 import {
@@ -8,10 +9,18 @@ import {
   WarningAlerterror,
 } from "../../Base UI Elements/SweetAlert";
 
-import { submitloanRequest } from "../../../HttpRequest/afterlogin";
+import {
+  submitloanRequest,
+  getUserDetails,
+  getBorrowerReferenceDetails,
+  loadlendernomineeDetails,
+  getUserId,
+} from "../../../HttpRequest/afterlogin";
 import BorrowerConsentSection, { BORROWER_CONSENTS } from "./BorrowerConsentSection";
+import { calculateBorrowerProfileCompleteness } from "../../../../utils/borrowerValidation";
 
 const LoanRequest = () => {
+  const navigate = useNavigate();
   const [consentItems, setConsentItems] = useState(new Array(BORROWER_CONSENTS.length).fill(false));
   const [newloandrequest, setnewloanrequest] = useState({
     loanamount: "",
@@ -22,6 +31,61 @@ const LoanRequest = () => {
     loanpurpose: "",
     expectedDate: "",
   });
+
+  const [profileCompleteness, setProfileCompleteness] = useState({
+    percentage: 100,
+    isEligibleToRaiseLoan: true,
+    missingRequirements: [],
+    loading: true,
+  });
+
+  useEffect(() => {
+    const evaluateCompleteness = async () => {
+      try {
+        const uId = getUserId() || sessionStorage.getItem("userId");
+        const [res, refRes, nomineeRes] = await Promise.allSettled([
+          getUserDetails(),
+          uId ? getBorrowerReferenceDetails(uId) : Promise.resolve(null),
+          loadlendernomineeDetails(),
+        ]);
+
+        const profileData = res.status === "fulfilled" ? res.value?.data : null;
+        const refData = refRes.status === "fulfilled" ? refRes.value?.data : null;
+        const nomineeData = nomineeRes.status === "fulfilled" ? nomineeRes.value?.data : null;
+
+        if (profileData) {
+          const comp = calculateBorrowerProfileCompleteness(
+            profileData,
+            refData || profileData.referenceDetailsResponseDto,
+            nomineeData
+          );
+          setProfileCompleteness({
+            percentage: comp.percentage,
+            isEligibleToRaiseLoan: comp.isEligibleToRaiseLoan,
+            missingRequirements: comp.missingRequirements,
+            loading: false,
+          });
+
+          if (!comp.isEligibleToRaiseLoan) {
+            Swal.fire({
+              icon: "warning",
+              title: "Profile Incomplete (90% Required)",
+              html: `Your Profile Completeness is currently <strong>${comp.percentage}%</strong>.<br/>You must achieve at least <strong>90% Profile Completeness</strong> before you can raise a loan request.<br/><br/><div style="font-size:13px; text-align:left; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #e2e8f0;"><strong>Pending items to complete:</strong><br/>• ${comp.missingRequirements.join("<br/>• ")}</div>`,
+              confirmButtonText: "Complete Profile Now",
+              confirmButtonColor: "#3d5ee1",
+              allowOutsideClick: false,
+            }).then(() => {
+              navigate("/borrowerProfile");
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error evaluating profile completeness:", err);
+        setProfileCompleteness((prev) => ({ ...prev, loading: false }));
+      }
+    };
+    evaluateCompleteness();
+  }, [navigate]);
 
   const handleInputchange = (event) => {
     const { name, value } = event.target;
@@ -34,6 +98,23 @@ const LoanRequest = () => {
   const allConsentsChecked = consentItems.every(Boolean);
 
   const handleSubmitHandler = () => {
+    if (!profileCompleteness.isEligibleToRaiseLoan) {
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Incomplete (90% Required)",
+        html: `Your Profile Completeness is currently <strong>${profileCompleteness.percentage}%</strong>.<br/>You must achieve at least <strong>90% Profile Completeness</strong> before you can raise a loan request.<br/><br/><div style="font-size:13px; text-align:left; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #e2e8f0;"><strong>Pending items to complete:</strong><br/>• ${profileCompleteness.missingRequirements.join("<br/>• ")}</div>`,
+        confirmButtonText: "Complete Profile Now",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Close",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerProfile");
+        }
+      });
+      return;
+    }
+
     if (!allConsentsChecked) {
       WarningAlerterror("Please read and acknowledge all 8 consent items before submitting.");
       return;
@@ -88,6 +169,53 @@ const LoanRequest = () => {
               </div>
             </div>
             {/* /Page Header */}
+            {/* Profile Completeness Warning Banner (< 90%) */}
+            {!profileCompleteness.loading && !profileCompleteness.isEligibleToRaiseLoan && (
+              <div className="alert alert-warning border border-warning-subtle rounded-3 p-4 mb-4 shadow-sm bg-warning bg-opacity-10">
+                <div className="d-flex align-items-start gap-3">
+                  <div
+                    className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style={{ width: "46px", height: "46px", backgroundColor: "#fef3c7", color: "#d97706" }}
+                  >
+                    <i className="fa-solid fa-triangle-exclamation fs-5"></i>
+                  </div>
+                  <div className="flex-grow-1">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                      <h5 className="fw-bold text-dark mb-0">
+                        Profile Completeness: {profileCompleteness.percentage}% (90% Required)
+                      </h5>
+                      <span className="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold">
+                        {profileCompleteness.percentage}% / 90%
+                      </span>
+                    </div>
+                    <p className="text-muted small mb-2" style={{ lineHeight: "1.5" }}>
+                      You cannot raise a loan request until your profile reaches at least <strong>90% Profile Completeness</strong>. Please complete the remaining mandatory profile sections to unlock loan requests.
+                    </p>
+                    <div className="progress mb-3" style={{ height: "8px", maxWidth: "340px", borderRadius: "10px" }}>
+                      <div
+                        className="progress-bar bg-warning rounded-pill"
+                        role="progressbar"
+                        style={{ width: `${profileCompleteness.percentage}%` }}
+                      />
+                    </div>
+                    {profileCompleteness.missingRequirements?.length > 0 && (
+                      <div className="small text-secondary mb-3">
+                        <strong>Pending Profile Sections: </strong>
+                        {profileCompleteness.missingRequirements.join(", ")}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-pill shadow-sm"
+                      onClick={() => navigate("/borrowerProfile")}
+                    >
+                      <i className="fa-solid fa-user-pen me-1"></i> Complete Profile Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="row">
               <div className="col-sm-12">
                 <div className="card">
@@ -335,9 +463,11 @@ const LoanRequest = () => {
                               type="button"
                               className="btn btn-primary"
                               onClick={handleSubmitHandler}
-                              disabled={!allConsentsChecked}
+                              disabled={!allConsentsChecked || (!profileCompleteness.loading && !profileCompleteness.isEligibleToRaiseLoan)}
                             >
-                              Submit
+                              {!profileCompleteness.loading && !profileCompleteness.isEligibleToRaiseLoan
+                                ? `Profile Incomplete (${profileCompleteness.percentage}% / 90%)`
+                                : "Submit"}
                             </button>
                           </div>
                         </div>

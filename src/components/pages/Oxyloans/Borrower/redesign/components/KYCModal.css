@@ -665,12 +665,17 @@
 
 .kyc-input-native {
   flex: 1;
-  border: none;
-  outline: none;
+  min-width: 0;
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   font-size: 13.5px;
   color: #0f172a;
-  background: transparent;
+  background: transparent !important;
   height: 100%;
+  pointer-events: auto !important;
+  user-select: text !important;
 }
 
 .kyc-input-toggle-btn {

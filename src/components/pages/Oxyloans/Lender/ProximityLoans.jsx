@@ -1046,6 +1046,21 @@ const ProximityLoans = () => {
                     </button>
                   )}
 
+                  {/* <Link
+                    to={`/lender/borrower-profile/${selectedBorrower.borrowerId}`}
+                    className="btn btn-outline-primary"
+                    style={{
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      fontSize: 13,
+                      whiteSpace: "nowrap",
+                    }}
+                    title="View dedicated full-page borrower profile"
+                  >
+                    <i className="fa fa-user me-1" />
+                    Full Profile Screen
+                  </Link> */}
+
                   <Link
                     to="/offerGivenList"
                     className="btn btn-outline-secondary"

@@ -5,7 +5,7 @@ import Header from "../../Header/Header";
 import { Link, useNavigate } from "react-router-dom";
 import FeatherIcon from "feather-icons-react";
 import PhoneInput from "react-phone-number-input";
-import { Success } from "../Base UI Elements/SweetAlert";
+import { Success, WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import axios from "axios";
 import {
   notificationssucces,
@@ -226,8 +226,8 @@ const Profile = () => {
           });
           notificationssucces();
         } else if (data.response.data.errorCode !== "200") {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-toastrSuccess(data.response.data.errorMessage, "top-right")
+          WarningBackendApi("warning", data.response.data.errorMessage);
+// toastrWarning(data.response.data.errorMessage, "top-right")
 
         }
       });
@@ -256,8 +256,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         if (data.request.status === 200) {
           notificationssucces();
         } else if (data.response.data.errorCode !== "200") {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-          toastrSuccess(data.response.data.errorMessage, "top-right")
+          WarningBackendApi("warning", data.response.data.errorMessage);
 
         }
       });
@@ -283,8 +282,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
           Success("Sucess", "WhatsApp OTP verified successfully")
           history("/dashboard")
         } else if (data.response.data.errorCode !== "200") {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-          toastrSuccess(data.response.data.errorMessage, "top-right")
+          WarningBackendApi("warning", data.response.data.errorMessage);
+          // toastrWarning(data.response.data.errorMessage, "top-right")
 
         }
       });
@@ -310,10 +309,19 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   }, [userProfile.aadharerror]);
   const handlerNominee = (event) => {
     const { value, name } = event.target;
-    setnomineeDetails({
-      ...nomineeDetails,
+    setnomineeDetails((prev) => ({
+      ...prev,
       [name]: value,
-    });
+      ...(name === "nomineeName" && { nomineeNameerror: "" }),
+      ...(name === "relation" && { relationerror: "" }),
+      ...(name === "nomineeEmail" && { nomineeEmaileeror: "" }),
+      ...(name === "nomineeMobile" && { nomineeMobileerror: "" }),
+      ...(name === "accountNo" && { accountNoerror: "" }),
+      ...(name === "nomineeIfsc" && { nomineeIfscerror: "" }),
+      ...(name === "bank" && { bankerror: "" }),
+      ...(name === "nomineecity" && { nomineecityerror: "" }),
+      ...(name === "branch" && { brancherror: "" }),
+    }));
   };
 
   useEffect(() => {
@@ -326,7 +334,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       nomineeDetails.nomineeMobile !== "" &&
       nomineeDetails.nomineeName !== "" &&
       nomineeDetails.relation !== "" &&
-      nomineeDetails.city !== "";
+      nomineeDetails.nomineecity !== "";
     if (isvalid) {
       setnomineeDetails((prev) => ({
         ...prev,
@@ -348,12 +356,13 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     nomineeDetails.nomineeMobile,
     nomineeDetails.nomineeName,
     nomineeDetails.relation,
-    nomineeDetails.city,
+    nomineeDetails.nomineecity,
   ]);
 
   const handleKeyPress = (event) => {
     const inputChar = event.key;
-    const regex = /^[a-zA-Z]*$/;
+    // Names, relations, cities, and bank names may contain internal spaces.
+    const regex = /^[a-zA-Z ]*$/;
 
     if (!regex.test(inputChar) && inputChar !== "Backspace") {
       event.preventDefault();
@@ -415,8 +424,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
           if (data.request.status === 200) {
             Success("success", "Bank Details Saved Successfully");
           } else if (data.response.data.errorCode !== "200") {
-            // WarningBackendApi("warning", data.response.data.errorMessage);
-            toastrSuccess(data.response.data.errorMessage, "top-right")
+            WarningBackendApi("warning", data.response.data.errorMessage);
+            // toastrWarning(data.response.data.errorMessage, "top-right")
 
           }
         });
@@ -425,83 +434,239 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
 
   };
 
-  const handleNomineeclick = async (event) => {
-    event.preventDefault();
-    setnomineeDetails({
-      ...nomineeDetails,
-      nomineeNameerror:
-        nomineeDetails.nomineeName === "" ? "Enter the Nominee Name" : "",
-      relationerror: nomineeDetails.relation === "" ? "Enter the Relation" : "",
-      nomineeEmaileeror:
-        nomineeDetails.nomineeEmail === ""
-          ? "Enter the Nominee Email"
-          : nomineeDetails.nomineeEmail.includes("@")
-          ? ""
-          : "Enter the valid Email address",
-      nomineeMobileerror:
-        nomineeDetails.nomineeMobile === ""
-          ? "Enter the Nominee Mobile Number"
-          : nomineeDetails.nomineeMobile.length === 10
-          ? ""
-          : "Enter the 10 Digits Mobile Number",
-      accountNoerror:
-        nomineeDetails.accountNo === "" ? "Enter the   Nominee Account No" : "",
-      emailerror: nomineeDetails.nomineeEmail === "" ? "Enter the Nominee Email" : "",
-      bankerror: nomineeDetails.bank === "" ? "Enter the bank" : "",
-      brancherror: nomineeDetails.branch === "" ? "Enter the Branch Name" : "",
-      nomineeIfscerror:
-        nomineeDetails.nomineeIfsc === ""
-          ? "Enter the Ifsc"
-          : nomineeDetails.nomineeIfsc.length === 11
-          ? ""
-          : "Please enter valid IFSC code",
-      nomineecityerror:
-        nomineeDetails.nomineecity === "" ? "Enter the city" : "",
-    });
+  const handleNomineeclick = async (e) => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+
+    const currentNominee = { ...nomineeDetails };
+
+    const userEmail = (
+      userProfile.email ||
+      reduxStoreData?.email ||
+      dashboarddata.profileData?.data?.email ||
+      sessionStorage.getItem("email") ||
+      ""
+    ).trim().toLowerCase();
+
+    const userMobile = (
+      userProfile.mobileNumber ||
+      reduxStoreData?.mobileNumber ||
+      dashboarddata.profileData?.data?.mobileNumber ||
+      sessionStorage.getItem("mobileNumber") ||
+      ""
+    ).replace(/\D/g, "").slice(-10);
+
+    const userAccount = (
+      bankaccountprofile.accountNumber ||
+      dashboarddata.profileData?.data?.accountNumber ||
+      ""
+    ).replace(/\D/g, "");
+
+    const userFullName = `${userProfile.firstName || ""} ${userProfile.lastName || ""}`
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+
+    let nomineeNameerror = "";
+    const nameVal = (currentNominee.nomineeName || "").trim();
+    if (!nameVal) {
+      nomineeNameerror = "Enter the Nominee Name";
+    } else if (/\d/.test(nameVal)) {
+      nomineeNameerror = "Enter characters only!";
+    } else if (userFullName && nameVal.toLowerCase() === userFullName) {
+      nomineeNameerror = "Nominee name must be different from your name";
+    }
+
+    let relationerror = "";
+    const relVal = (currentNominee.relation || "").trim();
+    if (!relVal) {
+      relationerror = "Enter the Relation";
+    } else if (/\d/.test(relVal)) {
+      relationerror = "Enter characters only!";
+    }
+
+    let nomineeEmaileeror = "";
+    const emailVal = (currentNominee.nomineeEmail || "").trim();
+    if (!emailVal) {
+      nomineeEmaileeror = "Enter the Nominee Email";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+      nomineeEmaileeror = "Enter valid Email address";
+    } else if (userEmail && emailVal.toLowerCase() === userEmail) {
+      nomineeEmaileeror = "Please provide nominee email ID, not your own email ID.";
+    }
+
+    let nomineeMobileerror = "";
+    const mobileVal = (currentNominee.nomineeMobile || "").trim();
+    if (!mobileVal) {
+      nomineeMobileerror = "Enter the Nominee Mobile Number";
+    } else if (mobileVal.length !== 10 || !/^\d{10}$/.test(mobileVal)) {
+      nomineeMobileerror = "Enter 10 Digits Mobile Number";
+    } else if (userMobile && mobileVal === userMobile) {
+      nomineeMobileerror = "Nominee mobile number must be different from your mobile number";
+    }
+
+    let accountNoerror = "";
+    const accVal = (currentNominee.accountNo || "").trim();
+    if (!accVal) {
+      accountNoerror = "Enter the Nominee Account No";
+    } else if (!/^\d{9,18}$/.test(accVal)) {
+      accountNoerror = "Enter valid Account Number";
+    } else if (userAccount && accVal === userAccount) {
+      accountNoerror = "Nominee account number must be different from your account number";
+    }
+
+    let nomineeIfscerror = "";
+    const ifscVal = (currentNominee.nomineeIfsc || "").trim().toUpperCase();
+    if (!ifscVal) {
+      nomineeIfscerror = "Enter the IFSC Code";
+    } else if (ifscVal.length !== 11) {
+      nomineeIfscerror = "Please enter valid IFSC code";
+    }
+
+    let bankerror = "";
+    const bankVal = (currentNominee.bank || "").trim();
+    if (!bankVal) {
+      bankerror = "Enter the Bank Name";
+    } else if (/\d/.test(bankVal)) {
+      bankerror = "Enter characters only!";
+    }
+
+    let nomineecityerror = "";
+    const cityVal = (currentNominee.nomineecity || "").trim();
+    if (!cityVal) {
+      nomineecityerror = "Enter the City";
+    } else if (/\d/.test(cityVal)) {
+      nomineecityerror = "Enter characters only!";
+    }
+
+    let brancherror = "";
+    const branchVal = (currentNominee.branch || "").trim();
+    if (!branchVal) {
+      brancherror = "Enter the Branch Name";
+    } else if (/\d/.test(branchVal)) {
+      brancherror = "Enter characters only!";
+    }
+
+    setnomineeDetails((prev) => ({
+      ...prev,
+      nomineeNameerror,
+      relationerror,
+      nomineeEmaileeror,
+      nomineeMobileerror,
+      accountNoerror,
+      nomineeIfscerror,
+      bankerror,
+      nomineecityerror,
+      brancherror,
+    }));
 
     if (
-      nomineeDetails.nomineeName !== "" &&
-      nomineeDetails.nomineeName !== null &&
-      nomineeDetails.nomineeIfsc !== "" &&
-      nomineeDetails.nomineeIfsc !== null &&
-      nomineeDetails.relation !== "" &&
-      nomineeDetails.relation !== null &&
-      nomineeDetails.nomineeEmail !== "" &&
-      nomineeDetails.nomineeEmail !== null &&
-      nomineeDetails.nomineeMobile !== "" &&
-      nomineeDetails.nomineeMobile !== null &&
-      nomineeDetails.nomineeMobile.length === 10 &&
-      nomineeDetails.accountNo !== "" &&
-      nomineeDetails.accountNo !== null &&
-      nomineeDetails.nomineeEmail !== "" &&
-      nomineeDetails.nomineeEmail !== null &&
-      nomineeDetails.bank !== "" &&
-      nomineeDetails.bank !== null &&
-      nomineeDetails.branch !== "" &&
-      nomineeDetails.branch !== null &&
-      nomineeDetails.nomineecity !== "" &&
-      nomineeDetails.nomineecity !== null &&
-      nomineeDetails.nomineeNameerror === "" &&
-      nomineeDetails.relationerror === "" &&
-      nomineeDetails.nomineeEmaileeror === "" &&
-      nomineeDetails.nomineeMobileerror === "" &&
-      nomineeDetails.accountNoerror === "" &&
-      nomineeDetails.emailerror === "" &&
-      nomineeDetails.bankerror === "" &&
-      nomineeDetails.nomineeIfscerror === "" &&
-      nomineeDetails.nomineecityerror === ""
+      nomineeNameerror ||
+      relationerror ||
+      nomineeEmaileeror ||
+      nomineeMobileerror ||
+      accountNoerror ||
+      nomineeIfscerror ||
+      bankerror ||
+      nomineecityerror ||
+      brancherror
     ) {
-      const response = savenomineeDeatailsApi(nomineeDetails);
-      response.then((data) => {
-        if (data.request.status === 200) {
-          Success("success", "Nominee Details Save Successfully");
-        } else if (data.response.data.errorCode !== "200") {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-          toastrSuccess(data.response.data.errorMessage, "top-right")
+      if (
+        nomineeEmaileeror ===
+        "Please provide nominee email ID, not your own email ID."
+      ) {
+        WarningBackendApi("warning", nomineeEmaileeror);
+      }
+      return;
+    }
 
+    try {
+      const data = await savenomineeDeatailsApi(currentNominee);
+
+      const isHttpSuccess =
+        data?.status === 200 || data?.request?.status === 200;
+      const resData = data?.data;
+
+      if (isHttpSuccess && resData) {
+        // Backend returns error message inside HTTP 200 response
+        // e.g. { "userId": null, "emial": null, ..., "errorMessage": "Please provide nominee email ID, not your own email ID." }
+        if (resData.errorMessage) {
+          WarningBackendApi("warning", resData.errorMessage);
+          if (
+            typeof resData.errorMessage === "string" &&
+            resData.errorMessage.toLowerCase().includes("email")
+          ) {
+            setnomineeDetails((prev) => ({
+              ...prev,
+              nomineeEmaileeror: resData.errorMessage,
+            }));
+          }
+          return;
         }
-      });
-    } else {
+
+        if (
+          resData.errorCode &&
+          resData.errorCode !== "200" &&
+          resData.errorCode !== 200
+        ) {
+          WarningBackendApi(
+            "warning",
+            resData.errorMessage || "Failed to save nominee details"
+          );
+          return;
+        }
+
+        Success("success", "Nominee Details Saved Successfully");
+
+        // Reload nominee details to keep state updated
+        loadlendernomineeDetails()
+          .then((nomRes) => {
+            if (
+              (nomRes?.status === 200 || nomRes?.request?.status === 200) &&
+              nomRes?.data &&
+              !nomRes.data.errorMessage
+            ) {
+              setnomineeDetails((prev) => ({
+                ...prev,
+                nomineeName: nomRes.data.name || "",
+                relation: nomRes.data.relation || "",
+                nomineeEmail: nomRes.data.emial || nomRes.data.email || "",
+                nomineeMobile: nomRes.data.mobileNumber || "",
+                accountNo: nomRes.data.accountNumber || "",
+                nomineeIfsc: nomRes.data.ifscCode || "",
+                bank: nomRes.data.bankName || "",
+                branch: nomRes.data.branchName || "",
+                nomineecity: nomRes.data.city || "",
+              }));
+            }
+          })
+          .catch(() => {});
+      } else {
+        const errorMsg =
+          data?.response?.data?.errorMessage ||
+          data?.response?.data?.message ||
+          data?.data?.errorMessage ||
+          data?.message ||
+          "Failed to save nominee details";
+        WarningBackendApi("warning", errorMsg);
+        if (
+          typeof errorMsg === "string" &&
+          errorMsg.toLowerCase().includes("email")
+        ) {
+          setnomineeDetails((prev) => ({
+            ...prev,
+            nomineeEmaileeror: errorMsg,
+          }));
+        }
+      }
+    } catch (err) {
+      const errorMsg =
+        err?.response?.data?.errorMessage ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to save nominee details";
+      WarningBackendApi("warning", errorMsg);
     }
   };
   // const submitNomineeDetails = (event) => {
@@ -641,20 +806,20 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
             ...prevProfile,
             ifscCodeerror: data.data.message, // Set the error on failure
           }));
-          //  WarningBackendApi("Warning", data.response.data.errorMessage);
-            toastrSuccess(data.response.data.errorMessage, "top-right")
+            WarningBackendApi("Warning", data.response.data.errorMessage);
+            // toastrSuccess(data.response.data.errorMessage, "top-right")
         }
       }
       else{
-                  // WarningBackendApi("warning", data.response.data.errorMessage);
-                  toastrSuccess(data.response.data.errorMessage, "top-right")
+                  WarningBackendApi("warning", data.response.data.errorMessage);
+                  // toastrSuccess(data.response.data.errorMessage, "top-right")
 
 
       }
     } catch (error) {
       console.error("Error verifying bank account and IFSC:", error);
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-        toastrSuccess(error.response.data.errorMessage, "top-right")
+          WarningBackendApi("warning", data.response.data.errorMessage);
+        // toastrSuccess(error.response.data.errorMessage, "top-right")
 
     }
   };
@@ -702,8 +867,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
           data.response.data &&
           data.response.data.errorCode !== "200"
         ) {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-          toastrSuccess(data.response.data.errorMessage, "top-right")
+          WarningBackendApi("warning", data.response.data.errorMessage);
+          // toastrSuccess(data.response.data.errorMessage, "top-right")
 
         } else {
         }
@@ -745,7 +910,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         ...prevDetails,
         nomineeNameerror: "Enter characters only!",
       }));
-    } else {
+    } else if (nomineeDetails.nomineeNameerror === "Enter characters only!") {
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         nomineeNameerror: "",
@@ -757,7 +922,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         ...prevDetails,
         relationerror: "Enter characters only!",
       }));
-    } else {
+    } else if (nomineeDetails.relationerror === "Enter characters only!") {
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         relationerror: "",
@@ -769,7 +934,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         ...prevDetails,
         bankerror: "Enter characters only!",
       }));
-    } else {
+    } else if (nomineeDetails.bankerror === "Enter characters only!") {
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         bankerror: "",
@@ -781,7 +946,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         ...prevDetails,
         nomineecityerror: "Enter characters only!",
       }));
-    } else {
+    } else if (nomineeDetails.nomineecityerror === "Enter characters only!") {
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         nomineecityerror: "",
@@ -794,7 +959,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         lastNamerror: "Enter characters only!",
       }));
     } else {
-      setnomineeDetails((prevDetails) => ({
+      setUserProfile((prevDetails) => ({
         ...prevDetails,
         lastNamerror: "",
       }));
@@ -899,40 +1064,32 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     }
 
     if (
-      /^\d+$/.test(nomineeDetails.nomineeMobile) ||
-      nomineeDetails.nomineeMobile === "" ||
-      nomineeDetails.nomineeMobile === null
+      nomineeDetails.nomineeMobile &&
+      !/^\d+$/.test(nomineeDetails.nomineeMobile)
     ) {
-      // Nominee mobile contains only digits or is empty or null
-
-      setnomineeDetails((prevDetails) => ({
-        ...prevDetails,
-        nomineeMobileerror: "", // No error
-      }));
-    } else {
-      // Nominee mobile contains non-digit characters
-
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         nomineeMobileerror: "Enter digits only!",
       }));
+    } else if (nomineeDetails.nomineeMobileerror === "Enter digits only!") {
+      setnomineeDetails((prevDetails) => ({
+        ...prevDetails,
+        nomineeMobileerror: "",
+      }));
     }
 
     if (
-      /^\d+$/.test(nomineeDetails.accountNo) ||
-      nomineeDetails.accountNo === "" ||
-      nomineeDetails.accountNo === null
+      nomineeDetails.accountNo &&
+      !/^\d+$/.test(nomineeDetails.accountNo)
     ) {
-      // Nominee mobile contains only digits or is empty or null
-      setnomineeDetails((prevDetails) => ({
-        ...prevDetails,
-        accountNoerror: "", // No error
-      }));
-    } else {
-      // Nominee mobile contains non-digit characters
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         accountNoerror: "Enter digits only!",
+      }));
+    } else if (nomineeDetails.accountNoerror === "Enter digits only!") {
+      setnomineeDetails((prevDetails) => ({
+        ...prevDetails,
+        accountNoerror: "",
       }));
     }
 
@@ -969,7 +1126,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
         ...prevDetails,
         brancherror: "Enter characters only!",
       }));
-    } else {
+    } else if (nomineeDetails.brancherror === "Enter characters only!") {
       setnomineeDetails((prevDetails) => ({
         ...prevDetails,
         brancherror: "",
@@ -991,7 +1148,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
     userProfile.mobileNumber,
     nomineeDetails.nomineeMobile,
     nomineeDetails.branch,
-    nomineeDetails.accountN,
+    nomineeDetails.accountNo,
     bankaccountprofile.bankCity,
     bankaccountprofile.branchName,
   ]);
@@ -1157,8 +1314,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
           Success("success", "Personal Details Saved Successfully");
           triggerSavingGoogleDistance(data.data.userId);
         } else if (data.response.data.errorCode !== "200") {
-          // WarningBackendApi("warning", data.response.data.errorMessage);
-          toastrSuccess(data.response.data.errorMessage, "top-right")
+          WarningBackendApi("warning", data.response.data.errorMessage);
+          // toastrSuccess(data.response.data.errorMessage, "top-right")
 
         }
       });
@@ -1186,7 +1343,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
       //   userProfile.address ,
       //   userProfile.city ,
       //   userProfile.city)
-      toastrWarning("fill the mandatory fields");
+      // toastrWarning("fill the mandatory fields");
     }
   };
 
@@ -1335,25 +1492,37 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
   };
 
   useEffect(() => {
-    const nomineresponse = loadlendernomineeDetails();
-    nomineresponse.then((data) => {
-      if (data.request.status === 200) {
-        setnomineeDetails((prev) => ({
-          ...prev,
-          nomineeName: data.data.name == null ? "" : data.data.name,
-          relation: data.data.relation == null ? "" : data.data.relation,
-          nomineeEmail: data.data.emial == null ? "" : data.data.emial,
-          nomineeMobile:
-            data.data.mobileNumber == null ? "" : data.data.mobileNumber,
-          accountNo:
-            data.data.accountNumber == null ? "" : data.data.accountNumber,
-          nomineeIfsc: data.data.ifscCode == null ? "" : data.data.ifscCode,
-          bank: data.data.bankName == null ? "" : data.data.bankName,
-          branch: data.data.branchName == null ? "" : data.data.branchName,
-          nomineecity: data.data.city == null ? "" : data.data.city,
-        }));
-      }
-    });
+    loadlendernomineeDetails()
+      .then((data) => {
+        if (
+          (data?.status === 200 || data?.request?.status === 200) &&
+          data?.data &&
+          !data.data.errorMessage
+        ) {
+          setnomineeDetails((prev) => ({
+            ...prev,
+            nomineeName: data.data.name == null ? "" : data.data.name,
+            relation: data.data.relation == null ? "" : data.data.relation,
+            nomineeEmail:
+              data.data.emial != null
+                ? data.data.emial
+                : data.data.email != null
+                ? data.data.email
+                : "",
+            nomineeMobile:
+              data.data.mobileNumber == null ? "" : data.data.mobileNumber,
+            accountNo:
+              data.data.accountNumber == null ? "" : data.data.accountNumber,
+            nomineeIfsc: data.data.ifscCode == null ? "" : data.data.ifscCode,
+            bank: data.data.bankName == null ? "" : data.data.bankName,
+            branch: data.data.branchName == null ? "" : data.data.branchName,
+            nomineecity: data.data.city == null ? "" : data.data.city,
+          }));
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading nominee details:", error);
+      });
   }, []);
 
   useEffect(() => {
@@ -1599,7 +1768,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
 
                     <li className="nav-item">
                       <Link
-                        className="nav-link Kyc"
+                        className="nav-link whatapp1"
                         data-bs-toggle="tab"
                         to="#whatapp1"
                       >
@@ -2017,8 +2186,8 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                         <br />
                         <div className="row">
                           <div className="col-md-12 col-lg-12">
-                            <form action="#">
-                              <div className="row">
+                            <form action="#" onSubmit={(e) => handleNomineeclick(e)}>
+                              <div className="row g-3">
                                 <div className="form-group col-12 col-md-4 local-forms">
                                   <label>
                                     Nominee Name
@@ -2207,13 +2376,13 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   )}
                                 </div>
 
-                                <div className="row col-12">
+                                <div className="col-12">
                                   <button
                                     className="btn btn-success col-12 col-md-2"
                                     type="submit"
                                     // disabled={nomineeDetails.isbtndisable}
 
-                                    onClick={() => handleNomineeclick()}
+                                    onClick={(e) => handleNomineeclick(e)}
                                   >
                                     Save
                                   </button>
@@ -2608,6 +2777,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   <input
                                     type="file"
                                     name="pan"
+                                    accept="image/*,application/pdf"
                                     id="pan"
                                     className="hide-input"
                                     onChange={handlefileupload}
@@ -2622,7 +2792,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
 
                                 {console.log(kyc)}
                                 {kyc.PanCard !== undefined &&
-                                  kyc.PanCard !== "" ? (
+                                  kyc.PanCard !== "" && kyc.PanCard.fileName ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.PanCard.fileName}</small>
@@ -2644,7 +2814,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   <input
                                     type="file"
                                     name="CHEQUELEAF"
-                                    accept="image/*"
+                                    accept="image/*,application/pdf"
                                     id="CHEQUELEAF"
                                     className="hide-input"
                                     onChange={handlefileupload}
@@ -2659,7 +2829,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </label>
                                 </div>
                                 {kyc.CHEQUELEAF !== undefined &&
-                                  kyc.CHEQUELEAF !== "" ? (
+                                  kyc.CHEQUELEAF !== "" && kyc.CHEQUELEAF.fileName ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.CHEQUELEAF.fileName}</small>
@@ -2679,7 +2849,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 <div className="settings-btn">
                                   <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*,application/pdf"
                                     name="aadhar"
                                     id="aadhar"
                                     className="hide-input"
@@ -2692,7 +2862,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </label>
                                 </div>
 
-                                {kyc.aadhar !== undefined && kyc.aadhar !== "" ? (
+                                {kyc.aadhar !== undefined && kyc.aadhar !== "" && kyc.aadhar.fileName ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.aadhar.fileName}</small>
@@ -2712,7 +2882,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 <div className="settings-btn">
                                   <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*,application/pdf"
                                     name="DRIVINGLICENCE"
                                     id="license"
                                     className="hide-input"
@@ -2725,7 +2895,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   </label>
                                 </div>
                                 {kyc.DRIVINGLICENCE !== undefined &&
-                                  kyc.DRIVINGLICENCE !== "" ? (
+                                  kyc.DRIVINGLICENCE !== "" && kyc.DRIVINGLICENCE.fileName ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.DRIVINGLICENCE.fileName}</small>
@@ -2742,7 +2912,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 <div className="settings-btn">
                                   <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*,application/pdf"
                                     id="VOTERID"
                                     name="VOTERID"
                                     onChange={handlefileupload}
@@ -2756,7 +2926,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 </div>
 
                                 {kyc.VOTERID !== undefined &&
-                                  kyc.VOTERID !== "" ? (
+                                  kyc.VOTERID !== "" && kyc.VOTERID.fileName ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.VOTERID.fileName}</small>
@@ -2777,7 +2947,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                   <input
                                     type="file"
                                     id="Passport"
-                                    accept="image/*"
+                                    accept="image/*,application/pdf"
                                     name="Passport"
                                     onChange={handlefileupload}
                                     className="hide-input"
@@ -2790,7 +2960,7 @@ toastrSuccess(data.response.data.errorMessage, "top-right")
                                 </div>
 
                                 {kyc.Passport !== undefined &&
-                                  kyc.Passport !== "" ? (
+                                  kyc.Passport !== "" && kyc.Passport.fileName ? (
                                   <h6 className="settings-size text-success">
                                     <i className="fa-solid fa-check mx-lg-1 "></i>
                                     <small>{kyc.Passport.fileName}</small>

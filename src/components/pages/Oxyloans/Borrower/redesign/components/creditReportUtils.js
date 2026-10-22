@@ -20,35 +20,29 @@ export const RAW_SAMPLE_RESPONSE = {
               iDAndContactInfo: {
                 personalInfo: {
                   name: {
-                    fullName: "BALIJEPALLI NARENDRA ",
-                    firstName: "BALIJEPALLI ",
-                    middleName: "NARENDRA "
+                    fullName: "DHARMAPURI SAI KRISHNA",
+                    firstName: "DHARMAPURI",
+                    middleName: "SAI KRISHNA"
                   },
-                  dateOfBirth: "1994-08-08",
+                  dateOfBirth: "1999-11-08",
                   gender: "Male",
-                  age: { age: "32" },
-                  totalIncome: ""
+                  age: { age: "27" },
+                  totalIncome: "25000"
                 },
                 identityInfo: {
-                  pANId: [{ seq: "1", reportedDate: "2026-09-23", idNumber: "CDBPB2737H" }],
+                  pANId: [{ seq: "1", reportedDate: "2026-09-23", idNumber: "JUXPK2964M" }],
                   otherId: [{ seq: "1", reportedDate: "2026-06-30", idNumber: "60011901969107" }]
                 },
                 addressInfo: [
-                  { seq: "1", reportedDate: "2026-09-23", address: "4-15-124-2 BHARATH PET 8THLANE AMARAVATHI ROAD  GUNTUR GUNTUR", state: "AP", postal: "522002", type: "Permanent" },
-                  { seq: "2", reportedDate: "2026-09-23", address: "SRS FINTECH LABS PVT LTD  CCO2 BLOCK  C HINDU FORTUNE FIELDS 9TH PHASE ANNEXE HYDERABAD", state: "AP", postal: "500085", type: "Office" },
-                  { seq: "3", reportedDate: "2026-09-23", address: "PLOT NO 287 MIG/2 KAHI PHOSE 9 KUKADPALLY  NEAR FORUM MALL HYDERABAD", state: "TS", postal: "500072", type: "Office" },
-                  { seq: "4", reportedDate: "2026-09-23", address: "SAI MSDHAV BOYS HOSTEL 155A ADDAGUTTA  NEAR JNTU HYDERABAD", state: "TS", postal: "500090", type: "Primary" },
-                  { seq: "5", reportedDate: "2021-03-31", address: "4-15-124-2 BHARATH PET 8THLANE AMARAVATHI ROAD  GUNTUR GUNTUR", state: "AP", postal: "522002", type: "Permanent" }
+                  { seq: "1", reportedDate: "2026-09-23", address: "TIRUMALAGIRI HYDERABAD TELANGANA", state: "TS", postal: "500085", type: "Permanent" },
+                  { seq: "2", reportedDate: "2026-09-23", address: "OXYLOANS HYDERABAD TELANGANA", state: "TS", postal: "500085", type: "Office" }
                 ],
                 phoneInfo: [
-                  { seq: "1", typeCode: "H", reportedDate: "2020-02-29", number: "00522002" },
-                  { seq: "2", typeCode: "M", reportedDate: "2026-09-23", number: "09492902990" },
-                  { seq: "3", typeCode: "M", reportedDate: "2023-02-01", number: "9966888825" },
-                  { seq: "4", typeCode: "T", reportedDate: "2026-06-30", number: "9492902990" },
-                  { seq: "5", typeCode: "T", reportedDate: "2023-04-01", number: "00522002" }
+                  { seq: "1", typeCode: "M", reportedDate: "2026-09-23", number: "7702443666" },
+                  { seq: "2", typeCode: "M", reportedDate: "2026-06-30", number: "918125861874" }
                 ],
                 emailAddressInfo: [
-                  { seq: "1", reportedDate: "2023-02-01", emailAddress: "NARENDRA@OXYLOANS.COM" }
+                  { seq: "1", reportedDate: "2026-02-01", emailAddress: "SOMETHINGSPECIALDAY@GMAIL.COM" }
                 ]
               },
               retailAccountsSummary: {

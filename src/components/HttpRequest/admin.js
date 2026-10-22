@@ -1016,6 +1016,29 @@ export const getAdminCreditReport = async (borrowerUserId) => {
   return response;
 };
 
+export const updateAcceptorRejectStatus = async (borrowerId, status,reason) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateUserRejectOrApprove`,
+    "PATCH",
+    token,
+    {userId: borrowerId, status, reason }
+  );
+  return response;
+};
+
+export const getAcceptorRejectStatus = async (borrowerId) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `updateUserRejectOrApprove/${encodeURIComponent(borrowerId)}`,
+    "GET",
+    token
+  );
+  return response;
+};
+
 export const updateOxyScore = async (borrowerId, oxyScore, comments) => {
   const token = getToken();
   const response = await handleApiRequestAfterLoginService(

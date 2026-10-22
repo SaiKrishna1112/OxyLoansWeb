@@ -3732,6 +3732,14 @@ table.table-inbox tbody tr.checked {
 .profile-tab-cont {
   padding-top: 1.875rem;
 }
+
+/* Keep nominee controls stretched to the width of their Bootstrap column. */
+.profile-tab-cont #nominee_tab .form-control {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
 .about-text {
   max-width: 500px;
 }

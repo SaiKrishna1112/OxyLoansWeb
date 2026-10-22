@@ -3,7 +3,7 @@ import { Table, Select, Input, Tag, Space, Typography, Card, message, } from "an
 import {  Spinner } from 'react-bootstrap';
 
 import { EyeOutlined, EditOutlined, UserSwitchOutlined, CommentOutlined,FileSearchOutlined  } from "@ant-design/icons";
-import { commentsAdminApiCall, searchCall, handleChangePrimaryType, handleInterestStatus, adminBorrowerSecureInfo, calculateRoiBasedOnCibilScore, getAdminCreditReport, updateOxyScore, handleComments, getcommentsHistory } from "../../../../HttpRequest/admin";
+import { commentsAdminApiCall, searchCall, handleChangePrimaryType, handleInterestStatus, adminBorrowerSecureInfo, calculateRoiBasedOnCibilScore, getAdminCreditReport, updateOxyScore, handleComments, getcommentsHistory, updateAcceptorRejectStatus, getAcceptorRejectStatus } from "../../../../HttpRequest/admin";
 import Swal from 'sweetalert2';
 import OxyloansAdminSidebar from "../../../../SideBar/OxyloansAdminSidebar";
 import OxyloansAdminHeader from "../../../../Header/OxyloansAdminHeader";
@@ -47,6 +47,11 @@ const BorrowerLoanApplications = () => {
   const [commentText, setCommentText] = useState("");
   const [commentError, setCommentError] = useState("");
   const [commentHistory, setCommentHistory] = useState([]);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectionStatus, setRejectionStatus] = useState("");
+  const [rejectionError, setRejectionError] = useState("");
+  const [rejectionLoading, setRejectionLoading] = useState(false);
+  const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
 
   const pageSize = 10; // Fixed page size
   const navigate = useNavigate();
@@ -423,8 +428,48 @@ const BorrowerLoanApplications = () => {
       }
     };
 
-  const changeUserStatus = (record) => {
+  const changeUserStatus = async (record) => {
     console.log("Change user status for:", record);
+    setSelectedRecord(record);
+    setRejectionStatus("");
+    setRejectionReason("");
+    setRejectionError("");
+    setRejectionModalOpen(true);
+
+    try {
+      const response = await getAcceptorRejectStatus(record.userDisplayId);
+      const statusData = response?.data && typeof response.data === "object" ? response.data : {};
+      setRejectionStatus(statusData.status || record.status || "");
+      setRejectionReason(statusData.reason || "");
+    } catch (error) {
+      console.error("Error fetching approve/reject status:", error);
+    }
+  };
+
+  const handleRejectApplication = async () => {
+    if (!selectedRecord) return;
+    if (!rejectionReason.trim()) {
+      setRejectionError("Rejection reason is required");
+      return;
+    } 
+    if (rejectionStatus === "") {
+      setRejectionError("Please select a rejection status");
+      return;
+    }
+    try {
+      setRejectionLoading(true);
+      const response = await updateAcceptorRejectStatus(selectedRecord.userDisplayId, rejectionStatus, rejectionReason);
+      setRejectionLoading(false);
+      setRejectionModalOpen(false);
+      setRejectionStatus("");
+      setRejectionReason("");
+      Swal.fire("Success!", "Application rejected successfully", "success");
+      fetchLoanData();
+    } catch (error) {
+      setRejectionLoading(false);
+      console.error("Error in rejecting application:", error);
+      Swal.fire("Error!", "Failed to reject application", "error");
+    }
   };
 
   const openVerifyModal = (record) => {
@@ -751,10 +796,10 @@ const BorrowerLoanApplications = () => {
             variant="info"
             icon={<UserSwitchOutlined />} 
             size="sm"
-            className="action-btn"
+            className="action-btn text-white"
             onClick={() => changeUserStatus(record)}
           >
-            View Experian Report
+            Approve/Reject
           </Button>
           <Button
             variant="success"
@@ -1466,6 +1511,71 @@ const BorrowerLoanApplications = () => {
             }}
           >
             {cibilLoading ? <><Spinner animation="border" size="sm" /> Updating...</> : "Update OxyScore"}
+          </button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={rejectionModalOpen} onHide={() => {setRejectionModalOpen(false);setRejectionStatus("");setRejectionReason("")}} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Reject Application</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label style={{ fontWeight: 500, fontSize: 13 }}>Borrower Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={`${selectedRecord?.user?.firstName || ""} ${selectedRecord?.user?.lastName || ""}`}
+                readOnly
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label style={{ fontWeight: 500, fontSize: 13 }}>Status</Form.Label>
+              <select className="form-control" value={rejectionStatus} onChange={(e) => setRejectionStatus(e.target.value)}>
+                <option value="">Select Status</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label style={{ fontWeight: 500, fontSize: 13 }}>Reason for Rejection</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Please provide a reason for rejecting this application..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+          {rejectionError && (
+            <div style={{ fontSize: 12, color: "#e53e3e", marginTop: 4 }}>{rejectionError}</div>
+          )}
+        </Modal.Body>
+        <Modal.Footer style={{ background: "#f8f9fa" }}>
+          <button
+            onClick={() => { setRejectionModalOpen(false); setRejectionStatus(""); setRejectionReason("")}}
+            style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "7px 18px", fontWeight: 500, cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleRejectApplication}
+            disabled={rejectionLoading || !rejectionReason}
+            style={{
+              background: rejectionLoading || !rejectionReason ? "#a0b4e8" : "#1a3c8f",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "7px 20px",
+              fontWeight: 600,
+              cursor: rejectionLoading || !rejectionReason ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {rejectionLoading ? <><Spinner animation="border" size="sm" /> Rejecting...</> : "Reject Application"}
           </button>
         </Modal.Footer>
       </Modal>

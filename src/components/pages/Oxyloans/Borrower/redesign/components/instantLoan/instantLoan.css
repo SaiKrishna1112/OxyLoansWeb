@@ -1,0 +1,1352 @@
+/* ==========================================================================
+   Intelligent Lending Studio & Decision Engine Stylesheet
+   Production-grade Fintech styling for instantLoan assessment modules
+   ========================================================================== */
+
+:root {
+  --studio-primary: #0040e0;
+  --studio-primary-rgb: 0, 64, 224;
+  --studio-success: #059669;
+  --studio-warning: #d97706;
+  --studio-danger: #dc2626;
+  --studio-info: #0284c7;
+  --studio-dark: #0f172a;
+  --studio-card-bg: #ffffff;
+  --studio-border: #e2e8f0;
+  --studio-muted: #64748b;
+  --studio-soft-bg: #f8fafc;
+}
+
+/* Master Studio Container */
+.intelligent-studio-wrapper {
+  color: var(--studio-dark);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.studio-card {
+  background: var(--studio-card-bg);
+  border: 1px solid var(--studio-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+  transition: all 0.25s ease;
+  overflow: hidden;
+}
+
+.studio-card:hover {
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08);
+}
+
+.studio-card-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--studio-border);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.studio-card-body {
+  padding: 24px;
+}
+
+/* Persona Switcher Bar */
+.persona-chip {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--studio-border);
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
+}
+
+.persona-chip:hover {
+  border-color: var(--studio-primary);
+  background: rgba(var(--studio-primary-rgb), 0.03);
+  transform: translateY(-2px);
+}
+
+.persona-chip.active {
+  border-color: var(--studio-primary);
+  background: rgba(var(--studio-primary-rgb), 0.08);
+  box-shadow: 0 4px 14px rgba(var(--studio-primary-rgb), 0.15);
+}
+
+/* Studio Navigation Tabs */
+.studio-nav-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+
+.studio-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: #f1f5f9;
+  color: var(--studio-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.studio-tab-btn:hover {
+  background: #e2e8f0;
+  color: var(--studio-dark);
+}
+
+.studio-tab-btn.active {
+  background: var(--studio-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(var(--studio-primary-rgb), 0.25);
+}
+
+/* Metric Display Tiles */
+.metric-tile {
+  background: var(--studio-soft-bg);
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: all 0.2s ease;
+}
+
+.metric-tile:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  color: var(--studio-muted);
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--studio-dark);
+  line-height: 1.2;
+}
+
+.metric-subtext {
+  font-size: 0.78rem;
+  color: var(--studio-muted);
+  margin-top: 4px;
+}
+
+/* Visual Decision Pipeline */
+.pipeline-track {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 4px;
+  scrollbar-width: thin;
+}
+
+.pipeline-node {
+  flex: 1;
+  min-width: 110px;
+  border-radius: 12px;
+  border: 1.5px solid var(--studio-border);
+  background: #ffffff;
+  padding: 12px 10px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pipeline-node:hover {
+  border-color: var(--studio-primary);
+  transform: translateY(-2px);
+}
+
+.pipeline-node.status-PASS {
+  border-color: #86efac;
+  background: #f0fdf4;
+  color: #14532d;
+}
+
+.pipeline-node.status-WARNING {
+  border-color: #fde047;
+  background: #fefce8;
+  color: #78350f;
+}
+
+.pipeline-node.status-FAIL {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.pipeline-node.active-inspect {
+  outline: 2px solid var(--studio-primary);
+  outline-offset: 2px;
+}
+
+/* High Contrast State Badges (WCAG AAA Compliant) */
+.badge-verified {
+  background-color: #dcfce7;
+  color: #14532d;
+  font-weight: 700;
+  border: 1px solid #86efac;
+}
+
+.badge-declared {
+  background-color: #fef3c7;
+  color: #78350f;
+  font-weight: 700;
+  border: 1px solid #fde047;
+}
+
+.badge-unverified {
+  background-color: #fee2e2;
+  color: #7f1d1d;
+  font-weight: 700;
+  border: 1px solid #fca5a5;
+}
+
+.badge-fintech-success-soft {
+  background-color: #ecfdf5;
+  color: #065f46;
+  font-weight: 700;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-fintech-warning-soft {
+  background-color: #fefce8;
+  color: #78350f;
+  font-weight: 700;
+  border: 1px solid #fef08a;
+}
+
+.badge-fintech-primary-soft {
+  background-color: #eff6ff;
+  color: #1e3a8a;
+  font-weight: 700;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-fintech-neutral {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+}
+
+.badge-fintech-danger-soft {
+  background-color: #fef2f2;
+  color: #991b1b;
+  font-weight: 700;
+  border: 1px solid #fecaca;
+}
+
+/* Decision Cards (Deep rich gradients with high contrast white text) */
+.decision-card-approve {
+  background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #065f46 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 12px 30px -4px rgba(6, 78, 59, 0.4);
+}
+
+.decision-card-reduced {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #1e40af 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 12px 30px -4px rgba(30, 58, 138, 0.4);
+}
+
+.decision-card-review {
+  background: linear-gradient(135deg, #7c2d12 0%, #9a3412 50%, #78350f 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 12px 30px -4px rgba(124, 45, 18, 0.4);
+}
+
+.decision-card-decline {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b91c1c 100%);
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 12px 30px -4px rgba(127, 29, 29, 0.4);
+}
+
+/* Custom Range Slider */
+.studio-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  outline: none;
+  transition: opacity 0.2s;
+}
+
+.studio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--studio-primary);
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.studio-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+
+/* Scenario Comparison Table */
+.scenario-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.scenario-table th {
+  background: #f8fafc;
+  color: var(--studio-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-bottom: 1.5px solid var(--studio-border);
+}
+
+.scenario-table td {
+  padding: 14px;
+  border-bottom: 1px solid var(--studio-border);
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.scenario-table tr:hover td {
+  background: #f8fafc;
+}
+
+.scenario-table tr.highlight-selected td {
+  background: rgba(var(--studio-primary-rgb), 0.05);
+  font-weight: 600;
+}
+
+/* Circular Gauge Representation */
+.gauge-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-svg {
+  transform: rotate(-90deg);
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: #e2e8f0;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Stress Test Status Pill (High Contrast) */
+.stress-pill-pass {
+  background: #dcfce7;
+  color: #14532d;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #86efac;
+}
+
+.stress-pill-warning {
+  background: #fefce8;
+  color: #78350f;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #fde047;
+}
+
+.stress-pill-fail {
+  background: #fee2e2;
+  color: #7f1d1d;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid #fca5a5;
+}
+
+/* Reason Code Cards */
+.reason-item {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border-left: 4px solid #cbd5e1;
+  background: #f8fafc;
+  margin-bottom: 10px;
+}
+
+.reason-item.impact-CRITICAL,
+.reason-item.impact-HIGH {
+  border-left-color: var(--studio-danger);
+  background: #fff5f5;
+}
+
+.reason-item.impact-POSITIVE,
+.reason-item.impact-POSITIVE_REDUCED {
+  border-left-color: var(--studio-success);
+  background: #f0fdf4;
+}
+
+.reason-item.impact-MEDIUM {
+  border-left-color: #b45309;
+  background: #fffbeb;
+}
+
+.reason-item.impact-INFO {
+  border-left-color: var(--studio-info);
+  background: #f0f9ff;
+}
+
+/* Pulse Beacon */
+.pulse-beacon-live {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse-ring 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+@keyframes pulse-ring {
+  to {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+}
+
+/* ==========================================================================
+   Single View Calculation Breakdown (Zero Horizontal Scroll & High Contrast)
+   ========================================================================== */
+.calc-breakdown-container {
+  width: 100%;
+  overflow: hidden;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+.calc-breakdown-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  gap: 2px;
+}
+
+.calc-grid-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  font-size: 0.88rem !important;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+}
+
+.calc-grid-row:hover {
+  background-color: #f8fafc;
+}
+
+.calc-grid-row:last-child {
+  border-bottom: none !important;
+}
+
+.calc-grid-label {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  flex: 1 !important;
+  padding-right: 14px !important;
+  font-size: 0.86rem;
+}
+
+.calc-grid-subtext {
+  display: block !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  margin-top: 3px !important;
+  line-height: 1.35;
+}
+
+.calc-grid-value {
+  text-align: right !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  white-space: nowrap !important;
+  font-size: 0.94rem !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-grid-row-highlight {
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%) !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  margin: 6px 0 !important;
+  border: 1.5px solid #a7f3d0 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08) !important;
+  color: #065f46 !important;
+}
+
+.calc-grid-row-total {
+  background: #f8fafc !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  margin-top: 4px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   Affordability & Debt Servicing Modern Card Components
+   ========================================================================== */
+.affordability-container {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+}
+
+.commitment-hero-box {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.commitment-badge-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+.commitment-badge-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+.commitment-badge-danger {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+.meter-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.02);
+}
+
+.verified-bank-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   Progressive Tenure Ladder & Locked Milestone Styling
+   ========================================================================== */
+.tenure-pill-locked {
+  background: #f8fafc !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  opacity: 0.85;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.tenure-pill-locked:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+.scenario-card-locked {
+  background: #f8fafc !important;
+  border: 1.5px dashed #cbd5e1 !important;
+  opacity: 0.88;
+  position: relative;
+}
+
+.scenario-card-locked .locked-overlay-chip {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+.credit-ladder-tracker {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+}
+
+.credit-ladder-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.credit-ladder-badge-active {
+  background: #047857;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+}
+
+.credit-ladder-badge-locked {
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  border: 1px solid #cbd5e1;
+}
+
+/* ==========================================================================
+   P2P Lender & Admin Matched ROI Variance Module Styling
+   ========================================================================== */
+.lender-matching-card {
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.lender-matching-card:hover {
+  border-color: #94a3b8;
+}
+
+.lender-roi-pill {
+  padding: 8px 16px;
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.lender-roi-pill:hover {
+  border-color: #0040e0;
+  background: #f0f7ff;
+}
+
+.lender-roi-pill.active {
+  background: #0040e0;
+  color: #ffffff;
+  border-color: #0040e0;
+  box-shadow: 0 2px 8px rgba(0, 64, 224, 0.25);
+}
+
+.lender-variance-badge-positive {
+  background: #fee2e2;
+  color: #7f1d1d;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  border: 1px solid #fca5a5;
+}
+
+.lender-variance-badge-discount {
+  background: #dcfce7;
+  color: #14532d;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  border: 1px solid #86efac;
+}
+
+.lender-variance-badge-equal {
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  border: 1px solid #bfdbfe;
+}
+
+/* ==========================================================================
+   PRODUCTION-GRADE FINTECH DESIGN SYSTEM & MOTION SUITE
+   Instant Loan Flow — Single Point of View Design System
+   ========================================================================== */
+
+:root {
+  --instant-primary: #0052ff;
+  --instant-primary-hover: #0040e0;
+  --instant-primary-glow: rgba(0, 82, 255, 0.22);
+  --instant-secondary: #0b2545;
+  --instant-success: #10b981;
+  --instant-success-glow: rgba(16, 185, 129, 0.25);
+  --instant-warning: #f59e0b;
+  --instant-danger: #ef4444;
+  --instant-dark: #0f172a;
+  --instant-surface: #ffffff;
+  --instant-surface-subtle: #f8fafc;
+  --instant-surface-elevated: #ffffff;
+  --instant-border: #e2e8f0;
+  --instant-border-strong: #cbd5e1;
+  --instant-text-primary: #0f172a;
+  --instant-text-secondary: #475569;
+  --instant-text-muted: #64748b;
+  --instant-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.04);
+  --instant-shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08);
+  --instant-shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12);
+  --instant-shadow-glow: 0 8px 30px rgba(0, 82, 255, 0.2);
+  --instant-radius-sm: 8px;
+  --instant-radius-md: 14px;
+  --instant-radius-lg: 20px;
+  --instant-radius-xl: 28px;
+}
+
+/* Smooth Page & Step Component Transitions */
+.step-view-enter {
+  animation: stepSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes stepSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Executive Single-Flow Top Command Bar */
+.instant-single-view-bar {
+  background: #ffffff;
+  border: 1px solid var(--instant-border);
+  border-radius: var(--instant-radius-lg);
+  padding: 16px 22px;
+  box-shadow: var(--instant-shadow-md);
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.instant-single-view-bar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0052ff 0%, #10b981 50%, #0052ff 100%);
+  background-size: 200% 100%;
+  animation: bannerGradient 6s ease infinite;
+}
+
+@keyframes bannerGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.instant-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.instant-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0052ff 0%, #0b2545 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 12px rgba(0, 82, 255, 0.25);
+  border: 2px solid #ffffff;
+}
+
+.instant-view-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--instant-text-secondary);
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none !important;
+}
+
+.instant-view-nav-pill:hover {
+  background: #e2e8f0;
+  color: var(--instant-text-primary);
+  transform: translateY(-1px);
+}
+
+.instant-view-nav-pill.active {
+  background: var(--instant-primary);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 82, 255, 0.3);
+  border-color: var(--instant-primary);
+}
+
+/* Production-Grade Stepper Component */
+.fintech-stepper-shell {
+  background: #ffffff;
+  border: 1px solid var(--instant-border);
+  border-radius: var(--instant-radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--instant-shadow-sm);
+  margin-bottom: 24px;
+}
+
+.stepper-node-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 2;
+}
+
+.stepper-node-active {
+  background: var(--instant-primary);
+  color: #ffffff;
+  box-shadow: 0 0 0 5px var(--instant-primary-glow);
+  animation: stepperPulse 2.2s infinite;
+  transform: scale(1.08);
+}
+
+@keyframes stepperPulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 82, 255, 0.55); }
+  70% { box-shadow: 0 0 0 12px rgba(0, 82, 255, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 82, 255, 0); }
+}
+
+.stepper-node-done {
+  background: var(--instant-success);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  animation: checkmarkPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes checkmarkPop {
+  0% { transform: scale(0.6); }
+  70% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+.stepper-node-pending {
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: 1.5px solid #cbd5e1;
+}
+
+.stepper-progress-track {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stepper-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0052ff 0%, #10b981 100%);
+  border-radius: 4px;
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Tactile Interactive Cards */
+.tactile-card-interactive {
+  background: #ffffff;
+  border: 1.5px solid var(--instant-border);
+  border-radius: var(--instant-radius-md);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.tactile-card-interactive:hover {
+  border-color: var(--instant-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--instant-shadow-md);
+}
+
+.tactile-card-interactive.selected {
+  border-color: var(--instant-primary);
+  background: linear-gradient(180deg, #ffffff 0%, #f8faff 100%);
+  box-shadow: 0 0 0 2px var(--instant-primary), var(--instant-shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* Micro-Interaction Radio Indicator */
+.radio-indicator-glow {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.tactile-card-interactive.selected .radio-indicator-glow {
+  border-color: var(--instant-primary);
+  background: var(--instant-primary);
+  box-shadow: 0 0 8px rgba(0, 82, 255, 0.4);
+}
+
+.radio-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: scale(0);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tactile-card-interactive.selected .radio-indicator-dot {
+  transform: scale(1);
+}
+
+/* Holographic Credit Bureau Scanner */
+.pan-scanner-stage {
+  position: relative;
+  background: linear-gradient(135deg, #0b2545 0%, #0f172a 100%);
+  border-radius: var(--instant-radius-lg);
+  padding: 24px;
+  color: #ffffff;
+  box-shadow: 0 12px 35px rgba(11, 37, 69, 0.3);
+  overflow: hidden;
+}
+
+.pan-scanner-stage::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(0, 82, 255, 0.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.laser-scan-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent 0%, #38bdf8 30%, #ffffff 50%, #38bdf8 70%, transparent 100%);
+  box-shadow: 0 0 16px 3px rgba(56, 189, 248, 0.8), 0 0 30px rgba(56, 189, 248, 0.5);
+  animation: laserScan 2.4s ease-in-out infinite;
+  z-index: 5;
+  pointer-events: none;
+}
+
+@keyframes laserScan {
+  0% { top: 6%; opacity: 0.7; }
+  50% { top: 92%; opacity: 1; }
+  100% { top: 6%; opacity: 0.7; }
+}
+
+.radar-sweep-disc {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, rgba(0, 82, 255, 0.2) 0deg, transparent 90deg, transparent 360deg);
+  animation: radarSweep 3.2s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes radarSweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Staggered Terminal Audit Logs */
+.terminal-audit-box {
+  background: #09101d;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.83rem;
+  color: #94a3b8;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.terminal-log-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  animation: fadeScaleIn 0.28s ease-out forwards;
+}
+
+.terminal-log-entry.success {
+  color: #34d399;
+}
+
+/* Penny Drop ₹1.00 Coin Drop Animation */
+.coin-drop-box {
+  display: inline-flex;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.coin-token {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.4);
+  border: 2px solid #fef3c7;
+  animation: coinDrop 0.85s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  z-index: 2;
+}
+
+@keyframes coinDrop {
+  0% { transform: translateY(-40px) scale(0.6); opacity: 0; }
+  60% { transform: translateY(4px) scale(1.08); opacity: 1; }
+  80% { transform: translateY(-2px) scale(0.98); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.coin-ripple-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid #10b981;
+  animation: rippleRing 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  z-index: 1;
+}
+
+@keyframes rippleRing {
+  0% { width: 40px; height: 40px; opacity: 1; }
+  100% { width: 110px; height: 110px; opacity: 0; }
+}
+
+/* Digital Seal / UIDAI Stamp Animation */
+.legal-seal-stamp {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 2.5px solid #059669;
+  border-radius: 8px;
+  color: #059669;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+  animation: stampSlam 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.15);
+  background: rgba(236, 253, 245, 0.9);
+}
+
+@keyframes stampSlam {
+  0% { transform: scale(2.4) rotate(-24deg); opacity: 0; }
+  70% { transform: scale(0.95) rotate(-7deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-6deg); opacity: 1; }
+}
+
+/* Disbursal Countdown Timer Ticker */
+.countdown-clock-hero {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #10b981;
+  text-shadow: 0 0 18px rgba(16, 185, 129, 0.4);
+  animation: digitPulse 2s ease-in-out infinite;
+}
+
+@keyframes digitPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Pulsing Beacon Badges */
+.pulse-beacon-live {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+  position: relative;
+}
+
+.pulse-beacon-live::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  border: 1.5px solid #10b981;
+  animation: beaconPulse 1.8s infinite;
+}
+
+@keyframes beaconPulse {
+  0% { transform: scale(0.9); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Modern Form Controls with Focus Glow */
+.fintech-input-modern {
+  border: 1.5px solid var(--instant-border);
+  border-radius: var(--instant-radius-md);
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  color: var(--instant-text-primary);
+  background: #ffffff;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.fintech-input-modern:focus {
+  outline: none;
+  border-color: var(--instant-primary);
+  box-shadow: 0 0 0 3.5px var(--instant-primary-glow);
+  background: #ffffff;
+}
+
+/* Interactive Amount Presets */
+.preset-chip-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--instant-border);
+  background: #f8fafc;
+  color: var(--instant-text-secondary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.preset-chip-btn:hover {
+  border-color: var(--instant-primary);
+  color: var(--instant-primary);
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.preset-chip-btn.active {
+  background: var(--instant-primary);
+  color: #ffffff;
+  border-color: var(--instant-primary);
+  box-shadow: 0 2px 8px rgba(0, 82, 255, 0.25);
+}
+
+/* Primary Fintech Button with Micro-Interaction */
+.btn-fintech-primary {
+  background: linear-gradient(135deg, #0052ff 0%, #0040e0 100%);
+  color: #ffffff !important;
+  border: none;
+  border-radius: var(--instant-radius-md);
+  padding: 13px 26px;
+  font-size: 0.96rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  box-shadow: 0 4px 14px rgba(0, 82, 255, 0.28);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-fintech-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(0, 82, 255, 0.38);
+  filter: brightness(1.05);
+}
+
+.btn-fintech-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-fintech-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+  .instant-single-view-bar {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .countdown-clock-hero {
+    font-size: 1.8rem;
+  }
+  
+  .stepper-node-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Full-Width Distraction-Free Flow Mode (No Sidebar until Flow Completion)
+   ========================================================================== */
+body.instant-flow-no-sidebar .page-wrapper {
+  margin-left: 0 !important;
+  transition: margin-left 0.3s ease;
+}
+
+body.instant-flow-no-sidebar .header-left {
+  width: 240px;
+}
+
+body.instant-flow-no-sidebar #toggle_btn,
+body.instant-flow-no-sidebar .menu-toggle,
+body.instant-flow-no-sidebar #mobile_btn {
+  display: none !important;
+}
+
+body.instant-flow-no-sidebar .sidebar {
+  display: none !important;
+}
+
+
+

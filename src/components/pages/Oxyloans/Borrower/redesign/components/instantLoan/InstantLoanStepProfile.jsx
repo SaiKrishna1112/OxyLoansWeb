@@ -1,58 +1,75 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import "./instantLoan.css";
 import { formatINR } from "../creditReportUtils";
-import { submitEmergencyReferences } from "./instantLoanService";
-
-const RELATIONSHIPS = [
-  "Parent",
-  "Spouse",
-  "Sibling",
-  "Friend",
-  "Colleague",
-  "Relative",
-];
+import {
+  updateBorrowerProfile,
+  normalizeDobToInput,
+} from "./instantLoanApi";
 
 const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
   const initialMaritalStatus = initialData.maritalStatus || "Single";
   const [formData, setFormData] = useState({
-    name: initialData.name || "narendra kumar b",
-    mobile: initialData.mobile || "9492902990",
-    panNumber: initialData.panNumber || initialData.documentId || "CDBPB2737H",
-    dateOfBirth: initialData.dateOfBirth || initialData.dob || "1994-08-08",
-    motherName: initialData.motherName || "abc",
+    name: initialData.name || "DHARMAPURI SAI KRISHNA",
+    email: initialData.email || "somethingspecialday@gmail.com",
+    mobile: initialData.mobile || "7702443666",
+    whatsAppNumber: initialData.whatsAppNumber || initialData.mobile || "918125861874",
+    gender: initialData.gender || "Male",
+    panNumber: initialData.panNumber || initialData.documentId || "JUXPK2964M",
+    dateOfBirth: normalizeDobToInput(initialData.dateOfBirth || initialData.dob) || "1999-11-08",
+    fatherName: initialData.fatherName || "Satya",
+    motherName: initialData.motherName || "",
     maritalStatus: initialMaritalStatus,
     spouseName: initialMaritalStatus === "Married" ? (initialData.spouseName || "") : "",
     spouseDob: initialMaritalStatus === "Married" ? (initialData.spouseDob || "") : "",
-    monthlySalary: initialData.monthlySalary || initialData.salary || "65000",
+    address: initialData.address || "Hyderabad",
+    locality: initialData.locality || "Tirumalagiri",
+    city: initialData.city || "Hyderabad",
+    state: initialData.state || "Telangana",
+    pincode: initialData.pincode || "500085",
+    monthlySalary: initialData.monthlySalary || initialData.salary || "25000",
     employmentType: initialData.employmentType || "SALARIED",
-    companyName: initialData.companyName || "SRS Fintech Labs Pvt Ltd",
-    designation: initialData.designation || "Senior Software Engineer",
-    officeAddress: initialData.officeAddress || "oxyloans",
-    officeMailId: initialData.officeMailId || "nanan@gmail.com",
-    officeLandLine: initialData.officeLandLine || "12254655",
-    address: initialData.address || "KPHB, Hyderabad",
-    pincode: initialData.pincode || "500072",
+    companyName: initialData.companyName || "oxyloans",
+    designation: initialData.designation || "Software Engineer",
+    workExperience: initialData.workExperience || "2",
+    officeAddress: initialData.officeAddress || "Plot 104, OxyLoans Office, Hyderabad",
+    officeMailId: initialData.officeMailId || "somethingspecialday@gmail.com",
+    officeLandLine: initialData.officeLandLine || "04048592301",
   });
 
-  const [ref1, setRef1] = useState(
-    initialData.ref1 || {
-      name: "Balijepalli Venkata",
-      mobile: "9848022338",
-      relation: "Parent",
-      address: "12 MG Road, Bangalore",
-      landMark: "Near metro",
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      const mStatus = initialData.maritalStatus || formData.maritalStatus || "Single";
+      setFormData((prev) => ({
+        ...prev,
+        name: initialData.name || prev.name,
+        email: initialData.email || prev.email,
+        mobile: initialData.mobile || prev.mobile,
+        whatsAppNumber: initialData.whatsAppNumber || prev.whatsAppNumber,
+        gender: initialData.gender || prev.gender || "Male",
+        panNumber: initialData.panNumber || initialData.documentId || prev.panNumber,
+        dateOfBirth: normalizeDobToInput(initialData.dateOfBirth || initialData.dob) || prev.dateOfBirth,
+        fatherName: initialData.fatherName || prev.fatherName,
+        motherName: initialData.motherName || prev.motherName,
+        maritalStatus: mStatus,
+        spouseName: mStatus === "Married" ? (initialData.spouseName || prev.spouseName || "") : "",
+        spouseDob: mStatus === "Married" ? (initialData.spouseDob || prev.spouseDob || "") : "",
+        address: initialData.address || prev.address,
+        locality: initialData.locality || prev.locality,
+        city: initialData.city || prev.city,
+        state: initialData.state || prev.state,
+        pincode: initialData.pincode || prev.pincode,
+        monthlySalary: initialData.monthlySalary || initialData.salary || prev.monthlySalary,
+        employmentType: initialData.employmentType || prev.employmentType || "SALARIED",
+        companyName: initialData.companyName || prev.companyName,
+        designation: initialData.designation || prev.designation,
+        workExperience: initialData.workExperience || prev.workExperience,
+        officeAddress: initialData.officeAddress || prev.officeAddress,
+        officeMailId: initialData.officeMailId || prev.officeMailId,
+        officeLandLine: initialData.officeLandLine || prev.officeLandLine,
+      }));
     }
-  );
-
-  const [ref2, setRef2] = useState(
-    initialData.ref2 || {
-      name: "Kiran Sharma",
-      mobile: "9121234567",
-      relation: "Colleague",
-      address: "45 Park Street, Kolkata",
-      landMark: "Opposite mall",
-    }
-  );
+  }, [initialData]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -93,8 +110,20 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
       setErrorMessage("Please enter borrower legal name.");
       return;
     }
+    if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
+      setErrorMessage("Please enter a valid personal email address.");
+      return;
+    }
+    if (!formData.mobile || formData.mobile.replace(/\D/g, "").length < 10) {
+      setErrorMessage("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!formData.fatherName || !formData.fatherName.trim()) {
+      setErrorMessage("Please enter borrower father's full name.");
+      return;
+    }
     if (!formData.motherName || !formData.motherName.trim()) {
-      setErrorMessage("Please enter borrower mother's name.");
+      setErrorMessage("Please enter borrower mother's full name.");
       return;
     }
     if (formData.maritalStatus === "Married") {
@@ -107,8 +136,20 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
         return;
       }
     }
-    if (!formData.mobile || formData.mobile.replace(/\D/g, "").length < 10) {
-      setErrorMessage("Please enter a valid 10-digit mobile number.");
+    if (!formData.address || !formData.address.trim()) {
+      setErrorMessage("Please enter your current residential address.");
+      return;
+    }
+    if (!formData.city || !formData.city.trim()) {
+      setErrorMessage("Please enter current city.");
+      return;
+    }
+    if (!formData.state || !formData.state.trim()) {
+      setErrorMessage("Please enter current state.");
+      return;
+    }
+    if (!formData.pincode || formData.pincode.replace(/\D/g, "").length !== 6) {
+      setErrorMessage("Please enter a valid 6-digit PIN code.");
       return;
     }
     const cleanPan = formData.panNumber.trim().toUpperCase();
@@ -124,26 +165,20 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
       setErrorMessage("Please enter employer / organization name.");
       return;
     }
-    if (!ref1.name.trim() || ref1.mobile.replace(/\D/g, "").length < 10) {
-      setErrorMessage("Please provide valid details for Emergency Reference 1.");
-      return;
-    }
-    if (!ref2.name.trim() || ref2.mobile.replace(/\D/g, "").length < 10) {
-      setErrorMessage("Please provide valid details for Emergency Reference 2.");
-      return;
-    }
-    if (ref1.mobile.replace(/\D/g, "") === ref2.mobile.replace(/\D/g, "")) {
-      setErrorMessage("Reference 1 and Reference 2 must have distinct contact numbers.");
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      await submitEmergencyReferences(ref1, ref2);
+      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+      await updateBorrowerProfile({
+        userId: Number(uId),
+        ...formData,
+        salary: Number(formData.monthlySalary),
+        dob: formData.dateOfBirth,
+        pinCode: formData.pincode,
+      }).catch((e) => console.warn("updateBorrowerProfile background:", e));
 
       Swal.fire({
         icon: "success",
-        title: "Profile & References Verified",
+        title: "Profile Verified",
         text: "Moving to instant salary-based eligibility assessment.",
         timer: 1400,
         showConfirmButton: false,
@@ -154,32 +189,30 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
         spouseName: formData.maritalStatus === "Married" ? formData.spouseName : "",
         spouseDob: formData.maritalStatus === "Married" ? formData.spouseDob : "",
         panNumber: cleanPan,
-        ref1,
-        ref2,
       });
     } catch (err) {
-      setErrorMessage("Failed to save references. Please try again.");
+      setErrorMessage("Failed to save profile details. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="fintech-card">
+    <form onSubmit={handleSubmit} className="fintech-card step-view-enter">
       {/* Step Header */}
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom">
         <div>
           <div className="d-flex align-items-center gap-2 mb-1">
             <span className="badge badge-fintech-primary-soft px-3 py-1 rounded-pill small">
-              Phase 1 • Basic KYC & Emergency Contacts
+              Phase 1 • Basic KYC & Employment Profile
             </span>
             <span className="badge badge-fintech-neutral px-2 py-1 rounded-pill small">
               Step 1 of 6
             </span>
           </div>
-          <h4 className="fw-bold text-dark mb-1">Borrower Profile & Emergency References</h4>
+          <h4 className="fw-bold text-dark mb-1">Borrower Profile & KYC</h4>
           <p className="text-muted small mb-0">
-            Enter your primary employment data and 2 verified references to unlock instant escrow matching.
+            Verify your personal details, residential address, and employment data to unlock instant escrow matching.
           </p>
         </div>
 
@@ -230,21 +263,22 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
             90% of Monthly Salary ({formatINR(salaryNum)})
           </span>
           <div className="text-white text-opacity-75 small mt-1" style={{ fontSize: "11px" }}>
-            *Final limit calculated after PaySprint Bureau pull
+            *Final limit calculated after OxyLoans Bureau verification
           </div>
         </div>
       </div>
 
-      {/* Part A: Professional & Employment Profile */}
+      {/* Section 1: Personal & Identity Profile */}
       <div className="mb-4">
         <div className="d-flex align-items-center gap-2 mb-3">
           <div className="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style={{ width: "32px", height: "32px" }}>
             <i className="fa-solid fa-user small"></i>
           </div>
-          <h6 className="fw-bold text-dark mb-0">Borrower Identity & Employment</h6>
+          <h6 className="fw-bold text-dark mb-0">1. Borrower Personal & Identity Profile</h6>
         </div>
 
         <div className="row g-3">
+          {/* Full Legal Name */}
           <div className="col-md-6">
             <label className="form-label small fw-bold text-dark mb-1">
               Full Legal Name <span className="text-danger">*</span>
@@ -259,16 +293,41 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                 value={formData.name}
                 onChange={handleFormChange}
                 className="form-control instant-form-control border-start-0 rounded-end-3"
-                placeholder="e.g. Narendra Kumar B"
+                placeholder="e.g. DHARMAPURI SAI KRISHNA"
                 required
               />
             </div>
             <small className="text-muted" style={{ fontSize: "11px" }}>
-              Must match your PAN Card and Bank Account.
+              As per Aadhaar / PAN card.
             </small>
           </div>
 
+          {/* Personal Email */}
           <div className="col-md-6">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Personal Email Address <span className="text-danger">*</span>
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                <i className="fa-solid fa-envelope"></i>
+              </span>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleFormChange}
+                className="form-control instant-form-control border-start-0 rounded-end-3"
+                placeholder="e.g. narendra@oxyloans.com"
+                required
+              />
+            </div>
+            <small className="text-muted" style={{ fontSize: "11px" }}>
+              For agreement documentation and instant loan updates.
+            </small>
+          </div>
+
+          {/* Mobile Number */}
+          <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
               Mobile Number (Aadhaar linked) <span className="text-danger">*</span>
             </label>
@@ -287,36 +346,53 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                 required
               />
             </div>
-            <small className="text-muted" style={{ fontSize: "11px" }}>
-              Used for Bureau CIR retrieval and Aadhaar OTP.
-            </small>
           </div>
 
+          {/* WhatsApp Number */}
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
-              PAN Number <span className="text-danger">*</span>
+              WhatsApp Number
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-success">
+                <i className="fa-brands fa-whatsapp"></i>
+              </span>
+              <input
+                type="tel"
+                name="whatsAppNumber"
+                value={formData.whatsAppNumber}
+                onChange={handleFormChange}
+                maxLength="10"
+                className="form-control instant-form-control border-start-0 rounded-end-3"
+                placeholder="WhatsApp contact number"
+              />
+            </div>
+          </div>
+
+          {/* Gender */}
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Gender <span className="text-danger">*</span>
             </label>
             <div className="input-group">
               <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
-                <i className="fa-solid fa-id-card"></i>
+                <i className="fa-solid fa-venus-mars"></i>
               </span>
-              <input
-                type="text"
-                name="panNumber"
-                value={formData.panNumber}
+              <select
+                name="gender"
+                value={formData.gender}
                 onChange={handleFormChange}
-                maxLength="10"
-                className="form-control instant-form-control border-start-0 rounded-end-3 text-uppercase fw-bold letter-spacing-1"
-                placeholder="ABCDE1234F"
+                className="form-select instant-form-control border-start-0 rounded-end-3"
                 required
-              />
+              >
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
-            <small className="text-success fw-semibold" style={{ fontSize: "11px" }}>
-              <i className="fa-solid fa-circle-check me-1"></i>
-              Verified in Phase 3 with PaySprint CIR
-            </small>
           </div>
 
+          {/* Date of Birth */}
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
               Date of Birth <span className="text-danger">*</span>
@@ -341,6 +417,28 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
             )}
           </div>
 
+          {/* Father's Full Name */}
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Father's Full Name <span className="text-danger">*</span>
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                <i className="fa-solid fa-user-tie"></i>
+              </span>
+              <input
+                type="text"
+                name="fatherName"
+                value={formData.fatherName}
+                onChange={handleFormChange}
+                className="form-control instant-form-control border-start-0 rounded-end-3"
+                placeholder="Father's full name (e.g. Satya)"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Mother's Full Name */}
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
               Mother's Full Name <span className="text-danger">*</span>
@@ -355,15 +453,39 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                 value={formData.motherName}
                 onChange={handleFormChange}
                 className="form-control instant-form-control border-start-0 rounded-end-3"
-                placeholder="e.g. abc"
+                placeholder="Mother's full name"
+                required
+              />
+            </div>
+          </div>
+
+          {/* PAN Card Number */}
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              PAN Number <span className="text-danger">*</span>
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
+                <i className="fa-solid fa-id-card"></i>
+              </span>
+              <input
+                type="text"
+                name="panNumber"
+                value={formData.panNumber}
+                onChange={handleFormChange}
+                maxLength="10"
+                className="form-control instant-form-control border-start-0 rounded-end-3 text-uppercase fw-bold letter-spacing-1"
+                placeholder="JUXPK2964M"
                 required
               />
             </div>
             <small className="text-muted" style={{ fontSize: "11px" }}>
-              Required for Bureau security verification.
+              <i className="fa-solid fa-shield-halved text-primary me-1"></i>
+              PAN will be verified against Credit Bureau records in Step 3.
             </small>
           </div>
 
+          {/* Marital Status */}
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
               Marital Status <span className="text-danger">*</span>
@@ -393,66 +515,146 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
                 <label className="form-label small fw-bold text-dark mb-1">
                   Spouse Full Name <span className="text-danger">*</span>
                 </label>
-                <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
-                    <i className="fa-solid fa-user-group"></i>
-                  </span>
-                  <input
-                    type="text"
-                    name="spouseName"
-                    value={formData.spouseName}
-                    onChange={handleFormChange}
-                    className="form-control instant-form-control border-start-0 rounded-end-3"
-                    placeholder="Enter spouse full name"
-                    required
-                  />
-                </div>
+                <input
+                  type="text"
+                  name="spouseName"
+                  value={formData.spouseName}
+                  onChange={handleFormChange}
+                  className="form-control instant-form-control"
+                  placeholder="Enter spouse full name"
+                  required
+                />
               </div>
 
               <div className="col-md-4">
                 <label className="form-label small fw-bold text-dark mb-1">
                   Spouse Date of Birth <span className="text-danger">*</span>
                 </label>
-                <div className="input-group">
-                  <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted">
-                    <i className="fa-solid fa-calendar"></i>
-                  </span>
-                  <input
-                    type="text"
-                    name="spouseDob"
-                    value={formData.spouseDob}
-                    onChange={handleFormChange}
-                    className="form-control instant-form-control border-start-0 rounded-end-3"
-                    placeholder="DD/MM/YYYY or YYYY-MM-DD"
-                    required
-                  />
-                </div>
+                <input
+                  type="date"
+                  name="spouseDob"
+                  value={formData.spouseDob}
+                  onChange={handleFormChange}
+                  className="form-control instant-form-control"
+                  required
+                />
               </div>
             </>
           )}
+        </div>
+      </div>
+
+      {/* Section 2: Current Residential Address */}
+      <div className="mb-4 pt-3 border-top">
+        <div className="d-flex align-items-center gap-2 mb-3">
+          <div className="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style={{ width: "32px", height: "32px" }}>
+            <i className="fa-solid fa-house small"></i>
+          </div>
+          <h6 className="fw-bold text-dark mb-0">2. Current Residential Address</h6>
+        </div>
+
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Flat / House No., Building & Street <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. Flat 402, Srinivasa Heights"
+              required
+            />
+          </div>
+
+          <div className="col-md-6">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Locality / Area / Landmark
+            </label>
+            <input
+              type="text"
+              name="locality"
+              value={formData.locality}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. KPHB Phase 6"
+            />
+          </div>
 
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
-              Net Monthly Salary (in INR) <span className="text-danger">*</span>
+              City <span className="text-danger">*</span>
             </label>
-            <div className="input-group">
-              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted fw-bold">
-                ₹
-              </span>
-              <input
-                type="number"
-                name="monthlySalary"
-                value={formData.monthlySalary}
-                onChange={handleFormChange}
-                step="1000"
-                className="form-control instant-form-control border-start-0 rounded-end-3 fw-bold text-dark"
-                placeholder="65000"
-                required
-              />
-            </div>
-            <small className="text-primary fw-semibold" style={{ fontSize: "11px" }}>
-              Capacity: {formatINR(estimatedCap)}
-            </small>
+            <input
+              type="text"
+              name="city"
+              value={formData.city}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. Hyderabad"
+              required
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              State <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              name="state"
+              value={formData.state}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. Telangana"
+              required
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              PIN Code <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              name="pincode"
+              value={formData.pincode}
+              onChange={handleFormChange}
+              maxLength="6"
+              className="form-control instant-form-control font-monospace"
+              placeholder="500072"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Section 3: Employment & Income Details */}
+      <div className="mb-4 pt-3 border-top">
+        <div className="d-flex align-items-center gap-2 mb-3">
+          <div className="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style={{ width: "32px", height: "32px" }}>
+            <i className="fa-solid fa-briefcase small"></i>
+          </div>
+          <h6 className="fw-bold text-dark mb-0">3. Employment & Income Details</h6>
+        </div>
+
+        <div className="row g-3">
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Employment Type <span className="text-danger">*</span>
+            </label>
+            <select
+              name="employmentType"
+              value={formData.employmentType}
+              onChange={handleFormChange}
+              className="form-select instant-form-control"
+              required
+            >
+              <option value="SALARIED">Salaried Employee</option>
+              <option value="SELF_EMPLOYED">Self Employed / Business</option>
+            </select>
           </div>
 
           <div className="col-md-4">
@@ -472,7 +674,7 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
 
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
-              Designation / Role
+              Designation / Job Title <span className="text-danger">*</span>
             </label>
             <input
               type="text"
@@ -480,13 +682,54 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
               value={formData.designation}
               onChange={handleFormChange}
               className="form-control instant-form-control"
-              placeholder="e.g. Senior Software Engineer"
+              placeholder="e.g. Lead Systems Architect"
+              required
             />
           </div>
 
           <div className="col-md-4">
             <label className="form-label small fw-bold text-dark mb-1">
-              Official Work Email
+              Net Monthly Take-Home Salary (₹) <span className="text-danger">*</span>
+            </label>
+            <div className="input-group">
+              <span className="input-group-text bg-light border-end-0 rounded-start-3 text-muted fw-bold">
+                ₹
+              </span>
+              <input
+                type="number"
+                name="monthlySalary"
+                value={formData.monthlySalary}
+                onChange={handleFormChange}
+                step="1000"
+                className="form-control instant-form-control border-start-0 rounded-end-3 fw-bold text-dark"
+                placeholder="65000"
+                required
+              />
+            </div>
+            <small className="text-primary fw-semibold" style={{ fontSize: "11px" }}>
+              Pre-Approved Capacity: {formatINR(estimatedCap)} (90%)
+            </small>
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Total Work Experience (Years)
+            </label>
+            <input
+              type="number"
+              name="workExperience"
+              value={formData.workExperience}
+              onChange={handleFormChange}
+              min="0"
+              max="40"
+              className="form-control instant-form-control"
+              placeholder="e.g. 4"
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Official Work Email ID
             </label>
             <input
               type="email"
@@ -494,7 +737,21 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
               value={formData.officeMailId}
               onChange={handleFormChange}
               className="form-control instant-form-control"
-              placeholder="e.g. nanan@gmail.com"
+              placeholder="e.g. narendra@srsfintech.com"
+            />
+          </div>
+
+          <div className="col-md-8">
+            <label className="form-label small fw-bold text-dark mb-1">
+              Workplace / Office Address
+            </label>
+            <input
+              type="text"
+              name="officeAddress"
+              value={formData.officeAddress}
+              onChange={handleFormChange}
+              className="form-control instant-form-control"
+              placeholder="e.g. Plot 104, HiTech City Phase 2, Madhapur, Hyderabad"
             />
           </div>
 
@@ -508,238 +765,18 @@ const InstantLoanStepProfile = ({ initialData = {}, onNext }) => {
               value={formData.officeLandLine}
               onChange={handleFormChange}
               className="form-control instant-form-control"
-              placeholder="e.g. 12254655"
-            />
-          </div>
-
-          <div className="col-md-8">
-            <label className="form-label small fw-bold text-dark mb-1">
-              Office / Workplace Address
-            </label>
-            <input
-              type="text"
-              name="officeAddress"
-              value={formData.officeAddress}
-              onChange={handleFormChange}
-              className="form-control instant-form-control"
-              placeholder="e.g. oxyloans"
-            />
-          </div>
-
-          <div className="col-md-4">
-            <label className="form-label small fw-bold text-dark mb-1">
-              Current City / Locality
-            </label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleFormChange}
-              className="form-control instant-form-control"
-              placeholder="e.g. KPHB, Hyderabad"
-            />
-          </div>
-
-          <div className="col-md-2">
-            <label className="form-label small fw-bold text-dark mb-1">
-              Pincode
-            </label>
-            <input
-              type="text"
-              name="pincode"
-              value={formData.pincode}
-              onChange={handleFormChange}
-              maxLength="6"
-              className="form-control instant-form-control"
-              placeholder="500072"
+              placeholder="e.g. 04048592301"
             />
           </div>
         </div>
       </div>
 
-      {/* Part B: Emergency References (Mandatory 2 Contacts) */}
-      <div className="mb-4 pt-3 border-top">
-        <div className="d-flex align-items-center justify-content-between mb-3">
-          <div className="d-flex align-items-center gap-2">
-            <div className="rounded-circle bg-primary bg-opacity-10 text-primary p-2 d-flex align-items-center justify-content-center" style={{ width: "32px", height: "32px" }}>
-              <i className="fa-solid fa-users-viewfinder small"></i>
-            </div>
-            <div>
-              <h6 className="fw-bold text-dark mb-0">Emergency References (Minimum 2 Required)</h6>
-              <span className="text-muted small" style={{ fontSize: "11px" }}>
-                Mandatory for P2P underwriting risk assessment. No spam or marketing calls.
-              </span>
-            </div>
-          </div>
-          <span className="badge badge-fintech-success-soft px-2 py-1 rounded-pill small">
-            2 Distinct Contacts Required
-          </span>
-        </div>
-
-        <div className="row g-3">
-          {/* Reference 1 */}
-          <div className="col-lg-6">
-            <div className="p-3 rounded-4 border bg-light h-100 position-relative">
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <span className="badge badge-fintech-primary small px-2 py-1 rounded-pill">
-                  Reference 1 (Immediate Family)
-                </span>
-                <span className="text-muted small" style={{ fontSize: "11px" }}>Primary</span>
-              </div>
-
-              <div className="mb-2">
-                <label className="form-label small fw-bold text-dark mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={ref1.name}
-                  onChange={(e) => setRef1({ ...ref1, name: e.target.value })}
-                  className="form-control form-control-sm instant-form-control"
-                  placeholder="e.g. Balijepalli Venkata"
-                  required
-                />
-              </div>
-
-              <div className="row g-2">
-                <div className="col-7">
-                  <label className="form-label small fw-bold text-dark mb-1">Contact Mobile</label>
-                  <div className="input-group input-group-sm">
-                    <span className="input-group-text bg-white border-end-0">+91</span>
-                    <input
-                      type="tel"
-                      value={ref1.mobile}
-                      onChange={(e) => setRef1({ ...ref1, mobile: e.target.value })}
-                      maxLength="10"
-                      className="form-control form-control-sm instant-form-control border-start-0"
-                      placeholder="10 digits"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="col-5">
-                  <label className="form-label small fw-bold text-dark mb-1">Relationship</label>
-                  <select
-                    value={ref1.relation}
-                    onChange={(e) => setRef1({ ...ref1, relation: e.target.value })}
-                    className="form-select form-select-sm instant-form-control"
-                  >
-                    {RELATIONSHIPS.map((rel) => (
-                      <option key={rel} value={rel}>{rel}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="row g-2 mt-1">
-                <div className="col-6">
-                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Address</label>
-                  <input
-                    type="text"
-                    value={ref1.address || ""}
-                    onChange={(e) => setRef1({ ...ref1, address: e.target.value })}
-                    className="form-control form-control-sm instant-form-control"
-                    placeholder="e.g. 12 MG Road, Bangalore"
-                  />
-                </div>
-                <div className="col-6">
-                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Landmark</label>
-                  <input
-                    type="text"
-                    value={ref1.landMark || ""}
-                    onChange={(e) => setRef1({ ...ref1, landMark: e.target.value })}
-                    className="form-control form-control-sm instant-form-control"
-                    placeholder="e.g. Near metro"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Reference 2 */}
-          <div className="col-lg-6">
-            <div className="p-3 rounded-4 border bg-light h-100 position-relative">
-              <div className="d-flex align-items-center justify-content-between mb-2">
-                <span className="badge badge-fintech-neutral small px-2 py-1 rounded-pill">
-                  Reference 2 (Work / Colleague)
-                </span>
-                <span className="text-muted small" style={{ fontSize: "11px" }}>Secondary</span>
-              </div>
-
-              <div className="mb-2">
-                <label className="form-label small fw-bold text-dark mb-1">Full Name</label>
-                <input
-                  type="text"
-                  value={ref2.name}
-                  onChange={(e) => setRef2({ ...ref2, name: e.target.value })}
-                  className="form-control form-control-sm instant-form-control"
-                  placeholder="e.g. Kiran Sharma"
-                  required
-                />
-              </div>
-
-              <div className="row g-2">
-                <div className="col-7">
-                  <label className="form-label small fw-bold text-dark mb-1">Contact Mobile</label>
-                  <div className="input-group input-group-sm">
-                    <span className="input-group-text bg-white border-end-0">+91</span>
-                    <input
-                      type="tel"
-                      value={ref2.mobile}
-                      onChange={(e) => setRef2({ ...ref2, mobile: e.target.value })}
-                      maxLength="10"
-                      className="form-control form-control-sm instant-form-control border-start-0"
-                      placeholder="10 digits"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="col-5">
-                  <label className="form-label small fw-bold text-dark mb-1">Relationship</label>
-                  <select
-                    value={ref2.relation}
-                    onChange={(e) => setRef2({ ...ref2, relation: e.target.value })}
-                    className="form-select form-select-sm instant-form-control"
-                  >
-                    {RELATIONSHIPS.map((rel) => (
-                      <option key={rel} value={rel}>{rel}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="row g-2 mt-1">
-                <div className="col-6">
-                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Address</label>
-                  <input
-                    type="text"
-                    value={ref2.address || ""}
-                    onChange={(e) => setRef2({ ...ref2, address: e.target.value })}
-                    className="form-control form-control-sm instant-form-control"
-                    placeholder="e.g. 45 Park Street, Kolkata"
-                  />
-                </div>
-                <div className="col-6">
-                  <label className="form-label small text-muted mb-1" style={{ fontSize: "11px" }}>Landmark</label>
-                  <input
-                    type="text"
-                    value={ref2.landMark || ""}
-                    onChange={(e) => setRef2({ ...ref2, landMark: e.target.value })}
-                    className="form-control form-control-sm instant-form-control"
-                    placeholder="e.g. Opposite mall"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Bottom Action Footer */}
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 pt-3 border-top">
         <div className="text-muted small d-flex align-items-center gap-2">
           <i className="fa-solid fa-lock text-success fs-6"></i>
-          <span>PAN & DOB are cross-verified in Step 3 via PaySprint CIR bureau API.</span>
+          <span>PAN & DOB are cross-verified in Step 3 via OxyLoans Credit Bureau verification.</span>
         </div>
 
         <button

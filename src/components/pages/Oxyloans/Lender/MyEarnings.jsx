@@ -501,9 +501,9 @@ const MyEarnings = () => {
   const filteredTotal = allData.length;
 
   const Invitelender = async () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.user.oxyloans.com/register?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/register?ref=LR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");
@@ -517,9 +517,9 @@ const MyEarnings = () => {
   };
 
   const Inviteborrower = async () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.user.oxyloans.com/borrower_register?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/borrower_register?ref=LR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");
@@ -533,9 +533,9 @@ const MyEarnings = () => {
   };
 
   const Invitenri = async () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=${userId}`;
+    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=LR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");

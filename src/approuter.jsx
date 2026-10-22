@@ -107,8 +107,8 @@ import RegularEscrowDeals from "./components/pages/Oxyloans/Lender/RegularEscrow
 import TopLendersPage from "./components/pages/Oxyloans/Lender/TopLendersPage.jsx";
 import Whatappuser from "./components/pages/Authentication/Whatappuser";
 // import BorrowerDashboard from "./components/pages/Dashboard/BorrowerInsightsDashboard";
-import BorrowerDashboard from "./components/pages/Oxyloans/Borrower/redesign/pages/Dashboard.jsx";
-import BorrowerProfile from "./components/pages/Oxyloans/Borrower/redesign/pages/Profile.jsx";
+import BorrowerDashboard from "./components/pages/Dashboard/BorrowerDashboard.jsx";
+import BorrowerProfile from "./components/pages/Oxyloans/Borrower/BorrowerProfile.jsx";
 import BorrowerAgreedLoans from "./components/pages/Oxyloans/Borrower/AgreedLoan";
 import BorrowerEnach from "./components/pages/Oxyloans/Borrower/Enach";
 import BorrowerLoanEligibility from "./components/pages/Oxyloans/Borrower/LoanEligibility";
@@ -162,10 +162,10 @@ import EscrowsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/Escrow
 import TestsDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/TestsDeals.jsx";
 import SalariedDeals from "./components/pages/Oxyloans/Admin/HelpDeskDeals/SalariedDeals.jsx";
 
-import BorrowerLoanRequestCreate from "./components/pages/Oxyloans/Borrower/redesign/pages/LoanRequest.jsx";
+import BorrowerLoanRequestCreate from "./components/pages/Oxyloans/Borrower/BorrowerLoanRequestCreate.jsx";
 import BorrowerRequestAmount from "./components/pages/Oxyloans/Borrower/BorrowerRequestAmount.jsx";
-import BorrowerLoansInitiated from "./components/pages/Oxyloans/Borrower/redesign/pages/Offers.jsx";
-import BorrowerDisbursementAmount from "./components/pages/Oxyloans/Borrower/redesign/pages/Disbursement.jsx";
+import BorrowerLoansInitiated from "./components/pages/Oxyloans/Borrower/BorrowerLoansInitiated.jsx";
+import BorrowerDisbursementAmount from "./components/pages/Oxyloans/Borrower/BorrowerDisbursementAmount.jsx";
 import BorrowerDisbursementInterestAmount from "./components/pages/Oxyloans/Borrower/BorrowerDisbursementInterestAmount.jsx";
 import BorrowerNearbyLendersPage from "./components/pages/Oxyloans/Borrower/BorrowerNearbyLendersPage.jsx";
 // ********************BORROWER MODULE    ROUTES END ************************** //
@@ -176,25 +176,42 @@ import InterestRateNegotiation from "./components/pages/Oxyloans/Lender/Interest
 import BorrowerMarketplaceConsent from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceConsent";
 import LenderMarketplaceConsent from "./components/pages/Oxyloans/Lender/LenderMarketplaceConsent";
 import EscalationDashboard from "./components/pages/Oxyloans/Lender/EscalationDashboard";
-import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/redesign/pages/Documents.jsx";
-// import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings";
+import BorrowerMarketplaceListings from "./components/pages/Oxyloans/Borrower/BorrowerMarketplaceListings.jsx";
 import NearbyBorrowers from "./components/pages/Oxyloans/Lender/NearbyBorrowers";
 import LenderEmiDashboard from "./components/pages/Oxyloans/Lender/LenderEmiDashboard";
 import BorrowerEmiSchedule from "./components/pages/Oxyloans/Borrower/BorrowerEmiSchedule";
 import MyOxyScore from "./components/pages/Oxyloans/Borrower/MyOxyScore";
-import BorrowerCreditReport from "./components/pages/Oxyloans/Borrower/redesign/pages/CreditReport.jsx";
-import InstantLoanFlow from "./components/pages/Oxyloans/Borrower/redesign/pages/InstantLoanFlow.jsx";
-import MarketplaceEsign from "./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEsign";
-import MarketplaceEnach from "./components/pages/Oxyloans/Borrower/redesign/pages/MarketplaceEnach";
+import BorrowerCreditReport from "./components/pages/Oxyloans/Borrower/MyOxyScore.jsx";
+import MarketplaceEsign from "./components/pages/Oxyloans/Borrower/MarketplaceEsign.jsx";
+import MarketplaceEnach from "./components/pages/Oxyloans/Borrower/MarketplaceEnach.jsx";
 import MarketplaceAdminDashboard from "./components/pages/Oxyloans/Admin/MarketplaceAdminDashboard";
 import SmartLoanMatch from "./components/pages/Oxyloans/Lender/SmartLoanMatch";
 import NotificationsPage from "./components/pages/NotificationsPage";
 import AdminDisbursalControl from "./components/pages/Oxyloans/Admin/AdminDisbursalControl";
 import AdminSettings from "./components/pages/Oxyloans/Admin/AdminSettings";
 import FeeDisclosure from "./components/pages/Oxyloans/Borrower/FeeDisclosure";
-import RepaymentView from "./components/pages/Oxyloans/Borrower/redesign/pages/Repayment.jsx";
+import RepaymentView from "./components/pages/Oxyloans/Borrower/RepaymentView.jsx";
 import AgreementPage from "./components/pages/Oxyloans/Borrower/AgreementPage";
-import MyLoans from "./components/pages/Oxyloans/Borrower/redesign/pages/LoanDetails.jsx";
+import MyLoans from "./components/pages/Oxyloans/Borrower/MyLoans.jsx";
+
+// Instant Loan Redesign Flow (Dedicated for Borrower #41682)
+import InstantBorrowerDashboard from "./components/pages/Oxyloans/Borrower/redesign/pages/Dashboard.jsx";
+import InstantBorrowerProfile from "./components/pages/Oxyloans/Borrower/redesign/pages/Profile.jsx";
+import RedesignCreditReport from "./components/pages/Oxyloans/Borrower/redesign/pages/CreditReport.jsx";
+import RedesignLoanRequest from "./components/pages/Oxyloans/Borrower/redesign/pages/LoanRequest.jsx";
+import RedesignDocuments from "./components/pages/Oxyloans/Borrower/redesign/pages/Documents.jsx";
+import RedesignOffers from "./components/pages/Oxyloans/Borrower/redesign/pages/Offers.jsx";
+import RedesignDisbursement from "./components/pages/Oxyloans/Borrower/redesign/pages/Disbursement.jsx";
+import RedesignRepayment from "./components/pages/Oxyloans/Borrower/redesign/pages/Repayment.jsx";
+import RedesignLoanDetails from "./components/pages/Oxyloans/Borrower/redesign/pages/LoanDetails.jsx";
+import BorrowerLoanRejectionDetails from "./components/pages/Oxyloans/Borrower/redesign/pages/BorrowerLoanRejectionDetails.jsx";
+import InstantLoanFlow from "./components/pages/Oxyloans/Borrower/redesign/pages/InstantLoanFlow.jsx";
+import {
+  InstantLoanGuard,
+  InstantLoanProfileGuard,
+  BorrowerDashboardSwitch,
+  BorrowerProfileSwitch,
+} from "./components/pages/Oxyloans/Borrower/InstantLoanRouteGuard.jsx";
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
 import AssignedUsersforCallers from "./components/pages/Oxyloans/Admin/AssignedUsersforCallers.jsx";
 import RadhaDashboard from "./components/pages/Oxyloans/Radha Admin/RadhaDashboard.jsx";
@@ -225,6 +242,7 @@ import ProcessingFees from "./components/pages/Oxyloans/Admin/BorrowerFees/Proce
 import Testimonials from "./components/Testimonials.jsx";
 import LenderNearbyBorrowersAdmin from "./components/pages/Oxyloans/Admin/LENDERS/LenderNearbyBorrowersAdmin.jsx";
 import BorrowerNearbyLendersAdmin from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerNearbyLendersAdmin.jsx";
+import LenderBorrowerProfile from "./components/pages/Oxyloans/Lender/LenderBorrowerProfile.jsx";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -237,6 +255,8 @@ const CatchAll = () => {
   const pt = localStorage.getItem("primaryType") || "";
   if (pt === "ADMIN" || pt === "HELPDESKADMIN") return <Navigate to="/oxyloansadmindashboard" replace />;
   if (pt === "LENDER") return <Navigate to="/dashboard" replace />;
+  const uid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+  if (String(uid).trim() === "41682") return <Navigate to="/instant-borrower-dashboard" replace />;
   return <Navigate to="/borrowerDashboard" replace />;
 };
 
@@ -482,14 +502,38 @@ const AppRouter = () => {
         <Route path="/mytransactions" element={<PrivateRoute element={<Mytransactions />} />} />
         <Route path="/autoInvestHistory" element={<PrivateRoute element={<AutoInvestHistory />} />} />
         <Route path="/dashboardTransactions" element={<PrivateRoute element={<DashboardTransactions />} />} />
-        <Route path="/interestsDateWise" element={<PrivateRoute element={<InterestsDateWise />} />} />
+        <Route path="/Month-wise-interest" element={<PrivateRoute element={<InterestsDateWise />} />} />
         <Route path="/walletToWalletTransactionHistory" element={<PrivateRoute element={<WalletToWalletTransactionHistory />} />} />
         <Route path="/adminAIDashboard" element={<PrivateRoute element={<AdminAIDashboard />} />} />
         <Route path="/adminAIReconciliation" element={<PrivateRoute element={<AdminAIReconciliationDashboard />} />} />
 
         {/* BORROWER & PARTNER */}
-        <Route path="/borrowerDashboard" element={<PrivateRoute element={<BorrowerDashboard />} />} />
-        <Route path="/borrowerProfile" element={<PrivateRoute element={<BorrowerProfile />} />} />
+        <Route
+          path="/borrowerDashboard"
+          element={
+            <PrivateRoute
+              element={
+                <BorrowerDashboardSwitch
+                  standardElement={<BorrowerDashboard />}
+                  instantElement={<InstantBorrowerDashboard />}
+                />
+              }
+            />
+          }
+        />
+        <Route
+          path="/borrowerProfile"
+          element={
+            <PrivateRoute
+              element={
+                <BorrowerProfileSwitch
+                  standardElement={<BorrowerProfile />}
+                  instantElement={<InstantBorrowerProfile />}
+                />
+              }
+            />
+          }
+        />
         <Route path="/borrowerAgreedLoans" element={<PrivateRoute element={<BorrowerAgreedLoans />} />} />
         <Route path="/borrowerenach" element={<PrivateRoute element={<BorrowerEnach />} />} />
         <Route path="/borrowerLoaneligibility" element={<PrivateRoute element={<BorrowerLoanEligibility />} />} />
@@ -513,6 +557,7 @@ const AppRouter = () => {
         <Route path="/Partneraccept" element={<PrivateRoute element={<Partneraccept />} />} />
         <Route path="/borrowerLoanRequestCreate" element={<PrivateRoute element={<BorrowerLoanRequestCreate />} />} />
         <Route path="/borrowerRequestAmount" element={<PrivateRoute element={<BorrowerRequestAmount />} />} />
+        <Route path="/borrower-loan-rejection-details" element={<PrivateRoute element={<BorrowerLoanRejectionDetails />} />} />
         <Route path="/borrowerLoansInitiated" element={<PrivateRoute element={<BorrowerLoansInitiated />} />} />
         <Route path="/borrowerDisbursementAmount" element={<PrivateRoute element={<BorrowerDisbursementAmount />} />} />
         <Route path="/borrowerDisbursementInterestAmount/:borrowerId/:loanId/:id" element={<PrivateRoute element={<BorrowerDisbursementInterestAmount />} />} />
@@ -575,14 +620,29 @@ const AppRouter = () => {
         <Route path="/escalation-dashboard" element={<PrivateRoute element={<EscalationDashboard />} />} />
         <Route path="/my-marketplace-loans" element={<PrivateRoute element={<BorrowerMarketplaceListings />} />} />
         <Route path="/nearby-borrowers" element={<PrivateRoute element={<NearbyBorrowers />} />} />
+        <Route path="/lender/borrower-profile/:borrowerId" element={<PrivateRoute element={<LenderBorrowerProfile />} />} />
+        <Route path="/lenderBorrowerProfile/:borrowerId" element={<PrivateRoute element={<LenderBorrowerProfile />} />} />
+        <Route path="/borrower-profile-view/:borrowerId" element={<PrivateRoute element={<LenderBorrowerProfile />} />} />
+        <Route path="/borrower-profile-view" element={<PrivateRoute element={<LenderBorrowerProfile />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
         <Route path="/borrower-credit-report" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
         <Route path="/my-oxyscore" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
-        <Route path="/borrower/instant-loan/:id" element={<PrivateRoute element={<InstantLoanFlow />} />} />
-        <Route path="/borrower/instant-loan" element={<PrivateRoute element={<InstantLoanFlow />} />} />
-        <Route path="/borrower-instant-flow/:id" element={<PrivateRoute element={<InstantLoanFlow />} />} />
-        <Route path="/instant-loan/:id" element={<PrivateRoute element={<InstantLoanFlow />} />} />
+        {/* ===== INSTANT LOANS FLOW (EXCLUSIVE FOR BORROWER #41682) ===== */}
+        <Route path="/instant-borrower-dashboard" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
+        <Route path="/instant-borrower-profile" element={<PrivateRoute element={<InstantLoanProfileGuard element={<InstantBorrowerProfile />} />} />} />
+        <Route path="/instant-borrower-credit-report" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignCreditReport />} />} />} />
+        <Route path="/instant-borrower-loan-request" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignLoanRequest />} />} />} />
+        <Route path="/instant-borrower-documents" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignDocuments />} />} />} />
+        <Route path="/instant-borrower-offers" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignOffers />} />} />} />
+        <Route path="/instant-borrower-disbursement" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignDisbursement />} />} />} />
+        <Route path="/instant-borrower-repayment" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignRepayment />} />} />} />
+        <Route path="/instant-borrower-loans" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignLoanDetails />} />} />} />
+        <Route path="/instant-borrower-flow" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
+        <Route path="/borrower/instant-loan/:id" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
+        <Route path="/borrower/instant-loan" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
+        <Route path="/borrower-instant-flow/:id" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
+        <Route path="/instant-loan/:id" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
         <Route path="/esign/:loanRequestId" element={<PrivateRoute element={<MarketplaceEsign />} />} />
         <Route path="/esign/:loanRequestId/" element={<PrivateRoute element={<MarketplaceEsign />} />} />
         <Route path="/enach/:loanRequestId" element={<PrivateRoute element={<MarketplaceEnach />} />} />

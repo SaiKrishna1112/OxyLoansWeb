@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import "./instantLoan.css";
 import { formatINR } from "../creditReportUtils";
 import { verifyBankAccount } from "./instantLoanService";
+import { saveVerifiedBankDetails } from "./instantLoanApi";
+import { getUserDetails } from "../../../../../../HttpRequest/afterlogin";
 
 const COMMON_BANKS = [
   "State Bank of India",
@@ -24,15 +27,48 @@ const InstantLoanStepBankDetails = ({
   onBack,
 }) => {
   const [bankData, setBankData] = useState({
-    accountHolderName: profileData.name || "BALIJEPALLI NARENDRA",
-    bankName: "State Bank of India",
-    accountNumber: "02529657461119",
-    confirmAccountNumber: "02529657461119",
-    ifscCode: "SBIN0005220",
+    accountHolderName: profileData?.name || "DHARMAPURI SAI KRISHNA",
+    bankName: profileData?.bankName || "STATE BANK OF INDIA",
+    accountNumber: profileData?.accountNumber || "34209820038",
+    confirmAccountNumber: profileData?.accountNumber || "34209820038",
+    ifscCode: profileData?.ifscCode || "SBIN0008505",
     accountType: "SAVINGS",
   });
 
+  useEffect(() => {
+    if (profileData?.accountNumber || profileData?.bankName) {
+      setBankData((prev) => ({
+        ...prev,
+        accountHolderName: profileData.name || prev.accountHolderName,
+        bankName: profileData.bankName || prev.bankName,
+        accountNumber: profileData.accountNumber || prev.accountNumber,
+        confirmAccountNumber: profileData.accountNumber || prev.confirmAccountNumber,
+        ifscCode: profileData.ifscCode || prev.ifscCode,
+      }));
+    }
+
+    getUserDetails()
+      .then((res) => {
+        if (res?.data) {
+          const d = res.data;
+          setBankData((prev) => ({
+            ...prev,
+            accountHolderName:
+              d.nameAtBank ||
+              (d.firstName ? `${d.firstName} ${d.lastName || ""}`.trim() : prev.accountHolderName),
+            bankName: d.bankName || prev.bankName,
+            accountNumber: d.accountNumber || prev.accountNumber,
+            confirmAccountNumber: d.accountNumber || prev.confirmAccountNumber,
+            ifscCode: d.ifscCode || prev.ifscCode,
+            accountType: d.accountType || prev.accountType,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [profileData]);
+
   const [isVerifying, setIsVerifying] = useState(false);
+  const [pennyDropStage, setPennyDropStage] = useState(1);
   const [verifiedSuccess, setVerifiedSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -64,8 +100,20 @@ const InstantLoanStepBankDetails = ({
     }
 
     setIsVerifying(true);
+    setPennyDropStage(1);
+
+    const stageTimer1 = setTimeout(() => {
+      setPennyDropStage(2);
+    }, 700);
+
+    const stageTimer2 = setTimeout(() => {
+      setPennyDropStage(3);
+    }, 1400);
+
     try {
       const res = await verifyBankAccount(bankData);
+      clearTimeout(stageTimer1);
+      clearTimeout(stageTimer2);
       setIsVerifying(false);
       setVerifiedSuccess(true);
 
@@ -83,6 +131,11 @@ const InstantLoanStepBankDetails = ({
         confirmButtonColor: "#0040e0",
         confirmButtonText: "Proceed to Disbursal Tracker",
       }).then(() => {
+        // Save verified details to borrower profile asynchronously
+        saveVerifiedBankDetails(bankData, applicationId).catch((e) =>
+          console.warn("saveVerifiedBankDetails background:", e)
+        );
+
         onBankVerified({
           ...bankData,
           verifiedBeneficiaryName: res.verifiedName || bankData.accountHolderName,
@@ -90,6 +143,8 @@ const InstantLoanStepBankDetails = ({
         });
       });
     } catch (err) {
+      clearTimeout(stageTimer1);
+      clearTimeout(stageTimer2);
       setIsVerifying(false);
       setErrorMessage("Failed to verify bank account. Please check IFSC and account number.");
     }
@@ -104,7 +159,7 @@ const InstantLoanStepBankDetails = ({
   };
 
   return (
-    <form onSubmit={handleVerifyBank} className="fintech-card">
+    <form onSubmit={handleVerifyBank} className="fintech-card step-view-enter">
       {/* Step Header */}
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom">
         <div>
@@ -149,7 +204,7 @@ const InstantLoanStepBankDetails = ({
           <div className="bank-metallic-card">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <span className="fw-bold letter-spacing-1 text-white small">
-                {bankData.bankName.toUpperCase()}
+                {(bankData.bankName || "STATE BANK OF INDIA").toUpperCase()}
               </span>
               <span className="badge badge-fintech-white-translucent rounded-pill px-2 py-1 small" style={{ fontSize: "10px" }}>
                 DIRECT DEPOSIT
@@ -207,6 +262,64 @@ const InstantLoanStepBankDetails = ({
           </div>
         </div>
       </div>
+
+      {/* Animated Penny Drop Verification Stage */}
+      {isVerifying && (
+        <div
+          className="p-4 rounded-4 mb-4 text-center step-view-enter shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+            border: "1.5px solid #86efac",
+          }}
+        >
+          <div className="coin-drop-box mb-3">
+            <div className="coin-ripple-ring"></div>
+            <div className="coin-token">₹1</div>
+          </div>
+
+          <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-success bg-opacity-20 text-success small fw-bold mb-2">
+            <span className="pulse-beacon-live"></span>
+            <span>NPCI IMPS Fast Rail</span>
+          </div>
+
+          <h5 className="fw-bold text-dark mb-1">
+            {pennyDropStage === 1
+              ? "Connecting to NPCI IMPS Gateway..."
+              : pennyDropStage === 2
+              ? "Depositing ₹1.00 Test Penny Drop to Beneficiary..."
+              : "Verifying Account Beneficiary Name Match..."}
+          </h5>
+
+          <p className="text-muted small mb-0" style={{ maxWidth: "520px", margin: "0 auto" }}>
+            Transmitting instant micro-deposit to confirm <strong>{bankData.accountHolderName}</strong> at {bankData.bankName || "State Bank of India"} ({bankData.ifscCode || "SBIN0005220"}).
+          </p>
+        </div>
+      )}
+
+      {/* Verified Beneficiary Callout */}
+      {verifiedSuccess && (
+        <div className="alert alert-success border-0 rounded-4 p-3 d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 shadow-xs step-view-enter">
+          <div className="d-flex align-items-center gap-3">
+            <div className="rounded-circle bg-success text-white p-2 d-flex align-items-center justify-content-center shadow-xs" style={{ width: "42px", height: "42px" }}>
+              <i className="fa-solid fa-circle-check fs-5"></i>
+            </div>
+            <div>
+              <strong className="d-block text-success">Bank Account Authenticated via Penny Drop ✓</strong>
+              <span className="small text-muted">
+                Beneficiary Match: <strong>{bankData.accountHolderName}</strong> (NPCI Status: VERIFIED & ACTIVE)
+              </span>
+            </div>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <span className="badge badge-fintech-success px-3 py-2 rounded-pill small fw-bold">
+              ₹1.00 CREDITED
+            </span>
+            <div className="legal-seal-stamp" style={{ fontSize: "11px", padding: "4px 10px" }}>
+              NPCI AUTH
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form Fields */}
       <div className="row g-3 mb-4">

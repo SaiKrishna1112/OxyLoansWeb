@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
-import { Myreferal, downloadreferal } from "../../../HttpRequest/afterlogin";
+import { Myreferal, downloadreferal, getUserId } from "../../../HttpRequest/afterlogin";
 import Footer from "../../../Footer/Footer";
 import { Table } from "antd";
 import { onShowSizeChange } from "../../../Pagination";
@@ -87,9 +87,9 @@ const ReferralStatus = () => {
   };
 
   const Invitelender = async () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.user.oxyloans.com/register?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/register?ref=BR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");
@@ -131,9 +131,9 @@ const ReferralStatus = () => {
   ];
 
   const handlenriinvite = () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=${userId}`;
+    input.value = `https://www.oxyloans.com/new/nrilenderregistration?ref=BR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");
@@ -144,9 +144,9 @@ const ReferralStatus = () => {
     });
   };
   const Inviteborrower = () => {
-    const userId = localStorage.getItem("userType");
+    const userId = getUserId() || localStorage.getItem("userType");
     const input = document.createElement("input");
-    input.value = `https://www.user.oxyloans.com/borrower_register?ref=${userId}`;
+    input.value = `https://www.user.oxyloans.com/borrower_register?ref=BR${userId}`;
     document.body.appendChild(input);
     input.select();
     document.execCommand("copy");

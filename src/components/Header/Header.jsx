@@ -11,7 +11,13 @@ import { useSelector, useDispatch } from "react-redux";
 import { fetchData } from "../Redux/Slice";
 import { fetchDatadashboard } from "../Redux/SliceDashboard";
 
-import { headericon04, oxylogomobile, oxylogodashboard } from "../imagepath";
+import {
+  headericon04,
+  oxylogomobile,
+  oxylogodashboard,
+} from "../imagepath";
+import "./Header.css";
+import Oxy10YearsGoogleDoodle from "./Oxy10YearsGoogleDoodle";
 import { Tag } from "antd";
 // import NotificationBell from "../NotificationBell";
 import { MARKETPLACE_URL } from "../../config";
@@ -206,30 +212,8 @@ const Header = (profile) => {
         <Tag      style={{height:'1.8rem' ,display:'flex',alignItems:'center'}} className="badge bg-success mx-2">Get Membership</Tag>
         </Link> */}
           {isLender && (
-            <li className="nav-item d-none d-sm-flex align-items-center me-2">
-              <button
-                type="button"
-                onClick={openLenderWelcomeModal}
-                style={{
-                  background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
-                  border: "1px solid #10b981",
-                  borderRadius: "20px",
-                  color: "#047857",
-                  padding: "4px 12px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  cursor: "pointer",
-                  boxShadow: "0 1px 3px rgba(16, 185, 129, 0.15)",
-                  transition: "all 0.2s ease",
-                }}
-                title="View 10 Years of OxyLoans Anniversary Note"
-              >
-                <span>🎉</span>
-                <span>10 Years of OxyLoans</span>
-              </button>
+            <li className="nav-item d-flex align-items-center me-1 me-sm-2 me-md-3 oxy-doodle-nav-item">
+              <Oxy10YearsGoogleDoodle onClick={openLenderWelcomeModal} />
             </li>
           )}
           <li className="nav-item  has-arrow dropdown-heads ">

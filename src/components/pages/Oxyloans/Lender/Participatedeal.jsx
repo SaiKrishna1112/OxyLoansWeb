@@ -69,31 +69,37 @@ const Participatedeal = () => {
         }
 
         const newObj = { ...response.data };
+        const formatRoi = (val) => {
+          const num = Number(val);
+          if (isNaN(num)) return val;
+          return parseFloat(num.toFixed(2));
+        };
+
         if (newObj.monthlyInterest != 0) {
-          newObj.rateOfInterest = `${newObj.monthlyInterest}% PM`;
+          newObj.rateOfInterest = `${formatRoi(newObj.monthlyInterest)}% PM`;
           newObj["payout"] = "MONTHLY";
           localStorage.setItem("choosenPayOutOption", "MONTHLY");
         } else if (newObj.quartlyInterest != 0) {
-          newObj.rateOfInterest = `${newObj.quartlyInterest * 3}% PA`;
+          newObj.rateOfInterest = `${formatRoi(newObj.quartlyInterest * 3)}% PA`;
           newObj["payout"] = "QUARTERLY";
           localStorage.setItem("choosenPayOutOption", "QUARTELY");
         } else if (newObj.halfInterest != 0) {
-          newObj.rateOfInterest = `${newObj.halfInterest * 6}% PA`;
+          newObj.rateOfInterest = `${formatRoi(newObj.halfInterest * 6)}% PA`;
           newObj["payout"] = "HALFYEARLY";
           localStorage.setItem("choosenPayOutOption", "HALFLY");
         } else if (newObj.yearlyInterest != 0) {
-          newObj.rateOfInterest = `${newObj.yearlyInterest * 12}% PA`;
+          newObj.rateOfInterest = `${formatRoi(newObj.yearlyInterest * 12)}% PA`;
           newObj["payout"] = "YEARLY";
           localStorage.setItem("choosenPayOutOption", "YEARLY");
         } else if (newObj.endofthedealInterest != 0) {
-          newObj.rateOfInterest = `${newObj.endofthedealInterest * 12}% PA`;
+          newObj.rateOfInterest = `${formatRoi(newObj.endofthedealInterest * 12)}% PA`;
           newObj["payout"] = "ENDOFTHEDEAL";
           localStorage.setItem("choosenPayOutOption", "ENDOFTHEDEAL");
         } else if (newObj.perDayInterestRoi != 0 || newObj.perDayInterestAmount != null) {
           newObj.rateOfInterest =
             newObj.perDayInterestRoi == 0.0
-              ? `${newObj.perDayInterestAmount} PD`
-              : `${newObj.perDayInterestRoi}% PD`;
+              ? `${formatRoi(newObj.perDayInterestAmount)} PD`
+              : `${formatRoi(newObj.perDayInterestRoi)}% PD`;
           newObj["payout"] = "PERDAY";
           localStorage.setItem("choosenPayOutOption", "PERDAY");
         }
@@ -187,15 +193,6 @@ const Participatedeal = () => {
         Number(reduxStoreData.holdAmountInDealParticipation || 0) -
         Number(reduxStoreData.equityAmount || 0)
       : 0;
-
-  const displayWalletBalance =
-    availableWalletBalance > 0
-      ? availableWalletBalance.toLocaleString("en-IN")
-      : withdrawriaseapi.amount
-      ? Number(withdrawriaseapi.amount).toLocaleString("en-IN")
-      : deal.apidata?.remainingAmountInDeal
-      ? Number(deal.apidata.remainingAmountInDeal).toLocaleString("en-IN")
-      : "67,950";
 
   const enteredAmount = Number(deal.participatedAmount || 0);
 
@@ -444,17 +441,28 @@ const Participatedeal = () => {
                           {deal.apidata?.dealName || "minmax test"}
                         </h2>
                         <span className="deal-active-badge">Active</span>
+                      </div>
 
-                        {/* Show if user already participated */}
-                        {hasAlreadyParticipated && (
+                      {/* Show if user already participated in a separate second line */}
+                      {hasAlreadyParticipated && (
+                        <div className="deal-already-participated-row">
                           <span className="deal-already-participated-badge">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                             Already Participated: ₹ {alreadyParticipated.toLocaleString("en-IN")}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       {/* <p className="deal-hero-desc">
                         A great opportunity to grow together with secure and transparent returns.
                       </p> */}
@@ -478,7 +486,7 @@ const Participatedeal = () => {
                     </div>
                     <div className="deal-wallet-info">
                       <p className="deal-wallet-label">Your Wallet Balance</p>
-                      <p className="deal-wallet-amount">₹ {displayWalletBalance}</p>
+                      <p className="deal-wallet-amount">₹ {availableWalletBalance.toLocaleString("en-IN")}</p>
                     </div>
                     <button
                       type="button"

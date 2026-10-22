@@ -44,6 +44,10 @@ body.oxy-redesign-active {
   border-color: var(--oxy-primary-container);
 }
 
+.oxy-loan-status-card-rejected {
+  border-left: 4px solid var(--oxy-error);
+}
+
 .oxy-card-lg {
   border-radius: var(--oxy-radius-lg);
   padding: 32px;

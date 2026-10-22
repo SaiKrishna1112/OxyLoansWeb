@@ -11,9 +11,12 @@ import {
   getBorrowerRequestAmount,
   getCibilBasedRoi,
   getUserDetails,
+  getBorrowerReferenceDetails,
+  loadlendernomineeDetails,
 } from "../../../HttpRequest/afterlogin";
 import FeeConfigInfo from "./FeeConfigInfo";
 import BorrowerConsentSection, { BORROWER_CONSENTS } from "./BorrowerConsentSection";
+import { calculateBorrowerProfileCompleteness } from "../../../../utils/borrowerValidation";
 
 const formatCurrency = (amount) => {
   const numericValue = Number(amount || 0);
@@ -25,6 +28,17 @@ const formatCurrency = (amount) => {
 
 const normalizeStatus = (status) => {
   return String(status || "").trim().toUpperCase();
+};
+
+const normalizeNomineeDetails = (nominee) => {
+  if (!nominee || typeof nominee !== "object") return null;
+
+  return {
+    ...nominee,
+    nomineeName: nominee.nomineeName || nominee.name || "",
+    relation: nominee.relation || "",
+    nomineeMobile: nominee.nomineeMobile || nominee.mobileNumber || "",
+  };
 };
 
 const BorrowerLoanRequestCreate = () => {
@@ -47,55 +61,59 @@ const BorrowerLoanRequestCreate = () => {
   });
   const hasShownBlockedAlertRef = useRef(false);
   const [cibilInfo, setCibilInfo] = useState({ loading: true, data: null });
+  const [profileCompleteness, setProfileCompleteness] = useState({
+    percentage: 100,
+    isEligibleToRaiseLoan: true,
+    missingRequirements: [],
+    loading: true,
+  });
 
   useEffect(() => {
     const checkProfileAndKyc = async () => {
       try {
-        const res = await getUserDetails();
-        if (res?.status === 200) {
-          const profileData = res.data;
-          
-          const fields = [
-            profileData.firstName,
-            profileData.lastName,
-            profileData.panNumber,
-            profileData.aadharNumber,
-            profileData.city,
-            profileData.state,
-            profileData.address,
-            profileData.whatsAppNumber || profileData.mobileNumber,
-          ];
-          const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
-          const completionPct = Math.round((filledFields.length / fields.length) * 100);
-                    const isProfileComplete = profileData?.personalDetailsInfo === true || completionPct >= 75;
-          const isKycComplete = profileData?.kycStatus === true;
-          const isCibilUploaded = profileData?.cibilScore !== undefined && Number(profileData.cibilScore) > 0;
-          
-          // if ((!isProfileComplete || !isKycComplete || !isCibilUploaded) && !hasShownBlockedAlertRef.current) {
-          //   hasShownBlockedAlertRef.current = true;
-          //   let missing = [];
-          //   if (!isProfileComplete) missing.push("Profile Setup (or 75% completeness)");
-          //   if (!isKycComplete) missing.push("KYC verification");
-          //   if (!isCibilUploaded) missing.push("OxyScore (CIBIL report upload)");
- 
-          //   Swal.fire({
-          //     icon: "warning",
-          //     title: "Requirements Pending",
-          //     text: `Please complete the following requirements: ${missing.join(", ")} before raising a loan request.`,
-          //     confirmButtonText: "Complete Now",
-          //     confirmButtonColor: "#3d5ee1",
-          //     allowOutsideClick: false,
-          //   }).then(() => {
-          //     if (!isProfileComplete || !isKycComplete) {
-          //       navigate("/borrowerProfile");
-          //     } else {
-          //       navigate("/my-oxyscore");
-          //     }
-          //   });
-          // }
+        const uId = getUserId() || sessionStorage.getItem("userId");
+        const [res, refRes, nomineeRes] = await Promise.allSettled([
+          getUserDetails(),
+          uId ? getBorrowerReferenceDetails(uId) : Promise.resolve(null),
+          loadlendernomineeDetails(),
+        ]);
+
+        const profileData = res.status === "fulfilled" ? res.value?.data : null;
+        const refData = refRes.status === "fulfilled" ? refRes.value?.data : null;
+        const nomineeData = normalizeNomineeDetails(
+          nomineeRes.status === "fulfilled" ? nomineeRes.value?.data : null
+        );
+
+        if (profileData) {
+          const comp = calculateBorrowerProfileCompleteness(
+            profileData,
+            refData || profileData.referenceDetailsResponseDto,
+            nomineeData
+          );
+          setProfileCompleteness({
+            percentage: comp.percentage,
+            isEligibleToRaiseLoan: comp.isEligibleToRaiseLoan,
+            missingRequirements: comp.missingRequirements,
+            loading: false,
+          });
+
+          if (!comp.isEligibleToRaiseLoan && !hasShownBlockedAlertRef.current) {
+            hasShownBlockedAlertRef.current = true;
+            Swal.fire({
+              icon: "warning",
+              title: "Profile Incomplete (90% Required)",
+              html: `Your Profile Completeness is currently <strong>${comp.percentage}%</strong>.<br/>You must achieve at least <strong>90% Profile Completeness</strong> before you can raise a loan request.<br/><br/><div style="font-size:13px; text-align:left; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #e2e8f0;"><strong>Pending items to complete:</strong><br/>• ${comp.missingRequirements.join("<br/>• ")}</div>`,
+              confirmButtonText: "Complete Profile Now",
+              confirmButtonColor: "#3d5ee1",
+              allowOutsideClick: false,
+            }).then(() => {
+              navigate("/borrowerProfile");
+            });
+          }
         }
       } catch (err) {
-        console.error("Error checking profile, KYC, and OxyScore requirements:", err);
+        console.error("Error checking profile requirements:", err);
+        setProfileCompleteness((prev) => ({ ...prev, loading: false }));
       }
     };
     checkProfileAndKyc();
@@ -281,17 +299,20 @@ const BorrowerLoanRequestCreate = () => {
     !!eligibleErrorMessage ||
     !hasEligibilityData ||
     isFormBlockedByStatus ||
-    !allConsentsChecked;
+    !allConsentsChecked ||
+    (!profileCompleteness.loading && !profileCompleteness.isEligibleToRaiseLoan);
 
   const submitButtonText = isSubmitting
     ? "Submitting..."
     : requestStatusInfo.loading
       ? "Checking request status..."
-      : isEligibleLoading
-        ? "Loading eligibility..."
-        : eligibleErrorMessage
-          ? "Eligibility required"
-          : "Submit Loan Request";
+      : !profileCompleteness.loading && !profileCompleteness.isEligibleToRaiseLoan
+        ? `Profile Incomplete (${profileCompleteness.percentage}% / 90%)`
+        : isEligibleLoading
+          ? "Loading eligibility..."
+          : eligibleErrorMessage
+            ? "Eligibility required"
+            : "Submit Loan Request";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -301,6 +322,23 @@ const BorrowerLoanRequestCreate = () => {
         "Session Expired",
         "Your session has expired. Please sign in again to continue.",
       );
+      return;
+    }
+
+    if (!profileCompleteness.isEligibleToRaiseLoan) {
+      Swal.fire({
+        icon: "warning",
+        title: "Profile Incomplete (90% Required)",
+        html: `Your Profile Completeness is currently <strong>${profileCompleteness.percentage}%</strong>.<br/>You must achieve at least <strong>90% Profile Completeness</strong> before you can raise a loan request.<br/><br/><div style="font-size:13px; text-align:left; background:#f8fafc; padding:12px 16px; border-radius:8px; border:1px solid #e2e8f0;"><strong>Pending items to complete:</strong><br/>• ${profileCompleteness.missingRequirements.join("<br/>• ")}</div>`,
+        confirmButtonText: "Complete Profile Now",
+        confirmButtonColor: "#3d5ee1",
+        showCancelButton: true,
+        cancelButtonText: "Close",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/borrowerProfile");
+        }
+      });
       return;
     }
 
@@ -519,6 +557,53 @@ const BorrowerLoanRequestCreate = () => {
 
           {/* Fee Configuration Info */}
           <FeeConfigInfo />
+
+          {/* Profile Completeness Warning Banner (< 90%) */}
+          {!profileCompleteness.loading && !profileCompleteness.isEligibleToRaiseLoan && (
+            <div className="alert alert-warning border border-warning-subtle rounded-3 p-4 mb-4 shadow-sm bg-warning bg-opacity-10">
+              <div className="d-flex align-items-start gap-3">
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style={{ width: "46px", height: "46px", backgroundColor: "#fef3c7", color: "#d97706" }}
+                >
+                  <i className="fa-solid fa-triangle-exclamation fs-5"></i>
+                </div>
+                <div className="flex-grow-1">
+                  <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                    <h5 className="fw-bold text-dark mb-0">
+                      Profile Completeness: {profileCompleteness.percentage}% (90% Required)
+                    </h5>
+                    <span className="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold">
+                      {profileCompleteness.percentage}% / 90%
+                    </span>
+                  </div>
+                  <p className="text-muted small mb-2" style={{ lineHeight: "1.5" }}>
+                    You cannot raise a loan request until your profile reaches at least <strong>90% Profile Completeness</strong>. Please complete the remaining mandatory profile sections to unlock loan requests.
+                  </p>
+                  <div className="progress mb-3" style={{ height: "8px", maxWidth: "340px", borderRadius: "10px" }}>
+                    <div
+                      className="progress-bar bg-warning rounded-pill"
+                      role="progressbar"
+                      style={{ width: `${profileCompleteness.percentage}%` }}
+                    />
+                  </div>
+                  {profileCompleteness.missingRequirements?.length > 0 && (
+                    <div className="small text-secondary mb-3">
+                      <strong>Pending Profile Sections: </strong>
+                      {profileCompleteness.missingRequirements.join(", ")}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-warning btn-sm fw-bold px-3 py-2 rounded-pill shadow-sm"
+                    onClick={() => navigate("/borrowerProfile")}
+                  >
+                    <i className="fa-solid fa-user-pen me-1"></i> Complete Profile Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {eligibleErrorMessage ? (
             <div className="row">

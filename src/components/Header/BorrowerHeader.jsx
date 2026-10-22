@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 import {
   getUserDetails,
   getSessionExpireTime,
@@ -26,10 +27,14 @@ import {
   oxylogodashboard,
 } from "../imagepath";
 import NotificationBell from "../NotificationBell";
+import { isInstantLoanBorrower } from "../../utils/redirectUtils";
 
 const BorrowerHeader = (profile) => {
   const dispatch = useDispatch();
   const reduxStoreData = useSelector((data) => data.counter.userProfile);
+  const currentUserId =
+    sessionStorage.getItem("userId") || localStorage.getItem("userId");
+  const isInstant = isInstantLoanBorrower(currentUserId);
   const [dashboarddata, setdashboarddata] = useState({
     profileData: "",
   });
@@ -40,6 +45,25 @@ const BorrowerHeader = (profile) => {
 
   const handlesidebarmobilemenu = () => {
     document.body.classList.toggle("slide-nav");
+  };
+
+  const handleBorrowerSignOut = (event) => {
+    event.preventDefault();
+    Swal.fire({
+      icon: "question",
+      title: "Sign out?",
+      text: "Are you sure you want to sign out?",
+      showCancelButton: true,
+      confirmButtonText: "Yes, sign out",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#3d5ee1",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    });
   };
 
   useEffect(() => {
@@ -84,10 +108,10 @@ const BorrowerHeader = (profile) => {
       <div className="header">
         {/* Logo */}
         <div className="header-left">
-          <Link to="/borrowerDashboard" className="logo">
+          <Link to={isInstant ? "/instant-borrower-dashboard" : "/borrowerDashboard"} className="logo">
             <img src={oxylogodashboard} alt="Logo" />
           </Link>
-          <Link to="/borrowerDashboard" className="logo logo-small">
+          <Link to={isInstant ? "/instant-borrower-dashboard" : "/borrowerDashboard"} className="logo logo-small">
             <img src={oxylogomobile} alt="Logo" width={30} height={30} />
           </Link>
         </div>
@@ -319,7 +343,7 @@ const BorrowerHeader = (profile) => {
                   <p className="text-muted mb-0">BORROWER</p>
                 </div>
               </div>
-              <Link className="dropdown-item" to="/borrowerProfile">
+              <Link className="dropdown-item" to={isInstant ? "/instant-borrower-profile" : "/borrowerProfile"}>
                 My Profile
               </Link>
               <Link className="dropdown-item" to="/borrowerRequestAmount">
@@ -329,10 +353,7 @@ const BorrowerHeader = (profile) => {
               <Link
                 className="dropdown-item"
                 to="/"
-                onClick={() => {
-                  localStorage.clear();
-                  sessionStorage.clear();
-                }}
+                onClick={handleBorrowerSignOut}
               >
                 Logout
               </Link>

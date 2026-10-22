@@ -6,7 +6,6 @@ import Footer from "../../../Footer/Footer";
 import {
   TicketHistoryapi,
   allQueriesCount1,
-  ticketcommentapi,
 } from "../../../HttpRequest/afterlogin";
 import Comment from "../Utills/Modals/Comment";
 import { handletocancelticket } from "../../Base UI Elements/SweetAlert";
@@ -14,9 +13,7 @@ import "./TicketHistory.css";
 
 const TicketHistory = () => {
   const [tickets, setTickets] = useState([]);
-  const [comments, setComments] = useState(null);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const [loadingCommentsId, setLoadingCommentsId] = useState(null);
   const [cancellingTicketId, setCancellingTicketId] = useState(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Statuses");
@@ -94,14 +91,8 @@ const TicketHistory = () => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  const openComments = async (item) => {
+  const openComments = (item) => {
     setSelectedTicket(item);
-    setLoadingCommentsId(item.id);
-    try {
-      setComments(await ticketcommentapi(item.id));
-    } finally {
-      setLoadingCommentsId(null);
-    }
   };
 
   const exportCsv = () => {
@@ -161,7 +152,7 @@ const TicketHistory = () => {
                       <td><strong className="ticket-subject">{item.subject || item.query}</strong></td>
                       <td><span className={`ticket-status status-${String(item.status || "default").toLowerCase().replace(/\s+/g, "-")}`}><i />{item.status}</span></td>
                       <td><span className="ticket-comment-preview">{item.comments || "Awaiting review from Support Executive..."}</span></td>
-                      <td><div className="ticket-row-actions"><button className="ticket-comment-btn" disabled={loadingCommentsId === item.id || cancellingTicketId !== null} onClick={() => openComments(item)} type="button">{loadingCommentsId === item.id ? <><i className="fa-solid fa-spinner fa-spin" /> Loading...</> : <><i className="fa-regular fa-message" /> Comments</>}</button><button className="ticket-cancel-btn" disabled={item.status === "Cancelled" || item.status === "Completed" || cancellingTicketId !== null || loadingCommentsId !== null} onClick={() => handleCancel(item.id)} type="button">{cancellingTicketId === item.id ? <><i className="fa-solid fa-spinner fa-spin" /> Cancelling...</> : <><i className="fa-regular fa-circle-xmark" /> Cancel</>}</button></div></td>
+                      <td><div className="ticket-row-actions"><button className="ticket-comment-btn" disabled={cancellingTicketId !== null} onClick={() => openComments(item)} type="button"><i className="fa-regular fa-message" /> Comments</button><button className="ticket-cancel-btn" disabled={item.status === "Cancelled" || item.status === "Completed" || cancellingTicketId !== null} onClick={() => handleCancel(item.id)} type="button">{cancellingTicketId === item.id ? <><i className="fa-solid fa-spinner fa-spin" /> Cancelling...</> : <><i className="fa-regular fa-circle-xmark" /> Cancel</>}</button></div></td>
                     </tr>
                   ))}
                   {!filteredTickets.length && <tr><td className="ticket-empty" colSpan="6">No tickets match your filters.</td></tr>}
@@ -170,7 +161,7 @@ const TicketHistory = () => {
             </div>
             <div className="ticket-table-footer"><span>Showing <strong>{filteredTickets.length ? (currentPage - 1) * pageSize + 1 : 0}</strong> to <strong>{Math.min((currentPage - 1) * pageSize + filteredTickets.length, hasFilters ? filteredTickets.length : queryCounts.allQueriesCount)}</strong> of <strong>{hasFilters ? filteredTickets.length : queryCounts.allQueriesCount}</strong> entries</span><div><button type="button" disabled={currentPage === 1} onClick={() => setCurrentPage((page) => page - 1)}>Previous</button>{Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => <button className={page === currentPage ? "is-current" : ""} type="button" key={page} onClick={() => setCurrentPage(page)}>{page}</button>)}<button type="button" disabled={currentPage === totalPages} onClick={() => setCurrentPage((page) => page + 1)}>Next</button></div></div>
           </section>
-          {comments && <Comment data={comments} ticket={selectedTicket} onClose={() => { setComments(null); setSelectedTicket(null); }} />}
+          {selectedTicket && <Comment ticket={selectedTicket} onClose={() => { setSelectedTicket(null); loadTickets(currentPage); }} />}
         </main>
         <Footer />
       </div>

@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Scrollbars } from "react-custom-scrollbars";
+import Swal from "sweetalert2";
+import { isInstantLoanBorrower } from "../../utils/redirectUtils";
 
 const BorrowerSidebar = (props) => {
   const [isSideMenu, setSideMenu] = useState("");
   const [isSideMenuLevel, setSideMenuLevel] = useState("");
   const [isSideMenuLevel2, setSideMenuLevel2] = useState("");
+
+  const currentUserId =
+    sessionStorage.getItem("userId") || localStorage.getItem("userId");
+  const isInstant = isInstantLoanBorrower(currentUserId);
 
   const toggleSidebar = (value) => {
     setSideMenu(value);
@@ -15,6 +21,25 @@ const BorrowerSidebar = (props) => {
   };
   const toggleSidebar2 = (value) => {
     setSideMenuLevel2(value);
+  };
+
+  const handleBorrowerSignOut = (event) => {
+    event.preventDefault();
+    Swal.fire({
+      icon: "question",
+      title: "Sign out?",
+      text: "Are you sure you want to sign out?",
+      showCancelButton: true,
+      confirmButtonText: "Yes, sign out",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#3d5ee1",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/";
+      }
+    });
   };
 
   useEffect(() => {
@@ -137,70 +162,94 @@ const BorrowerSidebar = (props) => {
             <div id="sidebar-menu" className="sidebar-menu">
               {/* Main Menu */}
               <ul>
-                <li
-                  className={`${
-                    "/borrowerDashboard" === pathName ? "active" : ""
-                  }`}
-                >
-                  <Link to="/borrowerDashboard">
-                    <i className="fa-solid fa-gauge"></i>{" "}
-                    <span> Dashboard </span>
-                    <span className="menu-arrow"></span>
-                  </Link>
-                </li>
-
-                <li
-                  className={`${
-                    "/borrowerProfile" === pathName ? "active" : ""
-                  }`}
-                >
-                  <Link to="/borrowerProfile">
-                    <i className="fa-solid fa-user"></i>
-                    <span> Profile </span>
-                    <span className="menu-arrow"></span>
-                  </Link>
-                </li>
-
-                {/* <li
-                  className={`${
-                    "/borrower-credit-report" === pathName || "/my-oxyscore" === pathName
-                      ? "active"
-                      : ""
-                  }`}
-                >
-                  <Link to="/borrower-credit-report" className="d-flex align-items-center">
-                    <i className="fa-solid fa-chart-pie"></i>
-                    <span> Credit Report </span>
-                    <span
-                      className="badge bg-success bg-opacity-10 text-success ms-auto"
-                      style={{ fontSize: "10px", padding: "3px 6px" }}
+                {isInstant ? (
+                  <>
+                    <li
+                      className={`${
+                        pathName.includes("/borrower/instant-loan") ||
+                        pathName.includes("/borrower-instant-flow") ||
+                        pathName.includes("/instant-loan") ||
+                        pathName === "/instant-borrower-flow" ||
+                        pathName === "/instant-borrower-dashboard" ||
+                        pathName === "/borrowerDashboard"
+                          ? "active"
+                          : ""
+                      }`}
                     >
-                      802
-                    </span>
-                  </Link>
-                </li>
-
-                <li
-                  className={`${
-                    pathName.includes("/borrower/instant-loan") || pathName.includes("/borrower-instant-flow")
-                      ? "active"
-                      : ""
-                  }`}
-                >
-                  <Link to="/borrower/instant-loan/41682" className="d-flex align-items-center">
-                    <i className="fa-solid fa-bolt text-warning"></i>
-                    <span> Instant Loan Flow </span>
-                    <span
-                      className="badge bg-primary text-white ms-auto"
-                      style={{ fontSize: "10px", padding: "2px 6px" }}
+                      <Link to="/borrower/instant-loan/41682" className="d-flex align-items-center">
+                        <i className="fa-solid fa-bolt text-warning"></i>
+                        <span> Instant Loan Flow </span>
+                        <span
+                          className="badge bg-primary text-white ms-auto"
+                          style={{ fontSize: "10px", padding: "2px 6px" }}
+                        >
+                          #41682
+                        </span>
+                      </Link>
+                    </li>
+                    <li
+                      className={`${
+                        pathName === "/instant-borrower-credit-report" ? "active" : ""
+                      }`}
                     >
-                      #41682
-                    </span>
-                  </Link>
-                </li> */}
+                      <Link to="/instant-borrower-credit-report" className="d-flex align-items-center">
+                        <i className="fa-solid fa-chart-pie"></i>
+                        <span> Credit Report </span>
+                      </Link>
+                    </li>
+                    <li
+                      className={`${
+                        pathName === "/instant-borrower-documents" ? "active" : ""
+                      }`}
+                    >
+                      <Link to="/instant-borrower-documents" className="d-flex align-items-center">
+                        <i className="fa-solid fa-folder-open"></i>
+                        <span> Documents Vault </span>
+                      </Link>
+                    </li>
+                    <li
+                      className={`${
+                        pathName === "/instant-borrower-profile" ? "active" : ""
+                      }`}
+                    >
+                      <Link to="/instant-borrower-profile" className="d-flex align-items-center">
+                        <i className="fa-solid fa-user"></i>
+                        <span> Profile </span>
+                      </Link>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li
+                      className={`${
+                        "/borrowerDashboard" === pathName ? "active" : ""
+                      }`}
+                    >
+                      <Link to="/borrowerDashboard">
+                        <i className="fa-solid fa-gauge"></i>{" "}
+                        <span> Dashboard </span>
+                        <span className="menu-arrow"></span>
+                      </Link>
+                    </li>
 
-                <li
-                  className={`${
+                    <li
+                      className={`${
+                        "/borrowerProfile" === pathName ? "active" : ""
+                      }`}
+                    >
+                      <Link to="/borrowerProfile">
+                        <i className="fa-solid fa-user"></i>
+                        <span> Profile </span>
+                        <span className="menu-arrow"></span>
+                      </Link>
+                    </li>
+                  </>
+                )}
+
+                {!isInstant && (
+                  <>
+                    <li
+                      className={`${
                     "/borrowerLoanRequestCreate" === pathName ||
                     "/borrowerRequestAmount" === pathName ||
                     "/borrowerLoansInitiated" === pathName ||
@@ -461,6 +510,16 @@ const BorrowerSidebar = (props) => {
                     ""
                   )}
                 </li>
+                  </>
+                )}
+                {isInstant && (
+                  <li className={`${"/" === pathName ? "active" : ""}`}>
+                    <Link to="/" onClick={handleBorrowerSignOut}>
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                      <span>Sign Out</span>
+                    </Link>
+                  </li>
+                )}
               </ul>
               {/* /Main Menu*/}
               {/* AI Insights */}
@@ -474,8 +533,9 @@ const BorrowerSidebar = (props) => {
               </ul> */}
               {/* /AI Insights */}
               {/* Management */}
-              <ul>
-                <li
+              {!isInstant && (
+                <ul>
+                  <li
                   className={`${
                     "/borrowerreferfriend" === pathName ||
                     "/borrowerreferstatus" === pathName ||
@@ -584,12 +644,13 @@ const BorrowerSidebar = (props) => {
                 {/* End Marketplace Menu Items */}
 
                 <li className={`${"/" === pathName ? "active" : ""}`}>
-                  <Link to="/">
+                  <Link to="/" onClick={handleBorrowerSignOut}>
                     <i className="fa-solid fa-right-from-bracket"></i>
                     <span>Sign Out</span>
                   </Link>
                 </li>
               </ul>
+            )}
               {/* /UI Interface */}
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import "./KYCModal.css";
+import { verifyPayslipCompany } from "../../../../../../utils/borrowerValidation";
 
 // Document Metadata Dictionary
 const DOC_META = {
@@ -104,6 +105,8 @@ const KYCModal = ({
   fileName = "",
   title = "",
   status = "",
+  companyName = "",
+  declaredSalary = "",
   onUploadFile,
   isUploading = false,
 }) => {
@@ -125,11 +128,16 @@ const KYCModal = ({
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePassword, setFilePassword] = useState("");
+  const [hasPasswordChoice, setHasPasswordChoice] = useState(null); // null (unselected) | "yes" | "no"
   const [showPassword, setShowPassword] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [liveCompanyCheck, setLiveCompanyCheck] = useState(null);
 
   const fileInputRef = useRef(null);
   const modalContainerRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const prevOpenRef = useRef(false);
 
   // Metadata for current document
   const docMeta = useMemo(() => {
@@ -150,21 +158,29 @@ const KYCModal = ({
   useEffect(() => {
     if (isOpen) {
       setMounted(true);
-      // Reset preview controls on open
-      setZoom(1);
-      setRotation(0);
-      setIsFullscreen(false);
-      setIsLoadingPreview(Boolean(fileUrl));
-      setHasPreviewError(false);
-      setSelectedFile(null);
-      setFilePassword("");
-      setUploadError("");
+      const isJustOpened = !prevOpenRef.current;
+      prevOpenRef.current = true;
 
-      // Set active tab based on requested mode and file availability
-      if (mode === "upload" || !fileUrl) {
-        setActiveTab("upload");
-      } else {
-        setActiveTab("preview");
+      if (isJustOpened) {
+        // Reset preview controls on initial modal open
+        setZoom(1);
+        setRotation(0);
+        setIsFullscreen(false);
+        setIsLoadingPreview(Boolean(fileUrl));
+        setHasPreviewError(false);
+        setSelectedFile(null);
+        setFilePassword("");
+        setHasPasswordChoice(null);
+        setShowPassword(false);
+        setUploadError("");
+        setPasswordError("");
+
+        // Set active tab based on requested mode and file availability
+        if (mode === "upload" || !fileUrl) {
+          setActiveTab("upload");
+        } else {
+          setActiveTab("preview");
+        }
       }
 
       // Safely lock body scroll without clobbering existing modal state
@@ -183,6 +199,7 @@ const KYCModal = ({
         }
       };
     } else {
+      prevOpenRef.current = false;
       setVisible(false);
       if (!document.body.classList.contains("modal-open")) {
         document.body.style.overflow = "";
@@ -195,6 +212,16 @@ const KYCModal = ({
       return () => clearTimeout(leaveTimer);
     }
   }, [isOpen, fileUrl, mode]);
+
+  // Automatically focus password input when "yes" is chosen
+  useEffect(() => {
+    if (hasPasswordChoice === "yes" && passwordInputRef.current) {
+      const timer = setTimeout(() => {
+        passwordInputRef.current?.focus();
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [hasPasswordChoice]);
 
   // Keyboard navigation & Accessibility (ESC to close)
   useEffect(() => {
@@ -262,8 +289,9 @@ const KYCModal = ({
     setIsDragging(false);
   };
 
-  const validateAndSelectFile = (file) => {
+  const validateAndSelectFile = async (file) => {
     setUploadError("");
+    setLiveCompanyCheck(null);
     if (!file) return;
 
     // Validate size (max 10MB)
@@ -282,6 +310,15 @@ const KYCModal = ({
     }
 
     setSelectedFile(file);
+
+    if ((documentType === "PAYSLIPS" || documentType === "paySlips") && companyName) {
+      try {
+        const check = await verifyPayslipCompany(file, companyName);
+        setLiveCompanyCheck(check);
+      } catch (err) {
+        console.warn("Live payslip company check:", err);
+      }
+    }
   };
 
   const handleDrop = (e) => {
@@ -304,12 +341,30 @@ const KYCModal = ({
   const handleExecuteUpload = async () => {
     if (!selectedFile) return;
 
+    setUploadError("");
+    setPasswordError("");
+
+    if (docMeta.hasPassword) {
+      if (!hasPasswordChoice) {
+        setPasswordError("Please select whether this file contains a password or not.");
+        return;
+      }
+      if (hasPasswordChoice === "yes" && !filePassword.trim()) {
+        setPasswordError("Password is required for password-protected files.");
+        return;
+      }
+    }
+
+    const finalPassword = hasPasswordChoice === "yes" ? filePassword.trim() : "";
+
     if (onUploadFile) {
       try {
-        await onUploadFile(selectedFile, documentType, filePassword);
+        await onUploadFile(selectedFile, documentType, finalPassword, hasPasswordChoice);
         // Reset local selection after upload
         setSelectedFile(null);
         setFilePassword("");
+        setHasPasswordChoice(null);
+        setPasswordError("");
       } catch (err) {
         console.error("Upload failed in KYCModal:", err);
       }
@@ -595,6 +650,25 @@ const KYCModal = ({
                 </div>
               )}
 
+              {/* Verification Context Notice */}
+              {(documentType === "PAYSLIPS" || documentType === "paySlips") && (
+                <div className="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-3 rounded-3" style={{ fontSize: "12px", border: "1px solid #bfdbfe", background: "#eff6ff" }}>
+                  <i className="fa-solid fa-building-circle-check text-primary fs-6"></i>
+                  <div>
+                    <strong>Employer Verification:</strong> Payslip will be checked against your registered employer: <strong>{companyName || "Declared Employer"}</strong>.
+                  </div>
+                </div>
+              )}
+
+              {(documentType === "BANKSTATEMENT" || documentType === "bankStatement") && (
+                <div className="alert alert-info py-2 px-3 small d-flex align-items-center gap-2 mb-3 rounded-3" style={{ fontSize: "12px", border: "1px solid #bfdbfe", background: "#eff6ff" }}>
+                  <i className="fa-solid fa-money-check-dollar text-primary fs-6"></i>
+                  <div>
+                    <strong>Salary Verification:</strong> Bank statement will be analyzed automatically to verify monthly salary credits matching your declared salary: <strong>₹{Number(declaredSalary || 0).toLocaleString("en-IN")}</strong>.
+                  </div>
+                </div>
+              )}
+
               {/* Drag and Drop Zone */}
               <div
                 className={`kyc-dropzone ${isDragging ? "is-dragging" : ""}`}
@@ -646,6 +720,7 @@ const KYCModal = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFile(null);
+                      setLiveCompanyCheck(null);
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
                     title="Remove selected file"
@@ -655,36 +730,153 @@ const KYCModal = ({
                 </div>
               )}
 
+              {selectedFile && (documentType === "PAYSLIPS" || documentType === "paySlips") && (
+                <div className="mt-2 mb-3 p-2 rounded border" style={{ fontSize: "11.5px", background: liveCompanyCheck?.verified ? "#f0fdf4" : "#fffbeb", borderColor: liveCompanyCheck?.verified ? "#bbf7d0" : "#fde68a" }}>
+                  {liveCompanyCheck?.verified ? (
+                    <div className="text-success fw-semibold">
+                      <i className="fa-solid fa-circle-check me-1"></i>
+                      Company match confirmed ({companyName || liveCompanyCheck.companyName}) in document!
+                    </div>
+                  ) : (
+                    <div className="text-warning-emphasis">
+                      <i className="fa-solid fa-circle-info me-1"></i>
+                      Document will be verified as issued by <strong>{companyName || "Employer"}</strong> upon submission.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedFile && (documentType === "BANKSTATEMENT" || documentType === "bankStatement") && (
+                <div className="mt-2 mb-3 p-2 rounded border" style={{ fontSize: "11.5px", background: "#f0fdf4", borderColor: "#bbf7d0" }}>
+                  <div className="text-success fw-semibold">
+                    <i className="fa-solid fa-bolt me-1"></i>
+                    Automated salary & turnover analyzer will run on this file.
+                  </div>
+                </div>
+              )}
+
               {/* Password Protection input if document requires/supports it */}
               {docMeta.hasPassword && (
-                <div className="kyc-password-group">
-                  <label className="kyc-label">
-                    <i className="fa-solid fa-lock text-muted"></i>
-                    File Password (Optional / If Protected)
+                <div className="kyc-password-group p-3 rounded-3 mt-3" style={{ background: "#f8fafc", border: "1.5px solid #e2e8f0" }}>
+                  <label className="kyc-label fw-bold mb-2 text-dark" style={{ fontSize: "13px" }}>
+                    <i className="fa-solid fa-shield-halved text-primary me-2"></i>
+                    Does this file contain a password? <span className="text-danger">*</span>
                   </label>
-                  <div className="kyc-input-shell">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="kyc-input-native"
-                      placeholder="Enter decryption password"
-                      value={filePassword}
-                      onChange={(e) => setFilePassword(e.target.value)}
-                      disabled={isUploading}
-                    />
-                    <button
-                      type="button"
-                      className="kyc-input-toggle-btn"
-                      onClick={() => setShowPassword((prev) => !prev)}
-                      title={showPassword ? "Hide password" : "Show password"}
-                    >
-                      <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
-                    </button>
+
+                  {/* Radio Buttons: Yes / No - Not defaulted to no or yes, user must choose */}
+                  <div className="d-flex align-items-center gap-4 mb-2">
+                    <div className="form-check form-check-inline d-flex align-items-center gap-2 mb-0" style={{ cursor: "pointer" }}>
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="kycHasPassword"
+                        id="kycHasPasswordYes"
+                        value="yes"
+                        checked={hasPasswordChoice === "yes"}
+                        onChange={() => {
+                          setHasPasswordChoice("yes");
+                          setPasswordError("");
+                        }}
+                        disabled={isUploading}
+                        style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                      />
+                      <label className="form-check-label small fw-semibold text-dark mb-0" htmlFor="kycHasPasswordYes" style={{ cursor: "pointer" }}>
+                        Yes, file has a password
+                      </label>
+                    </div>
+
+                    <div className="form-check form-check-inline d-flex align-items-center gap-2 mb-0" style={{ cursor: "pointer" }}>
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="kycHasPassword"
+                        id="kycHasPasswordNo"
+                        value="no"
+                        checked={hasPasswordChoice === "no"}
+                        onChange={() => {
+                          setHasPasswordChoice("no");
+                          setFilePassword("");
+                          setPasswordError("");
+                        }}
+                        disabled={isUploading}
+                        style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                      />
+                      <label className="form-check-label small fw-semibold text-dark mb-0" htmlFor="kycHasPasswordNo" style={{ cursor: "pointer" }}>
+                        No, unencrypted file
+                      </label>
+                    </div>
                   </div>
-                  {docMeta.pwdHint && (
-                    <span className="kyc-input-hint">
-                      <i className="fa-solid fa-circle-info me-1 text-primary"></i>
-                      {docMeta.pwdHint}
-                    </span>
+
+                  {/* Password Input (only rendered if Yes is selected) */}
+                  {hasPasswordChoice === "yes" && (
+                    <div className="mt-3">
+                      <label className="kyc-label mb-1" style={{ fontSize: "12px" }}>
+                        <i className="fa-solid fa-lock text-muted me-1"></i>
+                        File Password <span className="text-danger">*</span>
+                      </label>
+                      <div
+                        className="kyc-input-shell"
+                        style={{ background: "#ffffff", cursor: "text" }}
+                        onClick={() => passwordInputRef.current && passwordInputRef.current.focus()}
+                      >
+                        <input
+                          ref={passwordInputRef}
+                          type={showPassword ? "text" : "password"}
+                          className="kyc-input-native"
+                          style={{
+                            flex: 1,
+                            minWidth: 0,
+                            width: "100%",
+                            border: "none",
+                            outline: "none",
+                            boxShadow: "none",
+                            background: "transparent",
+                            fontSize: "14px",
+                            color: "#0f172a",
+                            padding: "6px 0",
+                            pointerEvents: "auto",
+                            userSelect: "text",
+                          }}
+                          placeholder="Enter file password (letters, digits, symbols)"
+                          value={filePassword}
+                          onChange={(e) => {
+                            setFilePassword(e.target.value);
+                            if (e.target.value.trim()) setPasswordError("");
+                          }}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                          }}
+                          disabled={isUploading}
+                          autoComplete="off"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          className="kyc-input-toggle-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowPassword((prev) => !prev);
+                          }}
+                          title={showPassword ? "Hide password" : "Show password"}
+                        >
+                          <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                        </button>
+                      </div>
+                      {docMeta.pwdHint && (
+                        <span className="kyc-input-hint d-block mt-1">
+                          <i className="fa-solid fa-circle-info me-1 text-primary"></i>
+                          {docMeta.pwdHint}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Validation Error Message */}
+                  {passwordError && (
+                    <div className="text-danger small mt-2 d-flex align-items-center gap-1 fw-medium" style={{ fontSize: "12px" }}>
+                      <i className="fa-solid fa-circle-exclamation"></i>
+                      <span>{passwordError}</span>
+                    </div>
                   )}
                 </div>
               )}

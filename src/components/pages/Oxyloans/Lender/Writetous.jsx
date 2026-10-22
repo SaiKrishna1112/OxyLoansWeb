@@ -557,7 +557,7 @@ const Writetous = () => {
                               className="btn btn-primary col-md-3 mx-3 my-5 querybtn"
                               onClick={querySubmission}
                               disabled={writetous.isVaild || isSubmitting}
-                            >
+                            > 
                               {isSubmitting ? (
                                 <>
                                   <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />

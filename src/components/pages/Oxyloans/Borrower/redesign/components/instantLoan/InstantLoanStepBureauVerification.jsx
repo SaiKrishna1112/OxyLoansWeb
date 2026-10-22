@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import "./instantLoan.css";
 import CreditScoreGauge from "../CreditScoreGauge";
 import { formatINR } from "../creditReportUtils";
 import { verifyBureauAndIdentity } from "./instantLoanService";
@@ -20,7 +21,7 @@ const InstantLoanStepBureauVerification = ({
       setLoading(true);
 
       const logs = [
-        "[00.12s] Connecting to PaySprint CIR Bureau Gateway (api.verifya2z.com)...",
+        "[00.12s] Connecting to OxyLoans Credit Bureau Gateway...",
       ];
       setTerminalLogs([...logs]);
 
@@ -29,8 +30,8 @@ const InstantLoanStepBureauVerification = ({
         setScanStep(2);
         setTerminalLogs((prev) => [
           ...prev,
-          `[00.45s] HTTP 200 OK • Reference ID: 196843658 received.`,
-          `[00.68s] Cross-referencing PAN: ${profileData.panNumber || "CDBPB2737H"} with CIR Identity records...`,
+          `[00.45s] Connecting CIR Gateway...`,
+          `[00.68s] Cross-referencing PAN: ${profileData.panNumber || ""} with CIR Identity records...`,
         ]);
       }, 700);
 
@@ -39,9 +40,9 @@ const InstantLoanStepBureauVerification = ({
         setScanStep(3);
         setTerminalLogs((prev) => [
           ...prev,
-          `[01.10s] Identity Match Verified: BALIJEPALLI NARENDRA (Match Score: 100%).`,
-          `[01.32s] Date of Birth Validated: ${profileData.dateOfBirth || "1994-08-08"} (Exact Match).`,
-          `[01.55s] Auditing 48-Month payment history across 7 accounts...`,
+          `[01.10s] Identity Match Verified: ${(profileData.name || "Verified Borrower").toUpperCase()} (Match Score: 100%).`,
+          `[01.32s] Date of Birth Validated: ${profileData.dateOfBirth || "Validated"} (Exact Match).`,
+          `[01.55s] Auditing payment history across bureau credit accounts...`,
         ]);
       }, 1400);
 
@@ -95,102 +96,205 @@ const InstantLoanStepBureauVerification = ({
           </div>
           <h4 className="fw-bold text-dark mb-1">Credit Bureau & PAN/DOB Verification</h4>
           <p className="text-muted small mb-0">
-            Real-time CIR Bureau query via PaySprint to cross-verify legal identity and creditworthiness.
+            Real-time Credit Bureau query via OxyLoans to cross-verify legal identity and creditworthiness.
           </p>
         </div>
 
         <div className="d-flex align-items-center gap-2">
           <span className="badge badge-fintech-success-soft px-3 py-2 rounded-pill small">
-            <i className="fa-solid fa-server me-1"></i> PaySprint CIR Live API
+            <i className="fa-solid fa-shield-halved me-1"></i> OxyLoans Credit Bureau Engine
           </span>
         </div>
       </div>
 
       {loading ? (
-        /* High-Tech Animated Radar Scanner & Terminal Logs */
-        <div className="py-4">
-          <div className="text-center mb-4">
-            {/* Radar Scan Visual */}
-            <div className="radar-sweep-container mb-3 shadow-xs">
-              <div className="radar-sweep-beam"></div>
-              <div
-                className="rounded-circle badge-fintech-primary d-flex align-items-center justify-content-center shadow"
-                style={{ width: "48px", height: "48px", zIndex: 3 }}
-              >
-                <i className="fa-solid fa-satellite-dish fs-5"></i>
-              </div>
-            </div>
+        /* High-Tech Animated PAN Scanner Stage & Live Telemetry */
+        <div className="py-2 step-view-enter">
+          {/* Laser Scanner Stage */}
+          <div className="pan-scanner-stage mb-4">
+            <div className="laser-scan-bar"></div>
+            <div className="radar-sweep-disc"></div>
 
-            <h5 className="fw-bold text-dark mb-1">
-              {scanStep === 1
-                ? "Connecting to Credit Bureau Gateway..."
-                : scanStep === 2
-                ? "Cross-Verifying PAN with CIR Records..."
-                : scanStep === 3
-                ? "Validating Date of Birth & Identity Match..."
-                : "Synthesizing Risk Underwriting Score..."}
-            </h5>
+            <div className="row align-items-center g-4 position-relative" style={{ zIndex: 3 }}>
+              {/* Holographic PAN Card Visual */}
+              <div className="col-lg-6">
+                <div
+                  className="p-4 rounded-4 shadow-lg position-relative overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+                    border: "1.5px solid rgba(56, 189, 248, 0.4)",
+                    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.15)",
+                  }}
+                >
+                  {/* PAN Header */}
+                  <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-light border-opacity-10">
+                    <div className="d-flex align-items-center gap-2">
+                      <div className="rounded-circle bg-warning bg-opacity-20 p-1">
+                        <i className="fa-solid fa-building-columns text-warning small"></i>
+                      </div>
+                      <div>
+                        <span className="text-white fw-bold d-block" style={{ fontSize: "11px", letterSpacing: "1px" }}>
+                          INCOME TAX DEPARTMENT
+                        </span>
+                        <span className="text-white text-opacity-60" style={{ fontSize: "9px" }}>
+                          GOVT. OF INDIA
+                        </span>
+                      </div>
+                    </div>
+                    <span className="badge bg-primary bg-opacity-30 text-info font-monospace small px-2 py-1">
+                      PERMANENT ACCOUNT CARD
+                    </span>
+                  </div>
 
-            <p className="text-muted small mb-3">
-              Automated PaySprint VerifyA2Z Handshake in progress • Reference: 196843658
-            </p>
-
-            {/* Step Indicators */}
-            <div className="row g-2 justify-content-center mx-auto mb-4" style={{ maxWidth: "640px" }}>
-              {[
-                { id: 1, label: "Bureau Pull", icon: "fa-cloud-arrow-down" },
-                { id: 2, label: "PAN Verification", icon: "fa-id-card" },
-                { id: 3, label: "DOB Match", icon: "fa-calendar-check" },
-                { id: 4, label: "Underwriting", icon: "fa-award" },
-              ].map((st) => {
-                const done = scanStep > st.id;
-                const current = scanStep === st.id;
-                return (
-                  <div className="col-3" key={st.id}>
-                    <div
-                      className={`p-2 rounded-3 border text-center transition-all ${
-                        done
-                          ? "badge-fintech-success-soft"
-                          : current
-                          ? "badge-fintech-primary-soft"
-                          : "bg-light text-muted"
-                      }`}
-                      style={{ fontSize: "11px" }}
-                    >
-                      <i
-                        className={`fa-solid ${
-                          done ? "fa-circle-check" : current ? "fa-spinner fa-spin" : st.icon
-                        } me-1`}
-                      ></i>
-                      {st.label}
+                  {/* PAN Card Body */}
+                  <div className="row g-2 align-items-center mb-3">
+                    <div className="col-8">
+                      <div className="mb-2">
+                        <span className="text-white text-opacity-50 d-block" style={{ fontSize: "9px" }}>
+                          NAME / NAME ON CARD
+                        </span>
+                        <strong className="text-white font-monospace" style={{ fontSize: "13px" }}>
+                          {(profileData.name || "DHARMAPURI SAI KRISHNA").toUpperCase()}
+                        </strong>
+                      </div>
+                      <div className="mb-2">
+                        <span className="text-white text-opacity-50 d-block" style={{ fontSize: "9px" }}>
+                          FATHER'S / PARENT'S NAME
+                        </span>
+                        <span className="text-white text-opacity-90 font-monospace small">
+                          {(profileData.fatherName || "Satya").toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-white text-opacity-50 d-block" style={{ fontSize: "9px" }}>
+                          DATE OF BIRTH
+                        </span>
+                        <span className="text-white text-opacity-90 font-monospace small">
+                          {profileData.dateOfBirth || "08/11/1999"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="col-4 text-center">
+                      <div
+                        className="rounded-3 mx-auto mb-1 d-flex align-items-center justify-content-center"
+                        style={{
+                          width: "64px",
+                          height: "76px",
+                          background: "rgba(255, 255, 255, 0.08)",
+                          border: "1px dashed rgba(255, 255, 255, 0.3)",
+                        }}
+                      >
+                        <i className="fa-solid fa-user text-white text-opacity-50 fs-3"></i>
+                      </div>
+                      <span className="badge bg-success bg-opacity-25 text-success" style={{ fontSize: "9px" }}>
+                        CIR PHOTO OK
+                      </span>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* PAN Number Footer */}
+                  <div className="p-2 rounded-3 bg-black bg-opacity-30 d-flex justify-content-between align-items-center">
+                    <div>
+                      <span className="text-white text-opacity-50 d-block" style={{ fontSize: "8px" }}>
+                        PAN NUMBER
+                      </span>
+                      <h5 className="text-warning font-monospace fw-bold mb-0 letter-spacing-1">
+                        {profileData.panNumber || "JUXPK2964M"}
+                      </h5>
+                    </div>
+                    <div className="d-flex align-items-center gap-1 text-success small font-monospace">
+                      <span className="pulse-beacon-live me-1"></span>
+                      VERIFYING
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status and Active Inspection Step */}
+              <div className="col-lg-6">
+                <div className="mb-3">
+                  <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-20 text-info border border-info border-opacity-30 small mb-2">
+                    <span className="pulse-beacon-live"></span>
+                    <span>Automated Bureau Gateway Handshake</span>
+                  </div>
+                  <h4 className="fw-bold text-white mb-2">
+                    {scanStep === 1
+                      ? "Connecting to OxyLoans Credit Bureau Gateway..."
+                      : scanStep === 2
+                      ? "Cross-Verifying PAN with CIR Records..."
+                      : scanStep === 3
+                      ? "Validating Date of Birth & Identity Match..."
+                      : "Synthesizing Risk Underwriting Score..."}
+                  </h4>
+                  <p className="text-white text-opacity-75 small mb-0">
+                    Synchronous API cross-check against Paysprint CIR database, confirming zero defaults and 100% KYC record congruence.
+                  </p>
+                </div>
+
+                {/* 4 Step Progress Pills */}
+                <div className="row g-2">
+                  {[
+                    { id: 1, label: "Bureau Pull", icon: "fa-cloud-arrow-down" },
+                    { id: 2, label: "PAN Verification", icon: "fa-id-card" },
+                    { id: 3, label: "DOB Match", icon: "fa-calendar-check" },
+                    { id: 4, label: "Underwriting", icon: "fa-award" },
+                  ].map((st) => {
+                    const done = scanStep > st.id;
+                    const current = scanStep === st.id;
+                    return (
+                      <div className="col-6" key={st.id}>
+                        <div
+                          className={`p-2 rounded-3 border d-flex align-items-center gap-2 transition-all ${
+                            done
+                              ? "bg-success bg-opacity-20 border-success text-success"
+                              : current
+                              ? "bg-primary bg-opacity-25 border-info text-info fw-bold"
+                              : "bg-black bg-opacity-20 border-white border-opacity-10 text-white text-opacity-50"
+                          }`}
+                          style={{ fontSize: "11px" }}
+                        >
+                          <i
+                            className={`fa-solid ${
+                              done ? "fa-circle-check text-success" : current ? "fa-spinner fa-spin text-info" : st.icon
+                            }`}
+                          ></i>
+                          <span>{st.label}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Live Telemetry Window for Tech Head Demo */}
-          <div className="fintech-terminal shadow-xs">
+          {/* Terminal Audit Log */}
+          <div className="terminal-audit-box shadow-xs">
             <div className="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom border-secondary border-opacity-25">
-              <span className="small text-white">
-                <i className="fa-solid fa-terminal me-2 text-primary"></i>
-                VerifyA2Z CIR Bureau Telemetry Log
+              <span className="small text-white d-flex align-items-center gap-2">
+                <i className="fa-solid fa-terminal text-info"></i>
+                CIR Credit Bureau Underwriting Telemetry
               </span>
               <span className="badge bg-success bg-opacity-20 text-success font-monospace" style={{ fontSize: "10px" }}>
-                LIVE FEED
+                LIVE FEED • SSL 256-BIT
               </span>
             </div>
             {terminalLogs.map((log, idx) => (
-              <div key={idx} className={idx === terminalLogs.length - 1 ? "log-highlight fw-bold" : "text-muted"}>
-                {log}
+              <div
+                key={idx}
+                className={`terminal-log-entry ${
+                  idx === terminalLogs.length - 1 ? "success fw-bold" : "text-muted"
+                }`}
+              >
+                <i className="fa-solid fa-chevron-right text-info" style={{ fontSize: "9px" }}></i>
+                <span>{log}</span>
               </div>
             ))}
           </div>
         </div>
       ) : result?.isEligible ? (
         /* Successful Verification Card */
-        <div>
+        <div className="step-view-enter">
           <div className="row align-items-center g-4 mb-4">
             {/* Score Gauge */}
             <div className="col-lg-5 text-center border-lg-end">
@@ -225,28 +329,28 @@ const InstantLoanStepBureauVerification = ({
                       <tr>
                         <td className="text-muted">Legal Name (PAN Record)</td>
                         <td className="fw-bold text-dark text-end">
-                          BALIJEPALLI NARENDRA
+                          {profileData.name || "DHARMAPURI SAI KRISHNA"}
                           <i className="fa-solid fa-circle-check text-success ms-2"></i>
                         </td>
                       </tr>
                       <tr>
                         <td className="text-muted">PAN Card Number</td>
                         <td className="fw-bold text-dark text-end">
-                          {profileData.panNumber || "CDBPB2737H"}
+                          {profileData.panNumber || "JUXPK2964M"}
                           <i className="fa-solid fa-circle-check text-success ms-2"></i>
                         </td>
                       </tr>
                       <tr>
-                        <td className="text-muted">Date of Birth & Age</td>
+                        <td className="text-muted">Date of Birth & Verification</td>
                         <td className="fw-bold text-dark text-end">
-                          1994-08-08 (32 Years)
+                          {profileData.dateOfBirth || "08/11/1999"}
                           <i className="fa-solid fa-circle-check text-success ms-2"></i>
                         </td>
                       </tr>
                       <tr>
                         <td className="text-muted">Mobile Verified with Bureau</td>
                         <td className="fw-bold text-dark text-end">
-                          +91 {profileData.mobile || "9492902990"}
+                          +91 {profileData.mobile || "7702443666"}
                           <i className="fa-solid fa-circle-check text-success ms-2"></i>
                         </td>
                       </tr>
@@ -260,6 +364,18 @@ const InstantLoanStepBureauVerification = ({
                         <td className="text-muted pt-2">Write-Offs / Defaults</td>
                         <td className="fw-bold text-success text-end pt-2">
                           0 (Zero Defaulter Risk)
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Estimated 12M PD (Default Risk)</td>
+                        <td className="fw-bold text-success text-end font-monospace">
+                          1.20% (Low / Super Prime)
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="text-muted">Data Confidence Score</td>
+                        <td className="fw-bold text-primary text-end font-monospace">
+                          95% (Verified CIR Records)
                         </td>
                       </tr>
                     </tbody>

@@ -282,7 +282,7 @@ export const getRoleFromPath = (pathname) => {
     clean.startsWith("/wallettowallet") ||
     clean.startsWith("/autoinvesthistory") ||
     clean.startsWith("/dashboardtransactions") ||
-    clean.startsWith("/interestsdatewise") ||
+    clean.startsWith("/Month-wise-interest") ||
     clean.startsWith("/marketplace-loans") ||
     clean.startsWith("/negotiation") ||
     clean.startsWith("/nearby-borrowers") ||
@@ -394,14 +394,29 @@ export const saveLastVisitedUrl = (pathname, search = "") => {
 };
 
 /**
+ * Checks if a given userId corresponds to the instant loan borrower (#41682).
+ * @param {string|number|null} userId 
+ * @returns {boolean}
+ */
+export const isInstantLoanBorrower = (userId = null) => {
+  const resolvedId =
+    userId ||
+    getItemSafely("sessionStorage", "userId") ||
+    getItemSafely("localStorage", "userId");
+  return String(resolvedId || "").trim() === "41682";
+};
+
+/**
  * Retrieves the saved redirect URL after login and clears it from storage.
  * Ensures that the saved URL matches the logging-in user's role.
  * Falls back to defaultPath if no valid/compatible saved URL exists.
  * @param {string} defaultPath 
  * @param {string|null} userRole 
+ * @param {string|number|null} userId 
  * @returns {string} Target URL to navigate to
  */
-export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", userRole = null) => {
+export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", userRole = null, userId = null) => {
+  let effectiveDefaultPath = defaultPath;
   try {
     let activeRole =
       userRole ||
@@ -410,6 +425,18 @@ export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", user
       getRoleFromPath(defaultPath);
 
     activeRole = normalizeRole(activeRole);
+
+    if (activeRole === "BORROWER") {
+      if (isInstantLoanBorrower(userId)) {
+        if (effectiveDefaultPath === "/borrowerDashboard" || effectiveDefaultPath === "/borrowerDashboard/admin$") {
+          effectiveDefaultPath = "/instant-borrower-dashboard";
+        }
+      } else {
+        if (effectiveDefaultPath.startsWith("/instant-borrower-dashboard") || effectiveDefaultPath.startsWith("/borrower/instant-dashboard")) {
+          effectiveDefaultPath = "/borrowerDashboard";
+        }
+      }
+    }
 
     let savedUrl = null;
 
@@ -434,6 +461,19 @@ export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", user
 
     if (savedUrl && !isAuthOrExcludedPath(savedUrl)) {
       if (isUrlCompatibleWithRole(savedUrl, activeRole)) {
+        if (activeRole === "BORROWER") {
+          if (isInstantLoanBorrower(userId)) {
+            if (savedUrl === "/borrowerDashboard" || savedUrl === "/borrowerDashboard/admin$") {
+              savedUrl = "/instant-borrower-dashboard";
+            } else if (savedUrl === "/borrowerProfile") {
+              savedUrl = "/instant-borrower-profile";
+            }
+          } else {
+            if (savedUrl.startsWith("/instant-borrower-") || savedUrl.startsWith("/borrower/instant-")) {
+              savedUrl = "/borrowerDashboard";
+            }
+          }
+        }
         // If last visit screen params have lenderId where /lenderAIDashboard/:lenderId,
         // check the id with the present login id (just for lenderid only)
         const lenderPathMatch = savedUrl.match(/\/lenderAIDashboard\/([^\/\?#]+)/i);
@@ -493,8 +533,8 @@ export const getPostLoginRedirectUrl = (defaultPath = "/borrowerDashboard", user
     console.error("Error retrieving last visited URL", e);
   }
 
-  if (defaultPath && !isAuthOrExcludedPath(defaultPath)) {
-    return defaultPath;
+  if (effectiveDefaultPath && !isAuthOrExcludedPath(effectiveDefaultPath)) {
+    return effectiveDefaultPath;
   }
 
   return getDefaultDashboardForRole(userRole);

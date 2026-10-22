@@ -198,8 +198,8 @@ const ReferaFriend = () => {
   };
 
   const Invitelender = async () => {
-    const userId = localStorage.getItem("userType") || getUserId() || "";
-    const link = `https://www.user.oxyloans.com/register?ref=${userId}`;
+    const userId = getUserId() || localStorage.getItem("userType") || "";
+    const link = `https://www.user.oxyloans.com/register?ref=BR${userId}`;
     copyToClipboard(link);
 
     setEmailres((prev) => ({
@@ -218,8 +218,8 @@ const ReferaFriend = () => {
   };
 
   const invitenri = async () => {
-    const userId = localStorage.getItem("userType") || getUserId() || "";
-    const link = `https://www.oxyloans.com/new/nrilenderregistration?ref=${userId}`;
+    const userId = getUserId() || localStorage.getItem("userType") || "";
+    const link = `https://www.oxyloans.com/new/nrilenderregistration?ref=BR${userId}`;
     copyToClipboard(link);
 
     setEmailres((prev) => ({
@@ -238,8 +238,8 @@ const ReferaFriend = () => {
   };
 
   const Inviteborrower = async () => {
-    const userId = localStorage.getItem("userType") || getUserId() || "";
-    const link = `https://www.user.oxyloans.com/borrower_register?ref=${userId}`;
+    const userId = getUserId() || localStorage.getItem("userType") || "";
+    const link = `https://www.user.oxyloans.com/borrower_register?ref=BR${userId}`;
     copyToClipboard(link);
 
     setEmailres((prev) => ({

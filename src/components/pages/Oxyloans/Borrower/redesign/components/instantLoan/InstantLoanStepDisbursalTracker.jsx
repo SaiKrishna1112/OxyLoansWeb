@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import "./instantLoan.css";
 import { formatINR, maskAccountNumber } from "../creditReportUtils";
+import { fetchDisbursementStatus } from "./instantLoanApi";
 
 const InstantLoanStepDisbursalTracker = ({
   applicationId = "41682",
@@ -11,20 +13,29 @@ const InstantLoanStepDisbursalTracker = ({
 }) => {
   const navigate = useNavigate();
 
-  const netDisbursal = selectedOffer?.netDisbursal || 43672;
-  const principal = selectedOffer?.principal || 45000;
-  const accNo = bankData?.accountNumber || "02529657461119";
-  const bankName = bankData?.bankName || "State Bank of India";
+  const principal = selectedOffer?.principal || 22500;
+  const defaultNet = selectedOffer?.netDisbursal || Math.round(principal * 0.97);
+  const [netDisbursal, setNetDisbursal] = useState(defaultNet);
+  const accNo = bankData?.accountNumber || profileData?.accountNumber || "34209820038";
+  const bankName = bankData?.bankName || profileData?.bankName || "STATE BANK OF INDIA";
 
   // Simulated countdown timer (1 hr 52 mins)
   const [secondsLeft, setSecondsLeft] = useState(6720);
 
   useEffect(() => {
+    fetchDisbursementStatus(applicationId)
+      .then((res) => {
+        if (res?.data?.netDisbursementAmount) {
+          setNetDisbursal(res.data.netDisbursementAmount);
+        }
+      })
+      .catch(() => {});
+
     const timer = setInterval(() => {
       setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [applicationId]);
 
   const formatCountdown = (totalSecs) => {
     const hrs = Math.floor(totalSecs / 3600);
@@ -34,14 +45,14 @@ const InstantLoanStepDisbursalTracker = ({
   };
 
   return (
-    <div className="fintech-card">
+    <div className="fintech-card step-view-enter">
       {/* Top Banner Status */}
       <div className="fintech-hero-dark mb-4">
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
           <div>
             <div className="d-flex align-items-center gap-2 mb-2">
               <span className="badge badge-fintech-warning px-3 py-1 rounded-pill small d-inline-flex align-items-center gap-2">
-                <span className="pulse-beacon"></span>
+                <span className="pulse-beacon-live"></span>
                 WAITING FOR DISBURSAL
               </span>
               <span className="text-white text-opacity-75 small">Application #{applicationId}</span>
@@ -58,13 +69,54 @@ const InstantLoanStepDisbursalTracker = ({
 
           <div className="text-md-end p-3 rounded-4 bg-white bg-opacity-10 border border-white border-opacity-10">
             <span className="text-white text-opacity-75 small d-block">Estimated Account Credit</span>
-            <h3 className="fw-bold text-success mb-0 font-monospace">
+            <div className="countdown-clock-hero">
               {formatCountdown(secondsLeft)}
-            </h3>
+            </div>
             <span className="text-white text-opacity-75 small" style={{ fontSize: "11px" }}>
               Direct IMPS Switch Queue: #1
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* All Steps Completed & Sidebar Unlocked Callout */}
+      <div
+        className="p-3 rounded-4 mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3 shadow-xs step-view-enter"
+        style={{
+          background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+          border: "1.5px solid #6ee7b7",
+        }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <div
+            className="rounded-circle bg-success text-white p-2 d-flex align-items-center justify-content-center shadow-xs"
+            style={{ width: "42px", height: "42px" }}
+          >
+            <i className="fa-solid fa-lock-open fs-5"></i>
+          </div>
+          <div>
+            <h6 className="fw-bold text-success mb-0">
+              All 6 Steps Completed — Borrower Dashboard & Profile Unlocked! ✓
+            </h6>
+            <small className="text-muted">
+              Your instant loan is authorized and escrow disbursal is under process. Full sidebar navigation and borrower profile are now active.
+            </small>
+          </div>
+        </div>
+
+        <div className="d-flex align-items-center gap-2">
+          <Link
+            to="/instant-borrower-profile"
+            className="btn btn-sm btn-success px-3 py-2 rounded-3 fw-bold shadow-xs text-white"
+          >
+            <i className="fa-solid fa-user me-1"></i> View Borrower Profile
+          </Link>
+          <Link
+            to="/instant-borrower-credit-report"
+            className="btn btn-sm btn-outline-success px-3 py-2 rounded-3 fw-bold"
+          >
+            <i className="fa-solid fa-chart-pie me-1"></i> Credit Report
+          </Link>
         </div>
       </div>
 
@@ -119,9 +171,9 @@ const InstantLoanStepDisbursalTracker = ({
                   <i className="fa-solid fa-check small"></i>
                 </div>
                 <div>
-                  <strong className="text-dark small d-block">1. Profile & Emergency References</strong>
+                  <strong className="text-dark small d-block">1. Borrower Profile & Employment</strong>
                   <span className="text-muted small" style={{ fontSize: "11px" }}>
-                    Verified borrower profile with 2 distinct emergency contacts
+                    Verified borrower KYC and employment details
                   </span>
                 </div>
               </div>
@@ -137,9 +189,9 @@ const InstantLoanStepDisbursalTracker = ({
                   <i className="fa-solid fa-check small"></i>
                 </div>
                 <div>
-                  <strong className="text-dark small d-block">2. Platform Assessment Fee Paid (₹150)</strong>
+                  <strong className="text-dark small d-block">2. References Verified & Assessment Fee Paid (₹150)</strong>
                   <span className="text-muted small" style={{ fontSize: "11px" }}>
-                    Txn verified via UPI switch • Bureau pipeline unlocked
+                    2 emergency contacts saved to borrower references registry • Fee paid via UPI
                   </span>
                 </div>
               </div>
@@ -155,7 +207,7 @@ const InstantLoanStepDisbursalTracker = ({
                   <i className="fa-solid fa-check small"></i>
                 </div>
                 <div>
-                  <strong className="text-dark small d-block">3. PaySprint Bureau & PAN/DOB Cross-Verification</strong>
+                  <strong className="text-dark small d-block">3. OxyLoans Bureau & PAN/DOB Cross-Verification</strong>
                   <span className="text-muted small" style={{ fontSize: "11px" }}>
                     Score: 802 Prime+ • 100% Identity Match with NSDL records
                   </span>
@@ -290,7 +342,7 @@ const InstantLoanStepDisbursalTracker = ({
           <button
             type="button"
             className="btn btn-primary rounded-3 px-4 py-2 small fw-bold text-white shadow-sm"
-            onClick={() => navigate("/borrowerDashboard")}
+            onClick={() => navigate("/instant-borrower-dashboard")}
             style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
           >
             Go to Dashboard

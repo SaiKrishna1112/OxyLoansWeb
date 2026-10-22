@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { fetchPaysprintCreditReport } from "../../../../../HttpRequest/afterlogin";
-import { RAW_SAMPLE_RESPONSE, setCachedCreditReport, parseCreditReportData } from "./creditReportUtils";
+import { setCachedCreditReport, parseCreditReportData } from "./creditReportUtils";
 
 const CreditScoreModal = ({
   show,
@@ -36,12 +36,12 @@ const CreditScoreModal = ({
       setActiveStep(0);
       setLoading(false);
       setFormData({
-        name: initialData.name || initialData.firstName ? `${initialData.firstName || ""} ${initialData.lastName || ""}`.trim() : "narendra kumar b",
-        mobile: initialData.mobile || initialData.mobileNumber || "9492902990",
-        documentId: initialData.documentId || initialData.panNumber || "CDBPB2737H",
-        dateOfBirth: initialData.dateOfBirth || initialData.dob || "1994-08-08",
-        address: initialData.address || initialData.residenceAddress || "KPHB",
-        pincode: initialData.pincode || initialData.pinCode || "500072",
+        name: initialData.name || (initialData.firstName ? `${initialData.firstName || ""} ${initialData.lastName || ""}`.trim() : ""),
+        mobile: initialData.mobile || initialData.mobileNumber || "",
+        documentId: initialData.documentId || initialData.panNumber || "",
+        dateOfBirth: initialData.dateOfBirth || initialData.dob || "",
+        address: initialData.address || initialData.residenceAddress || "",
+        pincode: initialData.pincode || initialData.pinCode || "",
       });
     }
   }, [show, initialData]);
@@ -108,13 +108,15 @@ const CreditScoreModal = ({
           result = response.data || response;
         }
       } catch (apiErr) {
-        console.warn("Live API call encountered error, falling back to verified sample bureau response:", apiErr);
+        console.warn("Live API call encountered error:", apiErr);
       }
 
-      // If backend returned success or fallback to verified bureau response structure
-      if (!result || !result.success) {
-        // Fallback to sample verified response
-        result = RAW_SAMPLE_RESPONSE;
+      if (!result || (!result.success && !result.rawResponse)) {
+        clearTimeout(stepTimer1);
+        clearTimeout(stepTimer2);
+        setLoading(false);
+        setErrorMessage("Unable to fetch credit bureau report at this time. Please verify your details or try again later.");
+        return;
       }
 
       clearTimeout(stepTimer1);
@@ -124,6 +126,10 @@ const CreditScoreModal = ({
       // Persist in local storage
       setCachedCreditReport(result);
 
+      const parsed = parseCreditReportData(result);
+      const score = parsed?.score || "Verified";
+      const tier = parsed?.scoreTier?.tier || "Prime";
+
       setTimeout(() => {
         setLoading(false);
         Swal.fire({
@@ -131,10 +137,10 @@ const CreditScoreModal = ({
           title: "Credit Report Verified!",
           html: `<div class="text-center">
             <p class="mb-2">Official Credit Bureau report successfully fetched.</p>
-            <div class="badge bg-success px-3 py-2 rounded-pill fs-6 mt-1">Score: 802 • Prime+ Rating</div>
+            <div class="badge bg-success px-3 py-2 rounded-pill fs-6 mt-1">Score: ${score} • ${tier} Rating</div>
           </div>`,
           confirmButtonColor: "#0040e0",
-          confirmButtonText: "View Full Report",
+          confirmButtonText: "OK",
         });
 
         if (onSuccess) {
@@ -281,7 +287,7 @@ const CreditScoreModal = ({
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="e.g. Narendra Kumar B"
+                      placeholder="Full Name as per PAN"
                       required
                     />
                   </div>
@@ -299,7 +305,7 @@ const CreditScoreModal = ({
                       name="mobile"
                       value={formData.mobile}
                       onChange={handleChange}
-                      placeholder="e.g. 9492902990"
+                      placeholder="10-digit mobile number"
                       maxLength="10"
                       required
                     />
@@ -318,7 +324,7 @@ const CreditScoreModal = ({
                       name="documentId"
                       value={formData.documentId}
                       onChange={handleChange}
-                      placeholder="e.g. CDBPB2737H"
+                      placeholder="10-character PAN (e.g. ABCDE1234F)"
                       maxLength="10"
                       required
                     />
@@ -354,7 +360,7 @@ const CreditScoreModal = ({
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      placeholder="e.g. KPHB, Hyderabad"
+                      placeholder="Enter Address / Locality"
                       required
                     />
                   </div>
@@ -372,7 +378,7 @@ const CreditScoreModal = ({
                       name="pincode"
                       value={formData.pincode}
                       onChange={handleChange}
-                      placeholder="e.g. 500072"
+                      placeholder="6-digit pincode"
                       maxLength="6"
                       required
                     />

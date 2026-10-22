@@ -10,7 +10,7 @@ import { loginHeroLeft, loginPlantCoin } from "../../imagepath";
 import { handlesenOtp, usersubmitotp, isApiSuccess, warnApiError } from "../../HttpRequest/beforelogin";
 import { saveLoginSession } from "../../HttpRequest/aiAdminApi";
 import BASE_URL, { ENV, DEV_ADMIN_MOBILE, DEV_OTP } from "../../../config";
-import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
+import { toastrSuccess } from "../Base UI Elements/Toast";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import Swal from "sweetalert2";
 import { handleStep2PendingFromLogin } from "./step2Handler";
@@ -114,9 +114,10 @@ const Loginotp = () => {
         if (saveLoginSession(res)) {
           toastrSuccess("Google login successful!");
           const role = res.data?.primaryType;
-          if (role === "LENDER") history("/lenderAIDashboard/" + res.data.id);
-          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
-          else history("/borrowerDashboard");
+          let defaultPath = "/borrowerDashboard";
+          if (role === "LENDER") defaultPath = "/lenderAIDashboard/" + res.data.id;
+          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) defaultPath = "/oxyloansadmindashboard";
+          history(getPostLoginRedirectUrl(defaultPath, role, res.data.id));
         }
       } else {
         const mobile = googleModal.mobileNumber || "";
@@ -204,7 +205,7 @@ const Loginotp = () => {
           defaultPath = "/oxyloansadmindashboard";
         }
         setTimeout(() => {
-          history(getPostLoginRedirectUrl(defaultPath, role));
+          history(getPostLoginRedirectUrl(defaultPath, role, retriveresponse.data.id));
         }, 2200);
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid OTP or mobile number");
@@ -216,7 +217,7 @@ const Loginotp = () => {
           ...prev,
           passworderror: message || "Invalid OTP entered",
         }));
-        toastrWarning(message);
+        // toastrWarning(message);
         WarningBackendApi(title, message);
       }
     } catch (e) {
@@ -340,7 +341,7 @@ const Loginotp = () => {
         setResendTimer(30);
       } else {
         const { title, message } = warnApiError(response, "Resend OTP failed", "Could not resend OTP");
-        toastrWarning(message);
+        // toastrWarning(message);
         WarningBackendApi(title, message);
       }
     } catch (e) {

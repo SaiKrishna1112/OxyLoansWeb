@@ -125,7 +125,7 @@ const CreditReport = () => {
               </div>
               <h3 className="fw-bold mb-0 text-dark">Credit Bureau Report & Health</h3>
               <p className="text-muted small mb-0">
-                Verified CIR bureau data powered by PaySprint & VerifyA2Z Engine • Order: #{reportData?.reportOrderNumber || "2989093135"}
+                Verified CIR bureau data powered by Oxyloans & VerifyA2Z Engine • Order: #{reportData?.reportOrderNumber || "2989093135"}
               </p>
             </div>
 
@@ -274,7 +274,7 @@ const CreditReport = () => {
                     </span>
                     <button
                       className="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1"
-                      onClick={() => navigate("/borrowerLoanRequestCreate")}
+                      onClick={() => navigate("/borrower/instant-loan/41682")}
                     >
                       Apply for Loan with this Score
                       <i className="fa-solid fa-arrow-right small"></i>
@@ -779,7 +779,7 @@ const CreditReport = () => {
                 type="button"
                 className="btn btn-primary px-4 rounded-3 text-nowrap"
                 style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
-                onClick={() => navigate("/borrowerLoanRequestCreate")}
+                onClick={() => navigate("/borrower/instant-loan/41682")}
               >
                 Apply for Loan Limit
               </button>

@@ -112,7 +112,9 @@ const Sidebar = (props) => {
       setSideMenu("Invoices");
     } else if (
       "/loanListings" === pathName ||
-      "/proximityLoans" === pathName
+      "/proximityLoans" === pathName ||
+      pathName.startsWith("/lender/borrower-profile") ||
+      pathName.startsWith("/borrower-profile-view")
     ) {
       setSideMenu("P2PLoans");
     } else if (
@@ -129,7 +131,7 @@ const Sidebar = (props) => {
     } else if (
       "/mytransactions" === pathName ||
       "/walletToWalletTransactionHistory" === pathName ||
-      "/interestsDateWise" === pathName ||
+      "/Month-wise-interest" === pathName ||
       "/dashboardTransactions" === pathName
     ) {
       setSideMenu("WalletTrans");
@@ -434,12 +436,12 @@ const Sidebar = (props) => {
                       </li>
                       <li>
                         <Link
-                          to="/interestsDateWise"
+                          to="/Month-wise-interest"
                           className={`${
-                            "/interestsDateWise" === pathName ? "active" : ""
+                            "/Month-wise-interest" === pathName ? "active" : ""
                           }`}
                         >
-                          View Interests Date Wise
+                          Month-wise Interest
                         </Link>
                       </li>
                       <li>

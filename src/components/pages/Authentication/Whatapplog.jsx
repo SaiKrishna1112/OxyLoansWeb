@@ -160,9 +160,10 @@ const Whatapplog = () => {
         if (saveLoginSession(loginRes)) {
           toastrSuccess("Google login successful!");
           const role = loginRes.data?.primaryType;
-          if (role === "LENDER") history("/lenderAIDashboard/" + loginRes.data.id);
-          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
-          else history("/borrowerDashboard");
+          let defaultPath = "/borrowerDashboard";
+          if (role === "LENDER") defaultPath = "/lenderAIDashboard/" + loginRes.data.id;
+          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) defaultPath = "/oxyloansadmindashboard";
+          history(getPostLoginRedirectUrl(defaultPath, role, loginRes.data.id));
         }
       } else if (status === "STEP2_PENDING") {
         history(`/register_active_proceed?id=${userId}&time=${registrationTime}`);
@@ -188,6 +189,15 @@ const Whatapplog = () => {
       toastrError("Please enter your WhatsApp number");
       return;
     }
+    // Clear the visible OTP and invalidate the previous OTP before requesting a new one.
+    setOtpDigits(["", "", "", ""]);
+    setwhatappotp((prev) => ({
+      ...prev,
+      otpdata: "",
+      successMessage: "",
+      errorMessage: "",
+    }));
+    requestAnimationFrame(() => otpBoxRefs.current[0]?.focus());
 
     setIsResending(true);
     try {
@@ -202,16 +212,35 @@ const Whatapplog = () => {
         toastrSuccess("WhatsApp OTP resent successfully!");
         setResendTimer(30);
       } else {
-        const errMsg = response.response?.data?.errorMessage || "Failed to resend WhatsApp OTP";
-        setwhatappotp((prev) => ({
+        const defaultErrMsg =
+                "Something went wrong. Please try again after some time.";
+
+          const apiErrMsg = response.response?.data?.errorMessage;
+
+          const errMsg =
+          !apiErrMsg ||
+          /internal server error|gateway timeout|bad gateway|service unavailable|504|502|503/i.test(
+          `${apiErrMsg} ${response.response?.status || ""}`
+          )
+          ? defaultErrMsg
+          : apiErrMsg;
+
+          setwhatappotp((prev) => ({
           ...prev,
           errorMessage: errMsg,
           successMessage: "",
-        }));
-        toastrError(errMsg);
+          }));
+
+          // toastrError(errMsg);
       }
     } catch (error) {
-      toastrError("Failed to resend WhatsApp OTP");
+      setwhatappotp((prev) => ({
+        ...prev,
+        otpdata: "",
+        errorMessage: error?.response?.data?.errorMessage || "Failed to resend WhatsApp OTP",
+        successMessage: "",
+      }));
+      // toastrError("Failed to resend WhatsApp OTP");
     } finally {
       setIsResending(false);
     }
@@ -255,18 +284,35 @@ const Whatapplog = () => {
 
         setIsVerified(true);
         setTimeout(() => {
-          history(getPostLoginRedirectUrl(redirectPath, pType));
+          history(getPostLoginRedirectUrl(redirectPath, pType, response.data.id));
         }, 2200);
       } else if (response.response?.status === 400) {
-        const errMsg = response.response?.data?.errorMessage || "Invalid WhatsApp OTP entered";
-        toastrError(errMsg);
-        setwhatappotp((prev) => ({ ...prev, errorMessage: errMsg }));
+         const defaultErrMsg =
+                "Something went wrong. Please try again after some time.";
+
+          const apiErrMsg = response.response?.data?.errorMessage;
+
+          const errMsg =
+          !apiErrMsg ||
+          /internal server error|gateway timeout|bad gateway|service unavailable|504|502|503/i.test(
+          `${apiErrMsg} ${response.response?.status || ""}`
+          )
+          ? defaultErrMsg
+          : apiErrMsg;
+
+          setwhatappotp((prev) => ({
+          ...prev,
+          errorMessage: errMsg,
+          successMessage: "",
+          }));
+
+          // toastrError(errMsg);
       } else if (response?.data?.whatsappLoginResponse) {
         setdata(response);
         setdatavaild(true);
       } else {
         const errMsg = response.response?.data?.errorMessage || "Verification failed";
-        toastrError(errMsg);
+        // toastrError(errMsg);
         setwhatappotp((prev) => ({ ...prev, errorMessage: errMsg }));
       }
     } catch (err) {
@@ -306,13 +352,26 @@ const Whatapplog = () => {
           otpBoxRefs.current[0]?.focus();
         }, 150);
       } else {
-        const errMsg = response.response?.data?.errorMessage || "Failed to send WhatsApp OTP";
-        setwhatappotp({
-          ...whatappotp,
+          const defaultErrMsg =
+                "Something went wrong. Please try again after some time.";
+
+          const apiErrMsg = response.response?.data?.errorMessage;
+
+          const errMsg =
+          !apiErrMsg ||
+          /internal server error|gateway timeout|bad gateway|service unavailable|504|502|503/i.test(
+          `${apiErrMsg} ${response.response?.status || ""}`
+          )
+          ? defaultErrMsg
+          : apiErrMsg;
+
+          setwhatappotp((prev) => ({
+          ...prev,
           errorMessage: errMsg,
           successMessage: "",
-        });
-        toastrError(errMsg);
+          }));
+
+          // toastrError(errMsg);
       }
     } catch (err) {
       toastrError(err?.message || "Failed to send WhatsApp OTP");

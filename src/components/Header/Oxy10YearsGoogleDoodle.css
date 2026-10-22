@@ -1,0 +1,426 @@
+/* ==========================================================================
+   OxyLoans 10 Years Google-Doodle Header Celebration Artwork
+   ========================================================================== */
+
+.oxy-doodle-wrapper {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 9999px;
+  padding: 3px 6px 3px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.oxy-doodle-wrapper:hover {
+  background: rgba(240, 253, 244, 0.65);
+  border-color: rgba(16, 185, 129, 0.22);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.18);
+}
+
+.oxy-doodle-wrapper:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* ==========================================================================
+   SVG Vector Dimensions
+   ========================================================================== */
+
+/* Desktop SVG */
+.oxy-doodle-svg {
+  height: 40px;
+  width: auto;
+  max-width: 250px;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Standard Mobile SVG (381px - 767px) */
+.oxy-doodle-svg-mob-standard {
+  height: 30px;
+  width: auto;
+  max-width: 135px;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Compact Mobile SVG (<= 380px) */
+.oxy-doodle-svg-mob-compact {
+  height: 27px;
+  width: auto;
+  max-width: 62px;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   4-Second Google-Doodle Micro-Animation Sequence
+   ========================================================================== */
+
+/* 1. Character Slide-in (0.0s - 0.5s) */
+.doodle-character-group {
+  animation: doodleCharacterSlide 4s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes doodleCharacterSlide {
+  0% {
+    transform: translate(4px, 12px);
+    opacity: 0;
+  }
+  12% {
+    transform: translate(4px, 1px);
+    opacity: 1;
+  }
+  20%, 100% {
+    transform: translate(4px, 2px);
+    opacity: 1;
+  }
+}
+
+.doodle-character-group-mob {
+  animation: doodleCharacterSlideMob 4s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes doodleCharacterSlideMob {
+  0% {
+    transform: translate(1px, 9px);
+    opacity: 0;
+  }
+  12% {
+    transform: translate(1px, 0.5px);
+    opacity: 1;
+  }
+  20%, 100% {
+    transform: translate(1px, 1px);
+    opacity: 1;
+  }
+}
+
+/* 2. Party Hat Bounce (0.2s - 0.5s) */
+.doodle-party-hat {
+  transform-origin: 18px 14px;
+  animation: doodleHatBounce 4s ease-out forwards;
+}
+
+.doodle-party-hat-mob {
+  transform-origin: 13px 8px;
+  animation: doodleHatBounce 4s ease-out forwards;
+}
+
+@keyframes doodleHatBounce {
+  0%, 6% {
+    transform: scale(1) translateY(0);
+  }
+  13% {
+    transform: scale(1.15) translateY(-2px);
+  }
+  18% {
+    transform: scale(0.95) translateY(0.5px);
+  }
+  24%, 100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 3. Golden "10" Scale & Shine (0.5s - 1.0s) */
+.doodle-gold-ten {
+  transform-origin: 70px 22px;
+  animation: doodleGoldTen 4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes doodleGoldTen {
+  0%, 12% {
+    transform: translate(46px, 6px) scale(0.9);
+    opacity: 0.5;
+  }
+  24% {
+    transform: translate(46px, 6px) scale(1.05);
+    opacity: 1;
+  }
+  30%, 100% {
+    transform: translate(46px, 6px) scale(1);
+    opacity: 1;
+  }
+}
+
+.doodle-gold-ten-mob {
+  transform-origin: 50px 18px;
+  animation: doodleGoldTenMob 4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes doodleGoldTenMob {
+  0%, 12% {
+    transform: translate(32px, 4px) scale(0.9);
+    opacity: 0.5;
+  }
+  24% {
+    transform: translate(32px, 4px) scale(1.05);
+    opacity: 1;
+  }
+  30%, 100% {
+    transform: translate(32px, 4px) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 4. "Years of OxyLoans" Typography Fade/Slide (1.0s - 1.6s) */
+.doodle-text-group {
+  animation: doodleTextFade 4s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes doodleTextFade {
+  0%, 22% {
+    opacity: 0;
+    transform: translate(104px, 0);
+  }
+  38%, 100% {
+    opacity: 1;
+    transform: translate(112px, 0);
+  }
+}
+
+.doodle-text-group-mob {
+  animation: doodleTextFadeMob 4s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes doodleTextFadeMob {
+  0%, 22% {
+    opacity: 0;
+    transform: translate(75px, 0);
+  }
+  38%, 100% {
+    opacity: 1;
+    transform: translate(82px, 0);
+  }
+}
+
+/* 5. Confetti Burst & Drift (1.0s - 2.8s) */
+.doodle-confetti-group {
+  transform-origin: 125px 22px;
+  animation: doodleConfettiBurst 4s ease-out forwards;
+}
+
+.doodle-confetti-group-mob {
+  transform-origin: 74px 17px;
+  animation: doodleConfettiBurst 4s ease-out forwards;
+}
+
+@keyframes doodleConfettiBurst {
+  0%, 20% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  55% {
+    opacity: 0.95;
+    transform: scale(1) translateY(0);
+  }
+  75%, 100% {
+    opacity: 0.9;
+    transform: scale(1) translateY(0.5px);
+  }
+}
+
+/* 6. Gift Box Bounce (1.6s - 2.3s) */
+.doodle-gift-box {
+  transform-origin: 100px 32px;
+  animation: doodleGiftBounce 4s ease-out forwards;
+}
+
+@keyframes doodleGiftBounce {
+  0%, 38% {
+    transform: translate(94px, 25px) scale(1);
+  }
+  46% {
+    transform: translate(94px, 21px) scale(1.18);
+  }
+  52% {
+    transform: translate(94px, 26px) scale(0.96);
+  }
+  58%, 100% {
+    transform: translate(94px, 25px) scale(1);
+  }
+}
+
+.doodle-gift-box-mob {
+  transform-origin: 73px 22px;
+  animation: doodleGiftBounceMob 4s ease-out forwards;
+}
+
+@keyframes doodleGiftBounceMob {
+  0%, 38% {
+    transform: translate(68px, 17px) scale(1);
+  }
+  46% {
+    transform: translate(68px, 14px) scale(1.16);
+  }
+  52% {
+    transform: translate(68px, 18px) scale(0.96);
+  }
+  58%, 100% {
+    transform: translate(68px, 17px) scale(1);
+  }
+}
+
+/* 7. Character Arm Wave (1.6s - 2.8s) */
+.doodle-waving-arm {
+  transform-origin: 24px 33px;
+  animation: doodleArmWave 4s ease-in-out forwards;
+}
+
+.doodle-waving-arm-mob {
+  transform-origin: 18.5px 23px;
+  animation: doodleArmWave 4s ease-in-out forwards;
+}
+
+@keyframes doodleArmWave {
+  0%, 38% {
+    transform: rotate(0deg);
+  }
+  43% {
+    transform: rotate(-16deg);
+  }
+  49% {
+    transform: rotate(10deg);
+  }
+  55% {
+    transform: rotate(-12deg);
+  }
+  61% {
+    transform: rotate(6deg);
+  }
+  68%, 100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Interactive Hover / Tap Wave Replay */
+.oxy-doodle-wrapper:hover .doodle-waving-arm,
+.oxy-doodle-wrapper:hover .doodle-waving-arm-mob {
+  animation: doodleArmWaveHover 0.75s ease-in-out infinite alternate;
+}
+
+@keyframes doodleArmWaveHover {
+  0% {
+    transform: rotate(-14deg);
+  }
+  100% {
+    transform: rotate(12deg);
+  }
+}
+
+.oxy-doodle-wrapper:hover .doodle-gift-box {
+  transform: translate(94px, 23px) scale(1.08);
+  transition: transform 0.2s ease;
+}
+
+.oxy-doodle-wrapper:hover .doodle-gift-box-mob {
+  transform: translate(68px, 15px) scale(1.08);
+  transition: transform 0.2s ease;
+}
+
+/* 8. Celebration Sparkles Twinkle */
+.doodle-sparkle-star,
+.doodle-sparkle-star-mob {
+  animation: doodleSparkleTwinkle 4s ease-in-out forwards;
+}
+
+.sparkle-anim-1 {
+  animation-delay: 0.1s;
+}
+.sparkle-anim-2 {
+  animation-delay: 0.6s;
+}
+.sparkle-anim-3 {
+  animation-delay: 1.2s;
+}
+
+@keyframes doodleSparkleTwinkle {
+  0%, 35% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  46% {
+    opacity: 1;
+    transform: scale(1.2) rotate(15deg);
+  }
+  60% {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+  80%, 100% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+}
+
+/* ==========================================================================
+   Responsive Adaptations & Breakpoints
+   ========================================================================== */
+
+/* Default (> 991px Desktop): Panoramic Google Doodle */
+.oxy-doodle-desktop {
+  display: flex;
+  align-items: center;
+}
+
+.oxy-doodle-mobile-standard,
+.oxy-doodle-mobile-compact {
+  display: none !important;
+}
+
+/* Tablet (768px - 991px): Scaled Panoramic Doodle */
+@media (max-width: 991px) and (min-width: 768px) {
+  .oxy-doodle-svg {
+    height: 34px;
+    max-width: 205px;
+  }
+}
+
+/* Standard Mobile (381px - 767px): Tailored Mobile Google Doodle */
+@media (max-width: 767px) and (min-width: 381px) {
+  .oxy-doodle-desktop {
+    display: none !important;
+  }
+  .oxy-doodle-mobile-standard {
+    display: flex !important;
+    align-items: center;
+  }
+  .oxy-doodle-mobile-compact {
+    display: none !important;
+  }
+  .oxy-doodle-wrapper {
+    padding: 2px 4px;
+  }
+}
+
+/* Ultra-Compact Mobile (<= 380px): Compact Google Doodle (Zero overlap) */
+@media (max-width: 380px) {
+  .oxy-doodle-desktop {
+    display: none !important;
+  }
+  .oxy-doodle-mobile-standard {
+    display: none !important;
+  }
+  .oxy-doodle-mobile-compact {
+    display: flex !important;
+    align-items: center;
+  }
+  .oxy-doodle-wrapper {
+    padding: 1px 2px;
+  }
+}

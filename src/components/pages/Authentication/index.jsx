@@ -75,9 +75,10 @@ const Login = () => {
         if (saveLoginSession(loginRes)) {
           toastrSuccess("Google login successful!");
           const role = loginRes.data?.primaryType;
-          if (role === "LENDER") history("/lenderAIDashboard/" + loginRes.data.id);
-          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
-          else history("/borrowerDashboard");
+          let defaultPath = "/borrowerDashboard";
+          if (role === "LENDER") defaultPath = "/lenderAIDashboard/" + loginRes.data.id;
+          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) defaultPath = "/oxyloansadmindashboard";
+          history(getPostLoginRedirectUrl(defaultPath, role, loginRes.data.id));
         }
       } else if (status === "STEP2_PENDING") {
         history(`/register_active_proceed?id=${userId}&time=${registrationTime}`);
@@ -151,14 +152,14 @@ const Login = () => {
         } else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(pType)) {
           defaultPath = "/oxyloansadmindashboard";
         }
-        history(getPostLoginRedirectUrl(defaultPath, pType));
+        history(getPostLoginRedirectUrl(defaultPath, pType, retriveresponse.data.id));
       } else {
         const { title, message } = warnApiError(retriveresponse, "Login failed", "Invalid credentials");
         const errData = retriveresponse?.response?.data || retriveresponse?.data;
         const handled = await handleStep2PendingFromLogin(errData, message, history);
         if (handled) return;
 
-        toastrWarning(message);
+        // toastrWarning(message);
         WarningBackendApi(title, message);
       }
     } catch (err) {

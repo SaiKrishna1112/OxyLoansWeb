@@ -19,7 +19,6 @@ import {
   getBorrowerReferenceDetails,
   uploadkyc,
   getuploadCredit,
-  borrowerSecureInfo,
   getBorrowerRunningloans,
   getBorrowerLoanDetails,
   sendWhatsappOtpapi,
@@ -46,12 +45,13 @@ import {
   getdatafeereceipt,
   getdatapayslips,
   getPCreditReportDoc,
+  analyzePayslipApi,
 } from "../../../../../HttpRequest/afterlogin";
 
 import LoadingState from "../components/LoadingState";
 import KYCModal from "../components/KYCModal";
 import CreditScoreModal from "../components/CreditScoreModal";
-import { getCachedCreditReport, RAW_SAMPLE_RESPONSE, parseCreditReportData } from "../components/creditReportUtils";
+import { getCachedCreditReport, parseCreditReportData } from "../components/creditReportUtils";
 import "../redesign.css";
 import { Button } from "antd";
 import {
@@ -63,6 +63,12 @@ import {
   validatePincode,
   validateName,
   validatePanNumber,
+  validateDesignation,
+  validateOfficeAddress,
+  calculateBorrowerProfileCompleteness,
+  verifyPayslipCompany,
+  verifySalaryFromBankStatement,
+  validatePayslipDocument,
 } from "../../../../../../utils/borrowerValidation";
 
 const Profile = () => {
@@ -89,7 +95,7 @@ const Profile = () => {
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [creditBureauData, setCreditBureauData] = useState(() => {
     const cached = getCachedCreditReport();
-    return parseCreditReportData(cached || RAW_SAMPLE_RESPONSE);
+    return cached ? parseCreditReportData(cached) : null;
   });
 
   const handleOpenEditSection = (section) => {
@@ -168,9 +174,9 @@ const Profile = () => {
     middleName: "",
     fatherName: "",
     motherName: "",
-    maritalStatus: "",
+    maritalStatus: "Single",
     spouseName: "",
-    spouseDob: "",
+    spouseDob: null,
     dob: "",
     panNumber: "",
     aadharNumber: "",
@@ -305,6 +311,25 @@ const Profile = () => {
   const [whatsappOtp, setWhatsappOtp] = useState("");
   const [whatsappSubmitted, setWhatsappSubmitted] = useState(false);
 
+  // Document Verification States (Payslip Company & Bank Statement Salary)
+  const [payslipVerification, setPayslipVerification] = useState(() => {
+    try {
+      const saved = localStorage.getItem("oxy_borrower_payslip_verified");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [salaryVerification, setSalaryVerification] = useState(() => {
+    try {
+      const saved = localStorage.getItem("oxy_borrower_salary_verified");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const documentNames = {
   pan: "PAN Card",
   creditReport: "Credit Bureau Report",
@@ -316,11 +341,11 @@ const Profile = () => {
   VOTERID: "Voter ID Card",
   PASSPORT: "Passport",
   PAYSLIPS: "Latest 6-Month Payslips",
-  INTERMEDIATE: "Intermediate Marksheet",
+  INTER: "Intermediate Marksheet",
   TENTH: "10th Grade Marksheet",
   GRADUATION: "Graduation Marksheet",
-  OFFERLETTER: "Offer Letter",
-  FEERECEIPT: "Fee Receipt",
+  UNIVERSITYOFFERLETTER: "Offer Letter",
+  FEE: "Fee Receipt",
 };
 
   useEffect(() => {
@@ -347,9 +372,9 @@ const Profile = () => {
           middleName: d.middleName || "",
           fatherName: d.fatherName || "",
           motherName: d.motherName || "",
-          maritalStatus: d.maritalStatus || "",
+          maritalStatus: d.maritalStatus || "Single",
           spouseName: d.maritalStatus === "Married" ? (d.spouseName || "") : "",
-          spouseDob: d.maritalStatus === "Married" ? (d.spouseDob || "") : "",
+          spouseDob: d.maritalStatus === "Married" && d.spouseDob && d.spouseDob.toString().trim() ? d.spouseDob.toString().trim() : null,
           dob: d.dob || "",
           panNumber: d.panNumber || "",
           aadharNumber: d.aadharNumber || "",
@@ -548,8 +573,8 @@ const Profile = () => {
 
       const docKeys = [
         "PanCard", "Passport", "CHEQUELEAF", "DRIVINGLICENCE", "VOTERID",
-        "aadhar", "bankStatement", "tenth", "intermediate", "graduation",
-        "offerletter", "feereceipt", "paySlips", "creditReport"
+        "aadhar", "bankStatement", "tenth", "inter", "graduation",
+        "universityOfferLetter", "feeReceipt", "paySlips", "creditReport"
       ];
 
       const updatedDocs = {};
@@ -584,7 +609,9 @@ const Profile = () => {
     placeholder: "",
     confirmText: "Continue",
     cancelText: "Skip",
+    hasPasswordChoice: null, // null (unselected) | "yes" | "no"
     password: "",
+    showPassword: false,
     error: "",
     resolver: null,
   });
@@ -632,6 +659,38 @@ const Profile = () => {
       console.log("No previous bank statement analysis found yet.");
     }
   };
+
+  // Sync Salary Verification whenever bankAnalysisData or profileData.salary changes
+  useEffect(() => {
+    if (bankAnalysisData) {
+      const result = verifySalaryFromBankStatement(profileData.salary, bankAnalysisData);
+      setSalaryVerification(result);
+      try {
+        localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(result));
+      } catch (err) {
+        console.warn("Could not cache salary verification", err);
+      }
+    }
+  }, [profileData.salary, bankAnalysisData]);
+
+  // Sync Payslip Company Verification if already uploaded
+  useEffect(() => {
+    if (kycDocs.paySlips && profileData.companyName && !payslipVerification) {
+      const initial = {
+        verified: true,
+        companyName: profileData.companyName,
+        fileName: kycDocs.paySlips.fileName || "Uploaded Payslip",
+        timestamp: new Date().toISOString(),
+        message: `Verified against ${profileData.companyName}`,
+      };
+      setPayslipVerification(initial);
+      try {
+        localStorage.setItem("oxy_borrower_payslip_verified", JSON.stringify(initial));
+      } catch (err) {
+        console.warn("Could not cache payslip verification", err);
+      }
+    }
+  }, [kycDocs.paySlips, profileData.companyName, payslipVerification]);
 
   const handleTriggerBankAnalysis = async (customPass = null) => {
     const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
@@ -699,11 +758,6 @@ const Profile = () => {
 
         if (isConfirmed && retryPass) {
           setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
-          try {
-            await borrowerSecureInfo({ ...secureInfo, bankStatementPassword: retryPass });
-          } catch (secErr) {
-            console.log("Saving secure info notice:", secErr);
-          }
           setAnalyzingBankStatement(false);
           return handleTriggerBankAnalysis(retryPass);
         }
@@ -746,20 +800,16 @@ const Profile = () => {
     }
   };
 
-  const profileCompletionPct = useMemo(() => {
-    const fields = [
-      profileData.firstName,
-      profileData.lastName,
-      profileData.panNumber,
-      profileData.aadharNumber,
-      profileData.city,
-      profileData.state,
-      profileData.residenceAddress,
-      profileData.whatsAppNumber,
-    ];
-    const filledFields = fields.filter((f) => f && String(f).trim() !== "" && String(f) !== "0");
-    return Math.round((filledFields.length / fields.length) * 100);
-  }, [profileData]);
+  const profileCompletenessInfo = useMemo(() => {
+    return calculateBorrowerProfileCompleteness(
+      { ...profileData, isPanVerified },
+      referenceList,
+      nominee,
+      bankaccount
+    );
+  }, [profileData, isPanVerified, referenceList, nominee, bankaccount]);
+
+  const profileCompletionPct = profileCompletenessInfo.percentage;
 
 const validateNomineeDetails = (nominee) => {
   if (!nominee?.nomineeName?.trim()) {
@@ -1059,10 +1109,15 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         if (panName) {
           setProfileData((prev) => ({ ...prev, firstName: panName }));
           try {
+            const currentMaritalStatus = profileData.maritalStatus || "Single";
+            const isMarried = currentMaritalStatus === "Married";
             await profileupadate({
               ...profileData,
               firstName: panName,
               panVerified: true,
+              maritalStatus: currentMaritalStatus,
+              spouseName: isMarried ? (profileData.spouseName || "") : "",
+              spouseDob: isMarried && profileData.spouseDob && profileData.spouseDob.toString().trim() ? profileData.spouseDob.toString().trim() : null,
             });
           } catch (persistErr) {
             console.log("Error saving PAN name update", persistErr);
@@ -1113,10 +1168,11 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
     let sanitizedValue = value;
 
     if (name === "maritalStatus") {
+      const selectedStatus = value || "Single";
       setProfileData((prev) => ({
         ...prev,
-        maritalStatus: value,
-        ...(value !== "Married" ? { spouseName: "", spouseDob: "" } : {}),
+        maritalStatus: selectedStatus,
+        ...(selectedStatus !== "Married" ? { spouseName: "", spouseDob: null } : {}),
       }));
       return;
     }
@@ -1236,7 +1292,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
     title,
     text,
     placeholder,
-    confirmText,
+    confirmText = "Continue",
     cancelText = "Skip",
     validationMessage = "Password is required!",
     initialPassword = "",
@@ -1249,7 +1305,9 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         placeholder,
         confirmText,
         cancelText,
+        hasPasswordChoice: initialPassword ? "yes" : null,
         password: initialPassword || "",
+        showPassword: false,
         error: "",
         resolver: resolve,
       });
@@ -1268,7 +1326,9 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       placeholder: "",
       confirmText: "Continue",
       cancelText: "Skip",
+      hasPasswordChoice: null,
       password: "",
+      showPassword: false,
       error: "",
       resolver: null,
     });
@@ -1279,13 +1339,30 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
   const handlePdfPasswordModalChange = (e) => {
     const value = e.target.value;
+    // Allows all letters (a-z, A-Z), numbers, and special characters
     setPdfPasswordModal((prev) => ({ ...prev, password: value, error: "" }));
   };
 
   const handlePdfPasswordModalSubmit = () => {
-    const password = (pdfPasswordModal.password || "").trim();
+    if (!pdfPasswordModal.hasPasswordChoice) {
+      setPdfPasswordModal((prev) => ({
+        ...prev,
+        error: "Please select whether this file contains a password or not.",
+      }));
+      return;
+    }
 
+    if (pdfPasswordModal.hasPasswordChoice === "yes" && !pdfPasswordModal.password.trim()) {
+      setPdfPasswordModal((prev) => ({
+        ...prev,
+        error: "Password is required for password-protected files.",
+      }));
+      return;
+    }
+
+    const password = pdfPasswordModal.hasPasswordChoice === "yes" ? (pdfPasswordModal.password || "").trim() : "";
     const resolver = pdfPasswordModal.resolver;
+
     setPdfPasswordModal({
       open: false,
       title: "",
@@ -1293,7 +1370,9 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       placeholder: "",
       confirmText: "Continue",
       cancelText: "Skip",
+      hasPasswordChoice: null,
       password: "",
+      showPassword: false,
       error: "",
       resolver: null,
     });
@@ -1343,11 +1422,27 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
         try { await uploadkyc(e, pass); } catch (uErr) { console.log("Legacy upload notice:", uErr); }
 
-        Swal.fire(
-          "Upload & Analysis Successful",
-          analyzeRes?.data?.message || "Bank statement uploaded and analyzed successfully!",
-          "success"
-        );
+        const statementData = analyzeRes?.data?.data || analyzeRes?.data || {};
+        const salaryCheck = verifySalaryFromBankStatement(profileData.salary, statementData);
+        setSalaryVerification(salaryCheck);
+        try {
+          localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(salaryCheck));
+        } catch (err) {}
+
+        Swal.fire({
+          title: salaryCheck.isMatch ? "Bank Statement Verified & Analyzed" : "Upload & Analysis Successful",
+          html: `<div>${analyzeRes?.data?.message || "Bank statement uploaded and analyzed successfully!"}</div>
+                 <div class="mt-3 p-3 rounded text-start" style="background:${salaryCheck.isMatch ? '#f0fdf4' : '#fffbeb'}; border:1px solid ${salaryCheck.isMatch ? '#bbf7d0' : '#fde68a'}; font-size:13px;">
+                   <div><b>Declared Monthly Salary:</b> ₹${Number(profileData.salary || 0).toLocaleString("en-IN")}</div>
+                   ${salaryCheck.detectedSalary > 0 ? `<div><b>Detected Monthly Inflow:</b> ₹${Number(salaryCheck.detectedSalary).toLocaleString("en-IN")}</div>` : ""}
+                   <div class="mt-2 ${salaryCheck.isMatch ? 'text-success fw-bold' : 'text-dark fw-semibold'}">
+                     <i class="fa-solid ${salaryCheck.isMatch ? 'fa-circle-check text-success' : 'fa-circle-info text-warning'} me-1"></i>
+                     ${salaryCheck.message}
+                   </div>
+                 </div>`,
+          icon: "success",
+          confirmButtonColor: "var(--oxy-primary)"
+        });
         await fetchKycFiles();
         await fetchBorrowerAnalysisData();
       } catch (err) {
@@ -1379,9 +1474,29 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
           try {
             const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
-            await analyzeBorrowerBankStatement(userId, file, retryPass);
+            const retryRes = await analyzeBorrowerBankStatement(userId, file, retryPass);
             try { await uploadkyc(e, retryPass); } catch (uErr) {}
-            Swal.fire("Success", "Bank statement analyzed successfully!", "success");
+            const retryData = retryRes?.data?.data || retryRes?.data || {};
+            const retrySalaryCheck = verifySalaryFromBankStatement(profileData.salary, retryData);
+            setSalaryVerification(retrySalaryCheck);
+            try {
+              localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(retrySalaryCheck));
+            } catch (err) {}
+
+            Swal.fire({
+              title: retrySalaryCheck.isMatch ? "Bank Statement Verified & Analyzed" : "Analysis Successful",
+              html: `<div>Bank statement analyzed successfully!</div>
+                     <div class="mt-3 p-3 rounded text-start" style="background:${retrySalaryCheck.isMatch ? '#f0fdf4' : '#fffbeb'}; border:1px solid ${retrySalaryCheck.isMatch ? '#bbf7d0' : '#fde68a'}; font-size:13px;">
+                       <div><b>Declared Monthly Salary:</b> ₹${Number(profileData.salary || 0).toLocaleString("en-IN")}</div>
+                       ${retrySalaryCheck.detectedSalary > 0 ? `<div><b>Detected Monthly Inflow:</b> ₹${Number(retrySalaryCheck.detectedSalary).toLocaleString("en-IN")}</div>` : ""}
+                       <div class="mt-2 ${retrySalaryCheck.isMatch ? 'text-success fw-bold' : 'text-dark fw-semibold'}">
+                         <i class="fa-solid ${retrySalaryCheck.isMatch ? 'fa-circle-check text-success' : 'fa-circle-info text-warning'} me-1"></i>
+                         ${retrySalaryCheck.message}
+                       </div>
+                     </div>`,
+              icon: "success",
+              confirmButtonColor: "var(--oxy-primary)"
+            });
             await fetchKycFiles();
             await fetchBorrowerAnalysisData();
           } catch (retryErr) {
@@ -1543,6 +1658,199 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       return;
     }
 
+    if ((e.target.name === "PAYSLIPS" || e.target.name === "paySlips") && file) {
+      let pass = secureInfo?.payslipsPassword || "";
+
+      const enteredPass = await promptForPdfPassword({
+        title: "Payslip PDF Password",
+        text: "Is your payslip password-protected? Enter the password below (leave blank if unencrypted).",
+        placeholder: "Enter Payslip Password (optional)",
+        confirmText: "Verify & Upload",
+        cancelText: "Cancel",
+        validationMessage: "Password can be left blank if not protected.",
+        initialPassword: pass,
+      });
+
+      if (enteredPass === null) {
+        if (e.target) e.target.value = "";
+        return;
+      }
+      pass = enteredPass || "";
+      if (pass) {
+        setSecureInfo((prev) => ({ ...prev, payslipsPassword: pass }));
+      }
+
+      try {
+        // 1. Analyze payslip via POST payslip/analyze1 (multipart/form-data)
+        const analyzeRes = await analyzePayslipApi(file);
+        const resData = analyzeRes?.data?.data || analyzeRes?.data || {};
+
+        let declaredCompany = (profileData.companyName || "").trim();
+
+        // 2. Validate against past 6 months, company name, and salary
+        let validation = await validatePayslipDocument(resData, declaredCompany, file);
+
+        // 2a. If company didn't match directly, check with borrower if it's the parent company / legal entity
+        if (!validation.isCompanyMatch && validation.needsParentConfirmation) {
+          const confirmParent = await Swal.fire({
+            title: "Employer / Legal Entity Check",
+            html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                     <div class="mb-2">Your profile employer is: <strong class="text-primary">${declaredCompany}</strong></div>
+                     <div class="mb-3">Employer detected on payslip: <strong class="text-success">${validation.detectedCompany}</strong></div>
+                     <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                       Is <strong>${validation.detectedCompany}</strong> the legal entity, parent company, or payroll partner for <strong>${declaredCompany}</strong>?
+                     </div>
+                   </div>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, Confirm (${validation.detectedCompany})`,
+            cancelButtonText: "No, Re-upload Different Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+
+          if (confirmParent.isConfirmed) {
+            validation.isCompanyMatch = true;
+            validation.errors = validation.errors.filter((err) => !err.includes("Employer mismatch"));
+            validation.isValid = validation.isDateValid && validation.detectedSalary > 0;
+            const updatedCompany = `${declaredCompany} (${validation.detectedCompany})`;
+            setProfileData((prev) => ({ ...prev, companyName: updatedCompany }));
+            declaredCompany = updatedCompany;
+          }
+        }
+
+        // 2b. If date was not readable by OCR, prompt borrower to confirm pay month from last 6 months
+        if (!validation.isDateValid && validation.needsDateConfirmation) {
+          const options = {};
+          const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const curr = new Date();
+          for (let i = 0; i < 6; i++) {
+            const d = new Date(curr.getFullYear(), curr.getMonth() - i, 1);
+            const key = `${mNames[d.getMonth()]} ${d.getFullYear()}`;
+            options[key] = key;
+          }
+          options["OLDER"] = "Older than 6 months";
+
+          const { value: selectedMonth } = await Swal.fire({
+            title: "Confirm Payslip Month",
+            text: "We could not automatically detect the pay date from this document. Please select the month this payslip covers:",
+            input: "select",
+            inputOptions: options,
+            inputPlaceholder: "Select Pay Month",
+            showCancelButton: true,
+            confirmButtonText: "Confirm Month",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "var(--oxy-primary)",
+            inputValidator: (val) => (!val ? "Please select a month!" : null),
+          });
+
+          if (selectedMonth && selectedMonth !== "OLDER") {
+            validation.isDateValid = true;
+            validation.detectedDate = selectedMonth;
+            validation.errors = validation.errors.filter((err) => !err.includes("date") && !err.includes("month"));
+            validation.isValid = validation.isCompanyMatch && validation.detectedSalary > 0;
+          }
+        }
+
+        if (!validation.isValid) {
+          if (e.target) e.target.value = "";
+
+          const errContent = validation.errors?.length > 0
+            ? validation.errors.join("<br/><br/>")
+            : (validation.errorMessage || "Please upload a valid payslip from the past 6 months issued by your employer.");
+
+          Swal.fire({
+            title: "Payslip Verification Failed",
+            html: `<div>We could not accept this payslip due to the following issue(s):</div>
+                   <div class="mt-3 p-3 rounded text-start" style="background-color: #fef2f2 !important; border: 1px solid #fca5a5 !important; color: #991b1b !important; font-size: 13px; line-height: 1.6;">
+                     ${errContent}
+                   </div>
+                   <div class="mt-3 text-muted small">Please upload a valid payslip from the <b>past 6 months</b> issued by <b>${declaredCompany || "your declared company"}</b>.</div>`,
+            icon: "error",
+            confirmButtonText: "Re-upload Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+          return;
+        }
+
+        // 3. ALL CHECKS PASSED -> Update salary in profile based on payslip
+        const newSalary = validation.detectedSalary;
+        setProfileData((prev) => ({ ...prev, salary: newSalary }));
+
+        try {
+          const userProfilePayload = {
+            ...profileData,
+            salary: newSalary,
+          };
+          const formDataPayload = {
+            totalExperience: profileData.workExperience,
+            company: profileData.companyName,
+            salary: newSalary,
+            designation: profileData.designation,
+            officeAddress: profileData.officeAddress,
+            officeMailId: profileData.officeMailId,
+            officeLandLine: profileData.officeLandLine,
+            country: profileData.country,
+            universityName: profileData.universityName,
+            universityLocation: profileData.location,
+          };
+          await profileupadate(userProfilePayload, formDataPayload, category);
+        } catch (updateErr) {
+          console.warn("Notice: could not persist salary update immediately", updateErr);
+        }
+
+        // 4. ONLY NOW UPLOAD TO S3 via uploadkyc
+        const res = await uploadkyc(e, pass);
+        if (res?.request?.status === 200 || res?.status === 200) {
+          const payslipRecord = {
+            verified: true,
+            companyName: validation.detectedCompany,
+            declaredCompany,
+            detectedSalary: newSalary,
+            detectedDate: validation.detectedDate,
+            salaryMatch: true,
+            companyMatch: true,
+            message: `Payslip verified for ${validation.detectedCompany} (${validation.detectedDate}).`,
+            analysisData: resData,
+          };
+          setPayslipVerification(payslipRecord);
+          try {
+            localStorage.setItem("oxy_borrower_payslip_verified", JSON.stringify(payslipRecord));
+          } catch (err) {}
+
+          Swal.fire({
+            title: "Payslip Verified & Uploaded",
+            html: `<div>Your payslip was successfully verified and uploaded to S3!</div>
+                   <div class="mt-3 p-3 rounded text-start" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:13px;">
+                     <div class="mb-1"><b>Employer:</b> ${declaredCompany} <span class="badge bg-success ms-1">Matched</span></div>
+                     <div class="mb-1"><b>Pay Period:</b> ${validation.detectedDate} <span class="badge bg-success ms-1">Within Last 6 Months</span></div>
+                     <div class="mb-1"><b>Monthly Salary:</b> ₹${newSalary.toLocaleString("en-IN")} <span class="badge bg-success ms-1">Profile Updated</span></div>
+                     <div class="mt-2 text-success fw-bold">
+                       <i class="fa-solid fa-circle-check text-success me-1"></i>
+                       Document verified and synced with profile.
+                     </div>
+                   </div>`,
+            icon: "success",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+          await fetchKycFiles();
+          await loadAllProfileData();
+        } else {
+          Swal.fire("Upload Failed", res?.data?.errorMessage || "File cannot be uploaded.", "error");
+        }
+      } catch (err) {
+        if (e.target) e.target.value = "";
+        const errMsg = err?.response?.data?.errorMessage || err?.response?.data?.message || err?.message || "Failed to analyze payslip.";
+        Swal.fire({
+          title: "Payslip Analysis Failed",
+          html: `<div>${errMsg}</div><div class="mt-2 text-muted small">Please verify the document is a readable PDF or image and try again.</div>`,
+          icon: "error",
+          confirmButtonText: "Re-upload Payslip",
+          confirmButtonColor: "var(--oxy-primary)",
+        });
+      }
+      return;
+    }
+
     try {
       const res = await uploadkyc(e);
       if (res?.request?.status === 200 || res?.status === 200) {
@@ -1617,8 +1925,24 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
   // Save Personal Details form
   const savePersonalDetails = async () => {
-    // Run comprehensive borrower validation rules
-    const validationResult = validateBorrowerPersonalDetails(profileData, category);
+    const effectiveMaritalStatus = profileData.maritalStatus || "Single";
+    const isMarried = effectiveMaritalStatus === "Married";
+    const effectiveSpouseName = isMarried ? (profileData.spouseName || "") : "";
+    const rawSpouseDob = isMarried ? profileData.spouseDob : null;
+    const effectiveSpouseDob = isMarried && rawSpouseDob && rawSpouseDob.toString().trim()
+      ? rawSpouseDob.toString().trim()
+      : null;
+
+    const dataToValidate = {
+      ...profileData,
+      maritalStatus: effectiveMaritalStatus,
+      spouseName: effectiveSpouseName,
+      spouseDob: effectiveSpouseDob,
+    };
+
+    // Run comprehensive borrower validation rule
+    console.log("Validating borrower personal details before save...", dataToValidate);
+    const validationResult = validateBorrowerPersonalDetails(dataToValidate, category);
     if (!validationResult.valid) {
       Swal.fire("Validation Error", validationResult.message, "warning");
       return;
@@ -1686,17 +2010,15 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         }
       }
 
-      
-
       const userProfilePayload = {
         firstName: updatedFirstName,
         lastName: profileData.lastName,
         middleName: profileData.middleName,
         fatherName: profileData.fatherName,
         motherName: profileData.motherName,
-        maritalStatus: profileData.maritalStatus,
-        spouseName: profileData.maritalStatus === "Married" ? profileData.spouseName : "",
-        spouseDob: profileData.maritalStatus === "Married" ? profileData.spouseDob : "",
+        maritalStatus: effectiveMaritalStatus,
+        spouseName: effectiveSpouseName,
+        spouseDob: effectiveSpouseDob,
         dob: profileData.dob,
         panNumber: profileData.panNumber,
         residenceAddress: profileData.residenceAddress,
@@ -1796,8 +2118,8 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       if (status === 200) {
         const resData = response.data;
         if (resData.accountStatus === "VALID") {
-          const nameAtBank = resData?.nameAtBank || bankaccount.nameAtBank || "";
-          const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+          const nameAtBank = resData?.nameAtBank ?? bankaccount.nameAtBank ?? "";
+          const borrowerFullName = (profileData.firstName || "").trim();
 
           // Check if Bank Account Holder Name matches Borrower Full Name
           if (nameAtBank && borrowerFullName && !isBankNameMatching(nameAtBank, borrowerFullName)) {
@@ -1847,7 +2169,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
     setBankaccount((prev) => ({ ...prev, mobileOtp: "" }));
   }
 
-    const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+    const borrowerFullName = (profileData.firstName || "").trim();
     if (bankaccount.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccount.nameAtBank, borrowerFullName)) {
       Swal.fire(
         "Bank Account Name Mismatch",
@@ -1892,7 +2214,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       return;
     }
 
-    const borrowerFullName = `${profileData.firstName} ${profileData.lastName}`.trim();
+    const borrowerFullName = (profileData.firstName || "").trim();
     if (bankaccount.nameAtBank && borrowerFullName && !isBankNameMatching(bankaccount.nameAtBank, borrowerFullName)) {
       Swal.fire(
         "Bank Account Name Mismatch",
@@ -2021,8 +2343,8 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       Passport: "Passport",
       PAYSLIPS: "paySlips",
       paySlips: "paySlips",
-      INTERMEDIATE: "intermediate",
-      intermediate: "intermediate",
+      INTER: "inter",
+      inter: "inter",
       TENTH: "tenth",
       tenth: "tenth",
       GRADUATION: "graduation",
@@ -2080,20 +2402,215 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         },
       };
 
-      if (docType === "BANKSTATEMENT") {
+      if (docType === "BANKSTATEMENT" || docType === "bankStatement") {
         const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
         if (password) {
           setSecureInfo((prev) => ({ ...prev, bankStatementPassword: password }));
         }
+        let analyzeRes = null;
         try {
-          await analyzeBorrowerBankStatement(userId, file, password || "");
+          analyzeRes = await analyzeBorrowerBankStatement(userId, file, password || "");
         } catch (aErr) {
           console.log("Bank analysis notice:", aErr);
         }
         await uploadkyc(syntheticEvent, password || "");
-        Swal.fire("Upload Successful", "Bank statement uploaded and analyzed successfully!", "success");
+
+        const statementData = analyzeRes?.data?.data || analyzeRes?.data || {};
+        const salaryCheck = verifySalaryFromBankStatement(profileData.salary, statementData);
+        setSalaryVerification(salaryCheck);
+        try {
+          localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(salaryCheck));
+        } catch (err) {}
+
+        Swal.fire({
+          title: salaryCheck.isMatch ? "Bank Statement Verified & Analyzed" : "Upload & Analysis Successful",
+          html: `<div>${analyzeRes?.data?.message || "Bank statement uploaded and analyzed successfully!"}</div>
+                 <div class="mt-3 p-3 rounded text-start" style="background:${salaryCheck.isMatch ? '#f0fdf4' : '#fffbeb'}; border:1px solid ${salaryCheck.isMatch ? '#bbf7d0' : '#fde68a'}; font-size:13px;">
+                   <div><b>Declared Monthly Salary:</b> ₹${Number(profileData.salary || 0).toLocaleString("en-IN")}</div>
+                   ${salaryCheck.detectedSalary > 0 ? `<div><b>Detected Monthly Inflow:</b> ₹${Number(salaryCheck.detectedSalary).toLocaleString("en-IN")}</div>` : ""}
+                   <div class="mt-2 ${salaryCheck.isMatch ? 'text-success fw-bold' : 'text-dark fw-semibold'}">
+                     <i class="fa-solid ${salaryCheck.isMatch ? 'fa-circle-check text-success' : 'fa-circle-info text-warning'} me-1"></i>
+                     ${salaryCheck.message}
+                   </div>
+                 </div>`,
+          icon: "success",
+          confirmButtonColor: "var(--oxy-primary)",
+        });
         await fetchKycFiles();
         await fetchBorrowerAnalysisData();
+      } else if (docType === "PAYSLIPS" || docType === "paySlips") {
+        let analyzeRes = null;
+        let resData = {};
+        try {
+          analyzeRes = await analyzePayslipApi(file);
+          resData = analyzeRes?.data?.data || analyzeRes?.data || {};
+        } catch (aErr) {
+          console.error("Payslip analyze error:", aErr);
+          const errMsg = aErr?.response?.data?.errorMessage || aErr?.response?.data?.message || aErr?.message || "Failed to analyze payslip.";
+          Swal.fire({
+            title: "Payslip Analysis Failed",
+            html: `<div>${errMsg}</div><div class="mt-2 text-muted small">Please verify the document is a readable PDF or image and try again.</div>`,
+            icon: "error",
+            confirmButtonText: "Re-upload Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+          setModalUploading(false);
+          return;
+        }
+
+        let declaredCompany = (profileData.companyName || "").trim();
+
+        // 2. Validate against past 6 months, company name, and salary
+        let validation = await validatePayslipDocument(resData, declaredCompany, file);
+
+        // 2a. If company didn't match directly, check with borrower if it's the parent company / legal entity
+        if (!validation.isCompanyMatch && validation.needsParentConfirmation) {
+          const confirmParent = await Swal.fire({
+            title: "Employer / Legal Entity Check",
+            html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                     <div class="mb-2">Your profile employer is: <strong class="text-primary">${declaredCompany}</strong></div>
+                     <div class="mb-3">Employer detected on payslip: <strong class="text-success">${validation.detectedCompany}</strong></div>
+                     <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                       Is <strong>${validation.detectedCompany}</strong> the legal entity, parent company, or payroll partner for <strong>${declaredCompany}</strong>?
+                     </div>
+                   </div>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, Confirm (${validation.detectedCompany})`,
+            cancelButtonText: "No, Re-upload Different Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+
+          if (confirmParent.isConfirmed) {
+            validation.isCompanyMatch = true;
+            validation.errors = validation.errors.filter((err) => !err.includes("Employer mismatch"));
+            validation.isValid = validation.isDateValid && validation.detectedSalary > 0;
+            const updatedCompany = `${declaredCompany} (${validation.detectedCompany})`;
+            setProfileData((prev) => ({ ...prev, companyName: updatedCompany }));
+            declaredCompany = updatedCompany;
+          }
+        }
+
+        // 2b. If date was not readable by OCR, prompt borrower to confirm pay month from last 6 months
+        if (!validation.isDateValid && validation.needsDateConfirmation) {
+          const options = {};
+          const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const curr = new Date();
+          for (let i = 0; i < 6; i++) {
+            const d = new Date(curr.getFullYear(), curr.getMonth() - i, 1);
+            const key = `${mNames[d.getMonth()]} ${d.getFullYear()}`;
+            options[key] = key;
+          }
+          options["OLDER"] = "Older than 6 months";
+
+          const { value: selectedMonth } = await Swal.fire({
+            title: "Confirm Payslip Month",
+            text: "We could not automatically detect the pay date from this document. Please select the month this payslip covers:",
+            input: "select",
+            inputOptions: options,
+            inputPlaceholder: "Select Pay Month",
+            showCancelButton: true,
+            confirmButtonText: "Confirm Month",
+            cancelButtonText: "Cancel",
+            confirmButtonColor: "var(--oxy-primary)",
+            inputValidator: (val) => (!val ? "Please select a month!" : null),
+          });
+
+          if (selectedMonth && selectedMonth !== "OLDER") {
+            validation.isDateValid = true;
+            validation.detectedDate = selectedMonth;
+            validation.errors = validation.errors.filter((err) => !err.includes("date") && !err.includes("month"));
+            validation.isValid = validation.isCompanyMatch && validation.detectedSalary > 0;
+          }
+        }
+
+        if (!validation.isValid) {
+          const errContent = validation.errors?.length > 0
+            ? validation.errors.join("<br/><br/>")
+            : (validation.errorMessage || "Please upload a valid payslip from the past 6 months issued by your employer.");
+
+          Swal.fire({
+            title: "Payslip Verification Failed",
+            html: `<div>We could not accept this payslip due to the following issue(s):</div>
+                   <div class="mt-3 p-3 rounded text-start" style="background-color: #fef2f2 !important; border: 1px solid #fca5a5 !important; color: #991b1b !important; font-size: 13px; line-height: 1.6;">
+                     ${errContent}
+                   </div>
+                   <div class="mt-3 text-muted small">Please upload a valid payslip from the <b>past 6 months</b> issued by <b>${declaredCompany || "your declared company"}</b>.</div>`,
+            icon: "error",
+            confirmButtonText: "Re-upload Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+          setModalUploading(false);
+          return;
+        }
+
+        // ALL CHECKS PASSED -> Update salary in profile based on payslip
+        const newSalary = validation.detectedSalary;
+        setProfileData((prev) => ({ ...prev, salary: newSalary }));
+
+        try {
+          const userProfilePayload = {
+            ...profileData,
+            salary: newSalary,
+          };
+          const formDataPayload = {
+            totalExperience: profileData.workExperience,
+            company: profileData.companyName,
+            salary: newSalary,
+            designation: profileData.designation,
+            officeAddress: profileData.officeAddress,
+            officeMailId: profileData.officeMailId,
+            officeLandLine: profileData.officeLandLine,
+            country: profileData.country,
+            universityName: profileData.universityName,
+            universityLocation: profileData.location,
+          };
+          await profileupadate(userProfilePayload, formDataPayload, category);
+        } catch (updateErr) {
+          console.warn("Notice: could not persist salary update immediately", updateErr);
+        }
+
+        if (password) {
+          setSecureInfo((prev) => ({ ...prev, payslipsPassword: password }));
+        }
+
+        // ONLY NOW UPLOAD TO S3
+        await uploadkyc(syntheticEvent, password || "");
+        await fetchKycFiles();
+        await loadAllProfileData();
+
+        const payslipRecord = {
+          verified: true,
+          companyName: validation.detectedCompany,
+          declaredCompany,
+          detectedSalary: newSalary,
+          detectedDate: validation.detectedDate,
+          salaryMatch: true,
+          companyMatch: true,
+          message: `Payslip verified for ${validation.detectedCompany} (${validation.detectedDate}).`,
+          analysisData: resData,
+        };
+
+        setPayslipVerification(payslipRecord);
+        try {
+          localStorage.setItem("oxy_borrower_payslip_verified", JSON.stringify(payslipRecord));
+        } catch (e) {}
+
+        Swal.fire({
+          title: "Payslip Verified & Uploaded",
+          html: `<div>Your payslip was successfully verified and uploaded to S3!</div>
+                 <div class="mt-3 p-3 rounded text-start" style="background:#f8fafc; border:1px solid #e2e8f0; font-size:13px;">
+                   <div class="mb-1"><b>Employer:</b> ${declaredCompany} <span class="badge bg-success ms-1">Matched</span></div>
+                   <div class="mb-1"><b>Pay Period:</b> ${validation.detectedDate} <span class="badge bg-success ms-1">Within Last 6 Months</span></div>
+                   <div class="mb-1"><b>Monthly Salary:</b> ₹${newSalary.toLocaleString("en-IN")} <span class="badge bg-success ms-1">Profile Updated</span></div>
+                   <div class="mt-2 text-success fw-bold">
+                     <i class="fa-solid fa-circle-check text-success me-1"></i>
+                     Document verified and synced with profile.
+                   </div>
+                 </div>`,
+          icon: "success",
+          confirmButtonColor: "var(--oxy-primary)",
+        });
       } else if (docType === "CREDITREPORT" || docType === "creditReport") {
         if (password) {
           setSecureInfo((prev) => ({ ...prev, creditReportPassword: password, cibilPassword: password }));
@@ -2151,7 +2668,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                     </div>
                     <div>
                       <h4 className="fw-bold mb-1 text-white text-capitalize">
-                        {profileData.firstName ? `${profileData.firstName} ${profileData.lastName}` : "—"}
+                        {profileData.firstName || "—"}
                       </h4>
                       <p className="text-white-50 mb-2 small">Borrower ID: BR{profileData.userId}</p>
                       
@@ -2172,7 +2689,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           <span className="badge px-3 py-1.5 rounded text-dark font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#ffd60a", fontSize: "12px" }}>
                             <i className="fa-solid fa-triangle-exclamation"></i> Bank Pending
                           </span>
-                        ) : verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, `${profileData.firstName} ${profileData.lastName}`.trim()) ? (
+                        ) : verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, profileData.firstName.trim()) ? (
                           <span className="badge px-3 py-1.5 rounded text-white font-bold d-inline-flex align-items-center gap-1" style={{ backgroundColor: "#dc3545", fontSize: "12px" }}>
                             <i className="fa-solid fa-triangle-exclamation"></i> Name Mismatch
                           </span>
@@ -2212,16 +2729,26 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                     <h6 className="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
                       <i className="fa-solid fa-sliders text-primary"></i> Profile Completeness
                     </h6>
-                    <span className="text-muted small">Complete all profile sections to speed up loan approvals and matching.</span>
+                    <span className="text-muted small">
+                      You must achieve at least <strong>90% Profile Completeness</strong> to raise a loan request.
+                    </span>
                   </div>
-                  <span className={`badge px-3 py-2 rounded-pill fw-bold fs-6 ${profileCompletionPct >= 75 ? "bg-success-subtle text-success" : "bg-warning-subtle text-dark"}`}>
-                    {profileCompletionPct}% Completed
-                  </span>
+                  <div className="d-flex align-items-center gap-2">
+                    {profileCompletionPct >= 90 ? (
+                      <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold">
+                        <i className="fa-solid fa-check-circle me-1"></i> Loan Request Eligible ({profileCompletionPct}%)
+                      </span>
+                    ) : (
+                      <span className="badge bg-warning-subtle text-dark px-3 py-2 rounded-pill fw-bold">
+                        <i className="fa-solid fa-triangle-exclamation me-1 text-warning"></i> {profileCompletionPct}% Completed (90% Required)
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="progress mb-3" style={{ height: "10px", borderRadius: "10px" }}>
                   <div 
-                    className={`progress-bar rounded-pill ${profileCompletionPct >= 75 ? "bg-success" : "bg-primary"}`} 
+                    className={`progress-bar rounded-pill ${profileCompletionPct >= 90 ? "bg-success" : "bg-warning"}`} 
                     role="progressbar" 
                     style={{ width: `${profileCompletionPct}%`, transition: "width 0.4s ease" }}
                   />
@@ -2251,6 +2778,14 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                     style={{ cursor: "pointer" }}
                   >
                     <i className={`fa-solid ${profileData.bankDetailsInfo && isBankVerified ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> Bank Account Linked
+                  </span>
+
+                  <span 
+                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${referenceList.filter(r => r.name?.trim() && r.referenceNumber?.trim()).length >= 2 ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
+                    onClick={() => setEditSection("references")}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <i className={`fa-solid ${referenceList.filter(r => r.name?.trim() && r.referenceNumber?.trim()).length >= 2 ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> 2 Emergency References
                   </span>
 
                   <span 
@@ -2349,11 +2884,11 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           <>
                             <div className="personal-info-row">
                               <span className="personal-info-label">Experience</span>
-                              <span className="personal-info-value">{profileData.workExperience || "0"} Years</span>
+                              <span className="personal-info-value">{profileData.workExperience ? `${profileData.workExperience} Years` : "—"}</span>
                             </div>
                             <div className="personal-info-row">
                               <span className="personal-info-label">Company Name</span>
-                              <span className="personal-info-value text-lowercase">{profileData.companyName || "—"}</span>
+                              <span className="personal-info-value">{profileData.companyName || "—"}</span>
                             </div>
                             <div className="personal-info-row">
                               <span className="personal-info-label">Designation</span>
@@ -2450,19 +2985,19 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                               </div>
                               <div className="col-6">
                                 <span className="bank-grid-label">Account Holder - </span>
-                                <span className={`bank-grid-value text-uppercase ${verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, `${profileData.firstName} ${profileData.lastName}`.trim()) ? "text-danger fw-bold" : ""}`}>
+                                <span className={`bank-grid-value text-uppercase ${verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, profileData.firstName.trim()) ? "text-danger fw-bold" : ""}`}>
                                   {verifiedBankAccount.nameAtBank}
                                 </span>
                               </div>
                             </div>
-                            {verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, `${profileData.firstName} ${profileData.lastName}`.trim()) && (
+                            {verifiedBankAccount.nameAtBank && profileData.firstName && !isBankNameMatching(verifiedBankAccount.nameAtBank, profileData.firstName.trim()) && (
                               <div
                                 className="mt-3 p-3 rounded-3 small fw-semibold d-flex align-items-center gap-2"
                                 style={{ backgroundColor: "#fff5f5", color: "#d9534f", border: "1px solid #f5c6cb" }}
                               >
                                 <i className="fa-solid fa-triangle-exclamation fs-6 me-1" style={{ color: "#d9534f" }}></i>
                                 <div>
-                                  <strong>Name Mismatch Warning:</strong> Bank Account Holder ("{verifiedBankAccount.nameAtBank}") does not match Borrower Name ("{`${profileData.firstName} ${profileData.lastName}`.trim()}"). Please edit bank info to link an account registered in your own name.
+                                  <strong>Name Mismatch Warning:</strong> Bank Account Holder ("{verifiedBankAccount.nameAtBank}") does not match Borrower Name ("{profileData.firstName.trim()}"). Please edit bank info to link an account registered in your own name.
                                 </div>
                               </div>
                             )}
@@ -2474,7 +3009,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                     </div>
 
                     {/* CREDIT BUREAU SCORE & HEALTH CARD */}
-                    {/* <div className="card border-0 shadow-sm rounded-4">
+                    <div className="card border-0 shadow-sm rounded-4">
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-start mb-3">
                           <div className="d-flex align-items-center gap-2">
@@ -2483,31 +3018,48 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                             </div>
                             <div>
                               <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>CREDIT BUREAU REPORT</h6>
-                              <span className="text-muted" style={{ fontSize: "11px" }}>PaySprint & CIR VerifyA2Z</span>
+                              <span className="text-muted" style={{ fontSize: "11px" }}>Official Bureau Analysis</span>
                             </div>
                           </div>
-                          <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill small">
-                            Verified
-                          </span>
+                          {creditBureauData?.score ? (
+                            <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-1 rounded-pill small">
+                              Verified
+                            </span>
+                          ) : (
+                            <span className="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 px-2 py-1 rounded-pill small">
+                              Pending
+                            </span>
+                          )}
                         </div>
 
-                        <div className="p-3 bg-light rounded-3 border mb-3">
-                          <div className="d-flex justify-content-between align-items-center mb-1">
-                            <span className="text-muted small">Bureau Score</span>
-                            <div className="d-flex align-items-baseline gap-1">
-                              <span className="fw-bold text-success fs-5">{creditBureauData?.score || 802}</span>
-                              <span className="text-muted small">/ 900</span>
+                        {creditBureauData?.score ? (
+                          <div className="p-3 bg-light rounded-3 border mb-3">
+                            <div className="d-flex justify-content-between align-items-center mb-1">
+                              <span className="text-muted small">Bureau Score</span>
+                              <div className="d-flex align-items-baseline gap-1">
+                                <span className="fw-bold text-success fs-5">{creditBureauData.score}</span>
+                                <span className="text-muted small">/ 900</span>
+                              </div>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center small">
+                              <span className="text-muted">Rating & Status</span>
+                              <span className="fw-semibold text-dark">
+                                {creditBureauData.scoreTier?.tier || "Standard"}
+                                {creditBureauData.scoreTier?.badge ? ` (${creditBureauData.scoreTier.badge})` : ""}
+                              </span>
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center small mt-1">
+                              <span className="text-muted">Accounts Track</span>
+                              <span className="text-muted">
+                                {creditBureauData.metrics?.totalAccountsCount ?? 0} reported ({creditBureauData.metrics?.activeAccountsCount ?? 0} active)
+                              </span>
                             </div>
                           </div>
-                          <div className="d-flex justify-content-between align-items-center small">
-                            <span className="text-muted">Rating & Status</span>
-                            <span className="fw-semibold text-dark">{creditBureauData?.scoreTier?.tier || "Excellent"} (Prime+)</span>
+                        ) : (
+                          <div className="p-3 bg-light rounded-3 border mb-3 text-center">
+                            <p className="text-muted small mb-0">No credit report fetched yet.</p>
                           </div>
-                          <div className="d-flex justify-content-between align-items-center small mt-1">
-                            <span className="text-muted">Accounts Track</span>
-                            <span className="text-muted">{creditBureauData?.metrics?.totalAccountsCount || 7} reported ({creditBureauData?.metrics?.activeAccountsCount || 1} active)</span>
-                          </div>
-                        </div>
+                        )}
 
                         <div className="d-flex gap-2">
                           <button
@@ -2515,18 +3067,20 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                             className="btn btn-outline-primary btn-sm flex-fill rounded-3"
                             onClick={() => setShowCreditModal(true)}
                           >
-                            <i className="fa-solid fa-arrows-rotate me-1"></i> Refresh
+                            <i className="fa-solid fa-arrows-rotate me-1"></i> {creditBureauData?.score ? "Refresh" : "Fetch Report"}
                           </button>
-                          <Link
-                            to="/borrower-credit-report"
-                            className="btn btn-primary btn-sm flex-fill rounded-3 text-white text-decoration-none d-flex align-items-center justify-content-center"
-                            style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
-                          >
-                            Full Report <i className="fa-solid fa-arrow-right ms-1"></i>
-                          </Link>
+                          {creditBureauData?.score && (
+                            <Link
+                              to="/instant-borrower-credit-report"
+                              className="btn btn-primary btn-sm flex-fill rounded-3 text-white text-decoration-none d-flex align-items-center justify-content-center"
+                              style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
+                            >
+                              Full Report <i className="fa-solid fa-arrow-right ms-1"></i>
+                            </Link>
+                          )}
                         </div>
                       </div>
-                    </div> */}
+                    </div>
 
                     {/* PAN CARD CARD */}
                     <div className="card border-0 shadow-sm rounded-4">
@@ -2619,6 +3173,40 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                             <span className="fw-bold text-success" style={{ fontSize: "15px" }}>{profileData.profileScore || "—"}</span>
                           </div>
                         </div>
+
+                        {/* Verification Badges Section */}
+                        <div className="mt-3 pt-2 border-top">
+                          <div className="d-flex flex-column gap-2" style={{ fontSize: "12px" }}>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="text-muted">
+                                <i className="fa-solid fa-file-invoice-dollar me-1 text-primary"></i>Employer Match:
+                              </span>
+                              {payslipVerification?.verified ? (
+                                <span className="badge bg-success-subtle text-success py-1 px-2">
+                                  <i className="fa-solid fa-check me-1"></i>Verified ({payslipVerification.companyName || profileData.companyName || "Employer"})
+                                </span>
+                              ) : (
+                                <span className="badge bg-light text-muted py-1 px-2 border">Pending Upload</span>
+                              )}
+                            </div>
+                            <div className="d-flex justify-content-between align-items-center">
+                              <span className="text-muted">
+                                <i className="fa-solid fa-building-columns me-1 text-primary"></i>Salary Inflow:
+                              </span>
+                              {salaryVerification?.isMatch ? (
+                                <span className="badge bg-success-subtle text-success py-1 px-2">
+                                  <i className="fa-solid fa-check me-1"></i>Verified (₹{Number(salaryVerification.detectedSalary || profileData.salary || 0).toLocaleString("en-IN")})
+                                </span>
+                              ) : salaryVerification?.status === "VARIANCE" ? (
+                                <span className="badge bg-warning-subtle text-warning py-1 px-2">
+                                  Variance Review
+                                </span>
+                              ) : (
+                                <span className="badge bg-light text-muted py-1 px-2 border">Pending Bank Statement</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -2670,7 +3258,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       {/* ========================================================================= */}
 
       {/* 1. PERSONAL DETAILS EDIT MODAL */}
-      <Modal show={editSection === "personal"} onHide={() => setEditSection(null)} size="lg" centered>
+      <Modal show={editSection === "personal"} onHide={() => setEditSection(null)} size="lg" centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold text-dark h5">Edit Profile Information</Modal.Title>
         </Modal.Header>
@@ -2694,7 +3282,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             </div>
             <div className="col-md-6">
               <label className="form-label text-muted small">Mother's Name <span className="text-danger">*</span></label>
-              <input type="text" className="form-control rounded-3" name="motherName" value={profileData.motherName} onChange={handleprofileInput} placeholder="e.g. abc" />
+              <input type="text" className="form-control rounded-3" name="motherName" value={profileData.motherName} onChange={handleprofileInput} placeholder="Enter Mother's Name" />
             </div>
             <div className="col-md-6">
               <label className="form-label text-muted small">Date of Birth (YYYY-MM-DD) <span className="text-danger">*</span></label>
@@ -2702,22 +3290,22 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             </div>
             <div className="col-md-6">
               <label className="form-label text-muted small">Marital Status <span className="text-danger">*</span></label>
-              <select className="form-select rounded-3" name="maritalStatus" value={profileData.maritalStatus} onChange={handleprofileInput} required>
+              <select className="form-select rounded-3" name="maritalStatus" value={profileData.maritalStatus || "Single"} onChange={handleprofileInput} required>
                 <option value="Single">Single</option>
                 <option value="Married">Married</option>
                 <option value="Divorced">Divorced</option>
                 <option value="Widowed">Widowed</option>
               </select>
             </div>
-            {profileData.maritalStatus === "Married" && (
+            {(profileData.maritalStatus || "Single") === "Married" && (
               <>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Spouse Name <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName} onChange={handleprofileInput} placeholder="Enter spouse full name" required />
+                  <input type="text" className="form-control rounded-3" name="spouseName" value={profileData.spouseName || ""} onChange={handleprofileInput} placeholder="Enter spouse full name" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Spouse Date of Birth <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" required />
+                  <label className="form-label text-muted small">Spouse Date of Birth</label>
+                  <input type="text" className="form-control rounded-3" name="spouseDob" value={profileData.spouseDob || ""} onChange={handleprofileInput} placeholder="DD/MM/YYYY or YYYY-MM-DD" />
                 </div>
               </>
             )}
@@ -2872,31 +3460,59 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
               <>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Work Experience (Years) <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" name="workExperience" value={profileData.workExperience} onChange={handleprofileInput} placeholder="e.g. 3" required />
+                  <input type="text" className="form-control rounded-3" name="workExperience" value={profileData.workExperience} onChange={handleprofileInput} placeholder="Years of experience" required />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Company Name <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" name="companyName" value={profileData.companyName} onChange={handleprofileInput} placeholder="e.g. Acme Corp" required />
+                  <input type="text" className="form-control rounded-3" name="companyName" value={profileData.companyName} onChange={handleprofileInput} placeholder="Enter company name" required />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Monthly Net Salary (₹) <span className="text-danger">*</span></label>
-                  <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} placeholder="e.g. 50000" required />
+                  <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} placeholder="Enter monthly net salary" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Designation / Role</label>
-                  <input type="text" className="form-control rounded-3" name="designation" value={profileData.designation} onChange={handleprofileInput} placeholder="e.g. Software Engineer" />
+                  <label className="form-label text-muted small">Designation / Role <span className="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    className={`form-control rounded-3 ${profileData.designation && !validateDesignation(profileData.designation, category).valid ? "is-invalid" : ""}`}
+                    name="designation"
+                    value={profileData.designation}
+                    onChange={handleprofileInput}
+                    placeholder="Enter designation / role"
+                    required
+                  />
+                  {profileData.designation && !validateDesignation(profileData.designation, category).valid && (
+                    <div className="invalid-feedback d-block small mt-1">
+                      <i className="fa-solid fa-triangle-exclamation me-1"></i>
+                      {validateDesignation(profileData.designation, category).message}
+                    </div>
+                  )}
                 </div>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Official / Work Email</label>
-                  <input type="email" className="form-control rounded-3" name="officeMailId" value={profileData.officeMailId} onChange={handleprofileInput} placeholder="e.g. nanan@gmail.com" />
+                  <input type="email" className="form-control rounded-3" name="officeMailId" value={profileData.officeMailId} onChange={handleprofileInput} placeholder="e.g. name@company.com" />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label text-muted small">Office Landline No. <span className="text-muted">(Optional)</span></label>
-                  <input type="text" className="form-control rounded-3" name="officeLandLine" value={profileData.officeLandLine} onChange={handleprofileInput} placeholder="e.g. 12254655" />
+                  <input type="text" className="form-control rounded-3" name="officeLandLine" value={profileData.officeLandLine} onChange={handleprofileInput} placeholder="e.g. 04012345678" />
                 </div>
                 <div className="col-12">
-                  <label className="form-label text-muted small">Office / Company Address</label>
-                  <input type="text" className="form-control rounded-3" name="officeAddress" value={profileData.officeAddress} onChange={handleprofileInput} placeholder="e.g. oxyloans" />
+                  <label className="form-label text-muted small">Office / Company Address <span className="text-danger">*</span></label>
+                  <input
+                    type="text"
+                    className={`form-control rounded-3 ${profileData.officeAddress && !validateOfficeAddress(profileData.officeAddress, category).valid ? "is-invalid" : ""}`}
+                    name="officeAddress"
+                    value={profileData.officeAddress}
+                    onChange={handleprofileInput}
+                    placeholder="Enter office / company address"
+                    required
+                  />
+                  {profileData.officeAddress && !validateOfficeAddress(profileData.officeAddress, category).valid && (
+                    <div className="invalid-feedback d-block small mt-1">
+                      <i className="fa-solid fa-triangle-exclamation me-1"></i>
+                      {validateOfficeAddress(profileData.officeAddress, category).message}
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -2941,7 +3557,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       </Modal>
 
       {/* 2. BANK ACCOUNT DETAILS MODAL */}
-      <Modal show={editSection === "bank"} onHide={() => { setEditSection(null); setOtpSent(false); setOtpButtonText("Send OTP"); }} centered>
+      <Modal show={editSection === "bank"} onHide={() => { setEditSection(null); setOtpSent(false); setOtpButtonText("Send OTP"); }} centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold text-dark h5">Edit Bank Information</Modal.Title>
         </Modal.Header>
@@ -3019,7 +3635,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       </Modal>
 
       {/* 3. NOMINEE DETAILS MODAL */}
-      <Modal show={editSection === "nominee"} onHide={() => setEditSection(null)} size="lg" centered>
+      <Modal show={editSection === "nominee"} onHide={() => setEditSection(null)} size="lg" centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold text-dark h5">Nominee details</Modal.Title>
         </Modal.Header>
@@ -3068,7 +3684,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       </Modal>
 
       {/* 4. REFERENCES EDIT MODAL */}
-      <Modal show={editSection === "references"} onHide={() => setEditSection(null)} size="lg" centered>
+      <Modal show={editSection === "references"} onHide={() => setEditSection(null)} size="lg" centered enforceFocus={false}>
         <Modal.Header closeButton>
           <div>
             <Modal.Title className="fw-bold text-dark h5 mb-0">Emergency Reference Contacts</Modal.Title>
@@ -3128,7 +3744,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                       <input
                         type="text"
                         className="form-control rounded-3"
-                        placeholder="e.g. Reference One"
+                        placeholder="Enter contact full name"
                         value={ref.name}
                         onChange={(e) => handleReferenceChange(index, "name", e.target.value)}
                       />
@@ -3153,7 +3769,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                       <input
                         type="text"
                         className="form-control rounded-3"
-                        placeholder="e.g. 12 MG Road, Bangalore"
+                        placeholder="Enter house no., street, area"
                         value={ref.address}
                         onChange={(e) => handleReferenceChange(index, "address", e.target.value)}
                       />
@@ -3165,7 +3781,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                       <input
                         type="text"
                         className="form-control rounded-3"
-                        placeholder="e.g. Near metro station"
+                        placeholder="Enter nearby landmark (optional)"
                         value={ref.landMark}
                         onChange={(e) => handleReferenceChange(index, "landMark", e.target.value)}
                       />
@@ -3197,7 +3813,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       </Modal>
 
       {/* 5. KYC & PASSWORDS EDIT MODAL */}
-      <Modal show={editSection === "kyc"} onHide={() => setEditSection(null)} size="lg" centered>
+      <Modal show={editSection === "kyc" && !kycModal.open} onHide={() => setEditSection(null)} size="lg" centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold text-dark h5">KYC Documents</Modal.Title>
         </Modal.Header>
@@ -3216,11 +3832,11 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
               ...(category === "STUDENT"
                 ? [
-                    { label: "Intermediate", name: "INTERMEDIATE", value: kycDocs.intermediate, downloadUrl: kycDocs.intermediate?.downloadUrl },
+                    { label: "Intermediate Marksheet", name: "INTER", value: kycDocs.inter, downloadUrl: kycDocs.inter?.downloadUrl },
                     { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth, downloadUrl: kycDocs.tenth?.downloadUrl },
                     { label: "Graduation Marksheet", name: "GRADUATION", value: kycDocs.graduation, downloadUrl: kycDocs.graduation?.downloadUrl },
-                    { label: "Offer Letter", name: "OFFERLETTER", value: kycDocs.offerletter, downloadUrl: kycDocs.offerletter?.downloadUrl },
-                    { label: "Fee Receipt", name: "FEERECEIPT", value: kycDocs.feereceipt, downloadUrl: kycDocs.feereceipt?.downloadUrl },
+                    { label: "Offer Letter", name: "UNIVERSITYOFFERLETTER", value: kycDocs.universityOfferLetter, downloadUrl: kycDocs.universityOfferLetter?.downloadUrl },
+                    { label: "Fee Receipt", name: "FEE", value: kycDocs.feeReceipt, downloadUrl: kycDocs.feeReceipt?.downloadUrl },
                   ]
                 : [])
             ].map((doc) => (
@@ -3260,7 +3876,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           className="btn btn-outline-success btn-xs py-1 px-2 cursor-pointer"
                           style={{ fontSize: "11px" }}
                           onClick={() => setShowCreditModal(true)}
-                          title="Fetch Official Bureau Report via PaySprint API"
+                          title="Fetch Official Bureau Report via Oxyloans API"
                         >
                           <i className="fa-solid fa-bolt me-1"></i> Pull API
                         </button>
@@ -3290,6 +3906,41 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                     </div>
                   )} */}
 
+                  {doc.name === "PAYSLIPS" && (
+                    <div className="mt-2 pt-2 border-top">
+                      {payslipVerification?.verified ? (
+                        <div className="p-2 rounded border bg-white" style={{ fontSize: "11px", borderColor: "#bbf7d0" }}>
+                          <div className="d-flex align-items-center justify-content-between mb-1">
+                            <span className="text-success fw-bold d-flex align-items-center gap-1">
+                              <i className="fa-solid fa-circle-check"></i> Payslip Verified
+                            </span>
+                            {payslipVerification.detectedDate && (
+                              <span className="badge bg-success-subtle text-success">{payslipVerification.detectedDate}</span>
+                            )}
+                          </div>
+                          <div className="text-dark">
+                            <span className="text-muted">Company: </span>
+                            <strong>{payslipVerification.companyName || profileData.companyName || "Employer"}</strong>
+                          </div>
+                          {payslipVerification.detectedSalary != null && (
+                            <div className="text-dark mt-1">
+                              <span className="text-muted">Salary: </span>
+                              <strong>₹ {Number(payslipVerification.detectedSalary).toLocaleString("en-IN")}</strong>
+                            </div>
+                          )}
+                          <div className="text-muted small mt-1" style={{ fontSize: "10.5px" }}>
+                            {payslipVerification.message || "Verified against registered employer."}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-2 rounded border bg-light text-muted" style={{ fontSize: "11px" }}>
+                          <i className="fa-solid fa-building me-1 text-secondary"></i>
+                          <span>Target Employer: <strong>{profileData.companyName || "Not set in profile"}</strong></span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {doc.name === "BANKSTATEMENT" && (
                     <div className="mt-2 pt-2 border-top">
                       <div className="d-flex flex-wrap gap-2 mb-2">
@@ -3309,6 +3960,34 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           PDF Report
                         </button>
                       </div>
+
+                      {salaryVerification && (
+                        <div className="mb-2 p-2 rounded border" style={{ fontSize: "11px", backgroundColor: salaryVerification.isMatch ? "#f0fdf4" : "#fffbeb", borderColor: salaryVerification.isMatch ? "#bbf7d0" : "#fde68a" }}>
+                          <div className={`d-flex align-items-center gap-1 fw-bold mb-1 ${salaryVerification.isMatch ? "text-success" : "text-warning"}`}>
+                            <i className={`fa-solid ${salaryVerification.isMatch ? "fa-circle-check" : "fa-triangle-exclamation"}`}></i>
+                            <span>{salaryVerification.isMatch ? "Salary Verified via Bank Statement" : "Salary Review"}</span>
+                          </div>
+                          <div className="d-flex justify-content-between mb-1">
+                            <span className="text-muted">Declared Salary:</span>
+                            <span className="fw-semibold">₹ {Number(salaryVerification.declaredSalary || profileData.salary || 0).toLocaleString("en-IN")}</span>
+                          </div>
+                          {salaryVerification.detectedSalary > 0 && (
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">Detected Inflow:</span>
+                              <span className="fw-semibold text-primary">₹ {Number(salaryVerification.detectedSalary).toLocaleString("en-IN")}/mo</span>
+                            </div>
+                          )}
+                          {salaryVerification.variancePct && (
+                            <div className="d-flex justify-content-between mb-1">
+                              <span className="text-muted">Variance:</span>
+                              <span className="fw-semibold">{salaryVerification.variancePct}%</span>
+                            </div>
+                          )}
+                          <div className="small mt-1 text-muted" style={{ fontSize: "10px" }}>
+                            {salaryVerification.message}
+                          </div>
+                        </div>
+                      )}
 
                       {bankAnalysisData && (
                         <div className="p-2 bg-white rounded border text-xs" style={{ fontSize: "11px" }}>
@@ -3348,29 +4027,90 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={pdfPasswordModal.open} onHide={handlePdfPasswordModalClose} centered>
+      <Modal show={pdfPasswordModal.open} onHide={handlePdfPasswordModalClose} centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold text-dark h5">{pdfPasswordModal.title}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="p-4">
           <p className="text-muted small mb-3">{pdfPasswordModal.text}</p>
-          <input
-            type="password"
-            className="form-control rounded-3"
-            placeholder={pdfPasswordModal.placeholder}
-            value={pdfPasswordModal.password}
-            onChange={handlePdfPasswordModalChange}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                handlePdfPasswordModalSubmit();
-              }
-            }}
-          />
-          {pdfPasswordModal.error && (
-            <div className="text-danger small mt-2">{pdfPasswordModal.error}</div>
-          )}
+
+          <div className="p-3 bg-light rounded-3 border mb-3">
+            <label className="fw-semibold small d-block mb-2 text-dark">
+              Does this file contain a password? <span className="text-danger">*</span>
+            </label>
+            <div className="d-flex align-items-center gap-4 mb-2">
+              <div className="form-check form-check-inline d-flex align-items-center gap-2 mb-0" style={{ cursor: "pointer" }}>
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="profilePdfModalHasPassword"
+                  id="profilePdfModalHasPasswordYes"
+                  value="yes"
+                  checked={pdfPasswordModal.hasPasswordChoice === "yes"}
+                  onChange={() => setPdfPasswordModal((prev) => ({ ...prev, hasPasswordChoice: "yes", error: "" }))}
+                  style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                />
+                <label className="form-check-label small fw-semibold text-dark mb-0" htmlFor="profilePdfModalHasPasswordYes" style={{ cursor: "pointer" }}>
+                  Yes, file is password-protected
+                </label>
+              </div>
+              <div className="form-check form-check-inline d-flex align-items-center gap-2 mb-0" style={{ cursor: "pointer" }}>
+                <input
+                  className="form-check-input"
+                  type="radio"
+                  name="profilePdfModalHasPassword"
+                  id="profilePdfModalHasPasswordNo"
+                  value="no"
+                  checked={pdfPasswordModal.hasPasswordChoice === "no"}
+                  onChange={() => setPdfPasswordModal((prev) => ({ ...prev, hasPasswordChoice: "no", password: "", error: "" }))}
+                  style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                />
+                <label className="form-check-label small fw-semibold text-dark mb-0" htmlFor="profilePdfModalHasPasswordNo" style={{ cursor: "pointer" }}>
+                  No, unencrypted file
+                </label>
+              </div>
+            </div>
+
+            {pdfPasswordModal.hasPasswordChoice === "yes" && (
+              <div className="mt-3">
+                <label className="small text-muted mb-1 d-block">
+                  Enter File Password <span className="text-danger">*</span>
+                </label>
+                <div className="input-group">
+                  <input
+                    type={pdfPasswordModal.showPassword ? "text" : "password"}
+                    className="form-control rounded-start-3"
+                    placeholder={pdfPasswordModal.placeholder || "Enter file password (letters, numbers, symbols)"}
+                    value={pdfPasswordModal.password}
+                    onChange={handlePdfPasswordModalChange}
+                    autoFocus
+                    autoComplete="off"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handlePdfPasswordModalSubmit();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setPdfPasswordModal((prev) => ({ ...prev, showPassword: !prev.showPassword }))}
+                    title={pdfPasswordModal.showPassword ? "Hide password" : "Show password"}
+                  >
+                    <i className={`fa-solid ${pdfPasswordModal.showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {pdfPasswordModal.error && (
+              <div className="text-danger small mt-2 d-flex align-items-center gap-1 fw-medium">
+                <i className="fa-solid fa-circle-exclamation"></i>
+                <span>{pdfPasswordModal.error}</span>
+              </div>
+            )}
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <button className="oxy-btn-secondary" onClick={handlePdfPasswordModalClose}>
@@ -3382,7 +4122,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={editSection === "whatsapp"} onHide={() => setEditSection(null)} centered>
+      <Modal show={editSection === "whatsapp"} onHide={() => setEditSection(null)} centered enforceFocus={false}>
         <Modal.Header closeButton>
           <Modal.Title className="fw-bold text-dark h5">Verify WhatsApp Number</Modal.Title>
         </Modal.Header>
@@ -3430,6 +4170,8 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         fileUrl={kycModal.fileUrl}
         fileName={kycModal.fileName}
         title={kycModal.title}
+        companyName={profileData.companyName}
+        declaredSalary={profileData.salary}
         onUploadFile={handleModalUploadFile}
         isUploading={modalUploading}
       />

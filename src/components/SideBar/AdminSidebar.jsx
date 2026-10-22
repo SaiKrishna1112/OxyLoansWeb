@@ -123,7 +123,7 @@ const Sidebar = (props) => {
     } else if (
       "/mytransactions" === pathName ||
       "/walletToWalletTransactionHistory" === pathName ||
-      "/interestsDateWise" === pathName ||
+      "/Month-wise-interest" === pathName ||
       "/dashboardTransactions" === pathName
     ) {
       setSideMenu("WalletTrans");

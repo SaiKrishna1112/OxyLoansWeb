@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   getNewSessionTime,
@@ -21,6 +20,7 @@ import {
   withdrawriaseapipay,
 } from "../../HttpRequest/afterlogin";
 import { toastrSuccess } from "./Toast";
+
 
 // Inside your component
 export const HandleClick = () => {
@@ -300,7 +300,7 @@ export const personalDetails = (message, route) => {
   });
 };
 
-export const participatedapi = async (deal) => {
+export const participatedapi = async (deal, navigate) => {
   const payoutmethod = localStorage.getItem("choosenPayOutOption");
   Swal.fire({
     title: "Please review the lending details!",
@@ -857,8 +857,6 @@ export const membershipsweetalertconformation = (membership, no) => {
 };
 
 export const newlendersweetalert = () => {
-  const navigate = useNavigate();
-
   Swal.fire({
     title:
       "You are a new lender group, pay the annual membership fee to participate in the multiple deals. ?",
@@ -866,7 +864,7 @@ export const newlendersweetalert = () => {
     confirmButtonText: "Pay Through wallet",
   }).then((result) => {
     if (result.isConfirmed) {
-      navigate("/membership");
+      window.location.href = "/membership";
     }
   });
 };
