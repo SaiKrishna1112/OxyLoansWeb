@@ -277,8 +277,9 @@ const Loginsso = () => {
         WarningBackendApi("Google Sign-In Failed", "Unexpected response. Please try again.");
       }
     } catch (e) {
-      const msg = e?.response?.data?.errorMessage || "Google sign-in failed. Please try another method.";
-      WarningBackendApi("Google Sign-In Failed", msg);
+      const msg = e?.response?.data?.errorMessage || "";
+      if (goToStep2IfPending(msg)) return;
+      WarningBackendApi("Google Sign-In Failed", msg || "Google sign-in failed. Please try another method.");
     } finally {
       setGoogleLoading(false);
     }
