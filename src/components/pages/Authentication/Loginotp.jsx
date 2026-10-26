@@ -83,8 +83,14 @@ const Loginotp = () => {
         setGoogleModal({ status: "NOT_FOUND", email });
       }
     } catch (err) {
-      const raw = err?.response?.data?.errorMessage || "Could not verify Google account. Please try OTP login.";
-      WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
+      const raw = err?.response?.data?.errorMessage || "";
+      const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(raw);
+      if (step2) {
+        toastrSuccess("Please complete your registration to continue.");
+        history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}&signupType=GOOGLE`);
+        return;
+      }
+      WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw || "Could not verify Google account. Please try OTP login."));
     } finally {
       setGoogleLoading(false);
     }
