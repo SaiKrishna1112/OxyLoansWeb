@@ -91,11 +91,19 @@ const Loginotp = () => {
       }
     } catch (err) {
       const errData = err?.response?.data;
-      const raw = errData?.errorMessage || "Could not verify Google account. Please try OTP login.";
+      const raw = errData?.errorMessage || "";
+
+      const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(raw);
+      if (step2) {
+        toastrSuccess("Please complete your registration to continue.");
+        history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}&signupType=GOOGLE`);
+        return;
+      }
+
       const handled = await handleStep2PendingFromLogin(errData, raw, history);
       if (handled) return;
 
-      WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
+      WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw || "Could not verify Google account. Please try OTP login."));
     } finally {
       setGoogleLoading(false);
     }
