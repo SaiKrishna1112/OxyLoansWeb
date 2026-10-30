@@ -87,6 +87,7 @@ import AutoInvestHistory from "./components/pages/Oxyloans/Lender/AutoInvestHist
 import DashboardTransactions from "./components/pages/Oxyloans/Lender/DashboardTransactions";
 import LenderRegister from "./components/pages/Authentication/LenderRegister";
 import BorrowerRegister from "./components/pages/Authentication/BorrowerRegister";
+import DealConsentPage from "./components/pages/Oxyloans/DealConsentPage";
 import Register_active_proceed from "./components/pages/Authentication/register_active_proceed";
 import RegisterStep2Dark from "./components/pages/Authentication/RegisterStep2Dark";
 import DarkLogin from "./components/pages/Authentication/DarkLogin";
@@ -231,6 +232,7 @@ const AppRouter = () => {
         <Route path="/glogin-test" element={<GoogleSSOTest />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<LenderRegister />} />
+        <Route path="/deal-consent" element={<DealConsentPage />} />
         <Route path="/userType" element={<UserType />} />
         <Route path="/borrower_register" element={<BorrowerRegister />} />
         <Route
