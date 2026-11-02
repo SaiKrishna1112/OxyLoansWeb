@@ -585,6 +585,19 @@ export default function BorrowerRegister() {
         setIsOtpVerifying(true);
         localStorage.setItem("id", response.responseData.userId);
         localStorage.setItem("timemilll", new Date().getTime());
+        if (response.responseData.statusCode === 200) {
+          // Handle successful registration
+          if (sessionStorage.getItem("utmSource")) {
+            sessionStorage.removeItem("utmSource");
+          }
+          if (sessionStorage.getItem("trackingId")) {
+            sessionStorage.removeItem("trackingId");
+          }
+          if (sessionStorage.getItem("relationshipId")) {
+            sessionStorage.removeItem("relationshipId");
+          }
+        }
+
         setTimeout(() => {
           setIsOtpVerifying(false);
           setField(false);
@@ -624,9 +637,11 @@ export default function BorrowerRegister() {
     const trackingIdParam = searchParams.get("trackingId");
     const relationshipIdParam = searchParams.get("relationshipId");
     const utmSource = searchParams.get("utm");
-    if (trackingIdParam) localStorage.setItem("trackingId", trackingIdParam);
-    if (relationshipIdParam) localStorage.setItem("relationshipId", relationshipIdParam);
-    if (utmSource) localStorage.setItem("utmSource", utmSource);
+    const studentIdParam = searchParams.get("studentId");
+    if (trackingIdParam) sessionStorage.setItem("trackingId", trackingIdParam);
+    if (relationshipIdParam) sessionStorage.setItem("relationshipId", relationshipIdParam);
+    if (utmSource) sessionStorage.setItem("utmSource", utmSource);
+    if (studentIdParam) sessionStorage.setItem("studentId", studentIdParam);
     if (trackingIdParam) setTrackingId(trackingIdParam);
     if (relationshipIdParam) setRelationshipId(relationshipIdParam);
     if (utmSource) setUtmSourceParam(utmSource);
@@ -642,7 +657,7 @@ export default function BorrowerRegister() {
         ...prev,
         referrerId: "",
       }));
-      localStorage.setItem("uniqnumber", "0");
+      sessionStorage.setItem("uniqnumber", "0");
     }
   }, []);
 
@@ -820,19 +835,25 @@ export default function BorrowerRegister() {
                     </div>
                   )}
 
-                  <div style={{ textAlign: "center", margin: "8px 0 14px" }}>
+                  <div className="reg-resend-box" style={{ margin: "10px 0 14px" }}>
+                    <span className="reg-resend-prompt">Didn't receive the OTP?</span>
                     {grResendTimer > 0 ? (
-                      <span style={{ fontSize: "12px", color: "#64748b" }}>
-                        Resend OTP in <strong>{grResendTimer}s</strong>
+                      <span className="reg-timer-badge">
+                        Resend in <strong>{grResendTimer}s</strong>
                       </span>
                     ) : (
                       <button
                         type="button"
-                        className="reg-text-link-btn"
+                        className="reg-resend-btn"
                         disabled={grLoading}
                         onClick={() => sendGoogleRegMobileOtp(grMobile)}
                       >
-                        Resend OTP
+                        <FeatherIcon
+                          icon="rotate-cw"
+                          size={13}
+                          className={grLoading ? "reg-spin" : ""}
+                        />
+                        <span>{grLoading ? "Sending..." : "Resend OTP"}</span>
                       </button>
                     )}
                   </div>
@@ -1199,18 +1220,18 @@ export default function BorrowerRegister() {
                     </div>
                   </div>
                 ) : (
-                  <div className="reg-otp-step-wrap">
+                  <div className="reg-otp-container">
                     <div className="reg-otp-icon-circle">
                       <FeatherIcon icon="shield" size={26} />
                     </div>
 
-                    <h2 className="reg-otp-heading">Verify Mobile OTP</h2>
-                    <p className="reg-otp-instruction">
+                    <h2 className="reg-otp-title">Verify Mobile OTP</h2>
+                    <p className="reg-otp-subtitle">
                       We sent a 6-digit verification code to{" "}
                       <strong>+91 {registrationField.mobile}</strong>
                     </p>
 
-                    <div className="reg-otp-box-wrapper">
+                    <div className="reg-otp-inputs">
                       <OtpInput
                         ref={inputRef}
                         length={6}
@@ -1218,10 +1239,11 @@ export default function BorrowerRegister() {
                       />
                     </div>
 
-                    <div className="reg-resend-row">
+                    <div className="reg-resend-box">
+                      <span className="reg-resend-prompt">Didn't receive the OTP?</span>
                       {resendTimer > 0 ? (
-                        <span className="reg-timer-text">
-                          Resend OTP in <strong>{resendTimer}s</strong>
+                        <span className="reg-timer-badge">
+                          Resend in <strong>{resendTimer}s</strong>
                         </span>
                       ) : (
                         <button
@@ -1230,13 +1252,18 @@ export default function BorrowerRegister() {
                           disabled={loadingResend}
                           onClick={handleResendOtp}
                         >
-                          {loadingResend ? "Sending..." : "Resend OTP"}
+                          <FeatherIcon
+                            icon="rotate-cw"
+                            size={13}
+                            className={loadingResend ? "reg-spin" : ""}
+                          />
+                          <span>{loadingResend ? "Sending..." : "Resend OTP"}</span>
                         </button>
                       )}
                     </div>
 
                     {error && (
-                      <div className="reg-main-error-banner">
+                      <div className="reg-global-error">
                         <FeatherIcon icon="alert-triangle" size={15} />
                         <span>{error}</span>
                       </div>

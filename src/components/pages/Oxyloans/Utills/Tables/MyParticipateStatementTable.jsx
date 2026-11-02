@@ -377,6 +377,12 @@ const MyParticipateStatementTable = ({ data, dealInfo }) => {
       render: (v) => v ? <span style={{ color: "#27ae60", fontWeight: 500 }}>{v}</span> : <span style={{ color: "#aaa" }}>Pending</span>,
     },
     {
+      title: "Days",
+      dataIndex: "days",
+      width: 60,
+      render: (v) => <span style={{ fontSize: 14, fontWeight: 500 }}>{v}</span>,
+    },
+    {
       title: "Status",
       dataIndex: "status",
       width: 90,

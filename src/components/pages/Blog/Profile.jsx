@@ -1226,10 +1226,10 @@ const Profile = () => {
     });
   };
 
-    const triggerSavingGoogleDistance = async (userId) => {
+    const triggersavingGoogleCordinates = async (userId) => {
     try {
       await axios.post(
-        `${base_url}savingGoogleDistance`,
+        `${base_url}savingGoogleCordinates`,
         {
           userId: String(userId),
         },
@@ -1241,7 +1241,7 @@ const Profile = () => {
       );
     } catch (error) {
       // Silent background call - no user popup required.
-      console.log("savingGoogleDistance api failed", error);
+      console.log("savingGoogleCordinates api failed", error);
     }
   };
 
@@ -1312,7 +1312,7 @@ const Profile = () => {
       response.then((data) => {
         if (data.request.status === 200) {
           Success("success", "Personal Details Saved Successfully");
-          triggerSavingGoogleDistance(data.data.userId);
+          triggersavingGoogleCordinates(data.data.userId);
         } else if (data.response.data.errorCode !== "200") {
           WarningBackendApi("warning", data.response.data.errorMessage);
           // toastrSuccess(data.response.data.errorMessage, "top-right")

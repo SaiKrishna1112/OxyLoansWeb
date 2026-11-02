@@ -78,6 +78,7 @@ const MapView = ({
   totalCount,
 }) => {
   const [hoveredId, setHoveredId] = useState(null);
+  const navigate = useNavigate();
 
   const lenderPos = useMemo(() => {
     const src = allBorrowers[0];
@@ -256,7 +257,9 @@ const MapView = ({
                   eventHandlers={{
                     mouseover: () => setHoveredId(borrower.borrowerId || idx),
                     mouseout: () => setHoveredId(null),
-                    click: () => onSelect(borrower),
+                    // click: () => onSelect(borrower),
+                    click: () => navigate(`/lender/borrower-profile/${borrower.borrowerId || ""}`, { state: { borrower } }),
+
                   }}
                 >
                   {/* Hover tooltip — rich borrower card */}
@@ -370,7 +373,8 @@ const MapView = ({
                           fontSize: 12,
                           borderRadius: 6,
                         }}
-                        onClick={() => onSelect(borrower)}
+                        // onClick={() => onSelect(borrower)}
+                        onClick={() => navigate(`/lender/borrower-profile/${borrower.borrowerId || ""}`, { state: { borrower } })}
                       >
                         <i className="fa fa-eye me-1" />
                         View Details
@@ -444,7 +448,8 @@ const MapView = ({
                       setHoveredId(borrower.borrowerId || idx)
                     }
                     onMouseLeave={() => setHoveredId(null)}
-                    onClick={() => onSelect(borrower)}
+                    // onClick={() => onSelect(borrower)}
+                    onClick={() => navigate(`/lender/borrower-profile/${borrower.borrowerId || ""}`, { state: { borrower } })}
                   >
                     <div
                       style={{
@@ -472,8 +477,15 @@ const MapView = ({
                         className="fw-semibold text-truncate"
                         style={{ fontSize: 13, color: "#1a1f36" }}
                       >
-                        {borrower.borrowerName || `Borrower #${idx + 1}`}
+                       BR{borrower.borrowerId || `Borrower #${idx + 1}`}
                       </div>
+                      <div style={{
+                          fontSize: 11,
+                          color: "#6c757d",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 3,
+                        }}> </div>
                       <div
                         style={{
                           fontSize: 11,

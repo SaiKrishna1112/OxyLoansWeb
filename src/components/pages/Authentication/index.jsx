@@ -13,6 +13,7 @@ import { toastrSuccess, toastrWarning } from "../Base UI Elements/Toast";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import { handleStep2PendingFromLogin } from "./step2Handler";
+import VersionBadge from "./VersionBadge";
 import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
@@ -86,7 +87,14 @@ const Login = () => {
         setGoogleModal({ status: "NOT_FOUND", email });
       }
     } catch (err) {
+      // const raw = err?.response?.data?.errorMessage || "Could not verify Google account. Please try standard login.";
       const raw = err?.response?.data?.errorMessage || "Could not verify Google account. Please try standard login.";
+      const step2 = /step 2 is pending\s*=\s*(\d+)\s*=/i.exec(raw);
+      if (step2) {
+        toastrSuccess("Please complete your registration to continue.");
+        history(`/register_active_proceed?id=${step2[1]}&time=${Date.now()}&signupType=GOOGLE`);
+        return;
+      }
       WarningBackendApi("Google Login Failed", cleanGoogleLoginError(raw));
     } finally {
       setGoogleLoading(false);
@@ -366,6 +374,8 @@ const Login = () => {
             <span>Don't have an account? </span>
             <Link to="/register">Sign Up Now →</Link>
           </div>
+
+          <VersionBadge />
         </div>
       </div>
 

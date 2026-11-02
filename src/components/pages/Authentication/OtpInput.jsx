@@ -41,6 +41,8 @@ const OtpInput = forwardRef(function OtpInput(
         <input
           key={index}
           type="text"
+          inputMode="numeric"
+          autoComplete="one-time-code"
           maxLength="1"
           value={value}
           onChange={(e) => handleChange(index, e.target.value)}

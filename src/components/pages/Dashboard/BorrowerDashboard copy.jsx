@@ -632,7 +632,7 @@ const BorrowerDashboard = () => {
           response?.data?.latitude == null ||
           response?.data?.longitude == null
         ) {
-          triggerSavingGoogleDistance(
+          triggersavingGoogleCordinates(
             response?.data?.userId || sessionStorage.getItem("userId"),
           );
         }
@@ -645,10 +645,10 @@ const BorrowerDashboard = () => {
       });
   };
 
-  const triggerSavingGoogleDistance = async (userId) => {
+  const triggersavingGoogleCordinates = async (userId) => {
     try {
       await axios.post(
-        `${base_url}savingGoogleDistance`,
+        `${base_url}savingGoogleCordinates`,
         {
           userId: String(userId),
         },
@@ -660,7 +660,7 @@ const BorrowerDashboard = () => {
       );
     } catch (error) {
       // Silent background call - no user popup required.
-      console.log("savingGoogleDistance api failed", error);
+      console.log("savingGoogleCordinates api failed", error);
     }
   };
 

@@ -165,10 +165,10 @@ const InstantLoanStepBankDetails = ({
         <div>
           <div className="d-flex align-items-center gap-2 mb-1">
             <span className="badge badge-fintech-primary-soft px-3 py-1 rounded-pill small">
-              Phase 6 • Disbursement Bank Verification
+              Phase 7 • Disbursement Bank Verification
             </span>
             <span className="badge badge-fintech-neutral px-2 py-1 rounded-pill small">
-              Step 6 of 6
+              Step 7 of 7
             </span>
           </div>
           <h4 className="fw-bold text-dark mb-1">Disbursement Bank Account & Penny Drop</h4>

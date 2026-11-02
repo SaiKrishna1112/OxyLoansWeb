@@ -299,6 +299,42 @@ export const isBankNameMatching = (bankHolderName, borrowerName) => {
   return hasLongTokenMatch || matchRatio >= 0.5;
 };
 
+// Check if payslip/document name matches the borrower's First Name
+export const isFirstNameMatching = (docName, borrowerFirstName) => {
+  if (!docName || !borrowerFirstName) return false;
+
+  const clean = (str) =>
+    str
+      .toString()
+      .toUpperCase()
+      .replace(/[^A-Z0-9\s]/g, " ")
+      .replace(/\b(MR|MRS|MS|DR|SHRI|SMT|M\/S)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // Extract first name (first word) only
+  const targetFirstName = clean(borrowerFirstName).split(/\s+/)[0] || "";
+  if (!targetFirstName || targetFirstName.length < 2) return false;
+
+  const docClean = clean(docName);
+  if (!docClean) return false;
+
+  const docTokens = docClean.split(/\s+/).filter((t) => t.length >= 2);
+
+  // 1. Direct token match (first name exists as a separate word/token)
+  if (docTokens.includes(targetFirstName)) {
+    return true;
+  }
+
+  // 2. Token starts with first name (e.g., prefix match)
+  if (targetFirstName.length >= 4 && docTokens.some((t) => t.startsWith(targetFirstName) || targetFirstName.startsWith(t))) {
+    return true;
+  }
+
+  // 3. Fallback to standard bank name matching with first name
+  return isBankNameMatching(docName, targetFirstName);
+};
+
 // Master validation function for Personal Details
 export const validateBorrowerPersonalDetails = (profileData, category = "SALARIED") => {
   // 1. First Name
@@ -389,6 +425,74 @@ export const validateBorrowerPersonalDetails = (profileData, category = "SALARIE
 };
 
 /**
+ * Normalizes any format of borrower reference records into a clean array
+ */
+export const normalizeReferenceList = (raw) => {
+  if (!raw) return [];
+  let list = [];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (Array.isArray(raw.referenceDto)) {
+    list = raw.referenceDto;
+  } else if (Array.isArray(raw.referenceDetailsResponseDto)) {
+    list = raw.referenceDetailsResponseDto;
+  } else if (Array.isArray(raw.references)) {
+    list = raw.references;
+  } else if (typeof raw === "object") {
+    const legacyRefs = [];
+    for (let i = 1; i <= 8; i++) {
+      const val = raw[`reference${i}`];
+      if (val && String(val).trim()) {
+        const str = String(val).trim();
+        const phoneMatch = str.match(/[6-9]\d{9}/);
+        const phone = phoneMatch ? phoneMatch[0] : "";
+        let name = str.replace(/[6-9]\d{9}/, "").replace(/[-–()]/g, "").trim();
+        if (!name) name = `Reference ${i}`;
+        legacyRefs.push({
+          name,
+          referenceNumber: phone || str,
+          address: "",
+          landMark: "",
+        });
+      }
+    }
+    if (legacyRefs.length > 0) {
+      list = legacyRefs;
+    }
+  }
+
+  return list.map((item) => ({
+    name: item.name || item.referenceName || "",
+    referenceNumber: (item.referenceNumber || item.mobileNumber || item.number || "")
+      .toString()
+      .replace(/\D/g, "")
+      .slice(0, 10),
+    address: item.address || "",
+    landMark: item.landMark || item.landmark || "",
+  }));
+};
+
+/**
+ * Normalizes nominee details from API response or profile object
+ */
+export const normalizeNomineeDetails = (nominee) => {
+  if (!nominee || typeof nominee !== "object") return null;
+
+  return {
+    ...nominee,
+    nomineeName: nominee.nomineeName || nominee.name || nominee.nominee_name || "",
+    relation: nominee.relation || nominee.nomineeRelation || "",
+    nomineeMobile: nominee.nomineeMobile || nominee.mobileNumber || nominee.mobile || "",
+    nomineeEmail: nominee.nomineeEmail || nominee.email || nominee.emial || "",
+    accountNo: nominee.accountNo || nominee.accountNumber || "",
+    nomineeIfsc: nominee.nomineeIfsc || nominee.ifscCode || "",
+    bank: nominee.bank || nominee.bankName || "",
+    branch: nominee.branch || nominee.branchName || "",
+    nomineecity: nominee.nomineecity || nominee.city || "",
+  };
+};
+
+/**
  * Calculates Borrower Profile Completeness Percentage (0 - 100%)
  * Rule: Profile completeness must be at least 90% to raise a loan request.
  *
@@ -459,11 +563,17 @@ export const calculateBorrowerProfileCompleteness = (
   else missing.push("Contact Details (Mobile & Email)");
   addBreakdownItem("Contact Details", 5, hasContact ? 5 : 0, hasContact, "Contact Details (Mobile & Email)");
 
-  const hasPan = Boolean(profile.panNumber?.trim());
   const isPanVerified = Boolean(
     profile.panVerified === true ||
     profile.panStatus?.toUpperCase() === "VERIFIED" ||
-    profile.isPanVerified
+    profile.isPanVerified ||
+    profile.kycDocs?.PanCard?.downloadUrl ||
+    profile.kycDocs?.PanCard ||
+    (typeof window !== "undefined" && sessionStorage.getItem("isPanVerified") === "true")
+  );
+  const hasPan = Boolean(
+    (profile.panNumber || profile.pan || profile.panCardNumber)?.trim() ||
+    isPanVerified
   );
   if (hasPan) {
     score += isPanVerified ? 5 : 3;
@@ -557,83 +667,165 @@ export const calculateBorrowerProfileCompleteness = (
   }
 
   // 5. Emergency Reference Contacts (15%)
+  const effectiveReferences =
+    references !== null && references !== undefined
+      ? references
+      : profile.references || profile.referenceDto || profile.referenceDetailsResponseDto;
+
   let refCount = 0;
-  if (Array.isArray(references)) {
-    refCount = references.filter(
-      (r) => r.name?.trim() && r.referenceNumber?.toString().replace(/\D/g, "").length === 10
+  const parsedRefs = normalizeReferenceList(effectiveReferences);
+  if (parsedRefs.length > 0) {
+    refCount = parsedRefs.filter(
+      (r) =>
+        (r.name || r.referenceName)?.trim() &&
+        (r.referenceNumber || r.mobileNumber || r.number)?.toString().replace(/\D/g, "").length === 10
     ).length;
-  } else if (references && typeof references === "object") {
-    const list = references.referenceDto || references.referenceDetailsResponseDto || [];
-    if (Array.isArray(list)) {
-      refCount = list.filter(
-        (r) =>
-          (r.name || r.referenceName)?.trim() &&
-          (r.referenceNumber || r.mobileNumber)?.toString().replace(/\D/g, "").length === 10
-      ).length;
-    } else {
-      for (let i = 1; i <= 8; i++) {
-        const val = references[`reference${i}`];
-        if (val && String(val).match(/[6-9]\d{9}/)) refCount++;
-      }
-    }
-  } else if (profile.referenceDto || profile.referenceDetailsResponseDto) {
-    const list = profile.referenceDto || profile.referenceDetailsResponseDto;
-    if (Array.isArray(list)) {
-      refCount = list.filter(
-        (r) =>
-          (r.name || r.referenceName)?.trim() &&
-          (r.referenceNumber || r.mobileNumber)?.toString().replace(/\D/g, "").length === 10
-      ).length;
-    } else if (typeof list === "object") {
-      for (let i = 1; i <= 8; i++) {
-        const val = list[`reference${i}`];
-        if (val && String(val).match(/[6-9]\d{9}/)) refCount++;
-      }
+  } else if (profile && typeof profile === "object") {
+    for (let i = 1; i <= 8; i++) {
+      const val = profile[`reference${i}`];
+      if (val && String(val).match(/[6-9]\d{9}/)) refCount++;
     }
   }
 
   if (refCount >= 2) {
     score += 15;
   } else if (refCount === 1) {
-    score += 7;
+    score += 8;
     missing.push("Second Emergency Reference Contact (2 required)");
   } else {
     missing.push("Emergency Reference Contacts (Minimum 2 required)");
   }
-  addBreakdownItem("Emergency References (2 required)", 15, refCount >= 2 ? 15 : refCount === 1 ? 7 : 0, refCount >= 2, refCount === 1 ? "Second Emergency Reference Contact (2 required)" : "Emergency Reference Contacts (Minimum 2 required)");
+  addBreakdownItem(
+    "Emergency References (2 required)",
+    15,
+    refCount >= 2 ? 15 : refCount === 1 ? 8 : 0,
+    refCount >= 2,
+    refCount === 1
+      ? "Second Emergency Reference Contact (2 required)"
+      : "Emergency Reference Contacts (Minimum 2 required)"
+  );
 
-  // 6. Nominee Details (5%)
-  const nom = nominee || {
-    nomineeName: profile.nomineeName,
-    nomineeMobile: profile.nomineeMobile,
+  // 6. Nominee Details (10%)
+  const effectiveNominee =
+    nominee !== null && nominee !== undefined
+      ? nominee
+      : profile.nominee || profile.nomineeDetails;
+
+  const nom = normalizeNomineeDetails(effectiveNominee) || {
+    nomineeName: profile.nomineeName || profile.nominee_name || "",
+    nomineeMobile: profile.nomineeMobile || profile.nomineeMobileNumber || "",
+    relation: profile.nomineeRelation || profile.relation || "",
   };
-  const hasNominee = Boolean(nom?.nomineeName?.trim() && (nom?.nomineeMobile?.trim() || nom?.relation?.trim()));
-  if (hasNominee) {
-    score += 5;
-  } else {
-    missing.push("Nominee Details");
+  const hasNomineeName = Boolean((nom?.nomineeName || nom?.name)?.trim());
+  const hasNomineeContact = Boolean((nom?.nomineeMobile || nom?.mobileNumber || nom?.relation)?.trim());
+  const nomEarned = (hasNomineeName ? 5 : 0) + (hasNomineeContact ? 5 : 0);
+  score += nomEarned;
+  if (!hasNomineeName || !hasNomineeContact) {
+    missing.push("Nominee Details (Name & Contact)");
   }
-  addBreakdownItem("Nominee Details", 5, hasNominee ? 5 : 0, hasNominee);
+  addBreakdownItem("Nominee Details", 10, nomEarned, hasNomineeName && hasNomineeContact, "Nominee Name, Relation & Mobile");
 
-  // 7. Aadhaar / KYC Document Status (5%)
-  const hasAadhaarOrKyc = Boolean(profile.aadharNumber || profile.kycStatus === true);
-  if (hasAadhaarOrKyc) {
-    score += 5;
-  } else {
-    missing.push("Aadhaar Number / KYC Document");
-  }
-  addBreakdownItem("Aadhaar / KYC Document", 5, hasAadhaarOrKyc ? 5 : 0, hasAadhaarOrKyc);
+  // 7. KYC & Verification Documents (15%)
+  // Check Aadhaar (5%), Current Payslip (5%), Bank Statement (5%)
+  const docs = profile.kycDocs || {};
+  const hasAadhaar = Boolean(
+    profile.kycStatus === true ||
+    profile.aadharNumber ||
+    profile.aadharDoc ||
+    profile.aadhar ||
+    docs.aadhar?.downloadUrl ||
+    docs.aadhar?.documentName ||
+    docs.aadhar ||
+    docs.Aadhar ||
+    docs.AADHAR
+  );
+  if (hasAadhaar) score += 5;
+  else missing.push("Aadhaar Card Document");
+  addBreakdownItem("Aadhaar Document", 5, hasAadhaar ? 5 : 0, hasAadhaar, "Aadhaar Card / Number");
 
-  const totalPossiblePoints = shouldValidateBank ? 100 : 85;
-  const finalPercentage = Math.min(100, Math.round((score / totalPossiblePoints) * 100));
+  const isStudent = category === "STUDENT";
+  const hasPayslip = Boolean(
+    profile.kycStatus === true ||
+    (isStudent
+      ? docs.universityOfferLetter?.downloadUrl || docs.feeReceipt?.downloadUrl || docs.universityOfferLetter || docs.feeReceipt || profile.universityName
+      : docs.paySlips?.downloadUrl || docs.paySlips?.documentName || docs.paySlips || docs.PAYSLIPS || profile.paySlips?.downloadUrl || profile.paySlips || profile.payslipVerification?.verified)
+  );
+  if (hasPayslip) score += 5;
+  else missing.push(isStudent ? "University Offer Letter / Fee Receipt" : "Current Payslip");
+  addBreakdownItem(
+    isStudent ? "University Offer Letter" : "Current Payslip",
+    5,
+    hasPayslip ? 5 : 0,
+    hasPayslip,
+    isStudent ? "University Offer Letter / Fee Receipt" : "Current Payslip"
+  );
+
+  const hasBankStatement = Boolean(
+    profile.kycStatus === true ||
+    docs.bankStatement?.downloadUrl ||
+    docs.bankStatement?.documentName ||
+    docs.bankStatement ||
+    docs.BANKSTATEMENT ||
+    profile.bankStatement?.downloadUrl ||
+    profile.bankStatement ||
+    profile.salaryVerification?.isMatch ||
+    profile.bankAnalysisData ||
+    profile.borrowerSalaryData?.monthlyAmount > 0 ||
+    profile.bankDetailsInfo === true
+  );
+  if (hasBankStatement) score += 5;
+  else missing.push("Bank Statement Document");
+  addBreakdownItem("Bank Statement", 5, hasBankStatement ? 5 : 0, hasBankStatement, "Bank Statement Document");
+
+  const totalPossiblePoints = 100;
+  const finalPercentage = Math.min(100, Math.round(score));
   const groupDefinitions = [
-    { label: "Personal & Identity", points: 30, labels: ["Full Name", "Date of Birth", "Gender", "Parents' Names", "Marital / Spouse Details", "Contact Details", "PAN Card & Verification"] },
-    { label: "Residence & Address", points: 15, labels: ["Residential Address", "City & State", "Valid Pincode"] },
-    { label: "Employment / Education", points: 15, labels: ["Employment Details", "Education Details"] },
-    ...(shouldValidateBank ? [{ label: "Bank Account", points: 15, labels: ["Bank Account Linking"] }] : []),
-    { label: "Emergency References", points: 15, labels: ["Emergency References (2 required)"] },
-    { label: "Nominee", points: 5, labels: ["Nominee Details"] },
-    { label: "Aadhaar / KYC", points: 5, labels: ["Aadhaar / KYC Document"] },
+    {
+      label: "Personal & Identity",
+      points: 30,
+      labels: [
+        "Full Name",
+        "Date of Birth",
+        "Gender",
+        "Parents' Names",
+        "Marital / Spouse Details",
+        "Contact Details",
+        "PAN Card & Verification",
+      ],
+    },
+    {
+      label: "Residence & Address",
+      points: 15,
+      labels: ["Residential Address", "City & State", "Valid Pincode"],
+    },
+    {
+      label: "Employment / Education",
+      points: 15,
+      labels: ["Employment Details", "Education Details"],
+    },
+    ...(shouldValidateBank
+      ? [{ label: "Bank Account", points: 15, labels: ["Bank Account Linking"] }]
+      : []),
+    {
+      label: "Emergency References",
+      points: 15,
+      labels: ["Emergency References (2 required)"],
+    },
+    {
+      label: "Nominee",
+      points: 10,
+      labels: ["Nominee Details"],
+    },
+    {
+      label: "KYC Documents",
+      points: 15,
+      labels: [
+        "Aadhaar Document",
+        "Current Payslip",
+        "University Offer Letter",
+        "Bank Statement",
+      ],
+    },
   ];
   const completionGroups = groupDefinitions.map((group) => ({
     label: group.label,
@@ -843,7 +1035,8 @@ export const KNOWN_COMPANY_ALIASES = [
 export const validatePayslipDocument = async (
   analysisData = {},
   declaredCompany = "",
-  file = null
+  file = null,
+  declaredUserName = ""
 ) => {
   const cleanDeclaredCompany = (declaredCompany || "").trim();
   const resData = analysisData?.data?.data || analysisData?.data || analysisData || {};
@@ -1011,21 +1204,22 @@ export const validatePayslipDocument = async (
     detectedDateStr = `${monthDisplayNames[detectedMonth]} ${detectedYear}`;
     monthsDifference = (currentYear - detectedYear) * 12 + (currentMonth - detectedMonth);
 
-    if (monthsDifference > 6) {
+    // Current payslips rule: within last 1-3 months (current quarter)
+    if (monthsDifference > 3) {
       isDateValid = false;
-      dateError = `The payslip is dated ${detectedDateStr} (more than 6 months old). Please upload a recent payslip from the past 6 months.`;
+      dateError = `The payslip is dated ${detectedDateStr} (older than 3 months). Please upload your current / latest payslip.`;
     } else if (monthsDifference < -1) {
       isDateValid = false;
-      dateError = `The payslip has an invalid future date (${detectedDateStr}). Please upload an issued payslip from the past 6 months.`;
+      dateError = `The payslip has an invalid future date (${detectedDateStr}). Please upload an issued current payslip.`;
     } else {
       isDateValid = true;
     }
-  } else if (resData.isPast6Months === true || resData.pastSixMonths === true || resData.isWithin6Months === false || resData.withinSixMonths === false) {
+  } else if (resData.isPast6Months === true || resData.pastSixMonths === true || resData.isWithin6Months === false || resData.withinSixMonths === false || resData.isCurrentPayslip === false) {
     isDateValid = false;
-    dateError = "The uploaded payslip is older than 6 months. Please upload a recent payslip from the past 6 months.";
-  } else if (resData.isWithin6Months === true || resData.withinSixMonths === true) {
+    dateError = "The uploaded payslip is not a current payslip. Please upload your current payslip.";
+  } else if (resData.isWithin6Months === true || resData.withinSixMonths === true || resData.isCurrentPayslip === true || resData.currentPayslip === true) {
     isDateValid = true;
-    detectedDateStr = "Within last 6 months";
+    detectedDateStr = "Current Payslip";
   } else {
     // If not identifiable from OCR, allow confirmation instead of hard rejection
     isDateValid = false;
@@ -1123,7 +1317,93 @@ export const validatePayslipDocument = async (
     companyError = `Employer mismatch: Your profile employer is "${cleanDeclaredCompany}", but the payslip indicates "${detectedCompany || 'Unknown Employer'}".`;
   }
 
-  // 3. EXTRACT & VALIDATE SALARY
+  // 3. EXTRACT & VALIDATE USER / EMPLOYEE FIRST NAME (First Name Only)
+  const rawDeclared = (
+    declaredUserName ||
+    resData.declaredUserName ||
+    resData.borrowerFirstName ||
+    resData.firstName ||
+    analysisData?.borrowerFirstName ||
+    analysisData?.firstName ||
+    analysisData?.borrowerName ||
+    analysisData?.userName ||
+    ""
+  ).toString().trim();
+
+  // Extract first name only (first word, e.g. 'Sai' from 'Sai Vikas')
+  const cleanDeclaredFirstName = rawDeclared ? rawDeclared.split(/\s+/)[0].trim() : "";
+
+  const detectedName = (
+    resData.employeeName ||
+    resData.employee_name ||
+    resData.empName ||
+    resData.emp_name ||
+    resData.userName ||
+    resData.name ||
+    resData.candidateName ||
+    resData.staffName ||
+    resData.employee ||
+    resData.accountHolder ||
+    resData.accountHolderName ||
+    resData.employeeDetails?.name ||
+    resData.employeeDetails?.employeeName ||
+    ""
+  ).toString().trim();
+
+  let isNameMatch = false;
+  let nameError = "";
+  let matchedNameInfo = "";
+
+  if (!cleanDeclaredFirstName) {
+    isNameMatch = true;
+  } else if (resData.nameMatch === true || resData.nameVerified === true || resData.isNameMatch === true || resData.isNameVerified === true) {
+    isNameMatch = true;
+    matchedNameInfo = "Employee name verified by analysis service.";
+  } else if (detectedName) {
+    if (isFirstNameMatching(detectedName, cleanDeclaredFirstName)) {
+      isNameMatch = true;
+      matchedNameInfo = `Employee name "${detectedName}" matches first name "${cleanDeclaredFirstName}".`;
+    } else {
+      // Fallback: Check if document raw text contains declared first name
+      if (fileBufferRawText) {
+        const normDocText = fileBufferRawText.toUpperCase().replace(/[^A-Z0-9\s]/g, " ");
+        const docTokens = normDocText.split(/\s+/);
+        const targetToken = cleanDeclaredFirstName.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+        if (targetToken && (docTokens.includes(targetToken) || (targetToken.length >= 4 && normDocText.includes(targetToken)))) {
+          isNameMatch = true;
+          matchedNameInfo = `First name "${cleanDeclaredFirstName}" confirmed inside document text.`;
+        }
+      }
+
+      if (!isNameMatch) {
+        isNameMatch = false;
+        nameError = `Employee first name mismatch: Your profile first name is "${cleanDeclaredFirstName}", but the payslip indicates "${detectedName}". Please upload your own payslip.`;
+      }
+    }
+  } else {
+    // No explicit employee name field detected in OCR response
+    if (fileBufferRawText) {
+      const normDocText = fileBufferRawText.toUpperCase().replace(/[^A-Z0-9\s]/g, " ");
+      const docTokens = normDocText.split(/\s+/);
+      const targetToken = cleanDeclaredFirstName.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+      if (targetToken && (docTokens.includes(targetToken) || (targetToken.length >= 4 && normDocText.includes(targetToken)))) {
+        isNameMatch = true;
+        matchedNameInfo = `First name "${cleanDeclaredFirstName}" confirmed inside document text.`;
+      } else {
+        isNameMatch = false;
+        nameError = `Could not verify your first name "${cleanDeclaredFirstName}" on this payslip. Please ensure your name is clearly visible.`;
+      }
+    } else {
+      isNameMatch = false;
+      nameError = `Could not detect your first name "${cleanDeclaredFirstName}" from document text.`;
+    }
+  }
+
+  const needsNameConfirmation = !isNameMatch && !detectedName && Boolean(cleanDeclaredFirstName);
+
+  // 4. EXTRACT & VALIDATE SALARY
   const rawSalary =
     resData.salary != null
       ? resData.salary
@@ -1155,10 +1435,11 @@ export const validatePayslipDocument = async (
     salaryError = "Could not detect a valid salary amount from this payslip. Please ensure your net/monthly pay is clearly visible.";
   }
 
-  const isValid = isDateValid && isCompanyMatch && detectedSalary > 0;
+  const isValid = isDateValid && isCompanyMatch && isNameMatch && detectedSalary > 0;
   const errors = [];
   if (!isDateValid && dateError) errors.push(dateError);
   if (!isCompanyMatch && companyError) errors.push(companyError);
+  if (!isNameMatch && nameError) errors.push(nameError);
   if (!detectedSalary && salaryError) errors.push(salaryError);
 
   const needsParentConfirmation = !isCompanyMatch && Boolean(detectedCompany && cleanDeclaredCompany);
@@ -1168,12 +1449,19 @@ export const validatePayslipDocument = async (
     isValid,
     isDateValid,
     isCompanyMatch,
+    isNameMatch,
+    detectedName: detectedName || (isNameMatch ? cleanDeclaredFirstName : ""),
+    declaredFirstName: cleanDeclaredFirstName,
+    declaredUserName: cleanDeclaredFirstName,
+    nameMatch: isNameMatch,
+    needsNameConfirmation,
     detectedSalary,
     detectedDate: detectedDateStr,
     detectedCompany: detectedCompany || cleanDeclaredCompany,
     declaredCompany: cleanDeclaredCompany,
     monthsAgo: monthsDifference,
     matchedAliasInfo,
+    matchedNameInfo,
     needsParentConfirmation,
     suggestedParentCompany: detectedCompany,
     needsDateConfirmation,
@@ -1265,5 +1553,150 @@ export const verifySalaryFromBankStatement = (declaredSalary, bankAnalysis) => {
       isMatch: false,
     };
   }
+};
+
+/**
+ * Validate Bank Statement Analysis API Response
+ * Endpoint: POST /v1/user/borrower/:borrowerId/analyze
+ * Checks underwriting decision, salary detection, customer name match, tamper assessment, and statement duration.
+ */
+export const validateBankStatementAnalysis = (analysisData, profileData = {}) => {
+  if (!analysisData) {
+    return {
+      isValid: false,
+      errors: ["Bank statement could not be analyzed. Please ensure you upload a valid bank statement PDF."],
+      warnings: [],
+      salaryDetected: false,
+      detectedSalary: 0,
+      customerName: "",
+      bankName: "",
+      accountNumberMasked: "",
+    };
+  }
+
+  // Handle nested formats (res.data.data, res.data, res)
+  const root = analysisData?.data || analysisData;
+  const overview = root?.overview || root?.report?.overview || root || {};
+  const keyIndicators = overview?.keyIndicators || root?.keyIndicators || {};
+  const eligibility = overview?.eligibility || root?.eligibility || {};
+  const report = root?.report || overview?.report || {};
+  const tamperAssessment = report?.tamperAssessment || overview?.tamperAssessment || {};
+
+  const errors = [];
+  const warnings = [];
+
+  // 1. TAMPER / FRAUD CHECK
+  const isTampered = Boolean(
+    tamperAssessment?.isTampered ||
+    tamperAssessment?.tamperRisk === "HIGH" ||
+    tamperAssessment?.fraudDetected
+  );
+  if (isTampered) {
+    errors.push(
+      "Document Integrity Alert: The statement appears to be modified, edited, or tampered. Please provide an authentic, unmodified PDF downloaded directly from your bank's netbanking portal."
+    );
+  }
+
+  // 2. UNDERWRITING DECISION CHECK
+  const decision = (overview?.decision || eligibility?.decision || "").toUpperCase();
+  if (decision === "REJECT" || decision === "REJECTED") {
+    const factors = eligibility?.decisionFactors?.length
+      ? eligibility.decisionFactors.join(", ")
+      : (overview?.underwritingNotes || "Statement does not meet underwriting criteria.");
+    errors.push(`Bank statement underwriting check rejected: ${factors}`);
+  }
+
+  // 3. ACCOUNT HOLDER NAME CHECK
+  const detectedCustomerName = (overview?.customerName || "").trim();
+  const profileFirstName = (profileData?.firstName || "").trim();
+  const profileLastName = (profileData?.lastName || "").trim();
+  const profileFullName = `${profileFirstName} ${profileLastName}`.trim();
+
+  let isNameMatch = true;
+  let nameWarning = null;
+  let needsNameConfirmation = false;
+
+  if (detectedCustomerName && (profileFirstName || profileLastName)) {
+    // Clean and remove common Indian title prefixes (MR, MRS, MS, DR, etc.)
+    const cleanTitles = (str) =>
+      str.toUpperCase()
+        .replace(/\b(MR|MRS|MS|MISS|DR|PROF|SHRI|SHREE|SMT|MD|M\/S)\b/gi, "")
+        .replace(/[^A-Z0-9\s]/g, " ")
+        .trim();
+
+    const normDetected = cleanTitles(detectedCustomerName);
+    const normProfile = cleanTitles(profileFullName);
+
+    const detectedTokens = normDetected.split(/\s+/).filter((t) => t.length >= 3);
+    const profileTokens = normProfile.split(/\s+/).filter((t) => t.length >= 3);
+
+    // Check if at least one meaningful name token matches
+    const tokenMatch = profileTokens.some((pt) =>
+      detectedTokens.some((dt) => dt.includes(pt) || pt.includes(dt))
+    );
+
+    if (!tokenMatch && profileTokens.length > 0 && detectedTokens.length > 0) {
+      isNameMatch = false;
+      needsNameConfirmation = true;
+      nameWarning = `Account holder name on statement is "${detectedCustomerName}", which differs from your profile name "${profileFullName}".`;
+    }
+  }
+
+  // 4. SALARY DETECTION CHECK
+  const detectedSalary = Number(
+    keyIndicators?.monthlySalary ||
+    overview?.monthlySalary ||
+    overview?.salary ||
+    0
+  );
+  const salaryDetected = Boolean(overview?.salaryDetected || detectedSalary > 0);
+
+  const employmentStatus = (profileData?.category || profileData?.employmentStatus || overview?.employmentStatus || "").toUpperCase();
+  const isSalaried = employmentStatus.includes("SALARIED");
+
+  if (isSalaried && !salaryDetected) {
+    warnings.push(
+      "No regular salary credits were detected in this bank statement. For salaried borrowers, regular salary credits from your employer are required for optimal loan eligibility."
+    );
+  }
+
+  // 5. STATEMENT DURATION / PERIOD CHECK
+  const periodDays = Number(overview?.periodDays || 0);
+  if (periodDays > 0 && periodDays < 60) {
+    warnings.push(
+      `Statement period is only ${periodDays} days. A statement covering at least 90 to 180 days (3 to 6 months) is recommended for accurate risk assessment.`
+    );
+  }
+
+  // 6. OVERALL VALIDITY
+  const isValid = errors.length === 0;
+
+  return {
+    isValid,
+    errors,
+    warnings,
+    salaryDetected,
+    detectedSalary,
+    isNameMatch,
+    needsNameConfirmation,
+    nameWarning,
+    customerName: detectedCustomerName,
+    bankName: overview?.bankName || "",
+    accountNumberMasked: overview?.accountNumberMasked || "",
+    accountType: overview?.accountType || "",
+    ifscCode: overview?.ifscCode || "",
+    periodStart: overview?.periodStart || "",
+    periodEnd: overview?.periodEnd || "",
+    periodDays: periodDays || 0,
+    riskLevel: overview?.riskLevel || "LOW",
+    riskScore: overview?.riskScore != null ? overview.riskScore : null,
+    decision: decision || "APPROVE",
+    decisionFactors: eligibility?.decisionFactors || [],
+    underwritingNotes: overview?.underwritingNotes || "",
+    keyIndicators,
+    eligibility,
+    rawOverview: overview,
+    report,
+  };
 };
 

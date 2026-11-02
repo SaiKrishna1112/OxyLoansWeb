@@ -110,6 +110,15 @@ export default function OpenMarketLoanListings() {
                 <li className="breadcrumb-item active">Browse Loan Requests</li>
               </ul>
             </div>
+            <div className="col-auto">
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold"
+                onClick={() => navigate('/rate-confirmation-variance')}
+              >
+                <i className="fa-solid fa-scale-balanced me-1"></i> Rate Confirmation & Variance
+              </button>
+            </div>
           </div>
         </div>
 

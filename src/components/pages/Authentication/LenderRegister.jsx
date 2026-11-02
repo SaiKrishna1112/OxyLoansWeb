@@ -589,6 +589,18 @@ export default function LenderRegister() {
         localStorage.setItem("id", response.responseData.userId);
         const mill1 = new Date().getTime();
         localStorage.setItem("timemilll", mill1);
+        if (response.responseData.statusCode === 200) {
+          // Handle successful registration
+          if (sessionStorage.getItem("utmSource")) {
+            sessionStorage.removeItem("utmSource");
+          }
+          if (sessionStorage.getItem("trackingId")) {
+            sessionStorage.removeItem("trackingId");
+          }
+          if (sessionStorage.getItem("relationshipId")) {
+            sessionStorage.removeItem("relationshipId");
+          }
+        }
         setTimeout(() => {
           setIsOtpVerifying(false);
           setfield(false);
@@ -635,11 +647,11 @@ export default function LenderRegister() {
     const trackingIdParam = searchParams.get("trackingId");
     const relationshipIdParam = searchParams.get("relationshipId");
     const utmSourceParam = searchParams.get("utm");
-    if (trackingIdParam) localStorage.setItem("trackingId", trackingIdParam);
-    if (relationshipIdParam) localStorage.setItem("relationshipId", relationshipIdParam);
+    if (trackingIdParam) sessionStorage.setItem("trackingId", trackingIdParam);
+    if (relationshipIdParam) sessionStorage.setItem("relationshipId", relationshipIdParam);
     if (trackingIdParam) setTrackingId(trackingIdParam);
     if (relationshipIdParam) setRelationshipId(relationshipIdParam);
-    if (utmSourceParam) localStorage.setItem("utmSource", utmSourceParam);
+    if (utmSourceParam) sessionStorage.setItem("utmSource", utmSourceParam);
     setUtmSourceParam(utmSourceParam || null);
 
     if (refParam) {
@@ -653,7 +665,7 @@ export default function LenderRegister() {
         ...prev,
         referrerId: "",
       }));
-      localStorage.setItem("uniqnumber", "0");
+      sessionStorage.setItem("uniqnumber", "0");
     }
   }, []);
 
@@ -827,19 +839,25 @@ export default function LenderRegister() {
                     </div>
                   )}
 
-                  <div className="reg-resend-box" style={{ textAlign: "center", margin: "10px 0" }}>
+                  <div className="reg-resend-box" style={{ margin: "10px 0 14px" }}>
+                    <span className="reg-resend-prompt">Didn't receive the OTP?</span>
                     {grResendTimer > 0 ? (
-                      <span style={{ color: "#64748b", fontSize: "12px" }}>
-                        Resend OTP in <strong>{grResendTimer}s</strong>
+                      <span className="reg-timer-badge">
+                        Resend in <strong>{grResendTimer}s</strong>
                       </span>
                     ) : (
                       <button
                         type="button"
-                        className="reg-resend-link"
+                        className="reg-resend-btn"
                         onClick={() => sendGoogleRegMobileOtp(grMobile)}
                         disabled={grLoading}
                       >
-                        {grLoading ? "Sending..." : "Resend OTP"}
+                        <FeatherIcon
+                          icon="rotate-cw"
+                          size={13}
+                          className={grLoading ? "reg-spin" : ""}
+                        />
+                        <span>{grLoading ? "Sending..." : "Resend OTP"}</span>
                       </button>
                     )}
                   </div>
@@ -1233,18 +1251,24 @@ export default function LenderRegister() {
                     </div>
 
                     <div className="reg-resend-box">
+                      <span className="reg-resend-prompt">Didn't receive the OTP?</span>
                       {resendTimer > 0 ? (
-                        <span style={{ color: "#64748b" }}>
-                          Resend OTP in <strong>{resendTimer}s</strong>
+                        <span className="reg-timer-badge">
+                          Resend in <strong>{resendTimer}s</strong>
                         </span>
                       ) : (
                         <button
                           type="button"
-                          className="reg-resend-link"
+                          className="reg-resend-btn"
                           onClick={handleResendOtp}
                           disabled={loadingResend}
                         >
-                          {loadingResend ? "Sending..." : "Resend OTP"}
+                          <FeatherIcon
+                            icon="rotate-cw"
+                            size={13}
+                            className={loadingResend ? "reg-spin" : ""}
+                          />
+                          <span>{loadingResend ? "Sending..." : "Resend OTP"}</span>
                         </button>
                       )}
                     </div>

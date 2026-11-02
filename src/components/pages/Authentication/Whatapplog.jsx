@@ -23,6 +23,7 @@ import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import { toastrError, toastrSuccess } from "../Base UI Elements/Toast";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import Whatappuser from "./Whatappuser";
+import VersionBadge from "./VersionBadge";
 import "./loginotp.css";
 
 const CountrySelectWithCallingCode = ({
@@ -622,6 +623,8 @@ const Whatapplog = () => {
                     <span>Don't have an account? </span>
                     <Link to="/register">Sign Up Now →</Link>
                   </div>
+
+                  <VersionBadge />
                 </>
               ) : (
                 /* Step 2: 4-digit WhatsApp OTP Verification */
@@ -742,6 +745,8 @@ const Whatapplog = () => {
                       ← Back to WhatsApp number
                     </button>
                   </div>
+
+                  <VersionBadge />
                 </div>
               )}
             </div>

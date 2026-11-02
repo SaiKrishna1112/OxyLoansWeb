@@ -125,6 +125,13 @@ const OxyloansAdminSidebar = () => {
       icon: "fa-solid fa-file-lines",
       type: [ "HELPDESKADMIN","ADMIN"]    },
     {
+      key: "borrowersList",
+      label: "Borrowers List",
+      link: "/borrowersList",
+      icon: "fa-solid fa-users",
+      type: ["HELPDESKADMIN", "ADMIN", "SUPERADMIN"],
+    },
+    {
       key: "borrowerLoanApplications",
       label: "Borrower Loan Applications",
       link: "/borrowerLoanApplications",

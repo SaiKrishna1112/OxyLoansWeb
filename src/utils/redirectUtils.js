@@ -206,6 +206,8 @@ export const getRoleFromPath = (pathname) => {
     clean.startsWith("/dealsinfo") ||
     clean.startsWith("/mainadmindashboard") ||
     clean.startsWith("/borrowerdocuments") ||
+    clean.startsWith("/borrowerslist") ||
+    clean.startsWith("/borrowerdocumentslist") ||
     clean.startsWith("/lendernearbyborrowers") ||
     clean.startsWith("/borrowernearbylenders")
   ) {

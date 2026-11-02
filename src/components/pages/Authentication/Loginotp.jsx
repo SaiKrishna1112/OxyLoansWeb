@@ -14,6 +14,7 @@ import { toastrSuccess } from "../Base UI Elements/Toast";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import Swal from "sweetalert2";
 import { handleStep2PendingFromLogin } from "./step2Handler";
+import VersionBadge from "./VersionBadge";
 import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
@@ -576,6 +577,8 @@ const Loginotp = () => {
                 <span>Don't have an account? </span>
                 <Link to="/register">Sign Up Now →</Link>
               </div>
+
+              <VersionBadge />
             </>
           ) : (
             /* OTP Verification Screen (Video Specification) */
@@ -675,6 +678,8 @@ const Loginotp = () => {
                 Need help? <Link to="/login">Login with Email</Link> or{" "}
                 <Link to="/whatsapplogin">WhatsApp</Link>
               </div>
+
+              <VersionBadge />
             </div>
           )}
         </div>

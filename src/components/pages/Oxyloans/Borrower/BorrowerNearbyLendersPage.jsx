@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Circle,
@@ -40,6 +40,27 @@ const createLenderPinIcon = () =>
 
 const lenderPinIcon = createLenderPinIcon();
 
+const createSelectedLenderPinIcon = () =>
+  L.divIcon({
+    className: "custom-map-pin-wrapper",
+    html: `
+      <div class="custom-map-pin is-selected" style="--pin-color:#ea580c">
+        <div class="pin-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="white">
+            <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+          </svg>
+        </div>
+        <span class="pin-tail"></span>
+        <span class="pin-glow"></span>
+      </div>
+    `,
+    iconSize: [38, 50],
+    iconAnchor: [19, 48],
+    popupAnchor: [0, -46],
+  });
+
+const selectedLenderPinIcon = createSelectedLenderPinIcon();
+
 const youLocationIcon = L.divIcon({
   className: "you-marker-outer",
   html: `
@@ -58,13 +79,13 @@ const youLocationIcon = L.divIcon({
   popupAnchor: [0, -64],
 });
 
-const MapFlyTo = ({ center }) => {
+const MapFlyTo = ({ center, trigger }) => {
   const map = useMap();
   useEffect(() => {
     if (center && center.length === 2) {
-      map.flyTo(center, 13, { animate: true, duration: 0.8 });
+      map.flyTo(center, Math.max(map.getZoom(), 13), { animate: true, duration: 0.8 });
     }
-  }, [center, map]);
+  }, [center, trigger, map]);
   return null;
 };
 
@@ -95,6 +116,14 @@ const BorrowerNearbyLendersPage = () => {
   const [selectedRadiusKm, setSelectedRadiusKm] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLenderId, setSelectedLenderId] = useState(null);
+  const [focusTrigger, setFocusTrigger] = useState(0);
+  const markerRefs = useRef({});
+
+  const handleSelectLender = (lenderId) => {
+    if (lenderId == null) return;
+    setSelectedLenderId(lenderId);
+    setFocusTrigger((prev) => prev + 1);
+  };
 
   const DISTANCE_OPTIONS = [
     { label: "All", value: "ALL" },
@@ -214,6 +243,34 @@ const BorrowerNearbyLendersPage = () => {
     return [lat, lng];
   }, [filteredLenders, selectedLenderId]);
 
+  useEffect(() => {
+    if (!selectedLenderId) return;
+    const lenderIdStr = String(selectedLenderId);
+    const marker = markerRefs.current[lenderIdStr];
+
+    Object.entries(markerRefs.current).forEach(([id, ref]) => {
+      if (ref && id !== lenderIdStr) {
+        try {
+          ref.closeTooltip();
+        } catch (e) {}
+      }
+    });
+
+    if (marker) {
+      try {
+        marker.openTooltip();
+      } catch (e) {}
+
+      const timer = setTimeout(() => {
+        try {
+          marker.openTooltip();
+        } catch (e) {}
+      }, 250);
+
+      return () => clearTimeout(timer);
+    }
+  }, [selectedLenderId, focusTrigger, filteredLenders]);
+
   return (
     <div className="main-wrapper">
       <style>
@@ -275,6 +332,27 @@ const BorrowerNearbyLendersPage = () => {
             border-radius: 50%;
             background: rgba(37,99,235,0.35);
             filter: blur(4px);
+          }
+
+          .custom-map-pin.is-selected {
+            transform: translateY(-6px) scale(1.18);
+            filter: drop-shadow(0 8px 18px rgba(234, 88, 12, 0.65));
+          }
+
+          .custom-map-pin.is-selected .pin-circle {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 3px 12px rgba(234, 88, 12, 0.6);
+          }
+
+          .custom-map-pin.is-selected .pin-tail {
+            background: linear-gradient(to bottom, #f97316, #ea580c);
+          }
+
+          .custom-map-pin.is-selected .pin-glow {
+            background: rgba(234, 88, 12, 0.5);
+            width: 24px;
+            height: 10px;
           }
 
           .leaflet-marker-icon:hover .custom-map-pin {
@@ -359,6 +437,14 @@ const BorrowerNearbyLendersPage = () => {
             background: #2563eb;
             color: #fff;
             border-color: #2563eb;
+          }
+
+          .map-hover-name.map-hover-name-selected {
+            background: #ffffff !important;
+            border: 1.5px solid #ea580c !important;
+            box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3) !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
           }
 
           .map-hover-name {
@@ -559,7 +645,7 @@ const BorrowerNearbyLendersPage = () => {
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <MapFlyTo center={selectedLenderPosition} />
+                    <MapFlyTo center={selectedLenderPosition} trigger={focusTrigger} />
                     <Marker
                       position={[borrowerLat, borrowerLng]}
                       icon={youLocationIcon}
@@ -600,22 +686,34 @@ const BorrowerNearbyLendersPage = () => {
                       const lenderLat = Number(lender?.lenderLat);
                       const lenderLng = Number(lender?.lenderLng);
                       if (!Number.isFinite(lenderLat) || !Number.isFinite(lenderLng)) return null;
+                      const lenderIdStr = String(lender?.lenderId);
+                      const isSelected = String(selectedLenderId) === lenderIdStr;
                       const markerKey = `${lender?.lenderId || "lender"}-${index}`;
                       const displayName = lender?.lenderName?.trim() || "Lender";
                       return (
                         <Marker
                           key={markerKey}
                           position={[lenderLat, lenderLng]}
-                          icon={lenderPinIcon}
+                          icon={isSelected ? selectedLenderPinIcon : lenderPinIcon}
+                          zIndexOffset={isSelected ? 1000 : 1}
+                          ref={(ref) => {
+                            if (ref) {
+                              markerRefs.current[lenderIdStr] = ref;
+                            } else {
+                              delete markerRefs.current[lenderIdStr];
+                            }
+                          }}
                           eventHandlers={{
-                            click: () => setSelectedLenderId(lender?.lenderId),
+                            click: () => handleSelectLender(lender?.lenderId),
                           }}
                         >
                           <Tooltip
                             direction="top"
-                            offset={[0, -40]}
+                            key={`${markerKey}-${isSelected ? "open" : "closed"}`}
+                            offset={[0, isSelected ? -46 : -40]}
+                            permanent={isSelected}
                             opacity={1}
-                            className="map-hover-name"
+                            className={`map-hover-name ${isSelected ? "map-hover-name-selected" : ""}`}
                           >
                             <span
                               style={{
@@ -627,12 +725,26 @@ const BorrowerNearbyLendersPage = () => {
                               <span
                                 className={`map-avatar map-avatar-${getGenderType(lender)}`}
                               />
-                              {displayName}
+                              <span>LR{lender?.lenderId}</span>
+                              {isSelected && lender?.distance != null && (
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    background: "#ea580c",
+                                    color: "#fff",
+                                    borderRadius: "10px",
+                                    padding: "1px 6px",
+                                    marginLeft: "2px",
+                                  }}
+                                >
+                                  {Number(lender.distance).toFixed(1)} km
+                                </span>
+                              )}
                             </span>
                           </Tooltip>
                           <Popup>
                             <div style={{ minWidth: "200px" }}>
-                              <strong>{displayName}</strong>
+                              <strong>LR{lender?.lenderId}</strong>
                               <div className="mt-2 small">
                                 <div>
                                   <strong>Distance</strong>{" "}
@@ -640,9 +752,9 @@ const BorrowerNearbyLendersPage = () => {
                                     ? `${Number(lender.distance).toFixed(2)} km`
                                     : "—"}
                                 </div>
-                                <div className="text-muted mt-1">
+                                {/* <div className="text-muted mt-1">
                                   Lender ID {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}
-                                </div>
+                                </div> */}
                               </div>
                             </div>
                           </Popup>
@@ -716,7 +828,7 @@ const BorrowerNearbyLendersPage = () => {
                             cursor: "pointer",
                             transition: "all 0.15s",
                           }}
-                          onClick={() => setSelectedLenderId(lenderId)}
+                          onClick={() => handleSelectLender(lender?.lenderId ?? lenderId)}
                         >
                           <div className="d-flex align-items-center gap-2">
                             <div style={{ width: 32, height: 32, borderRadius: "50%", background: isSelected ? PRIMARY : "#e8f0ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -724,9 +836,9 @@ const BorrowerNearbyLendersPage = () => {
                             </div>
                             <div style={{ minWidth: 0 }}>
                               <div className="fw-semibold text-truncate" style={{ fontSize: 12, color: isSelected ? PRIMARY : "#1a1f36" }}>
-                                {lender?.lenderName || "Lender"}
+                                LR{lender?.lenderId || "Lender"}
                               </div>
-                              <div style={{ fontSize: 10, color: "#888" }}>ID: {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}</div>
+                              {/* <div style={{ fontSize: 10, color: "#888" }}>ID: {lender?.lenderId ? `••••${String(lender.lenderId).slice(-2)}` : "—"}</div> */}
                             </div>
                             <div className="ms-auto text-end" style={{ flexShrink: 0 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: lender?.distance <= 5 ? "#16a34a" : lender?.distance <= 25 ? "#d97706" : "#dc3545" }}>

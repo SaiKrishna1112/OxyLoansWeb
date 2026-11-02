@@ -2,8 +2,10 @@
   "name": "Oxyloans",
   "version": "1.0.0",
   "scripts": {
-    "start": "react-scripts start",
+    "prebuild": "node scripts/generate-version.js",
     "build": "react-scripts build",
+    "prestart": "node scripts/generate-version.js",
+    "start": "react-scripts start",
     "test": "react-scripts test"
   },
   "author": "",

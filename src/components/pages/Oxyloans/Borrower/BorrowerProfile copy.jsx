@@ -1641,10 +1641,10 @@ const BorrowerProfile = () => {
     }
   };
 
-    const triggerSavingGoogleDistance = async (userId) => {
+    const triggersavingGoogleCordinates = async (userId) => {
       try {
         await axios.post(
-          `${base_url}savingGoogleDistance`,
+          `${base_url}savingGoogleCordinates`,
           {
             userId: String(userId),
           },
@@ -1656,7 +1656,7 @@ const BorrowerProfile = () => {
         );
       } catch (error) {
         // Silent background call - no user popup required.
-        console.log("savingGoogleDistance api failed", error);
+        console.log("savingGoogleCordinates api failed", error);
       }
     };
 
@@ -1791,7 +1791,7 @@ const BorrowerProfile = () => {
         if (data.request.status == 200) {
           Success("success", "Personal Details Saved Successfully");
           // save distance
-          triggerSavingGoogleDistance(data.data.userId);
+          triggersavingGoogleCordinates(data.data.userId);
           setTimeout(() => {
             window.location.reload();
           }, 2000);

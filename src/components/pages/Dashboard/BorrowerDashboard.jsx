@@ -19,7 +19,11 @@ import EmptyState from "../Oxyloans/Borrower/redesign/components/EmptyState";
 import LoadingState from "../Oxyloans/Borrower/redesign/components/LoadingState";
 import ErrorState from "../Oxyloans/Borrower/redesign/components/ErrorState";
 import BorrowerLoanDecisionStatus from "../Oxyloans/Borrower/redesign/components/BorrowerLoanDecisionStatus";
-import { calculateBorrowerProfileCompleteness } from "../../../utils/borrowerValidation";
+import { 
+  calculateBorrowerProfileCompleteness,
+  normalizeReferenceList,
+  normalizeNomineeDetails,
+} from "../../../utils/borrowerValidation";
 
 // HTTP Requests from codebase
 import { 
@@ -28,7 +32,12 @@ import {
   getListOfBorrowerLoansInitiated, 
   getDisbursementAmount, 
   getBorrowerEligibleAmount, 
-  getBorrowerRequestAmount 
+  getBorrowerRequestAmount,
+  getBorrowerReferenceDetails,
+  loadlendernomineeDetails,
+  getdataAadhar,
+  getdataBankStatement,
+  getdatapayslips
 } from "../../HttpRequest/afterlogin";
 
 // Leaflet Map Imports
@@ -100,11 +109,19 @@ const Dashboard = () => {
 
   // States
   const [profileDetails, setProfileDetails] = useState(null);
+  const [referenceList, setReferenceList] = useState([]);
+  const [nomineeDetails, setNomineeDetails] = useState(null);
+  const [kycDocs, setKycDocs] = useState({});
   const [eligibleInfo, setEligibleInfo] = useState({ amount: 0, loading: true });
 
   const profileCompleteness = useMemo(() => {
-    return calculateBorrowerProfileCompleteness(profileDetails);
-  }, [profileDetails]);
+    return calculateBorrowerProfileCompleteness(
+      profileDetails,
+      referenceList,
+      nomineeDetails,
+      null
+    );
+  }, [profileDetails, referenceList, nomineeDetails]);
   const isProfileEligible = profileCompleteness.isEligibleToRaiseLoan;
   const [hasActiveRequest, setHasActiveRequest] = useState(false);
   const [loanRequests, setLoanRequests] = useState([]);
@@ -144,22 +161,98 @@ const Dashboard = () => {
     };
   }, []);
 
-  const fetchProfile = () => {
-    axios
-      .get(`${base_url}personal/${sessionStorage.getItem("userId")}`, {
-        headers: {
-          accessToken: sessionStorage.getItem("accessToken"),
-        },
-      })
-      .then((response) => {
-        setProfileDetails(response.data);
-        if (response.data.city == null || response.data.city === "") {
+  const fetchProfile = async () => {
+    const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+    const accessToken = sessionStorage.getItem("accessToken");
+    if (!userId) return;
+
+    try {
+      const [userRes, refRes, nomineeRes, aadharRes, bankRes, payslipRes] = await Promise.allSettled([
+        axios.get(`${base_url}personal/${userId}`, {
+          headers: { accessToken },
+        }),
+        getBorrowerReferenceDetails(userId),
+        loadlendernomineeDetails(),
+        getdataAadhar(),
+        getdataBankStatement(),
+        getdatapayslips(userId),
+      ]);
+
+      const personalData = userRes.status === "fulfilled" ? userRes.value?.data : null;
+      if (personalData) {
+        if (personalData.city == null || personalData.city === "") {
           setShowCityModal(true);
         }
-      })
-      .catch((error) => {
-        console.error("error", error);
-      });
+      }
+
+      // References
+      let parsedReferences = [];
+      if (refRes.status === "fulfilled" && refRes.value?.data) {
+        parsedReferences = normalizeReferenceList(refRes.value.data);
+      } else if (personalData?.referenceDetailsResponseDto) {
+        parsedReferences = normalizeReferenceList(personalData.referenceDetailsResponseDto);
+      }
+
+      // Nominee
+      let parsedNominee = null;
+      if (nomineeRes.status === "fulfilled" && nomineeRes.value?.data) {
+        parsedNominee = normalizeNomineeDetails(nomineeRes.value.data);
+      }
+
+      // KYC Docs
+      let aadharDoc = aadharRes.status === "fulfilled" && aadharRes.value?.status === 200 ? aadharRes.value?.data : null;
+      let bankDoc = bankRes.status === "fulfilled" && bankRes.value?.status === 200 ? bankRes.value?.data : null;
+      let payslipDoc = payslipRes.status === "fulfilled" && payslipRes.value?.status === 200 ? payslipRes.value?.data : null;
+
+      if (payslipDoc && Array.isArray(payslipDoc) && payslipDoc.length > 0) {
+        const latest = payslipDoc[payslipDoc.length - 1] || payslipDoc[0];
+        payslipDoc = {
+          ...latest,
+          downloadUrl: latest.downloadUrl || latest.documentUrl || latest.fileUrl || latest.url || latest.documentPath,
+          allPayslips: payslipDoc,
+        };
+      }
+
+      const docs = {
+        aadhar: aadharDoc,
+        bankStatement: bankDoc,
+        paySlips: payslipDoc,
+      };
+
+      let savedPayslipVer = null;
+      let savedSalaryVer = null;
+      try {
+        const sp = localStorage.getItem("oxy_borrower_payslip_verified");
+        if (sp) savedPayslipVer = JSON.parse(sp);
+      } catch {}
+      try {
+        const ss = localStorage.getItem("oxy_borrower_salary_verified");
+        if (ss) savedSalaryVer = JSON.parse(ss);
+      } catch {}
+
+      setReferenceList(parsedReferences);
+      setNomineeDetails(parsedNominee);
+      setKycDocs(docs);
+
+      const mergedProfile = {
+        ...(personalData || {}),
+        references: parsedReferences,
+        referenceDetailsResponseDto: parsedReferences,
+        nominee: parsedNominee,
+        kycDocs: docs,
+        payslipVerification: savedPayslipVer,
+        salaryVerification: savedSalaryVer,
+        isPanVerified: Boolean(
+          personalData?.panVerified === true ||
+          personalData?.panStatus?.toUpperCase() === "VERIFIED" ||
+          sessionStorage.getItem("isPanVerified") === "true"
+        ),
+      };
+
+      setProfileDetails(mergedProfile);
+    } catch (error) {
+      console.error("error fetching profile info:", error);
+    }
   };
 
   const fetchEligibleInfo = async () => {
@@ -343,7 +436,7 @@ const Dashboard = () => {
       list.push({ title: "KYC Completed Successfully", description: "Identity verification approved", time: "Verified Profile Status", type: "SUCCESS" });
     }
     if (hasActiveRequest) {
-      list.push({ title: "Loan Application Initiated", description: "Request is broadcast to marketplace", time: "Active", type: "PENDING" });
+      list.push({ title: "Loan Application Initiated", description: "Loan request raised in marketplace", time: "Active", type: "PENDING" });
     }
     if (loansData.apiData.length > 0) {
       list.push({ title: `Received Bids from Lenders`, description: `Total matching offers count: ${loansData.apiData.length}`, time: "Offer matching stage", type: "APPROVED" });
@@ -622,7 +715,7 @@ const Dashboard = () => {
                                 onClick={() => setSelectedLenderId(l.lenderId)}
                                 style={{ cursor: "pointer" }}
                               >
-                                <span className="fw-bold d-block text-dark text-truncate" style={{ fontSize: "12px" }}>{l.lenderName || "Lender"}</span>
+                                <span className="fw-bold d-block text-dark text-truncate" style={{ fontSize: "12px" }}>LR{l.lenderId || "Lender"}</span>
                                 <span className="text-muted small" style={{ fontSize: "10px" }}>Distance: {Number(l.distance).toFixed(2)} km</span>
                               </div>
                             ))

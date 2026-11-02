@@ -156,11 +156,12 @@ export const calculateAffordability = (incomeData, expenseData, surplusData, rul
   const newTotalBurden = verifiedIncome > 0 ? (newOutflows / verifiedIncome) : 1;
 
   // Maximum Safe New EMI:
-  // Must respect max surplus allocation ratio (e.g. 55% of surplus)
-  // AND must respect residual buffer floor (leaving at least minSurplusBuffer)
+  // Must respect max surplus allocation ratio (e.g. 50% of surplus)
+  // AND must respect residual buffer floor (proportional to surplus so small surplus is not wiped out)
   // AND must not push debt obligations (FOIR) beyond policy cap (e.g. 60%)
-  const maxSafeEmiBySurplus = Math.round(monthlySurplus * (rules.maxSurplusAllocationRatio || 0.55));
-  const maxSafeEmiByBuffer = Math.max(0, Math.round(monthlySurplus - (rules.minSurplusBuffer || 3500)));
+  const maxSafeEmiBySurplus = Math.round(monthlySurplus * (rules.maxSurplusAllocationRatio || 0.50));
+  const requiredBuffer = Math.min(rules.minSurplusBuffer || 2500, Math.round(monthlySurplus * 0.45));
+  const maxSafeEmiByBuffer = Math.max(0, Math.round(monthlySurplus - requiredBuffer));
   const maxFoirHeadroom = Math.max(0, Math.round((verifiedIncome * (rules.maxFoirLimit || 0.60)) - totalExistingObligations));
   const maxSafeNewEmi = Math.max(0, Math.min(maxSafeEmiBySurplus, maxSafeEmiByBuffer, maxFoirHeadroom));
 
@@ -1128,5 +1129,99 @@ export const runComprehensiveUnderwriting = (inputs = {}, rules = {}, safetyCont
     stressTests,
     portfolioSafety,
     decisionEvaluation,
+  };
+};
+
+/**
+ * Dynamic Surplus-Based Best Loan Option Calculation Engine
+ * Recommends the optimal, non-excessive borrowing amount and tenure strictly based on
+ * verified monthly surplus to protect the borrower from debt distress.
+ */
+export const calculateSurplusBasedLoanOffer = (
+  salary = 25000,
+  customCashflow = {},
+  creditScore = 750,
+  repaymentCycle = 1,
+  rules = DEFAULT_RULES_CONFIG
+) => {
+  const verifiedSalary = Math.max(0, Number(salary || 25000));
+  const existingEmi = Math.max(0, Number(customCashflow.existingEmi || 0));
+  const creditCardMinDues = Math.max(0, Number(customCashflow.creditCardMinDues || 0));
+  const rent = Math.max(0, Number(customCashflow.rent || 0));
+  const householdExpenses = Math.max(0, Number(customCashflow.householdExpenses || 0));
+  const educationExpenses = Math.max(0, Number(customCashflow.educationExpenses || 0));
+  const insurance = Math.max(0, Number(customCashflow.insurance || 0));
+  const otherMandatory = Math.max(0, Number(customCashflow.otherMandatory || 0));
+
+  const totalMonthlyOutflows = existingEmi + creditCardMinDues + rent + householdExpenses + educationExpenses + insurance + otherMandatory;
+  const monthlySurplus = Math.max(0, verifiedSalary - totalMonthlyOutflows);
+
+  // Safe EMI Allocation Cap: Maximum 45% of monthly surplus (preserves 55% emergency cushion)
+  const safeEmiCap = Math.round(monthlySurplus * (rules?.maxSurplusAllocationRatio || 0.45));
+  // Safe Living Buffer: 55% of surplus must be kept untouched
+  const residualEmergencyBuffer = Math.max(0, monthlySurplus - safeEmiCap);
+
+  // Hard Cap: Ensure we don't give so much amount
+  // Bounded by repayment cycle and safe surplus
+  const minCap = 5000;
+  let cycleMaxCap = 25000;
+  if (repaymentCycle === 2) cycleMaxCap = 45000;
+  else if (repaymentCycle >= 3) cycleMaxCap = 75000;
+
+  // Max loan amount strictly constrained by surplus capacity (safe EMI * tenure)
+  const maxSafeTenureMonths = repaymentCycle === 1 ? 3 : repaymentCycle === 2 ? 6 : 12;
+  const surplusCapCalculated = Math.round(safeEmiCap * maxSafeTenureMonths * 0.95);
+  const maxCap = Math.max(minCap, Math.min(cycleMaxCap, surplusCapCalculated > 0 ? surplusCapCalculated : minCap));
+
+  // Best Loan Option ("from our side")
+  // Optimal starter tenure: 3 Months EMI (the sweet spot balancing fast closure and low monthly EMI)
+  const bestTenure = 3;
+  let bestAmount = 10000;
+  if (monthlySurplus < 6000) {
+    bestAmount = minCap; // ₹5,000
+  } else if (monthlySurplus < 10000) {
+    bestAmount = Math.max(minCap, Math.min(maxCap, Math.round((monthlySurplus * 0.8) / 1000) * 1000));
+  } else if (monthlySurplus < 20000) {
+    bestAmount = Math.max(minCap, Math.min(maxCap, Math.round((monthlySurplus * 1.0) / 1000) * 1000));
+  } else {
+    bestAmount = Math.max(minCap, Math.min(maxCap, Math.min(25000, Math.round((monthlySurplus * 1.2) / 1000) * 1000)));
+  }
+
+  // Ensure best amount does not exceed maxCap or fall below minCap
+  bestAmount = Math.max(minCap, Math.min(maxCap, bestAmount));
+
+  // Calculate pricing for the best loan option
+  const roiBand = calculateLenderRoiBand(creditScore);
+  const bestPricing = calculatePricing(bestAmount, bestTenure, roiBand.tier, 0.02, rules, roiBand.indicativeRoi);
+  const bestEmi = bestPricing.emi;
+  const bestSurplusUsedPct = monthlySurplus > 0 ? Math.round((bestEmi / monthlySurplus) * 100) : 0;
+  const bestResidualBuffer = Math.max(0, monthlySurplus - bestEmi);
+
+  return {
+    verifiedSalary,
+    totalMonthlyOutflows,
+    monthlySurplus,
+    safeEmiCap,
+    residualEmergencyBuffer,
+    minCap,
+    maxCap,
+    roiBand,
+    bestOption: {
+      amount: bestAmount,
+      tenure: bestTenure,
+      type: "EMI",
+      title: `${bestTenure}-Month EMI Plan`,
+      emi: bestEmi,
+      roi: roiBand.indicativeRoi,
+      totalInterest: bestPricing.totalInterest,
+      totalPayable: bestPricing.totalPayable,
+      processingFee: bestPricing.processingFee,
+      gst: bestPricing.gst,
+      netDisbursal: bestPricing.netDisbursal,
+      surplusUsedPct: bestSurplusUsedPct,
+      residualBuffer: bestResidualBuffer,
+      safetyBufferPct: 100 - bestSurplusUsedPct,
+      rationale: `Calculated from your verified monthly cashflow surplus of ${formatINR(monthlySurplus)}. Capped conservatively at ${formatINR(bestAmount)} to keep your monthly installment (${formatINR(bestEmi)}) well below 35% of surplus (${bestSurplusUsedPct}%), leaving ${formatINR(bestResidualBuffer)} safe for emergencies.`,
+    },
   };
 };

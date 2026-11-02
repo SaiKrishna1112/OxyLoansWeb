@@ -107,10 +107,10 @@ const InstantLoanStepAgreementEnach = ({
         <div>
           <div className="d-flex align-items-center gap-2 mb-1">
             <span className="badge badge-fintech-primary-soft px-3 py-1 rounded-pill small">
-              Phase 5 • Digital Paperwork & Repayment Mandate
+              Phase 6 • Digital Paperwork & Repayment Mandate
             </span>
             <span className="badge badge-fintech-neutral px-2 py-1 rounded-pill small">
-              Step 5 of 6
+              Step 6 of 7
             </span>
           </div>
           <h4 className="fw-bold text-dark mb-1">Aadhaar eSign & NPCI eNACH Mandate</h4>

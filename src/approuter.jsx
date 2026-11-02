@@ -61,6 +61,7 @@ import ProximityLoans from "./components/pages/Oxyloans/Lender/ProximityLoans";
 import AdminProximityLoanOverview from "./components/pages/Oxyloans/Admin/AdminProximityLoanOverview";
 import OfferGivenList from "./components/pages/Oxyloans/Lender/OfferGivenList";
 import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerDocuments.jsx";
+import BorrowersList from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowersList.jsx";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import LenderEsign from "./components/pages/Oxyloans/Lender/LenderEsign";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
@@ -243,6 +244,7 @@ import Testimonials from "./components/Testimonials.jsx";
 import LenderNearbyBorrowersAdmin from "./components/pages/Oxyloans/Admin/LENDERS/LenderNearbyBorrowersAdmin.jsx";
 import BorrowerNearbyLendersAdmin from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowerNearbyLendersAdmin.jsx";
 import LenderBorrowerProfile from "./components/pages/Oxyloans/Lender/LenderBorrowerProfile.jsx";
+import LenderRateConfirmationVariance from "./components/pages/Oxyloans/Lender/LenderRateConfirmationVariance";
 
 const isAuthenticated = () =>
   !!(sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"));
@@ -410,6 +412,8 @@ const AppRouter = () => {
         <Route path="/loanListings" element={<LoanListings />} />
         <Route path="/proximityLoans" element={<ProximityLoans />} />
         <Route path="/borrowerDocuments/:userId" element={<BorrowerDocuments />} />
+        <Route path="/borrowersList" element={<BorrowersList />} />
+        <Route path="/borrowerDocumentsList" element={<BorrowersList />} />
         <Route path="/disburseLoans" element={<DisburseLoans />} />
         <Route path="/lender_esign/:loanRequestId/:assignmentId" element={<LenderEsign />} />
         <Route path="/lender_esign/:loanRequestId" element={<LenderEsign />} />
@@ -589,6 +593,9 @@ const AppRouter = () => {
         <Route path="/lenderNearbyBorrowers/:userId" element={<PrivateRoute element={<LenderNearbyBorrowersAdmin />} />} />
         <Route path="/borrowerNearbyLenders/:userId" element={<PrivateRoute element={<BorrowerNearbyLendersAdmin />} />} />
         <Route path="/borrowerLoanApplications" element={<PrivateRoute element={<BorrowerLoanApplications />} />} />
+        <Route path="/borrowersList" element={<PrivateRoute element={<BorrowersList />} />} />
+        <Route path="/borrowerDocumentsList" element={<PrivateRoute element={<BorrowersList />} />} />
+        <Route path="/admin/borrowers-list" element={<PrivateRoute element={<BorrowersList />} />} />
         <Route path="/updateUserDetails" element={<PrivateRoute element={<RemoveCredentials />} />} />
         <Route path="/assignedUsersforCallers" element={<PrivateRoute element={<AssignedUsersforCallers />} />} />
         <Route path="/radhaDashboard" element={<PrivateRoute element={<RadhaDashboard />} />} />
@@ -625,6 +632,9 @@ const AppRouter = () => {
         <Route path="/borrower-profile-view/:borrowerId" element={<PrivateRoute element={<LenderBorrowerProfile />} />} />
         <Route path="/borrower-profile-view" element={<PrivateRoute element={<LenderBorrowerProfile />} />} />
         <Route path="/lender-emi-dashboard" element={<PrivateRoute element={<LenderEmiDashboard />} />} />
+        <Route path="/rate-confirmation-variance" element={<PrivateRoute element={<LenderRateConfirmationVariance />} />} />
+        <Route path="/lender/rate-confirmation-variance" element={<PrivateRoute element={<LenderRateConfirmationVariance />} />} />
+        <Route path="/lender-rate-confirmation" element={<PrivateRoute element={<LenderRateConfirmationVariance />} />} />
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
         <Route path="/borrower-credit-report" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
         <Route path="/my-oxyscore" element={<PrivateRoute element={<BorrowerCreditReport />} />} />

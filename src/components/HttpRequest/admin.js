@@ -2658,3 +2658,33 @@ export const getBorrowerLoanGeneratedFiles = async () => {
   return response;
 };
 
+
+
+export const getBorrowerDocumentsList = async (payload = { pageNo: 1, pageSize: 100 }) => {
+  const token = getToken();
+  const requestPayload =
+    typeof payload === "object" && payload !== null
+      ? { pageNo: 1, pageSize: 100, ...payload }
+      : { pageNo: Number(payload) || 1, pageSize: 100 };
+
+  try {
+    const response = await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      "borrowerDocuments",
+      "POST",
+      token,
+      requestPayload
+    );
+    return response;
+  } catch (error) {
+    if (error?.response?.status === 405) {
+      return await handleApiRequestAfterLoginService(
+        API_BASE_URL,
+        "borrowerDocuments",
+        "GET",
+        token
+      );
+    }
+    throw error;
+  }
+};

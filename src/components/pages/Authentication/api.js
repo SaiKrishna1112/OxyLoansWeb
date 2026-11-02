@@ -228,9 +228,10 @@ export const vaildateotp = async (
   relationshipId,
   signupSource
 ) => {
-  const uniqnumber = localStorage.getItem("uniqnumber");
+  const uniqnumber = sessionStorage.getItem("uniqnumber");
   const utmForPartner = localStorage.getItem("type");
-  const utmSource = localStorage.getItem("utmSource") === null ? localStorage.getItem("utmSource") : "WEB";
+  const utmSource = sessionStorage.getItem("utmSource") !== null ? sessionStorage.getItem("utmSource") : "WEB";
+  const studentId = sessionStorage.getItem("studentId");
 
   if (uniqnumber === null) {
     var data = {
@@ -288,6 +289,10 @@ export const vaildateotp = async (
 
       if (relationshipId) {
         params.relationshipId = relationshipId;
+      }
+
+      if (studentId) {
+        params.studentId = studentId;
       }
 
       const response = await axios.post(

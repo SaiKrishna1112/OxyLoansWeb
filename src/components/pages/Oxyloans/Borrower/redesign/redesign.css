@@ -660,9 +660,11 @@ body.oxy-redesign-active {
 }
 
 /* Executive Fintech Container */
-.fintech-shell {
-  max-width: 1040px;
-  margin: 0 auto;
+.fintech-shell,
+.fintech-shell-fullscreen {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
 }
 
 .fintech-card {
@@ -987,3 +989,63 @@ body.oxy-redesign-active .bg-success,
 
 
 
+
+/* ==========================================================================
+   GLOBAL UTILITIES: Fractional Spacing, Gaps, Margins, and Padding
+   Ensures icons, number circles, badges, and text never touch or collapse.
+   ========================================================================== */
+.gap-0-5, .gap-0\.5 { gap: 4px !important; }
+.gap-1 { gap: 6px !important; }
+.gap-1-5, .gap-1\.5 { gap: 8px !important; }
+.gap-2 { gap: 10px !important; }
+.gap-2-5, .gap-2\.5 { gap: 14px !important; }
+.gap-3 { gap: 16px !important; }
+.gap-3-5, .gap-3\.5 { gap: 20px !important; }
+.gap-4 { gap: 24px !important; }
+
+.me-0-5, .me-0\.5 { margin-right: 3px !important; }
+.me-1 { margin-right: 6px !important; }
+.me-1-5, .me-1\.5 { margin-right: 8px !important; }
+.me-2 { margin-right: 10px !important; }
+.me-2-5, .me-2\.5 { margin-right: 14px !important; }
+.me-3 { margin-right: 16px !important; }
+
+.ms-0-5, .ms-0\.5 { margin-left: 3px !important; }
+.ms-1 { margin-left: 6px !important; }
+.ms-1-5, .ms-1\.5 { margin-left: 8px !important; }
+.ms-2 { margin-left: 10px !important; }
+.ms-2-5, .ms-2\.5 { margin-left: 14px !important; }
+.ms-3 { margin-left: 16px !important; }
+
+.mb-0-5, .mb-0\.5 { margin-bottom: 3px !important; }
+.mb-1-5, .mb-1\.5 { margin-bottom: 6px !important; }
+.mb-2-5, .mb-2\.5 { margin-bottom: 10px !important; }
+.mt-0-5, .mt-0\.5 { margin-top: 3px !important; }
+.mt-1-5, .mt-1\.5 { margin-top: 6px !important; }
+.mt-2-5, .mt-2\.5 { margin-top: 10px !important; }
+
+.p-1-5, .p-1\.5 { padding: 6px !important; }
+.p-2-5, .p-2\.5 { padding: 10px !important; }
+.p-3-5, .p-3\.5 { padding: 14px !important; }
+
+.px-1-5, .px-1\.5 { padding-left: 6px !important; padding-right: 6px !important; }
+.px-2-5, .px-2\.5 { padding-left: 10px !important; padding-right: 10px !important; }
+.px-3-5, .px-3\.5 { padding-left: 14px !important; padding-right: 14px !important; }
+
+.py-0-5, .py-0\.5 { padding-top: 3px !important; padding-bottom: 3px !important; }
+.py-1-5, .py-1\.5 { padding-top: 6px !important; padding-bottom: 6px !important; }
+.py-2-5, .py-2\.5 { padding-top: 10px !important; padding-bottom: 10px !important; }
+
+/* Icon + Text Breathing Room Defaults */
+.card-data-label {
+  gap: 8px !important;
+}
+
+.repayment-feature-tag {
+  gap: 7px !important;
+}
+
+.badge i:not(:last-child),
+.btn i:not(:last-child) {
+  margin-right: 6px;
+}

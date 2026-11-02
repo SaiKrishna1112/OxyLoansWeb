@@ -33,7 +33,7 @@ const Participatedeal = () => {
     wallet: "",
     urldealId: "",
     amountfromurl: "",
-    spining: false,
+    spining: true,
     lenderRemainingPanLimit: 0,
     lenderTotalParticipationAmount: 0,
     lenderRemainingWalletAmount: 0,
@@ -44,6 +44,7 @@ const Participatedeal = () => {
     groupName: "",
     dealId: 0,
     currentUserWallet: 0,
+    fundingStatus: "",
   });
 
   useEffect(() => {
@@ -61,9 +62,11 @@ const Participatedeal = () => {
       }
 
       try {
+        setDeal((prev) => ({ ...prev, spining: true }));
         const response = await handledetail(dealId);
 
         if (!response || response.request?.status === 500 || !response.data) {
+          setDeal((prev) => ({ ...prev, spining: false }));
           navigate("/dashboard");
           return;
         }
@@ -118,8 +121,11 @@ const Participatedeal = () => {
           dealfeestatus: newObj.feeStatusToParticipate,
           uservalidity: newObj.lenderValidityStatus,
           groupName: newObj.groupName,
+          fundingStatus: newObj.fundingStatus,
+          spining: false,
         }));
       } catch (err) {
+        setDeal((prev) => ({ ...prev, spining: false }));
         navigate("/dashboard");
       }
     };
@@ -570,7 +576,7 @@ const Participatedeal = () => {
                         ₹{" "}
                         {deal.apidata?.remainingAmountInDeal
                           ? Number(deal.apidata.remainingAmountInDeal).toLocaleString("en-IN")
-                          : "66,450"}
+                          : "0"}
                       </strong>
                     </div>
                   </div>
@@ -758,6 +764,7 @@ const Participatedeal = () => {
                   </div>
 
                   {/* Grid 2: Participation Form Card */}
+                  {deal.fundingStatus !== "COMPLETED" ? (
                   <div className="deal-participation-box">
                     <h3 className="deal-participation-heading">
                       Your participation to this deal is
@@ -830,6 +837,8 @@ const Participatedeal = () => {
                         </div>
                       )}
 
+                      
+                      {deal.fundingStatus !== "COMPLETED"&&
                     <button
                       type="button"
                       className="deal-participate-submit-btn"
@@ -844,7 +853,34 @@ const Participatedeal = () => {
                         </>
                       )}
                     </button>
+                      }
                   </div>
+                  ):(
+                  <div className="deal-participation-box">
+                    <div className="deal-participation-success-icon">
+                      <svg
+                        width="48"
+                        height="48"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        color="#16a34a"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 12l2 2 4-4"></path>
+                      </svg>
+                    </div>
+
+                    <h3 className="deal-participation-success-heading">
+                      Deal Successfully Completed!
+                    </h3>
+
+                    <p className="deal-participation-success-message">
+                      This deal is now closed and no longer accepting new investments.
+                    </p>
+                  </div>
+                  )}
                 </div>
               </div>
             )}

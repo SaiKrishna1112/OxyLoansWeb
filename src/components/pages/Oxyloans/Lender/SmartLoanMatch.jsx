@@ -179,6 +179,15 @@ export default function SmartLoanMatch() {
                   best matching loan requests for you.
                 </p>
               </div>
+              <div style={{ marginLeft: "auto" }}>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold"
+                  onClick={() => navigate("/rate-confirmation-variance")}
+                >
+                  <i className="fa-solid fa-scale-balanced me-1"></i> Rate Confirmation & Variance
+                </button>
+              </div>
             </div>
           </div>
 

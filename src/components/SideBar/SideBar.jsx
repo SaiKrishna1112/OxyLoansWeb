@@ -484,6 +484,8 @@ const Sidebar = (props) => {
                 {/* P2P */}
                 <li
                   className={`${
+                    "/rate-confirmation-variance" === pathName ||
+                    "/proximityLoans" === pathName ||
                     "/offerGivenList" === pathName ||
                     "/disburseLoans" === pathName
                       ? "active submenu"
@@ -502,6 +504,14 @@ const Sidebar = (props) => {
                   </Link>
                   {isSideMenu == "P2PLoans" ? (
                     <ul style={{ display: "block" }}>
+                      <li>
+                        <Link
+                          to="/rate-confirmation-variance"
+                          className={`${"/rate-confirmation-variance" === pathName ? "active" : ""}`}
+                        >
+                          Rate Confirmation & Variance
+                        </Link>
+                      </li>
                       <li>
                         <Link
                           to="/proximityLoans"

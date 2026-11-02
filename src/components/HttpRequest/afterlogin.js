@@ -2493,16 +2493,20 @@ export const getdatafeereceipt = async () => {
 };
 
 
-export const getdatapayslips = async () => {
+export const getdatapayslips = async (userId = null) => {
   const token = getToken();
-  const userId = getUserId();
+  const uId = userId || getUserId();
   const res = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${userId}/download/PAYSLIPS`,
+    `payslip/user/${uId}`,
     "GET",
     token
   );
   return res;
+};
+
+export const getPayslipByUserIdApi = async (userId = null) => {
+  return getdatapayslips(userId);
 };
 
 export const getactivityApisData = () => {
@@ -3236,7 +3240,7 @@ export const setLatLong = async () => {
   }
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `savingGoogleDistance`,
+    `savingGoogleCordinates`,
     "POST",
     token,
     postdata
@@ -4733,6 +4737,27 @@ export const analyzeBorrowerBankStatement = async (borrowerId, fileOrPassword = 
 };
 
 /**
+ * Get Borrower Verified Salary Details
+ * Endpoint: GET /v1/user/borrower/:borrowerId/salary
+ */
+export const getBorrowerSalaryDetails = async (borrowerId) => {
+  const token = getToken();
+  const userId = borrowerId || getUserId();
+  const config = {
+    headers: {
+      accessToken: token,
+      accesstoken: token,
+      userId: userId,
+    },
+  };
+  try {
+    return await axios.get(`${API_BASE_URL}borrower/${userId}/salary`, config);
+  } catch (e) {
+    return await axios.get(`${MARKETPLACE_URL}/v1/user/borrower/${userId}/salary`, config);
+  }
+};
+
+/**
  * Get Bank Statement Analysis Summary for Borrower
  * Endpoint: GET /v1/user/borrower/:borrowerId
  */
@@ -4878,12 +4903,16 @@ export const fetchPaysprintCreditReport = async (payload) => {
 /**
  * Upload & Analyze Payslip for Borrower to validate salary and company
  * Endpoint: POST payslip/analyze1
- * Payload: multipart/form-data with 'file'
+ * Payload: multipart/form-data with 'file' and 'userId'
  */
-export const analyzePayslipApi = async (file) => {
+export const analyzePayslipApi = async (file, userId = null) => {
   const token = getToken();
+  const uId = userId || getUserId();
   const formData = new FormData();
   formData.append("file", file);
+  if (uId) {
+    formData.append("userId", uId);
+  }
 
   return await axios.post(`${API_BASE_URL}payslip/analyze1`, formData, {
     headers: {
@@ -4898,3 +4927,32 @@ export const analyzePayslipApi = async (file) => {
 
 
 
+
+export const getBorrowerDocumentsList = async (payload = { pageNo: 1, pageSize: 100 }) => {
+  const token = getToken();
+  const requestPayload =
+    typeof payload === "object" && payload !== null
+      ? { pageNo: 1, pageSize: 100, ...payload }
+      : { pageNo: Number(payload) || 1, pageSize: 100 };
+
+  try {
+    const response = await handleApiRequestAfterLoginService(
+      API_BASE_URL,
+      "borrowerDocuments",
+      "POST",
+      token,
+      requestPayload
+    );
+    return response;
+  } catch (error) {
+    if (error?.response?.status === 405) {
+      return await handleApiRequestAfterLoginService(
+        API_BASE_URL,
+        "borrowerDocuments",
+        "GET",
+        token
+      );
+    }
+    throw error;
+  }
+};

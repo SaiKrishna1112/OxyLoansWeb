@@ -802,12 +802,12 @@ const Profile = () => {
 
   const profileCompletenessInfo = useMemo(() => {
     return calculateBorrowerProfileCompleteness(
-      { ...profileData, isPanVerified },
+      { ...profileData, isPanVerified, kycDocs, payslipVerification, salaryVerification },
       referenceList,
       nominee,
-      bankaccount
+      null
     );
-  }, [profileData, isPanVerified, referenceList, nominee, bankaccount]);
+  }, [profileData, isPanVerified, referenceList, nominee, kycDocs, payslipVerification, salaryVerification]);
 
   const profileCompletionPct = profileCompletenessInfo.percentage;
 
@@ -1686,9 +1686,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         const resData = analyzeRes?.data?.data || analyzeRes?.data || {};
 
         let declaredCompany = (profileData.companyName || "").trim();
+        const borrowerFirstName = (profileData.firstName || "").trim();
 
-        // 2. Validate against past 6 months, company name, and salary
-        let validation = await validatePayslipDocument(resData, declaredCompany, file);
+        // 2. Validate against past 6 months, company name, user first name, and salary
+        let validation = await validatePayslipDocument(resData, declaredCompany, file, borrowerFirstName);
 
         // 2a. If company didn't match directly, check with borrower if it's the parent company / legal entity
         if (!validation.isCompanyMatch && validation.needsParentConfirmation) {
@@ -1747,7 +1748,31 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             validation.isDateValid = true;
             validation.detectedDate = selectedMonth;
             validation.errors = validation.errors.filter((err) => !err.includes("date") && !err.includes("month"));
-            validation.isValid = validation.isCompanyMatch && validation.detectedSalary > 0;
+            validation.isValid = validation.isCompanyMatch && validation.isNameMatch && validation.detectedSalary > 0;
+          }
+        }
+
+        // 2c. If name was not readable by OCR, prompt borrower to confirm ownership
+        if (!validation.isNameMatch && validation.needsNameConfirmation) {
+          const confirmName = await Swal.fire({
+            title: "Confirm Payslip Ownership",
+            html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                     <div class="mb-2">Your profile first name: <strong class="text-primary">${borrowerFirstName}</strong></div>
+                     <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                       We could not automatically detect your first name from the document text. Please confirm: Is this payslip officially issued to you (<strong>${borrowerFirstName}</strong>)?
+                     </div>
+                   </div>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, Confirm My Payslip`,
+            cancelButtonText: "No, Re-upload My Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+
+          if (confirmName.isConfirmed) {
+            validation.isNameMatch = true;
+            validation.errors = validation.errors.filter((err) => !err.toLowerCase().includes("name"));
+            validation.isValid = validation.isDateValid && validation.isCompanyMatch && validation.detectedSalary > 0;
           }
         }
 
@@ -1805,8 +1830,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             verified: true,
             companyName: validation.detectedCompany,
             declaredCompany,
+            detectedName: validation.detectedName || borrowerFirstName,
             detectedSalary: newSalary,
             detectedDate: validation.detectedDate,
+            nameMatch: true,
             salaryMatch: true,
             companyMatch: true,
             message: `Payslip verified for ${validation.detectedCompany} (${validation.detectedDate}).`,
@@ -1904,10 +1931,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
   };
 
   // distance
-    const triggerSavingGoogleDistance = async (userId) => {
+    const triggersavingGoogleCordinates = async (userId) => {
         try {
           await axios.post(
-            `${base_url}savingGoogleDistance`,
+            `${base_url}savingGoogleCordinates`,
             {
               userId: String(userId),
             },
@@ -1919,7 +1946,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           );
         } catch (error) {
           // Silent background call - no user popup required.
-          console.log("savingGoogleDistance api failed", error);
+          console.log("savingGoogleCordinates api failed", error);
         }
       };
 
@@ -2055,7 +2082,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       if (response?.status === 200 || response?.request?.status === 200) {
         try {
           await setLatLong();
-           triggerSavingGoogleDistance(response.data.userId);
+           triggersavingGoogleCordinates(response.data.userId);
         } catch (error) {
           console.error("Failed to update google distance", error);
         }
@@ -2459,9 +2486,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         }
 
         let declaredCompany = (profileData.companyName || "").trim();
+        const borrowerFirstName = (profileData.firstName || "").trim();
 
-        // 2. Validate against past 6 months, company name, and salary
-        let validation = await validatePayslipDocument(resData, declaredCompany, file);
+        // 2. Validate against past 6 months, company name, user first name, and salary
+        let validation = await validatePayslipDocument(resData, declaredCompany, file, borrowerFirstName);
 
         // 2a. If company didn't match directly, check with borrower if it's the parent company / legal entity
         if (!validation.isCompanyMatch && validation.needsParentConfirmation) {
@@ -2520,7 +2548,31 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             validation.isDateValid = true;
             validation.detectedDate = selectedMonth;
             validation.errors = validation.errors.filter((err) => !err.includes("date") && !err.includes("month"));
-            validation.isValid = validation.isCompanyMatch && validation.detectedSalary > 0;
+            validation.isValid = validation.isCompanyMatch && validation.isNameMatch && validation.detectedSalary > 0;
+          }
+        }
+
+        // 2c. If name was not readable by OCR, prompt borrower to confirm ownership
+        if (!validation.isNameMatch && validation.needsNameConfirmation) {
+          const confirmName = await Swal.fire({
+            title: "Confirm Payslip Ownership",
+            html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                     <div class="mb-2">Your profile first name: <strong class="text-primary">${borrowerFirstName}</strong></div>
+                     <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                       We could not automatically detect your first name from the document text. Please confirm: Is this payslip officially issued to you (<strong>${borrowerFirstName}</strong>)?
+                     </div>
+                   </div>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, Confirm My Payslip`,
+            cancelButtonText: "No, Re-upload My Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+
+          if (confirmName.isConfirmed) {
+            validation.isNameMatch = true;
+            validation.errors = validation.errors.filter((err) => !err.toLowerCase().includes("name"));
+            validation.isValid = validation.isDateValid && validation.isCompanyMatch && validation.detectedSalary > 0;
           }
         }
 
@@ -2583,8 +2635,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           verified: true,
           companyName: validation.detectedCompany,
           declaredCompany,
+          detectedName: validation.detectedName || borrowerFirstName,
           detectedSalary: newSalary,
           detectedDate: validation.detectedDate,
+          nameMatch: true,
           salaryMatch: true,
           companyMatch: true,
           message: `Payslip verified for ${validation.detectedCompany} (${validation.detectedDate}).`,
@@ -2832,6 +2886,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                         <div className="personal-info-row">
                           <span className="personal-info-label">WhatsApp Number</span>
                           <span className="personal-info-value">{profileData.whatsAppNumber || "—"}</span>
+                        </div>
+                        <div className="personal-info-row">
+                          <span className="personal-info-label">Mobile Number</span>
+                          <span className="personal-info-value">{profileData.mobileNumber || "—"}</span>
                         </div>
                         <div className="personal-info-row" style={{ alignItems: "flex-start" }}>
                           <span className="personal-info-label pt-1">Address</span>
@@ -3351,6 +3409,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
               <label className="form-label text-muted small">WhatsApp Number <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="whatsAppNumber" value={profileData.whatsAppNumber} onChange={handleprofileInput} />
             </div>
+            {/* <div className="col-md-6">
+              <label className="form-label text-muted small">Mobile Number <span className="text-danger">*</span></label>
+              <input type="text" className="form-control rounded-3" name="mobileNumber" value={profileData.mobileNumber} onChange={handleprofileInput} />
+            </div> */}
             <div className="col-12">
               <label className="form-label text-muted small">Residential Address <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="residenceAddress" value={profileData.residenceAddress} onChange={handleprofileInput} />
@@ -3914,6 +3976,12 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                             <span className="text-success fw-bold d-flex align-items-center gap-1">
                               <i className="fa-solid fa-circle-check"></i> Payslip Verified
                             </span>
+                            {payslipVerification.detectedName && (
+                              <div className="small mb-1">
+                                <span className="text-muted">Employee: </span>
+                                <strong>{payslipVerification.detectedName}</strong> <i className="fa-solid fa-circle-check text-success ms-1"></i>
+                              </div>
+                            )}
                             {payslipVerification.detectedDate && (
                               <span className="badge bg-success-subtle text-success">{payslipVerification.detectedDate}</span>
                             )}

@@ -1379,3 +1379,208 @@
   }
 }
 
+/* ==========================================================================
+   LOGIN VERSION CODE & UPDATE CHECKER STYLES
+   ========================================================================== */
+.login-version-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  position: relative;
+  user-select: none;
+  width: 100%;
+}
+
+.login-version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.login-version-badge:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.login-version-badge.update-available {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+  font-weight: 600;
+  cursor: pointer;
+  animation: updatePulse 2s infinite ease-in-out;
+}
+
+.login-version-badge.update-available:hover {
+  background: #ffedd5;
+  border-color: #fdba74;
+}
+
+.version-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.version-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.version-dot.pulse-amber {
+  background: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.25);
+  animation: dotBlink 1.4s infinite ease-in-out;
+}
+
+.version-code-text {
+  font-weight: 600;
+  color: #475569;
+}
+
+.version-status-text {
+  color: #94a3b8;
+  font-size: 10.5px;
+}
+
+.version-refresh-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  padding: 0 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+  transition: color 0.18s ease;
+}
+
+.version-refresh-btn:hover {
+  color: #0066f6;
+}
+
+.version-spin {
+  animation: versionRotate 0.8s linear infinite;
+}
+
+@keyframes versionRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dotBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes updatePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(249, 115, 22, 0);
+  }
+}
+
+.login-version-details-popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  min-width: 230px;
+  z-index: 100;
+  font-size: 11.5px;
+  animation: fadeIn 0.18s ease;
+}
+
+.version-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #0f172a;
+  font-size: 12px;
+}
+
+.version-popover-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.version-popover-close:hover {
+  color: #0f172a;
+}
+
+.version-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  color: #64748b;
+}
+
+.version-detail-row strong {
+  color: #0f172a;
+}
+
+.version-force-reload-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.version-force-reload-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+

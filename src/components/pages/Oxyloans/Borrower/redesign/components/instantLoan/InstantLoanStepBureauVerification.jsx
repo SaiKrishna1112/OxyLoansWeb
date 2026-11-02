@@ -88,10 +88,10 @@ const InstantLoanStepBureauVerification = ({
         <div>
           <div className="d-flex align-items-center gap-2 mb-1">
             <span className="badge badge-fintech-primary-soft px-3 py-1 rounded-pill small">
-              Phase 3 • Bureau Underwriting & Identity Cross-Check
+              Phase 4 • Bureau Underwriting & Identity Cross-Check
             </span>
             <span className="badge badge-fintech-neutral px-2 py-1 rounded-pill small">
-              Step 3 of 6
+              Step 4 of 7
             </span>
           </div>
           <h4 className="fw-bold text-dark mb-1">Credit Bureau & PAN/DOB Verification</h4>

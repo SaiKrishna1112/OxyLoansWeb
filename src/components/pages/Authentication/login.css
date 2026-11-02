@@ -27,21 +27,28 @@
 }
 .otp-field {
   display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .otp-field input {
-  width: 2.8rem;
-  height: 2.8rem;
-  font-size: 32px;
-  padding: 10px;
+  width: 44px;
+  height: 50px;
+  font-size: 22px;
+  padding: 0;
   text-align: center;
-  border-radius: 5px;
-  margin: 2px;
-  border: 2px solid #55525c;
-  background: transparent;
-  font-weight: bold;
-  color: gray;
+  border-radius: 10px;
+  margin: 0;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  font-weight: 700;
+  color: #0f172a;
   outline: none;
-  transition: all 0.1s;
+  box-sizing: border-box;
+  transition: all 0.18s ease;
 }
 .texts {
   display: flex;
@@ -50,8 +57,10 @@
   justify-content: center;
 }
 .otp-field input:focus {
-  border: 2px solid #5632e7;
-  box-shadow: 0 0 2px 2px #1a39b56a;
+  border: 2px solid #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
 }
 
 .disabled {
@@ -880,18 +889,20 @@
 /* ==========================================================================
    OTP VERIFICATION & SUCCESS STYLES
    ========================================================================== */
-.reg-otp-container {
+.reg-otp-container,
+.reg-otp-step-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   padding: 8px 0;
+  width: 100%;
   animation: fadeIn 0.4s ease;
 }
 
 .reg-otp-icon-circle {
-  width: 60px;
-  height: 60px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   display: flex;
@@ -900,52 +911,162 @@
   color: #ffffff;
   font-size: 24px;
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.3);
-  margin-bottom: 10px;
+  margin: 0 auto 10px;
   animation: shieldFloat 3s ease-in-out infinite;
 }
 
-.reg-otp-title {
-  font-size: 18px;
+.reg-otp-title,
+.reg-otp-heading {
+  font-size: 19px;
   font-weight: 700;
   color: #0f172a;
   margin: 0 0 4px;
+  text-align: center;
 }
 
-.reg-otp-subtitle {
-  font-size: 12.5px;
+.reg-otp-subtitle,
+.reg-otp-instruction {
+  font-size: 13px;
   color: #64748b;
   margin: 0 0 14px;
+  text-align: center;
+  line-height: 1.45;
+  max-width: 340px;
 }
 
-.reg-otp-inputs {
-  margin: 10px 0 16px;
+.reg-otp-inputs,
+.reg-otp-box-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 6px 0 14px;
 }
 
-.reg-resend-box {
-  margin-bottom: 12px;
+.reg-resend-box,
+.reg-resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 14px;
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  width: 100%;
+}
+
+.reg-resend-prompt {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.reg-timer-badge,
+.reg-timer-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12.5px;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-weight: 500;
 }
 
-.reg-resend-link {
+.reg-timer-badge strong,
+.reg-timer-text strong,
+.reg-resend-box strong,
+.reg-resend-row strong {
   color: #2563eb;
   font-weight: 700;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  font-family: inherit;
-  font-size: inherit;
-  transition: color 0.2s ease;
 }
 
-.reg-resend-link:hover {
+.reg-resend-btn,
+.reg-resend-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
   color: #1d4ed8;
-  text-decoration: underline;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  text-decoration: none;
 }
 
+.reg-resend-btn:hover:not(:disabled),
+.reg-resend-link:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.reg-resend-btn:active:not(:disabled),
+.reg-resend-link:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.reg-resend-btn:disabled,
 .reg-resend-link:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8;
+  box-shadow: none;
+  transform: none;
+}
+
+.reg-spin {
+  animation: regSpin 1s linear infinite;
+}
+
+@keyframes regSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reg-main-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin: 6px 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  animation: fadeIn 0.25s ease;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.reg-back-row {
+  margin-top: 14px;
+  width: 100%;
+  text-align: center;
 }
 
 /* OTP Success View */
@@ -1276,6 +1397,76 @@
   .reg-footnote,
   .reg-borrower-row {
     font-size: 11.5px;
+  }
+
+  .otp-field {
+    gap: 6px;
+  }
+
+  .otp-field input {
+    width: 38px;
+    height: 46px;
+    font-size: 19px;
+    border-radius: 8px;
+  }
+
+  .reg-otp-container,
+  .reg-otp-step-wrap {
+    padding: 4px 0;
+  }
+
+  .reg-otp-icon-circle {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .reg-otp-title,
+  .reg-otp-heading {
+    font-size: 17.5px;
+  }
+
+  .reg-otp-subtitle,
+  .reg-otp-instruction {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .reg-resend-box,
+  .reg-resend-row {
+    margin: 8px 0 12px;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .reg-resend-prompt {
+    font-size: 12px;
+  }
+
+  .reg-timer-badge,
+  .reg-timer-text {
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+
+  .reg-resend-btn,
+  .reg-resend-link {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .otp-field {
+    gap: 4px;
+  }
+
+  .otp-field input {
+    width: 34px;
+    height: 42px;
+    font-size: 17px;
+    border-radius: 6px;
   }
 }
 

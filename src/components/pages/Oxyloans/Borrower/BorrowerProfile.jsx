@@ -36,6 +36,7 @@ import {
   getBorrowerAnalysis,
   getBorrowerStatementById,
   getBorrowerReportPdfUser,
+  getBorrowerSalaryDetails,
   getdatatenth,
   getdataintermediate,
   getdatagraduation,
@@ -62,6 +63,7 @@ import {
   calculateBorrowerProfileCompleteness,
   verifySalaryFromBankStatement,
   validatePayslipDocument,
+  validateBankStatementAnalysis,
 } from "../../../../utils/borrowerValidation";
 
 const Profile = () => {
@@ -120,7 +122,7 @@ const Profile = () => {
           profileData.kycStatus === true ||
           (kycDocs && Object.values(kycDocs).filter((v) => v !== null).length > 0)
         );
-        if (isKycCompletedAndVerified) {
+        if (!isKycCompletedAndVerified) {
           Swal.fire({
             icon: "warning",
             title: "KYC & Documents Locked",
@@ -266,36 +268,23 @@ const Profile = () => {
   const [whatsappOtp, setWhatsappOtp] = useState("");
   const [whatsappSubmitted, setWhatsappSubmitted] = useState(false);
 
-  // Document Verification States (Payslip Company & Bank Statement Salary)
-  const [payslipVerification, setPayslipVerification] = useState(() => {
-    try {
-      const saved = localStorage.getItem("oxy_borrower_payslip_verified");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [salaryVerification, setSalaryVerification] = useState(() => {
-    try {
-      const saved = localStorage.getItem("oxy_borrower_salary_verified");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Document Verification States (Values populated purely from API responses - no localStorage)
+  const [payslipVerification, setPayslipVerification] = useState(null);
+  const [salaryVerification, setSalaryVerification] = useState(null);
+  const [borrowerSalaryData, setBorrowerSalaryData] = useState(null);
+  const [kycActiveTab, setKycActiveTab] = useState("all");
 
   const documentNames = {
   pan: "PAN Card",
   creditReport: "Credit Bureau Report",
   CREDITREPORT: "Credit Bureau Report",
   CHEQUELEAF: "Cancelled Cheque Leaf",
-  BANKSTATEMENT: "6-Month Bank Statement",
+  BANKSTATEMENT: "Bank Statement (3-6 Months)",
   AADHAR: "Aadhaar Card",
   DRIVINGLICENCE: "Driving Licence",
   VOTERID: "Voter ID Card",
   PASSPORT: "Passport",
-  PAYSLIPS: "Latest 6-Month Payslips",
+  PAYSLIPS: "Current Payslip",
   INTER: "Intermediate Marksheet",
   TENTH: "10th Grade Marksheet",
   GRADUATION: "Graduation Marksheet",
@@ -304,6 +293,13 @@ const Profile = () => {
 };
 
   useEffect(() => {
+    // Clean up any deprecated local storage verification caches to ensure values are taken ONLY from API responses
+    try {
+      localStorage.removeItem("oxy_borrower_payslip_verified");
+      localStorage.removeItem("oxy_borrower_salary_verified");
+      localStorage.removeItem("oxy_borrower_salary_data");
+    } catch (e) {}
+
     document.body.classList.add("oxy-redesign-active");
     loadAllProfileData();
     return () => {
@@ -496,6 +492,7 @@ const Profile = () => {
 
   const fetchKycFiles = async () => {
     try {
+      const currentUserId = profileData?.userId || localStorage.getItem("userId") || sessionStorage.getItem("userId");
       const creditReportPass = secureInfo?.creditReportPassword || secureInfo?.cibilPassword || "";
       const res = await Promise.allSettled([
         getPanDoc(),
@@ -510,7 +507,7 @@ const Profile = () => {
         getdatagraduation(),
         getdataofferletter(),
         getdatafeereceipt(),
-        getdatapayslips(),
+        getdatapayslips(currentUserId),
         getPCreditReportDoc(creditReportPass),
       ]);
 
@@ -523,7 +520,61 @@ const Profile = () => {
       const updatedDocs = {};
       docKeys.forEach((key, idx) => {
         if (res[idx]?.status === "fulfilled" && res[idx].value?.data) {
-          updatedDocs[key] = res[idx].value.data;
+          const val = res[idx].value.data;
+          if (key === "paySlips") {
+            // Handle array or object from payslip/user/{userId} API response - no localStorage used
+            let latestPayslip = null;
+            if (Array.isArray(val) && val.length > 0) {
+              latestPayslip = val[val.length - 1] || val[0];
+              updatedDocs[key] = {
+                ...latestPayslip,
+                downloadUrl: latestPayslip.downloadUrl || latestPayslip.documentUrl || latestPayslip.fileUrl || latestPayslip.url || latestPayslip.documentPath,
+                allPayslips: val,
+              };
+            } else if (typeof val === "object" && val !== null) {
+              latestPayslip = val;
+              updatedDocs[key] = {
+                ...val,
+                downloadUrl: val.downloadUrl || val.documentUrl || val.fileUrl || val.url || val.documentPath || val.data?.downloadUrl,
+              };
+            } else {
+              updatedDocs[key] = val;
+            }
+
+            if (latestPayslip) {
+              const rawSalary = latestPayslip.netSalary != null ? latestPayslip.netSalary : latestPayslip.salary != null ? latestPayslip.salary : latestPayslip.monthlySalary != null ? latestPayslip.monthlySalary : latestPayslip.amount != null ? latestPayslip.amount : 0;
+              const detectedSalary = typeof rawSalary === "number" ? rawSalary : (rawSalary && typeof rawSalary === "object" && rawSalary.amount ? Number(rawSalary.amount) : Number(rawSalary || 0));
+
+              const rawCompany = latestPayslip.companyName || latestPayslip.company || latestPayslip.detectedCompany || latestPayslip.employer || "";
+              const detectedCompany = typeof rawCompany === "string" ? rawCompany : "";
+
+              const rawDate = latestPayslip.payPeriod || latestPayslip.payMonth || latestPayslip.salaryMonth || latestPayslip.detectedDate || latestPayslip.monthYear || latestPayslip.month || "";
+              const detectedDate = typeof rawDate === "string" ? rawDate : (rawDate && typeof rawDate === "object" && rawDate.month ? `${rawDate.month} ${rawDate.year || ""}`.trim() : (rawDate?.date || ""));
+
+              const rawName = latestPayslip.employeeName || latestPayslip.detectedName || latestPayslip.name || "";
+              const detectedName = typeof rawName === "string" ? rawName : "";
+
+              if (detectedCompany || detectedSalary > 0 || detectedDate) {
+                setPayslipVerification({
+                  verified: Boolean(latestPayslip.verified !== false),
+                  companyName: detectedCompany,
+                  declaredCompany: profileData.companyName || detectedCompany,
+                  detectedName: detectedName,
+                  detectedSalary: detectedSalary,
+                  detectedDate: detectedDate,
+                  nameMatch: Boolean(detectedName),
+                  salaryMatch: detectedSalary > 0,
+                  companyMatch: Boolean(detectedCompany),
+                  message: `Payslip verified for ${detectedCompany} ${detectedDate ? `(${detectedDate})` : ""}.`,
+                  analysisData: latestPayslip,
+                });
+              }
+            } else {
+              setPayslipVerification(null);
+            }
+          } else {
+            updatedDocs[key] = val;
+          }
         } else {
           updatedDocs[key] = null;
         }
@@ -601,18 +652,30 @@ const Profile = () => {
     } catch (e) {
       console.log("No previous bank statement analysis found yet.");
     }
+
+    // Also fetch verified salary details from /borrower/:userId/salary (API-only, no localStorage)
+    try {
+      const salaryRes = await getBorrowerSalaryDetails(userId);
+      const sData = salaryRes?.data?.data || salaryRes?.data || {};
+      const sList = Array.isArray(sData.salaryDetails) ? sData.salaryDetails : Array.isArray(sData) ? sData : [];
+      if (sList.length > 0) {
+        setBorrowerSalaryData(sList[0]);
+      } else {
+        setBorrowerSalaryData(null);
+      }
+    } catch (sErr) {
+      console.log("No previous salary details found yet.");
+      setBorrowerSalaryData(null);
+    }
   };
 
-  // Sync Salary Verification whenever bankAnalysisData or profileData.salary changes
+  // Sync Salary Verification whenever bankAnalysisData or profileData.salary changes (in-memory only)
   useEffect(() => {
     if (bankAnalysisData) {
       const result = verifySalaryFromBankStatement(profileData.salary, bankAnalysisData);
       setSalaryVerification(result);
-      try {
-        localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(result));
-      } catch (err) {
-        console.warn("Could not cache salary verification", err);
-      }
+    } else {
+      setSalaryVerification(null);
     }
   }, [profileData.salary, bankAnalysisData]);
 
@@ -719,12 +782,12 @@ const Profile = () => {
 
   const profileCompletenessInfo = useMemo(() => {
     return calculateBorrowerProfileCompleteness(
-      { ...profileData, isPanVerified },
+      { ...profileData, isPanVerified, kycDocs, payslipVerification, salaryVerification, borrowerSalaryData },
       referenceList,
       nominee,
       null
     );
-  }, [profileData, isPanVerified, referenceList, nominee]);
+  }, [profileData, isPanVerified, referenceList, nominee, kycDocs, payslipVerification, salaryVerification, borrowerSalaryData]);
 
   const profileCompletionPct = profileCompletenessInfo.percentage;
   const getCompletionGroup = (label) =>
@@ -1309,6 +1372,239 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
     }
   };
 
+  /**
+   * Unified Bank Statement Validation, Analysis & Upload Handler
+   * 1. Calls analyze API
+   * 2. Validates underwriting decision, salary detection, tamper assessment & name match
+   * 3. Upon validation success, uploads statement document
+   * 4. Fetches verified salary amount from GET /borrower/:userId/salary
+   * 5. Updates profile salary & displays verified salary details
+   */
+  const processBankStatementValidationAndUpload = async (file, password = "", uploadEvent = null) => {
+    const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
+    if (!userId) {
+      Swal.fire("Session Expired", "Please login again to continue.", "error");
+      return false;
+    }
+
+    let activePass = password || secureInfo?.bankStatementPassword || "";
+
+    // 1. CALL ANALYZE API FIRST
+    let analyzeRes = null;
+    try {
+      analyzeRes = await analyzeBorrowerBankStatement(userId, file, activePass);
+    } catch (err) {
+      const errMsg = err?.response?.data?.errorMessage || err?.response?.data?.message || err?.message || "";
+      const isPasswordError =
+        errMsg.toLowerCase().includes("password") ||
+        errMsg.toLowerCase().includes("protected") ||
+        errMsg.toLowerCase().includes("encrypted") ||
+        errMsg.toLowerCase().includes("decrypt") ||
+        err?.response?.status === 400 ||
+        err?.response?.status === 422;
+
+      if (isPasswordError) {
+        const retryPass = await promptForPdfPassword({
+          title: "Password Required",
+          text: errMsg || "The uploaded bank statement PDF is password-protected. Please enter the password:",
+          placeholder: "Enter Bank Statement Password",
+          confirmText: "Submit & Analyze",
+          cancelText: "Cancel",
+          validationMessage: "Password is required to decrypt statement PDF!",
+        });
+
+        if (retryPass === null) {
+          return false;
+        }
+
+        activePass = retryPass;
+        setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
+
+        try {
+          analyzeRes = await analyzeBorrowerBankStatement(userId, file, retryPass);
+        } catch (retryErr) {
+          const rMsg = retryErr?.response?.data?.errorMessage || retryErr?.response?.data?.message || retryErr?.message || "Failed to analyze bank statement with provided password.";
+          Swal.fire("Analysis Error", rMsg, "error");
+          return false;
+        }
+      } else {
+        Swal.fire({
+          title: "Bank Statement Analysis Failed",
+          text: errMsg || "Failed to analyze bank statement. Please ensure the file is an authentic bank statement PDF.",
+          icon: "error",
+          confirmButtonColor: "var(--oxy-primary)",
+        });
+        return false;
+      }
+    }
+
+    const resData = analyzeRes?.data || {};
+
+    // 2. VALIDATE ANALYSIS RESPONSE
+    const validation = validateBankStatementAnalysis(resData, profileData);
+
+    // 2a. Check for blocking errors (e.g. Underwriter REJECT or Tamper detected)
+    if (!validation.isValid) {
+      const errContent = validation.errors.join("<br/><br/>");
+      Swal.fire({
+        title: "Bank Statement Verification Failed",
+        html: `<div>We could not accept this bank statement:</div>
+               <div class="mt-3 p-3 rounded text-start" style="background-color: #fef2f2 !important; border: 1px solid #fca5a5 !important; color: #991b1b !important; font-size: 13px; line-height: 1.6;">
+                 ${errContent}
+               </div>`,
+        icon: "error",
+        confirmButtonText: "Upload Different Statement",
+        confirmButtonColor: "var(--oxy-primary)",
+      });
+      return false;
+    }
+
+    // 2b. Name mismatch confirmation
+    if (!validation.isNameMatch && validation.needsNameConfirmation) {
+      const borrowerFullName = `${profileData.firstName || ""} ${profileData.lastName || ""}`.trim();
+      const confirmName = await Swal.fire({
+        title: "Bank Account Ownership Check",
+        html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                 <div class="mb-2">Your profile name: <strong class="text-primary">${borrowerFullName}</strong></div>
+                 <div class="mb-3">Account holder on statement: <strong class="text-success">${validation.customerName}</strong></div>
+                 <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                   Is this bank statement for your personal or joint bank account?
+                 </div>
+               </div>`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: `Yes, Confirm (${validation.customerName})`,
+        cancelButtonText: "No, Re-upload Statement",
+        confirmButtonColor: "var(--oxy-primary)",
+      });
+
+      if (!confirmName.isConfirmed) {
+        return false;
+      }
+    }
+
+    // 2c. Salaried borrower warning if no salary detected or statement period is short
+    if (validation.warnings.length > 0) {
+      const warnContent = validation.warnings.join("<br/><br/>");
+      const confirmWarn = await Swal.fire({
+        title: "Statement Notice",
+        html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                 <div class="p-3 rounded mb-3" style="background:#fffbeb; border:1px solid #fde68a; color:#92400e;">
+                   ${warnContent}
+                 </div>
+                 <div>Do you wish to proceed with this statement?</div>
+               </div>`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Proceed",
+        cancelButtonText: "Upload Another Statement",
+        confirmButtonColor: "var(--oxy-primary)",
+      });
+
+      if (!confirmWarn.isConfirmed) {
+        return false;
+      }
+    }
+
+    // 3. ALL CHECKS PASSED -> UPLOAD KYC DOCUMENT
+    const eventToUpload = uploadEvent || {
+      target: {
+        name: "BANKSTATEMENT",
+        files: [file],
+      },
+    };
+
+    try {
+      await uploadkyc(eventToUpload, activePass);
+    } catch (uErr) {
+      console.log("Kyc upload notice:", uErr);
+    }
+
+    // 4. FETCH VERIFIED SALARY AMOUNT FROM GET /borrower/:userId/salary (API-only, no localStorage)
+    let salaryDetails = null;
+    try {
+      const salaryRes = await getBorrowerSalaryDetails(userId);
+      const sData = salaryRes?.data?.data || salaryRes?.data || {};
+      const sList = Array.isArray(sData.salaryDetails) ? sData.salaryDetails : Array.isArray(sData) ? sData : [];
+      if (sList.length > 0) {
+        salaryDetails = sList[0];
+        setBorrowerSalaryData(salaryDetails);
+
+        if (salaryDetails.monthlyAmount > 0 && !profileData.salary) {
+          setProfileData((prev) => ({ ...prev, salary: salaryDetails.monthlyAmount }));
+        }
+      }
+    } catch (sErr) {
+      console.log("Fetch verified salary notice:", sErr);
+    }
+
+    // 5. UPDATE SALARY VERIFICATION & SYNC UI (in-memory state)
+    const statementData = resData?.data || resData || {};
+    const salaryCheck = verifySalaryFromBankStatement(profileData.salary, statementData);
+    setSalaryVerification(salaryCheck);
+
+    await fetchKycFiles();
+    await fetchBorrowerAnalysisData();
+
+    // 6. SHOW SUCCESS POPUP WITH VERIFIED SALARY AMOUNT
+    const verifiedSalary = salaryDetails?.monthlyAmount != null
+      ? salaryDetails.monthlyAmount
+      : validation.detectedSalary;
+
+    let trendText = "";
+    if (typeof salaryDetails?.salaryTrend === "string") {
+      trendText = salaryDetails.salaryTrend;
+    } else if (Array.isArray(salaryDetails?.salaryTrend)) {
+      trendText = salaryDetails.salaryTrend
+        .map((item) => (typeof item === "object" ? `${item.month || item.date || "M"}: ₹${Number(item.amount || 0).toLocaleString("en-IN")}` : String(item)))
+        .join(", ");
+    }
+
+    Swal.fire({
+      title: "Bank Statement Verified & Uploaded",
+      html: `<div>Bank statement uploaded and analyzed successfully!</div>
+             <div class="mt-3 p-3 rounded text-start" style="background:#f0fdf4; border:1px solid #bbf7d0; font-size:13px; line-height:1.7;">
+               ${verifiedSalary > 0 ? `
+                 <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
+                   <span class="text-muted">Verified Monthly Salary:</span>
+                   <span class="fw-bold text-success" style="font-size: 15px;">₹ ${Number(verifiedSalary).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
+                 </div>
+               ` : ""}
+               ${(salaryDetails?.bankName || validation.bankName) ? `
+                 <div class="d-flex justify-content-between mb-1">
+                   <span class="text-muted">Bank Name:</span>
+                   <span class="fw-semibold">${salaryDetails?.bankName || validation.bankName} ${salaryDetails?.accountNumberMasked || validation.accountNumberMasked || ""}</span>
+                 </div>
+               ` : ""}
+               ${(salaryDetails?.employer || validation.rawOverview?.employerHint) ? `
+                 <div class="d-flex justify-content-between mb-1">
+                   <span class="text-muted">Employer / Narration:</span>
+                   <span class="fw-semibold text-truncate ms-2" style="max-width:180px;" title="${salaryDetails?.employer || validation.rawOverview?.employerHint}">
+                     ${salaryDetails?.employer || validation.rawOverview?.employerHint}
+                   </span>
+                 </div>
+               ` : ""}
+               ${((salaryDetails?.periodStart && salaryDetails?.periodEnd) || (validation.periodStart && validation.periodEnd)) ? `
+                 <div class="d-flex justify-content-between mb-1">
+                   <span class="text-muted">Statement Period:</span>
+                   <span class="fw-semibold">${salaryDetails?.periodStart || validation.periodStart} to ${salaryDetails?.periodEnd || validation.periodEnd}</span>
+                 </div>
+               ` : ""}
+               ${trendText ? `
+                 <div class="d-flex justify-content-between">
+                   <span class="text-muted">Salary Trend:</span>
+                   <span class="badge bg-success-subtle text-success py-1 px-2 fw-semibold">${trendText}</span>
+                 </div>
+               ` : ""}
+             </div>`,
+      icon: "success",
+      confirmButtonText: "Done",
+      confirmButtonColor: "var(--oxy-primary)",
+    });
+
+    return true;
+  };
+
   // Upload File handler
   const handleFileUploadInput = async (e) => {
     if (profileCompletionPct < 75) {
@@ -1344,105 +1640,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
       setAnalyzingBankStatement(true);
       try {
-        const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
-        const analyzeRes = await analyzeBorrowerBankStatement(userId, file, pass);
-
-        try { await uploadkyc(e, pass); } catch (uErr) { console.log("Legacy upload notice:", uErr); }
-
-        const statementData = analyzeRes?.data?.data || analyzeRes?.data || {};
-        const salaryCheck = verifySalaryFromBankStatement(profileData.salary, statementData);
-        setSalaryVerification(salaryCheck);
-        try {
-          localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(salaryCheck));
-        } catch (err) {}
-
-        Swal.fire({
-          title: salaryCheck.isMatch ? "Bank Statement Verified & Analyzed" : "Upload & Analysis Successful",
-          html: `<div>${analyzeRes?.data?.message || "Bank statement uploaded and analyzed successfully!"}</div>
-                 <div class="mt-3 p-3 rounded text-start" style="background:${salaryCheck.isMatch ? '#f0fdf4' : '#fffbeb'}; border:1px solid ${salaryCheck.isMatch ? '#bbf7d0' : '#fde68a'}; font-size:13px;">
-                   <div><b>Declared Monthly Salary:</b> ₹${Number(profileData.salary || 0).toLocaleString("en-IN")}</div>
-                   ${salaryCheck.detectedSalary > 0 ? `<div><b>Detected Monthly Inflow:</b> ₹${Number(salaryCheck.detectedSalary).toLocaleString("en-IN")}</div>` : ""}
-                   <div class="mt-2 ${salaryCheck.isMatch ? 'text-success fw-bold' : 'text-dark fw-semibold'}">
-                     <i class="fa-solid ${salaryCheck.isMatch ? 'fa-circle-check text-success' : 'fa-circle-info text-warning'} me-1"></i>
-                     ${salaryCheck.message}
-                   </div>
-                 </div>`,
-          icon: "success",
-          confirmButtonColor: "var(--oxy-primary)"
-        });
-        await fetchKycFiles();
-        await fetchBorrowerAnalysisData();
-      } catch (err) {
-        const errMsg = err?.response?.data?.errorMessage || err?.message || "";
-        const isPasswordError =
-          errMsg.toLowerCase().includes("password") ||
-          errMsg.toLowerCase().includes("protected") ||
-          errMsg.toLowerCase().includes("encrypted") ||
-          errMsg.toLowerCase().includes("decrypt") ||
-          err?.response?.status === 400 ||
-          err?.response?.status === 422;
-
-        if (isPasswordError) {
-          const retryPass = await promptForPdfPassword({
-            title: "Password Required",
-            text: errMsg || "The uploaded bank statement PDF is password-protected. Please enter password:",
-            placeholder: "Enter Bank Statement Password",
-            confirmText: "Submit & Analyze",
-            cancelText: "Cancel",
-            validationMessage: "Password is required to decrypt statement PDF!",
-          });
-
-          if (retryPass === null) {
-            setProcessingDocument((prev) => ({ ...prev, bankStatement: false }));
-            return;
-          }
-
-          setSecureInfo((prev) => ({ ...prev, bankStatementPassword: retryPass }));
-
-          try {
-            const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
-            const retryRes = await analyzeBorrowerBankStatement(userId, file, retryPass);
-            try { await uploadkyc(e, retryPass); } catch (uErr) {}
-            const retryData = retryRes?.data?.data || retryRes?.data || {};
-            const retrySalaryCheck = verifySalaryFromBankStatement(profileData.salary, retryData);
-            setSalaryVerification(retrySalaryCheck);
-            try {
-              localStorage.setItem("oxy_borrower_salary_verified", JSON.stringify(retrySalaryCheck));
-            } catch (err) {}
-
-            Swal.fire({
-              title: retrySalaryCheck.isMatch ? "Bank Statement Verified & Analyzed" : "Analysis Successful",
-              html: `<div>Bank statement analyzed successfully!</div>
-                     <div class="mt-3 p-3 rounded text-start" style="background:${retrySalaryCheck.isMatch ? '#f0fdf4' : '#fffbeb'}; border:1px solid ${retrySalaryCheck.isMatch ? '#bbf7d0' : '#fde68a'}; font-size:13px;">
-                       <div><b>Declared Monthly Salary:</b> ₹${Number(profileData.salary || 0).toLocaleString("en-IN")}</div>
-                       ${retrySalaryCheck.detectedSalary > 0 ? `<div><b>Detected Monthly Inflow:</b> ₹${Number(retrySalaryCheck.detectedSalary).toLocaleString("en-IN")}</div>` : ""}
-                       <div class="mt-2 ${retrySalaryCheck.isMatch ? 'text-success fw-bold' : 'text-dark fw-semibold'}">
-                         <i class="fa-solid ${retrySalaryCheck.isMatch ? 'fa-circle-check text-success' : 'fa-circle-info text-warning'} me-1"></i>
-                         ${retrySalaryCheck.message}
-                       </div>
-                     </div>`,
-              icon: "success",
-              confirmButtonColor: "var(--oxy-primary)"
-            });
-            await fetchKycFiles();
-            await fetchBorrowerAnalysisData();
-          } catch (retryErr) {
-            Swal.fire("Analysis Error", retryErr?.response?.data?.errorMessage || "Failed to analyze bank statement.", "error");
-          }
-          return;
-        }
-
-        try {
-          const res = await uploadkyc(e, pass);
-          if (res?.request?.status === 200 || res?.status === 200) {
-            Swal.fire("Upload Successful", "Document uploaded successfully.", "success");
-            await fetchKycFiles();
-          } else {
-            Swal.fire("Upload Failed", res?.data?.errorMessage || "File cannot be uploaded.", "error");
-          }
-        } catch {
-          Swal.fire("Upload Failed", errMsg || "An error occurred during upload.", "error");
-        }
+        await processBankStatementValidationAndUpload(file, pass, e);
       } finally {
         setAnalyzingBankStatement(false);
         setProcessingDocument((prev) => ({ ...prev, bankStatement: false }));
@@ -1610,14 +1808,16 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       setProcessingDocument((prev) => ({ ...prev, paySlips: true }));
 
       try {
-        // 1. Analyze payslip via POST payslip/analyze1 (multipart/form-data)
-        const analyzeRes = await analyzePayslipApi(file);
+        // 1. Analyze payslip via POST payslip/analyze1 (multipart/form-data with file & userId)
+        const currentUserId = profileData?.userId || localStorage.getItem("userId") || sessionStorage.getItem("userId");
+        const analyzeRes = await analyzePayslipApi(file, currentUserId);
         const resData = analyzeRes?.data?.data || analyzeRes?.data || {};
 
         let declaredCompany = (profileData.companyName || "").trim();
+        const borrowerFirstName = (profileData.firstName || "").trim();
 
-        // 2. Validate against past 6 months, company name, and salary
-        let validation = await validatePayslipDocument(resData, declaredCompany, file);
+        // 2. Validate against past 6 months, company name, user first name, and salary
+        let validation = await validatePayslipDocument(resData, declaredCompany, file, borrowerFirstName);
 
         // 2a. If company didn't match directly, check with borrower if it's the parent company / legal entity
         if (!validation.isCompanyMatch && validation.needsParentConfirmation) {
@@ -1647,17 +1847,17 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           }
         }
 
-        // 2b. If date was not readable by OCR, prompt borrower to confirm pay month from last 6 months
+        // 2b. If date was not readable by OCR, prompt borrower to confirm pay month from recent 3 months
         if (!validation.isDateValid && validation.needsDateConfirmation) {
           const options = {};
           const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
           const curr = new Date();
-          for (let i = 0; i < 6; i++) {
+          for (let i = 0; i < 3; i++) {
             const d = new Date(curr.getFullYear(), curr.getMonth() - i, 1);
             const key = `${mNames[d.getMonth()]} ${d.getFullYear()}`;
-            options[key] = key;
+            options[key] = i === 0 ? `${key} (Current Month)` : key;
           }
-          options["OLDER"] = "Older than 6 months";
+          options["OLDER"] = "Older than 3 months";
 
           const { value: selectedMonth } = await Swal.fire({
             title: "Confirm Payslip Month",
@@ -1676,7 +1876,31 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             validation.isDateValid = true;
             validation.detectedDate = selectedMonth;
             validation.errors = validation.errors.filter((err) => !err.includes("date") && !err.includes("month"));
-            validation.isValid = validation.isCompanyMatch && validation.detectedSalary > 0;
+            validation.isValid = validation.isCompanyMatch && validation.isNameMatch && validation.detectedSalary > 0;
+          }
+        }
+
+        // 2c. If name was not readable by OCR, prompt borrower to confirm ownership
+        if (!validation.isNameMatch && validation.needsNameConfirmation) {
+          const confirmName = await Swal.fire({
+            title: "Confirm Payslip Ownership",
+            html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                     <div class="mb-2">Your profile first name: <strong class="text-primary">${borrowerFirstName}</strong></div>
+                     <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                       We could not automatically detect your first name from the document text. Please confirm: Is this payslip officially issued to you (<strong>${borrowerFirstName}</strong>)?
+                     </div>
+                   </div>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, Confirm My Payslip`,
+            cancelButtonText: "No, Re-upload My Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+
+          if (confirmName.isConfirmed) {
+            validation.isNameMatch = true;
+            validation.errors = validation.errors.filter((err) => !err.toLowerCase().includes("name"));
+            validation.isValid = validation.isDateValid && validation.isCompanyMatch && validation.detectedSalary > 0;
           }
         }
 
@@ -1686,7 +1910,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
           const errContent = validation.errors?.length > 0
             ? validation.errors.join("<br/><br/>")
-            : (validation.errorMessage || "Please upload a valid payslip from the past 6 months issued by your employer.");
+            : (validation.errorMessage || "Please upload your current payslip issued by your employer.");
 
           Swal.fire({
             title: "Payslip Verification Failed",
@@ -1694,7 +1918,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                    <div class="mt-3 p-3 rounded text-start" style="background-color: #fef2f2 !important; border: 1px solid #fca5a5 !important; color: #991b1b !important; font-size: 13px; line-height: 1.6;">
                      ${errContent}
                    </div>
-                   <div class="mt-3 text-muted small">Please upload a valid payslip from the <b>past 6 months</b> issued by <b>${declaredCompany || "your declared company"}</b>.</div>`,
+                   <div class="mt-3 text-muted small">Please upload your <b>current payslip</b> issued by <b>${declaredCompany || "your declared company"}</b>.</div>`,
             icon: "error",
             confirmButtonText: "Re-upload Payslip",
             confirmButtonColor: "var(--oxy-primary)",
@@ -1737,8 +1961,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           verified: true,
           companyName: validation.detectedCompany,
           declaredCompany,
+          detectedName: validation.detectedName || borrowerFirstName,
           detectedSalary: newSalary,
           detectedDate: validation.detectedDate,
+          nameMatch: true,
           salaryMatch: true,
           companyMatch: true,
           message: `Payslip verified for ${validation.detectedCompany} (${validation.detectedDate}).`,
@@ -1746,9 +1972,6 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         };
 
         setPayslipVerification(payslipRecord);
-        try {
-          localStorage.setItem("oxy_borrower_payslip_verified", JSON.stringify(payslipRecord));
-        } catch (err) {}
 
         Swal.fire({
           title: "Payslip Verified & Uploaded",
@@ -1836,10 +2059,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
   };
 
   // distance
-    const triggerSavingGoogleDistance = async (userId) => {
+    const triggersavingGoogleCordinates = async (userId) => {
         try {
           await axios.post(
-            `${base_url}savingGoogleDistance`,
+            `${base_url}savingGoogleCordinates`,
             {
               userId: String(userId),
             },
@@ -1851,7 +2074,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           );
         } catch (error) {
           // Silent background call - no user popup required.
-          console.log("savingGoogleDistance api failed", error);
+          console.log("savingGoogleCordinates api failed", error);
         }
       };
 
@@ -1988,7 +2211,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       if (response?.status === 200 || response?.request?.status === 200) {
         try {
           await setLatLong();
-           triggerSavingGoogleDistance(response.data.userId);
+           triggersavingGoogleCordinates(response.data.userId);
         } catch (error) {
           console.error("Failed to update google distance", error);
         }
@@ -2153,28 +2376,18 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       };
 
       if (docType === "BANKSTATEMENT" || docType === "bankStatement") {
-        const userId = localStorage.getItem("userId") || sessionStorage.getItem("userId");
         if (password) {
           setSecureInfo((prev) => ({ ...prev, bankStatementPassword: password }));
         }
-        let analyzeRes = null;
-        try {
-          analyzeRes = await analyzeBorrowerBankStatement(userId, file, password || "");
-        } catch (aErr) {
-          console.log("Bank analysis notice:", aErr);
-        }
-        await uploadkyc(syntheticEvent, password || "");
-
-        const statementData = analyzeRes?.data?.data || analyzeRes?.data || {};
-        const salaryCheck = verifySalaryFromBankStatement(profileData.salary, statementData);
-        setSalaryVerification(salaryCheck);
-        await fetchKycFiles();
-        await fetchBorrowerAnalysisData();
+        await processBankStatementValidationAndUpload(file, password || "", syntheticEvent);
+        setKycModal((prev) => ({ ...prev, open: false }));
+        return;
       } else if (docType === "PAYSLIPS" || docType === "paySlips") {
         let analyzeRes = null;
         let resData = {};
         try {
-          analyzeRes = await analyzePayslipApi(file);
+          const currentUserId = profileData?.userId || localStorage.getItem("userId") || sessionStorage.getItem("userId");
+          analyzeRes = await analyzePayslipApi(file, currentUserId);
           resData = analyzeRes?.data?.data || analyzeRes?.data || {};
         } catch (aErr) {
           console.error("Payslip analyze error:", aErr);
@@ -2190,9 +2403,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         }
 
         let declaredCompany = (profileData.companyName || "").trim();
+        const borrowerFirstName = (profileData.firstName || "").trim();
 
-        // 2. Validate against past 6 months, company name, and salary
-        let validation = await validatePayslipDocument(resData, declaredCompany, file);
+        // 2. Validate against past 6 months, company name, user first name, and salary
+        let validation = await validatePayslipDocument(resData, declaredCompany, file, borrowerFirstName);
 
         // 2a. If company didn't match directly, check with borrower if it's the parent company / legal entity
         if (!validation.isCompanyMatch && validation.needsParentConfirmation) {
@@ -2222,17 +2436,17 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           }
         }
 
-        // 2b. If date was not readable by OCR, prompt borrower to confirm pay month from last 6 months
+        // 2b. If date was not readable by OCR, prompt borrower to confirm pay month from recent 3 months
         if (!validation.isDateValid && validation.needsDateConfirmation) {
           const options = {};
           const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
           const curr = new Date();
-          for (let i = 0; i < 6; i++) {
+          for (let i = 0; i < 3; i++) {
             const d = new Date(curr.getFullYear(), curr.getMonth() - i, 1);
             const key = `${mNames[d.getMonth()]} ${d.getFullYear()}`;
-            options[key] = key;
+            options[key] = i === 0 ? `${key} (Current Month)` : key;
           }
-          options["OLDER"] = "Older than 6 months";
+          options["OLDER"] = "Older than 3 months";
 
           const { value: selectedMonth } = await Swal.fire({
             title: "Confirm Payslip Month",
@@ -2251,14 +2465,38 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             validation.isDateValid = true;
             validation.detectedDate = selectedMonth;
             validation.errors = validation.errors.filter((err) => !err.includes("date") && !err.includes("month"));
-            validation.isValid = validation.isCompanyMatch && validation.detectedSalary > 0;
+            validation.isValid = validation.isCompanyMatch && validation.isNameMatch && validation.detectedSalary > 0;
+          }
+        }
+
+        // 2c. If name was not readable by OCR, prompt borrower to confirm ownership
+        if (!validation.isNameMatch && validation.needsNameConfirmation) {
+          const confirmName = await Swal.fire({
+            title: "Confirm Payslip Ownership",
+            html: `<div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+                     <div class="mb-2">Your profile first name: <strong class="text-primary">${borrowerFirstName}</strong></div>
+                     <div class="p-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                       We could not automatically detect your first name from the document text. Please confirm: Is this payslip officially issued to you (<strong>${borrowerFirstName}</strong>)?
+                     </div>
+                   </div>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, Confirm My Payslip`,
+            cancelButtonText: "No, Re-upload My Payslip",
+            confirmButtonColor: "var(--oxy-primary)",
+          });
+
+          if (confirmName.isConfirmed) {
+            validation.isNameMatch = true;
+            validation.errors = validation.errors.filter((err) => !err.toLowerCase().includes("name"));
+            validation.isValid = validation.isDateValid && validation.isCompanyMatch && validation.detectedSalary > 0;
           }
         }
 
         if (!validation.isValid) {
           const errContent = validation.errors?.length > 0
             ? validation.errors.join("<br/><br/>")
-            : (validation.errorMessage || "Please upload a valid payslip from the past 6 months issued by your employer.");
+            : (validation.errorMessage || "Please upload your current payslip issued by your employer.");
 
           Swal.fire({
             title: "Payslip Verification Failed",
@@ -2266,7 +2504,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                    <div class="mt-3 p-3 rounded text-start" style="background-color: #fef2f2 !important; border: 1px solid #fca5a5 !important; color: #991b1b !important; font-size: 13px; line-height: 1.6;">
                      ${errContent}
                    </div>
-                   <div class="mt-3 text-muted small">Please upload a valid payslip from the <b>past 6 months</b> issued by <b>${declaredCompany || "your declared company"}</b>.</div>`,
+                   <div class="mt-3 text-muted small">Please upload your <b>current payslip</b> issued by <b>${declaredCompany || "your declared company"}</b>.</div>`,
             icon: "error",
             confirmButtonText: "Re-upload Payslip",
             confirmButtonColor: "var(--oxy-primary)",
@@ -2313,8 +2551,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
           verified: true,
           companyName: validation.detectedCompany,
           declaredCompany,
+          detectedName: validation.detectedName || borrowerFirstName,
           detectedSalary: newSalary,
           detectedDate: validation.detectedDate,
+          nameMatch: true,
           salaryMatch: true,
           companyMatch: true,
           message: `Payslip verified for ${validation.detectedCompany} (${validation.detectedDate}).`,
@@ -2322,9 +2562,6 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
         };
 
         setPayslipVerification(payslipRecord);
-        try {
-          localStorage.setItem("oxy_borrower_payslip_verified", JSON.stringify(payslipRecord));
-        } catch (e) {}
 
         Swal.fire({
           title: "Payslip Verified & Uploaded",
@@ -2706,29 +2943,6 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           </>
                         )}
                       </div>
-
-                      {/* NOMINEE & REFERENCES SHORTCUT TILES */}
-                      <div className="row g-3 mt-4 pt-3">
-                        <div className="col-6">
-                          <div className="shortcut-box" onClick={() => setEditSection("nominee")} style={{ cursor: "pointer" }}>
-                            <span className="text-muted d-block small mb-1">Nominee Info</span>
-                            <span className="fw-bold text-primary small d-flex align-items-center gap-1">
-                              {nominee.nomineeName ? nominee.nomineeName : "Add Nominee"} <i className="fa-solid fa-arrow-right-long"></i>
-                            </span>
-                          </div>
-                        </div>
-                        <div className="col-6">
-                          <div className="shortcut-box" onClick={() => setEditSection("references")} style={{ cursor: "pointer" }}>
-                            <span className="text-muted d-block small mb-1">References</span>
-                            <span className="fw-bold text-primary small d-flex align-items-center gap-1">
-                              {referenceList.filter(r => r.name?.trim() && r.referenceNumber?.trim()).length >= 2
-                                ? `${referenceList.filter(r => r.name?.trim() && r.referenceNumber?.trim()).length} Added`
-                                : "Add (Min 2)"} <i className="fa-solid fa-arrow-right-long"></i>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
                     </div>
                   </div>
                 </div>
@@ -2875,11 +3089,16 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                     <div className="card border-0 shadow-sm rounded-4">
                       <div className="card-body p-4">
                         <div className="d-flex justify-content-between align-items-start mb-3">
-                          <div className="d-flex align-items-center gap-2">
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
                             <div className="rounded p-2 d-flex align-items-center justify-content-center" style={{ width: "38px", height: "38px", backgroundColor: "#fffbeb", color: "#d97706" }}>
                               <i className="fa-solid fa-folder-open"></i>
                             </div>
                             <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>KYC & DOCUMENT SECURE VAULT</h6>
+                            {getCompletionGroup("KYC Documents") && (
+                              <span className="badge bg-warning-subtle text-dark rounded-pill">
+                                {getCompletionGroup("KYC Documents").earned}% / 15%
+                              </span>
+                            )}
                           </div>
                           <button 
                             className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
@@ -2918,11 +3137,15 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                                 <span className="badge bg-light text-muted py-1 px-2 border">Pending Upload</span>
                               )}
                             </div> */}
-                            {/* <div className="d-flex justify-content-between align-items-center">
+                            <div className="d-flex justify-content-between align-items-center">
                               <span className="text-muted">
                                 <i className="fa-solid fa-building-columns me-1 text-primary"></i>Salary Inflow:
                               </span>
-                              {salaryVerification?.isMatch ? (
+                              {borrowerSalaryData?.monthlyAmount > 0 ? (
+                                <span className="badge bg-success-subtle text-success py-1 px-2">
+                                  <i className="fa-solid fa-check me-1"></i>Verified (₹{Number(borrowerSalaryData.monthlyAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })})
+                                </span>
+                              ) : salaryVerification?.isMatch ? (
                                 <span className="badge bg-success-subtle text-success py-1 px-2">
                                   <i className="fa-solid fa-check me-1"></i>Verified (₹{Number(salaryVerification.detectedSalary || profileData.salary || 0).toLocaleString("en-IN")})
                                 </span>
@@ -2933,9 +3156,194 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                               ) : (
                                 <span className="badge bg-light text-muted py-1 px-2 border">Pending Bank Statement</span>
                               )}
-                            </div> */}
+                            </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* NOMINEE INFO CARD */}
+                    <div className="card border-0 shadow-sm rounded-4">
+                      <div className="card-body p-4">
+                        <div className="d-flex justify-content-between align-items-start mb-3">
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <div 
+                              className="rounded p-2 d-flex align-items-center justify-content-center" 
+                              style={{ width: "38px", height: "38px", backgroundColor: "#f3e8ff", color: "#9333ea" }}
+                            >
+                              <i className="fa-solid fa-user-shield"></i>
+                            </div>
+                            <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>NOMINEE INFO</h6>
+                            {getCompletionGroup("Nominee") && (
+                              <span 
+                                className="badge rounded-pill"
+                                style={{ 
+                                  backgroundColor: getCompletionGroup("Nominee").earned > 0 ? "#f3e8ff" : "#f1f5f9", 
+                                  color: getCompletionGroup("Nominee").earned > 0 ? "#7e22ce" : "#64748b" 
+                                }}
+                              >
+                                {getCompletionGroup("Nominee").earned}% / 10%
+                              </span>
+                            )}
+                          </div>
+                          <button 
+                            className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
+                            onClick={() => handleOpenEditSection("nominee")}
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i> {nominee?.nomineeName?.trim() ? "Edit" : "+ Add Nominee"}
+                          </button>
+                        </div>
+
+                        {nominee?.nomineeName?.trim() ? (
+                          <div className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                            <div>
+                              <span className="text-muted d-block small">Nominee Details</span>
+                              <div className="d-flex align-items-center gap-2 mt-1">
+                                <span className="fw-bold text-dark" style={{ fontSize: "15px" }}>{nominee.nomineeName}</span>
+                                {nominee.relation && (
+                                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style={{ fontSize: "11px" }}>
+                                    {nominee.relation}
+                                  </span>
+                                )}
+                              </div>
+                              {nominee.nomineeMobile && (
+                                <span className="text-muted small d-block mt-1">
+                                  <i className="fa-solid fa-phone me-1 text-primary" style={{ fontSize: "11px" }}></i>
+                                  {nominee.nomineeMobile}
+                                </span>
+                              )}
+                            </div>
+                            <span className="security-badge-yes flex-shrink-0">Added</span>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                            <div>
+                              <span className="text-muted d-block small">Nominee Status</span>
+                              <span className="text-muted fst-italic small">Not Nominated</span>
+                            </div>
+                            <span 
+                              className="security-badge-no flex-shrink-0" 
+                              onClick={() => handleOpenEditSection("nominee")}
+                              style={{ cursor: "pointer" }}
+                            >
+                              Add
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* EMERGENCY REFERENCES CARD */}
+                    <div className="card border-0 shadow-sm rounded-4">
+                      <div className="card-body p-4">
+                        <div className="d-flex justify-content-between align-items-start mb-3">
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <div 
+                              className="rounded p-2 d-flex align-items-center justify-content-center" 
+                              style={{ width: "38px", height: "38px", backgroundColor: "#ccfbf1", color: "#0f766e" }}
+                            >
+                              <i className="fa-solid fa-users"></i>
+                            </div>
+                            <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>EMERGENCY REFERENCES</h6>
+                            {getCompletionGroup("Emergency References") && (
+                              <span 
+                                className="badge rounded-pill"
+                                style={{ 
+                                  backgroundColor: getCompletionGroup("Emergency References").earned > 0 ? "#ccfbf1" : "#f1f5f9", 
+                                  color: getCompletionGroup("Emergency References").earned > 0 ? "#0f766e" : "#64748b" 
+                                }}
+                              >
+                                {getCompletionGroup("Emergency References").earned}% / 15%
+                              </span>
+                            )}
+                          </div>
+                          <button 
+                            className="btn btn-link text-primary p-0 fw-semibold text-decoration-none d-flex align-items-center gap-1"
+                            onClick={() => handleOpenEditSection("references")}
+                            style={{ fontSize: "14px" }}
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i> {
+                              referenceList.filter((r) => r.name?.trim() && r.referenceNumber?.trim()).length >= 2 
+                                ? "Edit" 
+                                : "Add References"
+                            }
+                          </button>
+                        </div>
+
+                        {(() => {
+                          const validRefs = (referenceList || []).filter((r) => r?.name?.trim() && r?.referenceNumber?.trim());
+                          const ref1 = validRefs[0] || null;
+                          const ref2 = validRefs[1] || null;
+
+                          return (
+                            <div className="d-flex flex-column gap-2">
+                              {/* Reference #1 (Primary) */}
+                              <div className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                                <div className="overflow-hidden me-2">
+                                  <span className="text-muted d-block small">Reference #1 (Primary)</span>
+                                  {ref1 ? (
+                                    <div className="mt-1">
+                                      <span className="fw-bold text-dark" style={{ fontSize: "14px" }}>{ref1.name}</span>
+                                      <span className="text-muted small d-block">
+                                        <i className="fa-solid fa-phone me-1 text-primary" style={{ fontSize: "11px" }}></i>
+                                        {ref1.referenceNumber}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted fst-italic small">Not Provided</span>
+                                  )}
+                                </div>
+                                {ref1 ? (
+                                  <span className="security-badge-yes flex-shrink-0">Added</span>
+                                ) : (
+                                  <span 
+                                    className="security-badge-no flex-shrink-0" 
+                                    onClick={() => handleOpenEditSection("references")} 
+                                    style={{ cursor: "pointer" }}
+                                  >
+                                    Add
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Reference #2 (Secondary) */}
+                              <div className="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                                <div className="overflow-hidden me-2">
+                                  <span className="text-muted d-block small">Reference #2 (Secondary)</span>
+                                  {ref2 ? (
+                                    <div className="mt-1">
+                                      <span className="fw-bold text-dark" style={{ fontSize: "14px" }}>{ref2.name}</span>
+                                      <span className="text-muted small d-block">
+                                        <i className="fa-solid fa-phone me-1 text-primary" style={{ fontSize: "11px" }}></i>
+                                        {ref2.referenceNumber}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted fst-italic small">Not Provided</span>
+                                  )}
+                                </div>
+                                {ref2 ? (
+                                  <span className="security-badge-yes flex-shrink-0">Added</span>
+                                ) : (
+                                  <span 
+                                    className="security-badge-no flex-shrink-0" 
+                                    onClick={() => handleOpenEditSection("references")} 
+                                    style={{ cursor: "pointer" }}
+                                  >
+                                    Add
+                                  </span>
+                                )}
+                              </div>
+
+                              {validRefs.length > 2 && (
+                                <div className="text-end pt-1">
+                                  <span className="text-muted small">+{validRefs.length - 2} more reference(s)</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -3089,6 +3497,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
               <label className="form-label text-muted small">WhatsApp Number <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="whatsAppNumber" value={profileData.whatsAppNumber} onChange={handleprofileInput} />
             </div>
+            <div className="col-md-6">
+              <label className="form-label text-muted small">Mobile Number <span className="text-danger">*</span></label>
+              <input type="text" className="form-control rounded-3" name="mobileNumber" value={profileData.mobileNumber} onChange={handleprofileInput} />
+            </div>
             <div className="col-12">
               <label className="form-label text-muted small">Residential Address <span className="text-danger">*</span></label>
               <input type="text" className="form-control rounded-3" name="residenceAddress" value={profileData.residenceAddress} onChange={handleprofileInput} />
@@ -3205,7 +3617,14 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                   <input type="text" className="form-control rounded-3" name="companyName" value={profileData.companyName} onChange={handleprofileInput} placeholder="Enter company name" required />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label text-muted small">Monthly Net Salary (₹) <span className="text-danger">*</span></label>
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <label className="form-label text-muted small mb-0">Monthly Net Salary (₹) <span className="text-danger">*</span></label>
+                    {borrowerSalaryData?.monthlyAmount > 0 && (
+                      <span className="badge bg-success-subtle text-success py-1 px-2" style={{ fontSize: "11px" }}>
+                        <i className="fa-solid fa-circle-check me-1"></i>Verified: ₹{Number(borrowerSalaryData.monthlyAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
                   <input type="text" className="form-control rounded-3" name="salary" value={profileData.salary} onChange={handleprofileInput} placeholder="Enter monthly net salary" required />
                 </div>
                 <div className="col-md-6">
@@ -3473,180 +3892,900 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
       </Modal>
 
       {/* 5. KYC & PASSWORDS EDIT MODAL */}
-      <Modal show={editSection === "kyc" && !kycModal.open} onHide={() => setEditSection(null)} size="lg" centered enforceFocus={false}>
-        <Modal.Header closeButton>
-          <Modal.Title className="fw-bold text-dark h5">KYC Documents</Modal.Title>
+      <Modal show={editSection === "kyc" && !kycModal.open} onHide={() => setEditSection(null)} size="xl" centered enforceFocus={false}>
+        <style>{`
+          @keyframes kycCardEntrance {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes kycPulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+          }
+          .kyc-pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            animation: kycPulseDot 2s infinite;
+          }
+          .kyc-doc-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+          }
+          .kyc-doc-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 28px -6px rgba(15, 23, 42, 0.09), 0 6px 10px -4px rgba(15, 23, 42, 0.04);
+            border-color: #cbd5e1;
+          }
+          .kyc-doc-card.card-uploaded {
+            border-left: 4.5px solid #10b981 !important;
+          }
+          .kyc-doc-card.card-pending {
+            border-left: 4.5px solid #f59e0b !important;
+          }
+          .kyc-badge-pending {
+            background-color: #fffbeb !important;
+            color: #b45309 !important;
+            border: 1px solid #fde68a !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 3px 8px !important;
+            border-radius: 6px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+          }
+          .kyc-badge-uploaded {
+            background-color: #ecfdf5 !important;
+            color: #047857 !important;
+            border: 1px solid #a7f3d0 !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            padding: 3px 8px !important;
+            border-radius: 6px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            cursor: pointer !important;
+            max-width: 220px !important;
+          }
+          .kyc-badge-uploaded:hover {
+            background-color: #d1fae5 !important;
+            color: #065f46 !important;
+          }
+          .kyc-tab-btn {
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #475569;
+            padding: 7px 16px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+          }
+          .kyc-tab-btn:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+            border-color: #cbd5e1;
+          }
+          .kyc-tab-btn.active {
+            background: linear-gradient(135deg, #0040e0 0%, #2e5bff 100%);
+            color: #ffffff !important;
+            border-color: #0040e0;
+            box-shadow: 0 4px 12px rgba(0, 64, 224, 0.25);
+          }
+          .kyc-tab-btn.active .kyc-tab-badge {
+            background: rgba(255, 255, 255, 0.25) !important;
+            color: #ffffff !important;
+          }
+          .kyc-tab-badge {
+            background: #f1f5f9;
+            color: #64748b;
+            border-radius: 999px;
+            padding: 1px 7px;
+            font-size: 10.5px;
+            font-weight: 700;
+          }
+          .kyc-btn-view {
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 11.5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+          }
+          .kyc-btn-view:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+            transform: translateY(-1px);
+          }
+          .kyc-btn-upload {
+            background: linear-gradient(135deg, #0040e0 0%, #2e5bff 100%);
+            color: #ffffff !important;
+            border: none;
+            border-radius: 8px;
+            padding: 5px 14px;
+            font-size: 11.5px;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 64, 224, 0.22);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+          }
+          .kyc-btn-upload:hover {
+            background: linear-gradient(135deg, #0036bd 0%, #1a49f5 100%);
+            box-shadow: 0 4px 12px rgba(0, 64, 224, 0.35);
+            transform: translateY(-1px);
+            color: #ffffff;
+          }
+          .kyc-btn-report {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 5px 12px;
+            font-size: 11.5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+          }
+          .kyc-btn-report:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+            transform: translateY(-1px);
+          }
+          .kyc-intel-box {
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+          }
+          .kyc-tile {
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 9px;
+            padding: 8px 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            transition: all 0.15s ease;
+          }
+          .kyc-tile:hover {
+            border-color: #cbd5e1;
+            background: #fafafa;
+          }
+          .kyc-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+          }
+          .kyc-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+          }
+          .kyc-tabs-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+          .kyc-vault-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+          }
+          .kyc-vault-progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+          @media (max-width: 575.98px) {
+            .kyc-card-header {
+              flex-direction: column !important;
+              align-items: stretch !important;
+              gap: 12px !important;
+            }
+            .kyc-card-actions {
+              width: 100% !important;
+              display: flex !important;
+              gap: 6px !important;
+            }
+            .kyc-card-actions > button {
+              flex: 1 1 0 !important;
+              justify-content: center !important;
+              text-align: center !important;
+              min-height: 36px !important;
+              padding: 7px 10px !important;
+              font-size: 11.5px !important;
+            }
+            .kyc-tabs-container {
+              overflow-x: auto !important;
+              flex-wrap: nowrap !important;
+              -webkit-overflow-scrolling: touch !important;
+              scrollbar-width: none !important;
+              padding-bottom: 6px !important;
+              margin-bottom: 12px !important;
+            }
+            .kyc-tabs-container::-webkit-scrollbar {
+              display: none !important;
+            }
+            .kyc-tab-btn {
+              flex-shrink: 0 !important;
+              white-space: nowrap !important;
+            }
+            .kyc-vault-header {
+              flex-direction: column !important;
+              align-items: stretch !important;
+              gap: 10px !important;
+            }
+            .kyc-vault-progress-wrapper {
+              width: 100% !important;
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+            }
+            .kyc-vault-progress-bar {
+              flex: 1 !important;
+              max-width: none !important;
+              margin-left: 12px !important;
+            }
+            .kyc-badge-uploaded {
+              max-width: 100% !important;
+            }
+            .kyc-doc-title {
+              white-space: normal !important;
+            }
+          }
+        `}</style>
+        <Modal.Header closeButton className="px-3 px-sm-4 py-3 border-bottom bg-white">
+          <div>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <Modal.Title className="fw-bold text-dark h5 mb-0 d-flex align-items-center gap-2">
+                <i className="fa-solid fa-folder-open text-primary"></i>
+                KYC Document Vault
+              </Modal.Title>
+            </div>
+            <p className="text-muted small mb-0 mt-1" style={{ fontSize: "12px" }}>
+              Upload, verify, and manage your official identity, financial intelligence, and educational records.
+            </p>
+          </div>
         </Modal.Header>
-        <Modal.Body className="p-4" style={{ maxHeight: "70vh", overflowY: "auto" }}>
-          <div className="row g-4">
-          {[
-              { label: "PAN Card Document", name: "pan", value: kycDocs.PanCard, passwordField: "panPassword", downloadUrl: kycDocs.PanCard?.downloadUrl },
-              { label: "Credit Bureau Report", name: "CREDITREPORT", value: kycDocs.creditReport, passwordField: "creditReportPassword", downloadUrl: kycDocs.creditReport?.downloadUrl },
-              { label: "Cancelled Cheque Leaf", name: "CHEQUELEAF", value: kycDocs.CHEQUELEAF, downloadUrl: kycDocs.CHEQUELEAF?.downloadUrl },
-              { label: "6-Month Bank Statement", name: "BANKSTATEMENT", value: kycDocs.bankStatement, passwordField: "bankStatementPassword", downloadUrl: kycDocs.bankStatement?.downloadUrl },
-              { label: "Registered Aadhaar Card", name: "AADHAR", value: kycDocs.aadhar, passwordField: "aadharPassword", downloadUrl: kycDocs.aadhar?.downloadUrl },
-              { label: "Driving Licence Scan", name: "DRIVINGLICENCE", value: kycDocs.DRIVINGLICENCE, downloadUrl: kycDocs.DRIVINGLICENCE?.downloadUrl },
-              { label: "Voter Identity Card", name: "VOTERID", value: kycDocs.VOTERID, downloadUrl: kycDocs.VOTERID?.downloadUrl },
-              { label: "Official Passport Page", name: "PASSPORT", value: kycDocs.Passport, downloadUrl: kycDocs.Passport?.downloadUrl },
-              { label: "Latest 6-Month Payslips", name: "PAYSLIPS", value: kycDocs.paySlips, passwordField: "payslipsPassword", downloadUrl: kycDocs.paySlips?.downloadUrl },
+        <Modal.Body className="p-3 p-sm-4" style={{ maxHeight: "78vh", overflowY: "auto", backgroundColor: "#f8fafc" }}>
+          {(() => {
+            const allKycDocs = [
+              {
+                label: "PAN Card Document",
+                name: "pan",
+                category: "identity",
+                categoryLabel: "Identity",
+                value: kycDocs.PanCard,
+                passwordField: "panPassword",
+                downloadUrl: kycDocs.PanCard?.downloadUrl,
+                icon: "fa-solid fa-id-card",
+                iconBg: "#e0f2fe",
+                iconColor: "#0284c7",
+              },
+              {
+                label: "Credit Bureau Report",
+                name: "CREDITREPORT",
+                category: "financial",
+                categoryLabel: "Credit",
+                value: kycDocs.creditReport,
+                passwordField: "creditReportPassword",
+                downloadUrl: kycDocs.creditReport?.downloadUrl,
+                icon: "fa-solid fa-chart-line",
+                iconBg: "#fef3c7",
+                iconColor: "#d97706",
+              },
+              {
+                label: "Cancelled Cheque Leaf",
+                name: "CHEQUELEAF",
+                category: "financial",
+                categoryLabel: "Banking",
+                value: kycDocs.CHEQUELEAF,
+                downloadUrl: kycDocs.CHEQUELEAF?.downloadUrl,
+                icon: "fa-solid fa-money-check",
+                iconBg: "#f3e8ff",
+                iconColor: "#9333ea",
+              },
+              {
+                label: "Bank Statement (3-6 Months)",
+                name: "BANKSTATEMENT",
+                category: "financial",
+                categoryLabel: "Banking",
+                value: kycDocs.bankStatement,
+                passwordField: "bankStatementPassword",
+                downloadUrl: kycDocs.bankStatement?.downloadUrl,
+                icon: "fa-solid fa-building-columns",
+                iconBg: "#dcfce7",
+                iconColor: "#16a34a",
+              },
+              {
+                label: "Registered Aadhaar Card",
+                name: "AADHAR",
+                category: "identity",
+                categoryLabel: "Identity",
+                value: kycDocs.aadhar,
+                passwordField: "aadharPassword",
+                downloadUrl: kycDocs.aadhar?.downloadUrl,
+                icon: "fa-solid fa-fingerprint",
+                iconBg: "#fee2e2",
+                iconColor: "#dc2626",
+              },
+              {
+                label: "Driving Licence Scan",
+                name: "DRIVINGLICENCE",
+                category: "identity",
+                categoryLabel: "Address / ID",
+                value: kycDocs.DRIVINGLICENCE,
+                downloadUrl: kycDocs.DRIVINGLICENCE?.downloadUrl,
+                icon: "fa-solid fa-id-badge",
+                iconBg: "#e0e7ff",
+                iconColor: "#4f46e5",
+              },
+              {
+                label: "Voter Identity Card",
+                name: "VOTERID",
+                category: "identity",
+                categoryLabel: "Identity",
+                value: kycDocs.VOTERID,
+                downloadUrl: kycDocs.VOTERID?.downloadUrl,
+                icon: "fa-solid fa-address-card",
+                iconBg: "#ccfbf1",
+                iconColor: "#0d9488",
+              },
+              {
+                label: "Official Passport Page",
+                name: "PASSPORT",
+                category: "identity",
+                categoryLabel: "Passport",
+                value: kycDocs.Passport,
+                downloadUrl: kycDocs.Passport?.downloadUrl,
+                icon: "fa-solid fa-passport",
+                iconBg: "#ffedd5",
+                iconColor: "#ea580c",
+              },
+              {
+                label: "Current Payslip",
+                name: "PAYSLIPS",
+                category: "financial",
+                categoryLabel: "Income",
+                value: kycDocs.paySlips,
+                passwordField: "payslipsPassword",
+                downloadUrl: kycDocs.paySlips?.downloadUrl,
+                icon: "fa-solid fa-file-invoice-dollar",
+                iconBg: "#ecfdf5",
+                iconColor: "#059669",
+              },
 
               ...(category === "STUDENT"
                 ? [
-                    { label: "Intermediate Marksheet", name: "INTER", value: kycDocs.inter, downloadUrl: kycDocs.inter?.downloadUrl },
-                    { label: "10th Grade Marksheet", name: "TENTH", value: kycDocs.tenth, downloadUrl: kycDocs.tenth?.downloadUrl },
-                    { label: "Graduation Marksheet", name: "GRADUATION", value: kycDocs.graduation, downloadUrl: kycDocs.graduation?.downloadUrl },
-                    { label: "Offer Letter", name: "UNIVERSITYOFFERLETTER", value: kycDocs.universityOfferLetter, downloadUrl: kycDocs.universityOfferLetter?.downloadUrl },
-                    { label: "Fee Receipt", name: "FEE", value: kycDocs.feeReceipt, downloadUrl: kycDocs.feeReceipt?.downloadUrl },
+                    {
+                      label: "Intermediate Marksheet",
+                      name: "INTER",
+                      category: "academic",
+                      categoryLabel: "Academic",
+                      value: kycDocs.inter,
+                      downloadUrl: kycDocs.inter?.downloadUrl,
+                      icon: "fa-solid fa-graduation-cap",
+                      iconBg: "#f0fdf4",
+                      iconColor: "#16a34a",
+                    },
+                    {
+                      label: "10th Grade Marksheet",
+                      name: "TENTH",
+                      category: "academic",
+                      categoryLabel: "Academic",
+                      value: kycDocs.tenth,
+                      downloadUrl: kycDocs.tenth?.downloadUrl,
+                      icon: "fa-solid fa-book-open",
+                      iconBg: "#fef9c3",
+                      iconColor: "#ca8a04",
+                    },
+                    {
+                      label: "Graduation Marksheet",
+                      name: "GRADUATION",
+                      category: "academic",
+                      categoryLabel: "Academic",
+                      value: kycDocs.graduation,
+                      downloadUrl: kycDocs.graduation?.downloadUrl,
+                      icon: "fa-solid fa-user-graduate",
+                      iconBg: "#ede9fe",
+                      iconColor: "#7c3aed",
+                    },
+                    {
+                      label: "Offer Letter",
+                      name: "UNIVERSITYOFFERLETTER",
+                      category: "academic",
+                      categoryLabel: "Academic",
+                      value: kycDocs.universityOfferLetter,
+                      downloadUrl: kycDocs.universityOfferLetter?.downloadUrl,
+                      icon: "fa-solid fa-envelope-open-text",
+                      iconBg: "#e0f2fe",
+                      iconColor: "#0284c7",
+                    },
+                    {
+                      label: "Fee Receipt",
+                      name: "FEE",
+                      category: "academic",
+                      categoryLabel: "Academic",
+                      value: kycDocs.feeReceipt,
+                      downloadUrl: kycDocs.feeReceipt?.downloadUrl,
+                      icon: "fa-solid fa-receipt",
+                      iconBg: "#fae8ff",
+                      iconColor: "#c026d3",
+                    },
                   ]
-                : [])
-            ].map((doc) => (
-              <div className="col-md-6" key={doc.name}>
-                <div className="p-3 border rounded-3 bg-light d-flex flex-column justify-content-between h-100">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <div>
-                      <span className="fw-bold d-block text-dark small">{doc.label}</span>
-                      {doc.downloadUrl != null ? (
-                        <span
-                          onClick={() => viewKYCFile(doc.downloadUrl, doc.label, doc.name, doc.value?.fileName)}
-                          className="text-success small"
-                          style={{ fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}
-                          title="Click to preview document"
-                        >
-                          ✓ {doc.value?.fileName || "Uploaded"}
-                        </span>
-                      ) : (
-                        <span className="text-muted small" style={{ fontSize: "11px" }}>No file uploaded</span>
-                      )}
+                : []),
+            ];
+
+            const totalDocsCount = allKycDocs.length;
+            const uploadedDocsCount = allKycDocs.filter((d) => d.downloadUrl != null).length;
+            const completionPercent = totalDocsCount > 0 ? Math.round((uploadedDocsCount / totalDocsCount) * 100) : 0;
+
+            const tabs = [
+              { id: "all", label: "All Documents", count: allKycDocs.length, icon: "fa-solid fa-layer-group" },
+              { id: "identity", label: "Identity & Address", count: allKycDocs.filter((d) => d.category === "identity").length, icon: "fa-solid fa-id-card" },
+              { id: "financial", label: "Income & Banking", count: allKycDocs.filter((d) => d.category === "financial").length, icon: "fa-solid fa-wallet" },
+              ...(category === "STUDENT"
+                ? [{ id: "academic", label: "Academic Records", count: allKycDocs.filter((d) => d.category === "academic").length, icon: "fa-solid fa-graduation-cap" }]
+                : []),
+            ];
+
+            const filteredDocs = kycActiveTab === "all" ? allKycDocs : allKycDocs.filter((d) => d.category === kycActiveTab);
+
+            const renderDocItem = (doc, idx) => {
+              const isUploaded = doc.downloadUrl != null;
+
+              return (
+                <div
+                  key={doc.name}
+                  className={`kyc-doc-card p-3.5 ${isUploaded ? "card-uploaded" : "card-pending"}`}
+                  style={{
+                    animation: "kycCardEntrance 0.35s ease-out backwards",
+                    animationDelay: `${idx * 0.05}s`,
+                  }}
+                >
+                  {/* Top Header Row */}
+                  <div className="kyc-card-header">
+                    <div className="d-flex align-items-center gap-2.5" style={{ minWidth: 0, flex: 1 }}>
+                      {/* 3D Squircle Icon Tile */}
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+                        style={{
+                          width: "42px",
+                          height: "42px",
+                          backgroundColor: doc.iconBg || "#f1f5f9",
+                          color: doc.iconColor || "#475569",
+                          fontSize: "17px",
+                          boxShadow: `0 3px 8px ${doc.iconBg || "#f1f5f9"}`,
+                        }}
+                      >
+                        <i className={doc.icon || "fa-solid fa-file-lines"}></i>
+                      </div>
+
+                      {/* Title & Badge */}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div className="d-flex align-items-center gap-1.5 flex-wrap">
+                          <span className="fw-bold text-dark kyc-doc-title" style={{ fontSize: "13.5px" }} title={doc.label}>
+                            {doc.label}
+                          </span>
+                          <span className="badge bg-light text-muted border py-0 px-1.5" style={{ fontSize: "9.5px", fontWeight: 500 }}>
+                            {doc.categoryLabel || "Doc"}
+                          </span>
+                        </div>
+
+                        {isUploaded ? (
+                          <div className="mt-1 d-flex align-items-center gap-1.5">
+                            <span
+                              onClick={() => viewKYCFile(doc.downloadUrl, doc.label, doc.name, doc.value?.fileName)}
+                              className="kyc-badge-uploaded text-truncate"
+                              title={doc.value?.fileName || "Uploaded (Click to preview document)"}
+                            >
+                              <span className="kyc-pulse-dot flex-shrink-0"></span>
+                              <span className="text-truncate">{doc.value?.fileName || "Uploaded"}</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="mt-1">
+                            <span className="kyc-badge-pending">
+                              <i className="fa-regular fa-clock" style={{ fontSize: "11px", color: "#d97706" }}></i>
+                              Upload Required
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="d-flex align-items-center gap-1">
-                      {doc.downloadUrl != null && (
+
+                    {/* Action Buttons */}
+                    <div className="kyc-card-actions">
+                      {doc.name === "BANKSTATEMENT" && (borrowerSalaryData || bankAnalysisData) && (
                         <button
                           type="button"
-                          className="btn btn-outline-secondary btn-xs py-1 px-2 cursor-pointer"
-                          style={{ fontSize: "11px" }}
+                          className="kyc-btn-report"
+                          onClick={handleDownloadBankReportPdf}
+                          disabled={downloadingBankReport}
+                          title="Download Statement Analysis PDF Report"
+                        >
+                          {downloadingBankReport ? (
+                            <span className="spinner-border spinner-border-sm" role="status"></span>
+                          ) : (
+                            <i className="fa-solid fa-file-pdf"></i>
+                          )}
+                          <span>Report</span>
+                        </button>
+                      )}
+
+                      {isUploaded && (
+                        <button
+                          type="button"
+                          className="kyc-btn-view"
                           onClick={() => viewKYCFile(doc.downloadUrl, doc.label, doc.name, doc.value?.fileName)}
                           title="Preview Document"
                         >
                           <i className="fa-solid fa-eye"></i>
+                          <span>View</span>
                         </button>
                       )}
+
                       <button
                         type="button"
-                        className="btn btn-outline-primary btn-xs py-1 px-2 cursor-pointer"
-                        style={{ fontSize: "11px" }}
+                        className="kyc-btn-upload"
                         onClick={() => openKYCModal(doc.name, "upload")}
-                        title="Upload Document"
+                        title={isUploaded ? "Re-upload this document" : "Upload this document"}
                       >
                         <i className="fa-solid fa-cloud-arrow-up"></i>
+                        <span>{isUploaded ? "Re-upload" : "Upload"}</span>
                       </button>
                     </div>
                   </div>
-                  {/* {doc.passwordField && (
-                    <div className="mt-2 pt-2 border-top">
-                      <label className="form-label text-muted text-xs mb-1" style={{ fontSize: "10px" }}>File Password</label>
-                      <input 
-                        type="text" 
-                        className="form-control form-control-sm rounded-2 text-xs py-1" 
-                        name={doc.passwordField}
-                        placeholder="Enter file password"
-                        value={secureInfo[doc.passwordField] || ""} 
-                        onChange={handleSecureInput} 
-                      />
-                    </div>
-                  )} */}
 
+                  {/* Bank Statement Financial Intelligence Widget */}
                   {doc.name === "BANKSTATEMENT" && (
-                    <div className="mt-2 pt-2 border-top">
-                      <div className="d-flex flex-wrap gap-2 mb-2">
-
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1 py-1 px-2"
-                          style={{ fontSize: "11px" }}
-                          onClick={handleDownloadBankReportPdf}
-                          disabled={downloadingBankReport}
-                        >
-                          {downloadingBankReport ? (
-                            <span className="spinner-border spinner-border-sm me-1" role="status"></span>
-                          ) : (
-                            <i className="fa-solid fa-file-pdf text-danger me-1"></i>
-                          )}
-                          PDF Report
-                        </button>
-                      </div>
-
-                      {bankAnalysisData && (
-                        <div className="p-2 bg-white rounded border text-xs" style={{ fontSize: "11px" }}>
-                          <div className="d-flex justify-content-between mb-1">
-                            <span className="text-muted">Analysis Status:</span>
-                            <span className="fw-bold text-success">{bankAnalysisData.status || bankAnalysisData.analysisStatus || "Completed"}</span>
+                    <div className="mt-3 pt-2.5 border-top">
+                      {borrowerSalaryData ? (
+                        <div className="kyc-intel-box">
+                          {/* Top Header: Badge + Monthly Amount */}
+                          <div className="d-flex align-items-center justify-content-between pb-2 mb-2.5 border-bottom">
+                            <div className="d-flex align-items-center gap-1.5">
+                              <div
+                                className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                                style={{ width: "24px", height: "24px", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#fff", fontSize: "11px" }}
+                              >
+                                <i className="fa-solid fa-check"></i>
+                              </div>
+                              <div>
+                                <span className="fw-bold text-dark d-block" style={{ fontSize: "11.5px" }}>AI Salary Verified</span>
+                                <span className="text-muted" style={{ fontSize: "9.5px" }}>Bank Statement Analysis</span>
+                              </div>
+                            </div>
+                            {borrowerSalaryData.monthlyAmount != null && (
+                              <div className="text-end">
+                                <span className="text-muted d-block" style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700 }}>Monthly Salary</span>
+                                <span className="fw-bold text-success" style={{ fontSize: "16px", lineHeight: 1 }}>
+                                  ₹ {Number(borrowerSalaryData.monthlyAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          {(bankAnalysisData.averageMonthlyBalance != null || bankAnalysisData.avgMonthlyBalance != null) && (
-                            <div className="d-flex justify-content-between mb-1">
-                              <span className="text-muted">Avg Monthly Bal:</span>
-                              <span className="fw-bold">₹ {Number(bankAnalysisData.averageMonthlyBalance || bankAnalysisData.avgMonthlyBalance || 0).toLocaleString("en-IN")}</span>
-                            </div>
-                          )}
-                          {(bankAnalysisData.totalTurnover != null || bankAnalysisData.turnover != null) && (
-                            <div className="d-flex justify-content-between mb-1">
-                              <span className="text-muted">Total Turnover:</span>
-                              <span className="fw-bold">₹ {Number(bankAnalysisData.totalTurnover || bankAnalysisData.turnover || 0).toLocaleString("en-IN")}</span>
-                            </div>
-                          )}
-                          {bankAnalysisData.riskRating && (
-                            <div className="d-flex justify-content-between">
-                              <span className="text-muted">Risk Rating:</span>
-                              <span className="fw-bold text-primary">{bankAnalysisData.riskRating}</span>
+
+                          {/* Metric Tiles Grid */}
+                          <div className="row g-2 mb-2">
+                            {borrowerSalaryData.bankName && (
+                              <div className="col-sm-6">
+                                <div className="kyc-tile">
+                                  <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 600 }}>Bank & Account</span>
+                                  <span className="fw-semibold text-dark text-truncate d-flex align-items-center gap-1.5 mt-0.5" style={{ fontSize: "11.5px" }} title={`${borrowerSalaryData.bankName} ${borrowerSalaryData.accountNumberMasked || ""}`}>
+                                    <i className="fa-solid fa-building-columns text-primary" style={{ fontSize: "11px" }}></i>
+                                    <span className="text-truncate">{borrowerSalaryData.bankName} {borrowerSalaryData.accountNumberMasked || ""}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {borrowerSalaryData.periodStart && borrowerSalaryData.periodEnd && (
+                              <div className="col-sm-6">
+                                <div className="kyc-tile">
+                                  <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 600 }}>Statement Period</span>
+                                  <span className="fw-semibold text-secondary d-flex align-items-center gap-1.5 mt-0.5" style={{ fontSize: "11.5px" }}>
+                                    <i className="fa-regular fa-calendar text-primary" style={{ fontSize: "11px" }}></i>
+                                    <span>{borrowerSalaryData.periodStart} – {borrowerSalaryData.periodEnd}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {borrowerSalaryData.employer && (
+                              <div className="col-12">
+                                <div className="kyc-tile">
+                                  <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 600 }}>Employer / Narration</span>
+                                  <span className="fw-semibold text-dark text-truncate d-flex align-items-center gap-1.5 mt-0.5" style={{ fontSize: "11.5px" }} title={borrowerSalaryData.employer}>
+                                    <i className="fa-solid fa-briefcase text-info" style={{ fontSize: "11px" }}></i>
+                                    <span className="text-truncate">{borrowerSalaryData.employer}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {(bankAnalysisData?.averageMonthlyBalance != null || bankAnalysisData?.avgMonthlyBalance != null) && (
+                              <div className="col-sm-6">
+                                <div className="kyc-tile">
+                                  <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", letterSpacing: "0.4px", fontWeight: 600 }}>Avg Monthly Balance</span>
+                                  <span className="fw-bold text-dark d-block mt-0.5" style={{ fontSize: "11.5px" }}>
+                                    ₹ {Number(bankAnalysisData.averageMonthlyBalance || bankAnalysisData.avgMonthlyBalance || 0).toLocaleString("en-IN")}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Salary Credit Monthly Trends */}
+                          {borrowerSalaryData.salaryTrend && (
+                            <div className="pt-2 mt-2 border-top">
+                              <div className="d-flex align-items-center justify-content-between mb-1.5">
+                                <span className="text-muted small fw-semibold" style={{ fontSize: "10.5px" }}>
+                                  <i className="fa-solid fa-arrow-trend-up text-success me-1"></i> Salary Credits Detected:
+                                </span>
+                                <span className="badge bg-white text-secondary border px-2 py-0.5 shadow-xs" style={{ fontSize: "9.5px", fontWeight: 600 }}>
+                                  {typeof borrowerSalaryData.salaryTrend === "string"
+                                    ? borrowerSalaryData.salaryTrend
+                                    : Array.isArray(borrowerSalaryData.salaryTrend)
+                                    ? `${borrowerSalaryData.salaryTrend.length} Months Tracked`
+                                    : "Verified"}
+                                </span>
+                              </div>
+                              {Array.isArray(borrowerSalaryData.salaryTrend) && borrowerSalaryData.salaryTrend.length > 0 && (
+                                <div className="d-flex flex-wrap gap-1.5">
+                                  {borrowerSalaryData.salaryTrend.map((item, index) => (
+                                    <div
+                                      key={index}
+                                      className="badge bg-white text-dark border py-1 px-2 d-inline-flex align-items-center gap-1.5 shadow-xs"
+                                      style={{ fontSize: "10.5px", fontWeight: "normal", borderRadius: "7px" }}
+                                    >
+                                      <span className="text-muted">{typeof item === "object" ? item.month || item.date || `M${index + 1}` : `M${index + 1}`}:</span>
+                                      <span className="fw-bold text-success">
+                                        ₹{Number(typeof item === "object" ? item.amount || 0 : item || 0).toLocaleString("en-IN")}
+                                      </span>
+                                      <i className="fa-solid fa-circle-check text-success" style={{ fontSize: "9px" }}></i>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
+                      ) : bankAnalysisData ? (
+                        <div className="kyc-intel-box">
+                          <div className="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                            <span className="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" style={{ fontSize: "11px" }}>
+                              <i className="fa-solid fa-circle-check"></i>
+                              {bankAnalysisData.status || bankAnalysisData.analysisStatus || "Analysis Completed"}
+                            </span>
+                            {bankAnalysisData.riskRating && (
+                              <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-semibold" style={{ fontSize: "11px" }}>
+                                Risk Rating: {bankAnalysisData.riskRating}
+                              </span>
+                            )}
+                          </div>
+                          <div className="row g-2" style={{ fontSize: "11.5px" }}>
+                            {(bankAnalysisData.averageMonthlyBalance != null || bankAnalysisData.avgMonthlyBalance != null) && (
+                              <div className="col-sm-6">
+                                <div className="kyc-tile">
+                                  <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", fontWeight: 600 }}>Avg Monthly Bal</span>
+                                  <span className="fw-bold text-dark d-block mt-0.5">
+                                    ₹ {Number(bankAnalysisData.averageMonthlyBalance || bankAnalysisData.avgMonthlyBalance || 0).toLocaleString("en-IN")}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {(bankAnalysisData.totalTurnover != null || bankAnalysisData.turnover != null) && (
+                              <div className="col-sm-6">
+                                <div className="kyc-tile">
+                                  <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", fontWeight: 600 }}>Total Turnover</span>
+                                  <span className="fw-bold text-dark d-block mt-0.5">
+                                    ₹ {Number(bankAnalysisData.totalTurnover || bankAnalysisData.turnover || 0).toLocaleString("en-IN")}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   )}
 
+                  {/* Current Payslip Intelligence Widget */}
                   {doc.name === "PAYSLIPS" && payslipVerification && (
-                    <div className="mt-2 pt-2 border-top">
-                      <div className="p-2 bg-white rounded border text-xs" style={{ fontSize: "11px" }}>
-                        <div className="d-flex justify-content-between mb-1">
-                          <span className="text-muted">Analysis Status:</span>
-                          <span className={`fw-bold ${payslipVerification.verified ? "text-success" : "text-primary"}`}>
-                            {payslipVerification.verified ? "Verified" : "Analyzed"}
-                          </span>
+                    <div className="mt-3 pt-2.5 border-top">
+                      <div className="kyc-intel-box">
+                        <div className="d-flex align-items-center justify-content-between pb-2 mb-2.5 border-bottom">
+                          <div className="d-flex align-items-center gap-1.5">
+                            <div
+                              className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                              style={{ width: "24px", height: "24px", background: payslipVerification.verified ? "linear-gradient(135deg, #10b981 0%, #059669 100%)" : "linear-gradient(135deg, #0040e0 0%, #2e5bff 100%)", color: "#fff", fontSize: "11px" }}
+                            >
+                              <i className="fa-solid fa-check"></i>
+                            </div>
+                            <div>
+                              <span className="fw-bold text-dark d-block" style={{ fontSize: "11.5px" }}>
+                                {payslipVerification.verified ? "Payslip Verified" : "Payslip Analyzed"}
+                              </span>
+                              <span className="text-muted" style={{ fontSize: "9.5px" }}>Cross-referenced with Profile</span>
+                            </div>
+                          </div>
+                          {payslipVerification.detectedSalary != null && (
+                            <div className="text-end">
+                              <span className="text-muted d-block" style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 700 }}>Detected Net Pay</span>
+                              <span className="fw-bold text-success" style={{ fontSize: "16px", lineHeight: 1 }}>
+                                ₹ {Number(typeof payslipVerification.detectedSalary === "object" ? payslipVerification.detectedSalary?.amount || 0 : payslipVerification.detectedSalary).toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        {payslipVerification.detectedDate && (
-                          <div className="d-flex justify-content-between mb-1">
-                            <span className="text-muted">Pay Period:</span>
-                            <span className="fw-semibold text-truncate ms-2 text-success">
-                              {payslipVerification.detectedDate} <i className="fa-solid fa-circle-check text-success ms-1"></i>
-                            </span>
-                          </div>
-                        )}
-                        {payslipVerification.companyName && (
-                          <div className="d-flex justify-content-between mb-1">
-                            <span className="text-muted">Employer:</span>
-                            <span className="fw-semibold text-truncate ms-2" style={{ maxWidth: "160px" }} title={payslipVerification.companyName}>
-                              {payslipVerification.companyName} {payslipVerification.companyMatch && <i className="fa-solid fa-circle-check text-success ms-1"></i>}
-                            </span>
-                          </div>
-                        )}
-                        {payslipVerification.detectedSalary != null && (
-                          <div className="d-flex justify-content-between">
-                            <span className="text-muted">Salary:</span>
-                            <span className="fw-semibold">
-                              ₹ {Number(payslipVerification.detectedSalary).toLocaleString("en-IN")} {payslipVerification.salaryMatch && <i className="fa-solid fa-circle-check text-success ms-1"></i>}
-                            </span>
-                          </div>
-                        )}
+
+                        <div className="row g-2" style={{ fontSize: "11.5px" }}>
+                          {payslipVerification.detectedDate && (
+                            <div className="col-sm-6">
+                              <div className="kyc-tile">
+                                <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", fontWeight: 600 }}>Pay Period</span>
+                                <span className="fw-semibold text-secondary d-flex align-items-center gap-1.5 mt-0.5">
+                                  <i className="fa-regular fa-calendar text-primary" style={{ fontSize: "11px" }}></i>
+                                  <span>
+                                    {typeof payslipVerification.detectedDate === "string"
+                                      ? payslipVerification.detectedDate
+                                      : payslipVerification.detectedDate?.month
+                                      ? `${payslipVerification.detectedDate.month}`
+                                      : String(payslipVerification.detectedDate)}
+                                  </span>
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {payslipVerification.detectedName && (
+                            <div className="col-sm-6">
+                              <div className="kyc-tile">
+                                <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", fontWeight: 600 }}>Employee Name</span>
+                                <span className="fw-semibold text-dark text-truncate d-flex align-items-center gap-1.5 mt-0.5" title={typeof payslipVerification.detectedName === "string" ? payslipVerification.detectedName : ""}>
+                                  <i className="fa-solid fa-user-check text-success" style={{ fontSize: "11px" }}></i>
+                                  <span className="text-truncate">{typeof payslipVerification.detectedName === "string" ? payslipVerification.detectedName : ""}</span>
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {payslipVerification.companyName && (
+                            <div className="col-12">
+                              <div className="kyc-tile">
+                                <span className="text-muted d-block" style={{ fontSize: "9.5px", textTransform: "uppercase", fontWeight: 600 }}>Employer Name</span>
+                                <span className="fw-semibold text-dark text-truncate d-flex align-items-center gap-1.5 mt-0.5" title={typeof payslipVerification.companyName === "string" ? payslipVerification.companyName : ""}>
+                                  <i className="fa-solid fa-building text-primary" style={{ fontSize: "11px" }}></i>
+                                  <span className="text-truncate">{typeof payslipVerification.companyName === "string" ? payslipVerification.companyName : ""}</span>
+                                  {payslipVerification.companyMatch && <i className="fa-solid fa-circle-check text-success ms-1"></i>}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
+              );
+            };
+
+            return (
+              <div>
+                {/* Vault Completeness Bar */}
+                <div className="p-2.5 p-sm-3 mb-3 rounded-3" style={{ background: "linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)", border: "1px solid #dbeafe" }}>
+                  <div className="kyc-vault-header">
+                    <div className="d-flex align-items-center gap-2.5">
+                      <div
+                        className="d-flex align-items-center justify-content-center rounded-circle flex-shrink-0"
+                        style={{ width: "38px", height: "38px", background: "linear-gradient(135deg, #0040e0 0%, #2e5bff 100%)", color: "#fff", boxShadow: "0 4px 10px rgba(0, 64, 224, 0.25)" }}
+                      >
+                        <i className="fa-solid fa-shield-halved" style={{ fontSize: "16px" }}></i>
+                      </div>
+                      <div>
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                          <span className="fw-bold text-dark" style={{ fontSize: "13.5px" }}>Vault Completeness</span>
+                          <span className="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5 fw-semibold" style={{ fontSize: "10px" }}>
+                            <span className="kyc-pulse-dot me-1"></span> {completionPercent === 100 ? "All Verified" : "Encrypted Vault"}
+                          </span>
+                        </div>
+                        <p className="text-muted small mb-0 mt-0.5" style={{ fontSize: "11px" }}>
+                          {uploadedDocsCount} of {totalDocsCount} documents uploaded &middot; {totalDocsCount - uploadedDocsCount} pending
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar & Badges */}
+                    <div className="kyc-vault-progress-wrapper">
+                      <div className="text-end">
+                        <span className="fw-bold text-dark d-block" style={{ fontSize: "13.5px", lineHeight: 1 }}>{completionPercent}%</span>
+                        <span className="text-muted" style={{ fontSize: "9.5px", textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>Completed</span>
+                      </div>
+                      <div className="kyc-vault-progress-bar" style={{ width: "130px", height: "10px", backgroundColor: "#e2e8f0", borderRadius: "999px", overflow: "hidden" }}>
+                        <div
+                          style={{
+                            width: `${completionPercent}%`,
+                            height: "100%",
+                            background: completionPercent === 100 ? "linear-gradient(90deg, #10b981, #059669)" : "linear-gradient(90deg, #0040e0, #2e5bff)",
+                            borderRadius: "999px",
+                            transition: "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filter Tabs with animated pills */}
+                <div className="kyc-tabs-container mb-3 pb-2 border-bottom">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`kyc-tab-btn ${kycActiveTab === tab.id ? "active" : ""}`}
+                      onClick={() => setKycActiveTab(tab.id)}
+                    >
+                      <i className={tab.icon}></i>
+                      <span>{tab.label}</span>
+                      <span className="kyc-tab-badge">{tab.count}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Document Cards Grid */}
+                {filteredDocs.length === 0 ? (
+                  <div className="text-center py-5 bg-white rounded-3 border">
+                    <i className="fa-solid fa-folder-open text-muted mb-2" style={{ fontSize: "32px" }}></i>
+                    <p className="text-muted mb-0 small">No documents in this category.</p>
+                  </div>
+                ) : (
+                  <div className="row g-3">
+                    <div className="col-lg-6 col-12 d-flex flex-column gap-3">
+                      {filteredDocs.filter((_, idx) => idx % 2 === 0).map((doc, idx) => renderDocItem(doc, idx * 2))}
+                    </div>
+                    <div className="col-lg-6 col-12 d-flex flex-column gap-3">
+                      {filteredDocs.filter((_, idx) => idx % 2 === 1).map((doc, idx) => renderDocItem(doc, idx * 2 + 1))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </Modal.Body>
-        <Modal.Footer>
-          <button className="oxy-btn-secondary" onClick={() => setEditSection(null)}>Cancel</button>
+        <Modal.Footer className="border-top px-3 px-sm-4 py-2.5 py-sm-3 bg-white d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 text-muted small text-center text-sm-start" style={{ fontSize: "11.5px" }}>
+            <i className="fa-solid fa-shield-halved text-success"></i>
+            <span>All documents are encrypted, watermark-protected, and securely archived.</span>
+          </div>
+          <button type="button" className="btn btn-secondary px-4 fw-semibold w-100 w-sm-auto" onClick={() => setEditSection(null)}>
+            Close
+          </button>
         </Modal.Footer>
       </Modal>
 

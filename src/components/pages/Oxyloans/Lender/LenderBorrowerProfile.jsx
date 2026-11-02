@@ -1091,7 +1091,7 @@ export default function LenderBorrowerProfile() {
                   { key: "personal", label: "Personal & Family", icon: "fa-user" },
                   { key: "employment", label: "Employment & Income", icon: "fa-briefcase" },
                   { key: "contact", label: "Contact Details", icon: "fa-phone" },
-                  { key: "banking", label: "Bank & Financial", icon: "fa-university" },
+                  // { key: "banking", label: "Bank & Financial", icon: "fa-university" },
                   { key: "references", label: `References (${references.length})`, icon: "fa-users" },
                   { key: "documents", label: `KYC Documents (${documents.length})`, icon: "fa-file-shield" },
                 ].map((t) => (
@@ -1926,16 +1926,8 @@ export default function LenderBorrowerProfile() {
                   <div className="lbp-card-body">
                     <div className="row">
                       <div className="col-md-4 lbp-data-item">
-                        <div className="lbp-data-label">First Name</div>
-                        <div className="lbp-data-value">{profile.firstName || "—"}</div>
-                      </div>
-                      <div className="col-md-4 lbp-data-item">
-                        <div className="lbp-data-label">Middle Name</div>
-                        <div className="lbp-data-value">{profile.middleName || "—"}</div>
-                      </div>
-                      <div className="col-md-4 lbp-data-item">
-                        <div className="lbp-data-label">Last Name</div>
-                        <div className="lbp-data-value">{profile.lastName || "—"}</div>
+                        <div className="lbp-data-label">Full Name</div>
+                        <div className="lbp-data-value">{profile.fullname || "—"}</div>
                       </div>
 
                       <div className="col-md-4 lbp-data-item">
@@ -2097,7 +2089,7 @@ export default function LenderBorrowerProfile() {
                           <div className="col-md-4 lbp-data-item">
                             <div className="lbp-data-label">Monthly Salary / Income</div>
                             <div className="lbp-data-value text-success fw-bold">
-                              {profile.salary ? `₹ ${Number(profile.salary).toLocaleString("en-IN")}` : "—"}
+                              {profile.salaryIncomeMonthly ? `₹ ${Number(profile.salaryIncomeMonthly).toLocaleString("en-IN")}` : "—"}
                             </div>
                           </div>
                           <div className="col-md-4 lbp-data-item">
@@ -2268,7 +2260,7 @@ export default function LenderBorrowerProfile() {
               )}
 
               {/* TAB 5: BANK & FINANCIAL */}
-              {activeTab === "banking" && (
+              {/* {activeTab === "banking" && (
                 <div className="lbp-card">
                   <div className="lbp-card-header">
                     <div className="d-flex align-items-center gap-2">
@@ -2359,7 +2351,7 @@ export default function LenderBorrowerProfile() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* TAB 6: EMERGENCY REFERENCES */}
               {activeTab === "references" && (

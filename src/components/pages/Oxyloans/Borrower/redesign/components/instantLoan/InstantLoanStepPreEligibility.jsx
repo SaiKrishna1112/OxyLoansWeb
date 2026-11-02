@@ -21,10 +21,18 @@ const RELATIONSHIPS = [
 
 const InstantLoanStepPreEligibility = ({
   profileData,
+  payslipVerification,
+  bankStatementVerification,
   onPaymentSuccess,
   onBack,
 }) => {
-  const salary = Number(profileData.monthlySalary || 25000);
+  const salary = Number(
+    profileData.verifiedSalary ||
+    profileData.monthlySalary ||
+    payslipVerification?.detectedSalary ||
+    bankStatementVerification?.detectedSalary ||
+    25000
+  );
   const [eligibleEstimate, setEligibleEstimate] = useState(Math.round(salary * 0.9));
   const [indicativeRoi, setIndicativeRoi] = useState(16.5);
 
@@ -207,10 +215,10 @@ const InstantLoanStepPreEligibility = ({
         <div>
           <div className="d-flex align-items-center gap-2 mb-1">
             <span className="badge badge-fintech-primary-soft px-3 py-1 rounded-pill small">
-              Phase 2 • References & Assessment Fee
+              Phase 3 • References & Assessment Fee
             </span>
             <span className="badge badge-fintech-neutral px-2 py-1 rounded-pill small">
-              Step 2 of 6
+              Step 3 of 7
             </span>
           </div>
           <h4 className="fw-bold text-dark mb-1">Pre-Approved Limit & References Assessment</h4>
@@ -224,7 +232,7 @@ const InstantLoanStepPreEligibility = ({
           onClick={onBack}
           className="btn btn-sm btn-outline-secondary rounded-3 px-3"
         >
-          <i className="fa-solid fa-arrow-left me-1"></i> Edit Profile
+          <i className="fa-solid fa-arrow-left me-1"></i> Back to Income Verification
         </button>
       </div>
 
@@ -237,6 +245,16 @@ const InstantLoanStepPreEligibility = ({
               Pre-Approved Instant Credit Line
             </div>
 
+            {(bankStatementVerification?.verified || payslipVerification?.verified) ? (
+              <div className="d-inline-flex flex-wrap align-items-center gap-2 px-3 py-1 rounded-pill bg-white text-dark small fw-bold mb-2 shadow-xs">
+                <i className="fa-solid fa-circle-check text-success"></i>
+                <span>
+                  Income Authenticated: {formatINR(salary)}/mo
+                  {bankStatementVerification?.verified && ` • Bank Inflow (${bankStatementVerification.bankName || "Bank"})`}
+                  {payslipVerification?.verified && ` • Payslip (${payslipVerification.companyName || profileData.companyName || "Employer"})`}
+                </span>
+              </div>
+            ) : null}
             <h1 className="display-6 fw-bold text-white mb-2">
               Eligible for up to {formatINR(eligibleEstimate)}
             </h1>
@@ -278,7 +296,17 @@ const InstantLoanStepPreEligibility = ({
               <i className="fa-solid fa-calculator fs-6"></i>
             </div>
             <div>
-              <strong className="text-dark small d-block">Transparent Pre-Approval Calculation:</strong>
+              <strong className="text-dark small d-block">
+                Transparent Pre-Approval Calculation {
+                  (bankStatementVerification?.verified || payslipVerification?.verified) && (
+                    <span className="text-success ms-1">
+                      ({bankStatementVerification?.verified ? "Bank Inflow" : ""}
+                      {bankStatementVerification?.verified && payslipVerification?.verified ? " & " : ""}
+                      {payslipVerification?.verified ? "Payslip OCR" : ""} Authenticated ✓)
+                    </span>
+                  )
+                }:
+              </strong>
               <span className="text-muted small" style={{ fontSize: "12px" }}>
                 Net Monthly Salary ({formatINR(salary)}) × 0.90x Institutional Underwriting Multiplier = <strong className="text-primary">{formatINR(eligibleEstimate)}</strong> Maximum Instant Borrowing Limit
               </span>
