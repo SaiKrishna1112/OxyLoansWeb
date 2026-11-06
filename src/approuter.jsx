@@ -2,6 +2,7 @@ import React from "react";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import PrivacyPolicy from "./components/pages/Static/PrivacyPolicy";
 import TermsOfService from "./components/pages/Static/TermsOfService";
+import OpenPlatformScore from "./components/pages/OpenPlatform/OpenPlatformScore";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
@@ -494,6 +495,7 @@ const AppRouter = () => {
         {/* Static pages */}
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/score" element={<OpenPlatformScore />} />
       </Routes>
     </BrowserRouter>
     </GoogleOAuthProvider>
