@@ -154,7 +154,14 @@ const Register_active_proceed = () => {
 
       setTimeout(() => {
         registersuccess("Registration successfully completed");
-        history("/");
+        const isInstant =
+          localStorage.getItem("oxy_flow_type") === "INSTANT_LOAN" ||
+          sessionStorage.getItem("oxy_flow_type") === "INSTANT_LOAN";
+        if (isInstant) {
+          history("/loginotp?type=instant");
+        } else {
+          history("/");
+        }
         setLoading(false);
       }, 2200);
     } catch (error) {

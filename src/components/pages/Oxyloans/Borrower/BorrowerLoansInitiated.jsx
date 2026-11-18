@@ -317,6 +317,7 @@ const BorrowerLoansInitiated = () => {
     distance: data.distance ?? 0,
     borrowerAggrement: data.borrowerAggrement || null,
     borrowerEsigned: data.borrowerEsigned || false,
+    lenderEsigned: Boolean(data.lenderEsigned),
   }));
 
   const RemainingTime = ({ createdAt, duration }) => {
@@ -456,12 +457,22 @@ const BorrowerLoansInitiated = () => {
               </div>
             ) : null}
             {borrowerStatus === "LOANACCEPTED" && !record.borrowerEsigned && record.borrowerAggrement ? (
-              <Link
-                to={`/esign/${record.loanRequestId || record.id}?assignmentId=${record.id}`}
-                className="btn btn-sm btn-warning fw-semibold"
-              >
-                <i className="fa-solid fa-signature me-1"></i> eSign Agreement
-              </Link>
+              record.lenderEsigned ? (
+                <Link
+                  to={`/esign/${record.loanRequestId || record.id}?assignmentId=${record.id}`}
+                  className="btn btn-sm btn-warning fw-semibold"
+                >
+                  <i className="fa-solid fa-signature me-1"></i> eSign Agreement
+                </Link>
+              ) : (
+                <span
+                  className="badge bg-warning-subtle text-warning p-2 small border border-warning-subtle d-inline-flex align-items-center gap-1"
+                  title="Waiting for lender to complete digital eSign first"
+                >
+                  <i className="fa-solid fa-clock"></i>
+                  <span>Lender eSign Pending</span>
+                </span>
+              )
             ) : null}
             {record.borrowerAggrement && (
               <a

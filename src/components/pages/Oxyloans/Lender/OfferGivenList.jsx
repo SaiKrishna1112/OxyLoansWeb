@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Modal } from "antd";
 import Header from "../../../Header/Header";
 import SideBar from "../../../SideBar/SideBar";
 import {
@@ -10,6 +11,7 @@ import {
   completeEsign,
   getUserDetails,
   lenderBorrowerEsign,
+  completeCashfreeEsign,
 } from "../../../HttpRequest/afterlogin";
 import Swal from "sweetalert2";
 import { personalDetails } from "../../Base UI Elements/SweetAlert";
@@ -43,6 +45,18 @@ const OfferGivenList = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [agreementLoadingById, setAgreementLoadingById] = useState({});
   const [esignLoadingById, setEsignLoadingById] = useState({});
+
+  // Cashfree eSign modal state
+  const [esignModal, setEsignModal] = useState({
+    open: false,
+    offer: null,
+    step: "review", // "review" | "redirect" | "success"
+    aadhaarNumber: "",
+    agreed: true,
+    redirectUrl: "",
+    loading: false,
+    error: "",
+  });
 
   useEffect(() => { fetchOffers(1); }, []);
   useEffect(() => { fetchOffers(currentPage); }, [currentPage]);
@@ -102,108 +116,145 @@ const OfferGivenList = () => {
     }
   };
 
-  const handleEsignAction = async (offer) => {
-    const rowId = String(offer?.id ?? "");
+  const handleOpenEsignModal = async (offer) => {
+    let prefilledAadhar = "";
     try {
-      // const userDetailsRes = await getUserDetails();
-      // if (userDetailsRes?.status === 200) {
-      //   const profileDetails = userDetailsRes.data;
-      //   if (profileDetails?.personalDetailsInfo !== true) {
-      //     personalDetails(
-      //       "Please complete your personal details first to proceed with the eSign.", 
-      //       "/profile"
-      //     );
-      //     return;
-      //   }
-      // } else {
-      //   throw new Error("Unable to verify profile details.");
-      // }
-
-      const confirm = await Swal.fire({
-        title: "Confirm eSign",
-        text: "Do you want to eSign this loan agreement?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "Yes, eSign",
-        cancelButtonText: "Cancel",
-        confirmButtonColor: PRIMARY,
-      });
-      if (!confirm.isConfirmed) return;
-
-      let prefilledAadhar = "";
-      try {
-        const userDetailsRes = await getUserDetails();
-        if (userDetailsRes?.status === 200 || userDetailsRes?.data) {
-          prefilledAadhar = userDetailsRes.data?.aadharNumber || "";
-        }
-      } catch (err) {
-        console.error("Failed to fetch user details for Aadhaar pre-fill:", err);
+      const userDetailsRes = await getUserDetails();
+      if (userDetailsRes?.status === 200 || userDetailsRes?.data) {
+        prefilledAadhar =
+          userDetailsRes.data?.aadharNumber ||
+          userDetailsRes.data?.aadhaarNumber ||
+          "";
       }
+    } catch (err) {
+      console.warn("Aadhaar pre-fill notice:", err);
+    }
 
-      const { value: aadharNumber } = await Swal.fire({
-        title: "Enter Aadhaar Number",
-        input: "text",
-        inputValue: prefilledAadhar,
-        inputLabel: "A 12-digit Aadhaar number is required for verification.",
-        inputPlaceholder: "Enter 12-digit Aadhaar Number",
-        showCancelButton: true,
-        confirmButtonColor: PRIMARY,
-        confirmButtonText: "Submit",
-        inputAttributes: {
-          maxlength: "12",
-          autocapitalize: "off",
-          autocorrect: "off",
-        },
-        inputValidator: (value) => {
-          if (!value) {
-            return "Aadhaar number is required!";
-          }
-          if (!/^\d{12}$/.test(value)) {
-            return "Please enter a valid 12-digit Aadhaar number!";
-          }
-        }
-      });
+    setEsignModal({
+      open: true,
+      offer,
+      step: "review",
+      aadhaarNumber: prefilledAadhar,
+      agreed: true,
+      redirectUrl: "",
+      loading: false,
+      error: "",
+    });
+  };
 
-      if (!aadharNumber) return;
+  const handleStartRealCashfreeEsign = async () => {
+    if (!esignModal.agreed) {
+      setEsignModal((prev) => ({
+        ...prev,
+        error: "Please authorize the consent checkbox to initiate eSign.",
+      }));
+      return;
+    }
+    if (!esignModal.aadhaarNumber || esignModal.aadhaarNumber.length < 4) {
+      setEsignModal((prev) => ({
+        ...prev,
+        error: "Please enter a valid 12-digit Aadhaar number (at least 4 digits required).",
+      }));
+      return;
+    }
 
-      if (rowId) {
-        setEsignLoadingById((prev) => ({ ...prev, [rowId]: true }));
-      }
+    setEsignModal((prev) => ({ ...prev, loading: true, error: "" }));
 
-      const esignRes = await lenderBorrowerEsign(offer?.loanRequestId, aadharNumber, offer?.id);
-      const data = esignRes?.data;
+    const offer = esignModal.offer;
+    const loanReqId = offer?.loanRequestId || offer?.id;
+    const assignmentId = offer?.id;
+    const targetUrl = assignmentId
+      ? `${window.location.origin}/lender_esign/${loanReqId}/${assignmentId}`
+      : `${window.location.origin}/lender_esign/${loanReqId}`;
+
+    try {
+      const res = await lenderBorrowerEsign(
+        loanReqId,
+        esignModal.aadhaarNumber,
+        assignmentId,
+        targetUrl
+      );
+
+      const data = res?.data;
       if (data && (data.redirect_url || data.redirectUrl)) {
         const url = data.redirect_url || data.redirectUrl;
-        window.open(url, "_self");
-        return;
-      }
+        setEsignModal((prev) => ({
+          ...prev,
+          loading: false,
+          redirectUrl: url,
+          step: "redirect",
+        }));
 
-      if (esignRes?.status === 200 || esignRes?.request?.status === 200) {
+        // Preserve auth tokens
+        const token =
+          sessionStorage.getItem("accessToken") ||
+          localStorage.getItem("accessToken");
+        const userId =
+          sessionStorage.getItem("userId") || localStorage.getItem("userId");
+        if (token) localStorage.setItem("accessToken", token);
+        if (userId) localStorage.setItem("userId", userId);
+
+        window.open(url, "_blank");
+      } else if (res?.status === 200 || res?.request?.status === 200) {
+        setEsignModal((prev) => ({ ...prev, loading: false, step: "success" }));
+        fetchOffers(currentPage);
+      } else {
+        const msg =
+          res?.data?.message ||
+          res?.data?.errorMessage ||
+          "Failed to initiate Cashfree eSign session. Please try again.";
+        setEsignModal((prev) => ({ ...prev, loading: false, error: msg }));
+      }
+    } catch (err) {
+      const msg =
+        err?.response?.data?.errorMessage ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to initiate Cashfree eSign. Please check loan request status.";
+      setEsignModal((prev) => ({ ...prev, loading: false, error: msg }));
+    }
+  };
+
+  const handleVerifyEsignCompletion = async () => {
+    setEsignModal((prev) => ({ ...prev, loading: true, error: "" }));
+    const offer = esignModal.offer;
+    const loanReqId = offer?.loanRequestId || offer?.id;
+    const assignmentId = offer?.id;
+
+    try {
+      const res = await completeCashfreeEsign(loanReqId, assignmentId);
+      if (res?.status === 200 || res?.data) {
+        setEsignModal((prev) => ({ ...prev, loading: false, step: "success" }));
         await Swal.fire({
           icon: "success",
-          title: "eSign Completed",
-          text: "Loan agreement eSigned successfully.",
+          title: "eSign Verified",
+          text: "Lender digital signature has been recorded successfully!",
           confirmButtonColor: PRIMARY,
         });
         fetchOffers(currentPage);
       } else {
-        throw esignRes;
+        setEsignModal((prev) => ({
+          ...prev,
+          loading: false,
+          error:
+            "Verification pending. Please ensure you have completed the eSign in the opened window.",
+        }));
       }
-    } catch (error) {
-      await Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: getApiErrorMessage(error) || "Failed to complete eSign.",
-        confirmButtonColor: PRIMARY,
-      });
-    } finally {
-      if (rowId) {
-        setEsignLoadingById((prev) => ({ ...prev, [rowId]: false }));
-      }
+    } catch (err) {
+      fetchOffers(currentPage);
+      const msg =
+        err?.response?.data?.errorMessage ||
+        err?.response?.data?.message ||
+        "Verification pending. Please ensure you have completed the eSign in Cashfree.";
+      setEsignModal((prev) => ({ ...prev, loading: false, error: msg }));
     }
   };
 
- const handleAction = async () => {
+  const handleEsignAction = (offer) => {
+    handleOpenEsignModal(offer);
+  };
+
+  const handleAction = async () => {
   if (!confirmModal) return;
 
   const { offer, action } = confirmModal;
@@ -752,30 +803,37 @@ const OfferGivenList = () => {
                                     Disburse Loan
                                   </button>
                                 )} */}
-                                {isLoanAcceptedStatus &&  (
-                                  <button
-                                    className="btn btn-sm text-white"
-                                    title="eSign Agreement"
-                                    disabled={Boolean(esignLoadingById[rowId]) || offer.lenderEsigned}
-                                    style={{
-                                      background: "#fd7e14",
-                                      borderRadius: 6,
-                                      padding: "4px 10px",
-                                      fontSize: 12,
-                                    }}
-                                    onClick={() => handleEsignAction(offer)}
-                                  >
-                                    {Boolean(esignLoadingById[rowId]) ? (
-                                      <>
-                                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                        eSigning...
-                                      </>
+                                {isLoanAcceptedStatus && (
+                                  <div className="d-flex align-items-center gap-1.5 flex-wrap justify-content-center">
+                                    {offer.lenderEsigned ? (
+                                      <span className="badge bg-success-subtle text-success p-2 small fw-semibold">
+                                        <i className="fa-solid fa-circle-check me-1"></i> eSigned
+                                      </span>
                                     ) : (
                                       <>
-                                        <i className="fa fa-signature me-1" /> { offer.lenderEsigned? 'eSign Completed' : 'eSign'}
+                                        <Link
+                                          to={`/lender_esign/${offer.loanRequestId || offer.id}?assignmentId=${offer.id}`}
+                                          className="btn btn-sm btn-warning text-dark fw-bold d-inline-flex align-items-center gap-1"
+                                          title="Proceed to Aadhaar eSign via Cashfree"
+                                          style={{ borderRadius: 6, padding: "4px 10px", fontSize: 12 }}
+                                        >
+                                          <i className="fa-solid fa-signature"></i>
+                                          <span>eSign Agreement</span>
+                                        </Link>
+
+                                        <button
+                                          type="button"
+                                          className="btn btn-sm btn-outline-warning text-dark fw-semibold d-inline-flex align-items-center gap-1"
+                                          onClick={() => handleOpenEsignModal(offer)}
+                                          title="Quick Cashfree eSign Gateway Modal"
+                                          style={{ borderRadius: 6, padding: "4px 10px", fontSize: 12 }}
+                                        >
+                                          <i className="fa-solid fa-bolt text-warning"></i>
+                                          <span>Quick Sign</span>
+                                        </button>
                                       </>
                                     )}
-                                  </button>
+                                  </div>
                                 )}
                                 {canProcess && (
                                   <div
@@ -1055,6 +1113,248 @@ const OfferGivenList = () => {
           </div>
         </div>
       )}
+
+      {/* Modal: Real Cashfree Aadhaar eSign Gateway Modal for Lender */}
+      <Modal
+        title={
+          <div className="d-flex align-items-center gap-2">
+            <span
+              className="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning bg-opacity-10 text-warning"
+              style={{ width: "32px", height: "32px", fontSize: "14px" }}
+            >
+              <i className="fa-solid fa-signature"></i>
+            </span>
+            <div>
+              <span className="fw-bold text-dark d-block" style={{ fontSize: "15px" }}>
+                Lender Aadhaar eSign via Cashfree Gateway
+              </span>
+              <span className="text-muted small d-block" style={{ fontSize: "11px", fontWeight: "normal" }}>
+                Legally binding digital signature under Information Technology Act, 2000
+              </span>
+            </div>
+          </div>
+        }
+        open={esignModal.open}
+        onCancel={() => setEsignModal((prev) => ({ ...prev, open: false }))}
+        footer={null}
+        destroyOnClose
+        style={{ top: 35 }}
+        width={620}
+      >
+        <div className="py-2">
+          {esignModal.offer && (
+            <div className="p-3 rounded-3 bg-light border mb-3" style={{ fontSize: "13px" }}>
+              <div className="row g-2">
+                <div className="col-6">
+                  <span className="text-muted d-block small">Loan Request ID</span>
+                  <strong>#{esignModal.offer.loanRequestId || esignModal.offer.id}</strong>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted d-block small">Borrower Name</span>
+                  <strong>{esignModal.offer.borrowerName || esignModal.offer.firstName || "Borrower"}</strong>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted d-block small">Offered Amount</span>
+                  <strong className="text-success">
+                    ₹ {Number(esignModal.offer.lenderInterestedAmount || esignModal.offer.offerAmount || 0).toLocaleString("en-IN")}
+                  </strong>
+                </div>
+                <div className="col-6">
+                  <span className="text-muted d-block small">Interest Rate (ROI)</span>
+                  <strong>{esignModal.offer.roi}% p.a.</strong>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {esignModal.error && (
+            <div className="alert alert-danger py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+              <i className="fa-solid fa-circle-exclamation text-danger"></i>
+              <span>{esignModal.error}</span>
+            </div>
+          )}
+
+          {esignModal.step === "review" && (
+            <div>
+              <div className="p-3 border rounded-3 mb-3 bg-white">
+                <div className="d-flex align-items-center justify-content-between mb-2">
+                  <span className="fw-semibold text-dark small">P2P Borrower-Lender Legal Agreement</span>
+                  {esignModal.offer?.lenderAgrrement && (
+                    <a
+                      href={esignModal.offer.lenderAgrrement}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-link p-0 small text-decoration-none"
+                    >
+                      <i className="fa-solid fa-arrow-up-right-from-square me-1"></i> Preview PDF
+                    </a>
+                  )}
+                </div>
+                <p className="text-muted small mb-0" style={{ fontSize: "12px", lineHeight: "1.6" }}>
+                  I hereby authorize OxyLoans to affix my digital signature to the loan contract under the Information Technology Act, 2000. I acknowledge that the loan amount will be disbursed via RBI-regulated Escrow directly to the borrower's verified bank account.
+                </p>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label small fw-semibold text-muted">
+                  Aadhaar Number / VID <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={esignModal.aadhaarNumber}
+                  maxLength={12}
+                  onChange={(e) =>
+                    setEsignModal((prev) => ({
+                      ...prev,
+                      aadhaarNumber: e.target.value.replace(/\D/g, ""),
+                    }))
+                  }
+                  placeholder="Enter 12-digit Aadhaar number"
+                />
+                <span className="text-muted small d-block mt-1" style={{ fontSize: "11px" }}>
+                  Used to generate official Cashfree Aadhaar eSign session with UIDAI.
+                </span>
+              </div>
+
+              <div className="form-check mb-3">
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  id="lenderModalConsentCheck"
+                  checked={esignModal.agreed}
+                  onChange={(e) =>
+                    setEsignModal((prev) => ({ ...prev, agreed: e.target.checked }))
+                  }
+                />
+                <label className="form-check-label text-muted small" htmlFor="lenderModalConsentCheck">
+                  I agree to electronically sign this P2P loan contract using Aadhaar OTP verification via Cashfree.
+                </label>
+              </div>
+
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 pt-2 border-top">
+                <Link
+                  to={`/lender_esign/${esignModal.offer?.loanRequestId || esignModal.offer?.id}?assignmentId=${esignModal.offer?.id}`}
+                  className="btn btn-outline-primary btn-sm rounded-pill px-3"
+                  onClick={() => setEsignModal((prev) => ({ ...prev, open: false }))}
+                >
+                  <i className="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Full eSign Page
+                </Link>
+
+                <div className="d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm rounded-pill px-3"
+                    onClick={() => setEsignModal((prev) => ({ ...prev, open: false }))}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-warning text-dark fw-bold btn-sm rounded-pill px-4"
+                    disabled={esignModal.loading || !esignModal.agreed || esignModal.aadhaarNumber.length < 4}
+                    onClick={handleStartRealCashfreeEsign}
+                  >
+                    {esignModal.loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1.5" role="status"></span>
+                        <span>Connecting to Cashfree...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-signature me-1.5"></i>
+                        <span>Proceed to Cashfree eSign</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {esignModal.step === "redirect" && (
+            <div className="text-center py-3">
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary mb-3"
+                style={{ width: "60px", height: "60px", fontSize: "24px" }}
+              >
+                <i className="fa-solid fa-arrow-up-right-from-square"></i>
+              </div>
+              <h5 className="fw-bold text-dark mb-2">Cashfree Aadhaar eSign Portal Opened</h5>
+              <p className="text-muted small mx-auto mb-3" style={{ maxWidth: "480px" }}>
+                We have opened Cashfree's Aadhaar signing window. Please verify the OTP sent to your Aadhaar-linked mobile by UIDAI, then return here to complete verification.
+              </p>
+
+              <div className="bg-light p-3 rounded-3 mb-4 mx-auto text-start" style={{ maxWidth: "480px", fontSize: "12.5px" }}>
+                <div className="d-flex gap-2 align-items-start mb-2">
+                  <span className="badge bg-primary rounded-circle p-1">1</span>
+                  <span className="text-muted">Enter Aadhaar number & UIDAI OTP on the Cashfree window.</span>
+                </div>
+                <div className="d-flex gap-2 align-items-start">
+                  <span className="badge bg-primary rounded-circle p-1">2</span>
+                  <span className="text-muted">Once verified, click the button below to confirm signature recording.</span>
+                </div>
+              </div>
+
+              <div className="d-flex flex-column gap-2 justify-content-center align-items-center">
+                <button
+                  type="button"
+                  className="btn btn-success fw-bold rounded-pill px-4"
+                  disabled={esignModal.loading}
+                  onClick={handleVerifyEsignCompletion}
+                >
+                  {esignModal.loading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1.5" role="status"></span>
+                      <span>Verifying Signature...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-circle-check me-1.5"></i>
+                      <span>I Have Completed eSign (Verify)</span>
+                    </>
+                  )}
+                </button>
+
+                {esignModal.redirectUrl && (
+                  <a
+                    href={esignModal.redirectUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-link text-primary text-decoration-none small mt-1"
+                  >
+                    <i className="fa-solid fa-redo me-1"></i> Relaunch Cashfree Portal
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {esignModal.step === "success" && (
+            <div className="text-center py-4">
+              <div
+                className="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success mb-3"
+                style={{ width: "64px", height: "64px", fontSize: "28px" }}
+              >
+                <i className="fa-solid fa-circle-check"></i>
+              </div>
+              <h5 className="fw-bold text-success mb-1">Lender Agreement eSigned Successfully!</h5>
+              <p className="text-muted small mb-4">
+                Your digital signature seal has been permanently verified and affixed to the loan agreement via Cashfree. The contract is now legally executed.
+              </p>
+              <div className="d-flex justify-content-center gap-2">
+                <button
+                  type="button"
+                  className="btn btn-primary rounded-pill px-4"
+                  onClick={() => setEsignModal((prev) => ({ ...prev, open: false }))}
+                >
+                  Close & View Offers
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

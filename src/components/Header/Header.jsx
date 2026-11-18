@@ -22,7 +22,6 @@ import { Tag } from "antd";
 // import NotificationBell from "../NotificationBell";
 import { MARKETPLACE_URL } from "../../config";
 import { initWebPush } from "../../utils/fcmWebPush";
-import { openLenderWelcomeModal } from "../pages/Oxyloans/Lender/LenderWelcomeModal";
 
 const Header = (profile) => {
   const location = useLocation();
@@ -42,6 +41,8 @@ const Header = (profile) => {
   const _demoLR   = _demoParams.get("lr")   || "1234";
   const displayLenderId = isDemoMode ? _demoLR : ((isTestRecording && reduxStoreData?.userId === 27127) ? 72271 : reduxStoreData?.userId);
   const displayFirstName = isDemoMode ? _demoName : ((isTestRecording && reduxStoreData?.userId === 27127) ? "Pradeep Chakravarthy" : (reduxStoreData?.firstName ? reduxStoreData.firstName.charAt(0).toUpperCase() + reduxStoreData.firstName.slice(1).toLowerCase() : ""));
+
+
   const isLender =
     (
       sessionStorage.getItem("primaryType") ||
@@ -213,7 +214,7 @@ const Header = (profile) => {
         </Link> */}
           {isLender && (
             <li className="nav-item d-flex align-items-center me-1 me-sm-2 me-md-3 oxy-doodle-nav-item">
-              <Oxy10YearsGoogleDoodle onClick={openLenderWelcomeModal} />
+              <Oxy10YearsGoogleDoodle />
             </li>
           )}
           <li className="nav-item  has-arrow dropdown-heads ">

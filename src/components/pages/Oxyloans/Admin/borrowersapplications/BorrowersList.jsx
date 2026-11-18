@@ -456,8 +456,10 @@ const BorrowersList = () => {
   const [loading, setLoading] = useState(true);
   const [isUsingSample, setIsUsingSample] = useState(false);
 
-  // Filters & Search
-  const [searchQuery, setSearchQuery] = useState("");
+  // Search by dropdown (borrowerId, name, mobileNumber) + server-side search
+  const [searchType, setSearchType] = useState("borrowerId");
+  const [searchValue, setSearchValue] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState(null);
   const [docFilter, setDocFilter] = useState("ALL");
   const [bankFilter, setBankFilter] = useState("ALL");
   const [nomineeFilter, setNomineeFilter] = useState("ALL");
@@ -486,17 +488,43 @@ const BorrowersList = () => {
   const [rotation, setRotation] = useState(0);
   const [imgLoadError, setImgLoadError] = useState(false);
 
-  // Fetch borrower documents list dynamically from API with pagination
+  // Fetch borrower documents list dynamically from API (without pagination for search, only send active variable)
   const fetchBorrowers = async (
     targetPage = currentPage,
     targetPageSize = pageSize,
-    showToast = false
+    showToast = false,
+    searchParams = appliedSearch
   ) => {
     setLoading(true);
-    const payload = {
-      pageNo: Number(targetPage) || 1,
-      pageSize: Number(targetPageSize) || 10,
-    };
+
+    let payload = {};
+
+    // When searching: without pagination and only send the variable being searched
+    if (searchParams && searchParams.value) {
+      const { type, value } = searchParams;
+      const cleanVal = String(value || "").trim();
+
+      if (type === "borrowerId") {
+        const cleanedId = cleanVal.replace(/^(BR|LR)/i, "").replace(/[^0-9]/g, "");
+        payload = {
+          borrowerId: cleanedId ? Number(cleanedId) : Number(cleanVal) || cleanVal,
+        };
+      } else if (type === "name") {
+        payload = {
+          name: cleanVal,
+        };
+      } else if (type === "mobileNumber") {
+        payload = {
+          mobileNumber: cleanVal,
+        };
+      }
+    } else {
+      // Default list: with pagination
+      payload = {
+        pageNo: Number(targetPage) || 1,
+        pageSize: Number(targetPageSize) || 10,
+      };
+    }
 
     try {
       const response = await getBorrowerDocumentsList(payload);
@@ -531,11 +559,15 @@ const BorrowersList = () => {
         if (showToast) {
           if (records.length > 0) {
             message.success(
-              `Loaded page ${targetPage} (${records.length} records)`
+              searchParams
+                ? `Found ${records.length} borrower(s) matching your search`
+                : `Loaded page ${targetPage} (${records.length} records)`
             );
           } else {
             message.info(
-              `Page ${targetPage} has no records. You have reached the end of the list.`
+              searchParams
+                ? "No borrower records found matching your search."
+                : `Page ${targetPage} has no records. You have reached the end of the list.`
             );
           }
         }
@@ -560,7 +592,7 @@ const BorrowersList = () => {
 
   // Initial load
   useEffect(() => {
-    fetchBorrowers(1, 10, false);
+    fetchBorrowers(1, 10, false, null);
   }, []);
 
   // Previous Page navigation
@@ -568,7 +600,7 @@ const BorrowersList = () => {
     if (loading || currentPage <= 1) return;
     const prevPage = currentPage - 1;
     setCurrentPage(prevPage);
-    fetchBorrowers(prevPage, pageSize, true);
+    fetchBorrowers(prevPage, pageSize, true, appliedSearch);
   };
 
   // Next Page navigation
@@ -576,47 +608,71 @@ const BorrowersList = () => {
     if (loading) return;
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-    fetchBorrowers(nextPage, pageSize, true);
+    fetchBorrowers(nextPage, pageSize, true, appliedSearch);
   };
 
   // Page Size change
   const handlePageSizeChange = (newSize) => {
     setPageSize(newSize);
     setCurrentPage(1);
-    fetchBorrowers(1, newSize, true);
+    fetchBorrowers(1, newSize, true, appliedSearch);
+  };
+
+  // Search handlers
+  const handleSearch = () => {
+    const trimmedVal = searchValue.trim();
+    if (!trimmedVal) {
+      message.warning("Please enter a value to search");
+      return;
+    }
+
+    if (searchType === "borrowerId") {
+      const cleanedId = trimmedVal.replace(/^(BR|LR)/i, "").replace(/[^0-9]/g, "");
+      if (!cleanedId) {
+        message.warning("Please enter a valid numeric Borrower ID (e.g. 69957)");
+        return;
+      }
+    }
+
+    if (searchType === "mobileNumber") {
+      const cleanMobile = trimmedVal.replace(/[^0-9+]/g, "");
+      if (!cleanMobile) {
+        message.warning("Please enter a valid Mobile Number (e.g. 868654986)");
+        return;
+      }
+    }
+
+    const newSearch = { type: searchType, value: trimmedVal };
+    setAppliedSearch(newSearch);
+    setCurrentPage(1);
+    fetchBorrowers(1, pageSize, true, newSearch);
+  };
+
+  const handleClearSearch = () => {
+    setSearchValue("");
+    setAppliedSearch(null);
+    setCurrentPage(1);
+    fetchBorrowers(1, pageSize, true, null);
+  };
+
+  const handleSearchInputChange = (e) => {
+    const val = e.target.value;
+    setSearchValue(val);
+    if (!val && appliedSearch) {
+      setAppliedSearch(null);
+      setCurrentPage(1);
+      fetchBorrowers(1, pageSize, true, null);
+    }
+  };
+
+  const handleSearchTypeChange = (newType) => {
+    setSearchType(newType);
+    setSearchValue("");
   };
 
   // Filtered dataset
   const filteredData = useMemo(() => {
     return borrowers.filter((item) => {
-      const name = (item.name || item.borrowerDetails?.fullname || "").toLowerCase();
-      const userId = String(item.userId || item.borrowerDetails?.userId || "");
-      const uniqueNo = String(item.experianSummary?.uniqueNumber || "").toLowerCase();
-      const mobile = String(item.borrowerDetails?.mobileNumber || "");
-      const whatsapp = String(item.borrowerDetails?.whastappNumber || "");
-      const email = (item.borrowerDetails?.email || "").toLowerCase();
-      const pan = (item.borrowerDetails?.panNumber || "").toLowerCase();
-      const bank = (item.borrowerDetails?.bankName || "").toLowerCase();
-      const city = (item.borrowerDetails?.city || "").toLowerCase();
-      const state = (item.borrowerDetails?.state || "").toLowerCase();
-      const q = searchQuery.trim().toLowerCase();
-
-      // Search match
-      const matchesSearch =
-        !q ||
-        name.includes(q) ||
-        userId.includes(q) ||
-        uniqueNo.includes(q) ||
-        mobile.includes(q) ||
-        whatsapp.includes(q) ||
-        email.includes(q) ||
-        pan.includes(q) ||
-        bank.includes(q) ||
-        city.includes(q) ||
-        state.includes(q);
-
-      if (!matchesSearch) return false;
-
       // Document filter
       const docs = Array.isArray(item.documents) ? item.documents : [];
       if (docFilter === "WITH_DOCS" && docs.length === 0) return false;
@@ -680,7 +736,6 @@ const BorrowersList = () => {
     });
   }, [
     borrowers,
-    searchQuery,
     docFilter,
     bankFilter,
     nomineeFilter,
@@ -755,7 +810,8 @@ const BorrowersList = () => {
 
   // Reset Filters
   const handleResetFilters = () => {
-    setSearchQuery("");
+    setSearchValue("");
+    setAppliedSearch(null);
     setDocFilter("ALL");
     setBankFilter("ALL");
     setNomineeFilter("ALL");
@@ -763,6 +819,7 @@ const BorrowersList = () => {
     setStatusFilter("ALL");
     setQuickFilter("ALL");
     setCurrentPage(1);
+    fetchBorrowers(1, pageSize, true, null);
   };
 
   // Open Document Lightbox
@@ -783,13 +840,57 @@ const BorrowersList = () => {
     setProfileModalVisible(true);
   };
 
-  // Copy to clipboard helper
-  const copyText = (text, label) => {
-    if (!text) return;
-    navigator.clipboard
-      .writeText(text)
-      .then(() => message.success(`${label || "Text"} copied to clipboard`))
-      .catch(() => message.error("Failed to copy"));
+  // Copy to clipboard helper (with fallback for HTTP / non-secure contexts like IP address access)
+  const copyText = async (text, label) => {
+    if (!text && text !== 0) return;
+    const value = String(text);
+
+    const fallbackCopy = (val) => {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = val;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "-9999px";
+        textArea.style.opacity = "0";
+        textArea.setAttribute("readonly", "");
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textArea);
+        return successful;
+      } catch (err) {
+        console.error("Fallback copy failed:", err);
+        return false;
+      }
+    };
+
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        window.isSecureContext
+      ) {
+        await navigator.clipboard.writeText(value);
+        message.success(`${label || "Text"} copied to clipboard`);
+      } else {
+        const success = fallbackCopy(value);
+        if (success) {
+          message.success(`${label || "Text"} copied to clipboard`);
+        } else {
+          message.error("Failed to copy to clipboard");
+        }
+      }
+    } catch (err) {
+      // If navigator.clipboard fails (e.g. permission denied), attempt fallback
+      const success = fallbackCopy(value);
+      if (success) {
+        message.success(`${label || "Text"} copied to clipboard`);
+      } else {
+        message.error("Failed to copy to clipboard");
+      }
+    }
   };
 
   // Export to CSV
@@ -1430,28 +1531,6 @@ const BorrowersList = () => {
                 <Title level={4} style={{ margin: 0, color: "#0f172a", fontWeight: 800 }}>
                   Borrowers Intelligence & Verification Studio
                 </Title>
-                <Tag color="purple" style={{ margin: 0, fontWeight: 700, padding: "2px 10px", borderRadius: 12 }}>
-                  <i className="fa-solid fa-crown me-1 text-warning"></i> CEO Executive View
-                </Tag>
-                {isUsingSample ? (
-                  <Tooltip title="The live borrowerDocuments API returned empty or is offline; demonstrating with complete verified response data.">
-                    <Tag
-                      color="orange"
-                      icon={<WarningOutlined />}
-                      style={{ margin: 0, borderRadius: 12 }}
-                    >
-                      Sample Preview Mode
-                    </Tag>
-                  </Tooltip>
-                ) : (
-                  <Tag
-                    color="success"
-                    icon={<CheckCircleOutlined />}
-                    style={{ margin: 0, borderRadius: 12 }}
-                  >
-                    Live API Connected
-                  </Tag>
-                )}
               </div>
               <Text type="secondary" style={{ fontSize: 13 }}>
                 Executive underwriting console for borrower profile completeness, KYC secure vault, banking verifications, and bureau risk metrics
@@ -1460,35 +1539,41 @@ const BorrowersList = () => {
 
             <Space wrap>
 
-              <Space>
-                <Button
-                  icon={<LeftOutlined />}
-                  disabled={currentPage <= 1 || loading}
-                  onClick={handlePrev}
-                >
-                  Prev
-                </Button>
-                <Tag color="cyan" style={{ margin: 0, padding: "4px 10px", fontWeight: 700 }}>
-                  Page {currentPage}
+              {!appliedSearch ? (
+                <Space>
+                  <Button
+                    icon={<LeftOutlined />}
+                    disabled={currentPage <= 1 || loading}
+                    onClick={handlePrev}
+                  >
+                    Prev
+                  </Button>
+                  <Tag color="cyan" style={{ margin: 0, padding: "4px 10px", fontWeight: 700 }}>
+                    Page {currentPage}
+                  </Tag>
+                  <Button
+                    type="primary"
+                    disabled={loading || (borrowers.length === 0 && currentPage > 1)}
+                    onClick={handleNext}
+                    style={{
+                      backgroundColor:
+                        loading || (borrowers.length === 0 && currentPage > 1)
+                          ? undefined
+                          : "#3d5ee1",
+                      borderColor:
+                        loading || (borrowers.length === 0 && currentPage > 1)
+                          ? undefined
+                          : "#3d5ee1",
+                    }}
+                  >
+                    Next <RightOutlined />
+                  </Button>
+                </Space>
+              ) : (
+                <Tag color="blue" style={{ margin: 0, padding: "4px 10px", fontWeight: 600 }}>
+                  Search Results ({filteredData.length})
                 </Tag>
-                <Button
-                  type="primary"
-                  disabled={loading || (borrowers.length === 0 && currentPage > 1)}
-                  onClick={handleNext}
-                  style={{
-                    backgroundColor:
-                      loading || (borrowers.length === 0 && currentPage > 1)
-                        ? undefined
-                        : "#3d5ee1",
-                    borderColor:
-                      loading || (borrowers.length === 0 && currentPage > 1)
-                        ? undefined
-                        : "#3d5ee1",
-                  }}
-                >
-                  Next <RightOutlined />
-                </Button>
-              </Space>
+              )}
 
               <Button
                 type="default"
@@ -1501,198 +1586,6 @@ const BorrowersList = () => {
             </Space>
           </div>
 
-          {/* Metric Summary KPI Cards */}
-          <Row gutter={[16, 16]} className="mb-4">
-            <Col xs={12} sm={8} lg={4}>
-              <Card
-                bordered={false}
-                className="cursor-pointer transition-all"
-                style={{
-                  boxShadow: quickFilter === "ALL" ? "0 4px 12px rgba(59, 130, 246, 0.25)" : "0 1px 3px rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  borderLeft: "4px solid #3b82f6",
-                  border: quickFilter === "ALL" ? "2px solid #3b82f6" : undefined,
-                  cursor: "pointer",
-                }}
-                bodyStyle={{ padding: 14 }}
-                onClick={() => setQuickFilter("ALL")}
-              >
-                <Statistic
-                  title={
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      Borrowers on Page
-                    </span>
-                  }
-                  value={stats.total}
-                  valueStyle={{ fontSize: 24, fontWeight: 800, color: "#1e293b" }}
-                  prefix={<UserOutlined style={{ color: "#3b82f6" }} />}
-                />
-                <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                  Page {currentPage} overview
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={12} sm={8} lg={4}>
-              <Card
-                bordered={false}
-                style={{
-                  boxShadow: quickFilter === "ELIGIBLE" ? "0 4px 12px rgba(16, 185, 129, 0.25)" : "0 1px 3px rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  borderLeft: "4px solid #10b981",
-                  border: quickFilter === "ELIGIBLE" ? "2px solid #10b981" : undefined,
-                  cursor: "pointer",
-                }}
-                bodyStyle={{ padding: 14 }}
-                onClick={() => setQuickFilter(quickFilter === "ELIGIBLE" ? "ALL" : "ELIGIBLE")}
-              >
-                <Statistic
-                  title={
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      Loan Eligible (≥90%)
-                    </span>
-                  }
-                  value={stats.eligibleCount}
-                  suffix={<span style={{ fontSize: 13, color: "#64748b" }}>/{stats.total}</span>}
-                  valueStyle={{ fontSize: 24, fontWeight: 800, color: "#10b981" }}
-                  prefix={<CheckCircleOutlined style={{ color: "#10b981" }} />}
-                />
-                <div style={{ fontSize: 11, color: "#059669", marginTop: 2, fontWeight: 600 }}>
-                  Avg Completeness: {stats.avgCompleteness}%
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={12} sm={8} lg={4}>
-              <Card
-                bordered={false}
-                style={{
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  borderLeft: "4px solid #3d5ee1",
-                }}
-                bodyStyle={{ padding: 14 }}
-              >
-                <Statistic
-                  title={
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      Avg Personal Score
-                    </span>
-                  }
-                  value={stats.avgPersonalPct}
-                  suffix={<span style={{ fontSize: 13, color: "#64748b" }}>% / 30%</span>}
-                  valueStyle={{ fontSize: 24, fontWeight: 800, color: "#3d5ee1" }}
-                  prefix={<UserOutlined style={{ color: "#3d5ee1" }} />}
-                />
-                <div style={{ fontSize: 11, color: "#3d5ee1", marginTop: 2, fontWeight: 600 }}>
-                  Personal info category
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={12} sm={8} lg={4}>
-              <Card
-                bordered={false}
-                style={{
-                  boxShadow: quickFilter === "WITH_DOCS" ? "0 4px 12px rgba(245, 158, 11, 0.25)" : "0 1px 3px rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  borderLeft: "4px solid #f59e0b",
-                  border: quickFilter === "WITH_DOCS" ? "2px solid #f59e0b" : undefined,
-                  cursor: "pointer",
-                }}
-                bodyStyle={{ padding: 14 }}
-                onClick={() => setQuickFilter(quickFilter === "WITH_DOCS" ? "ALL" : "WITH_DOCS")}
-              >
-                <Statistic
-                  title={
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      With Documents
-                    </span>
-                  }
-                  value={stats.withDocs}
-                  suffix={
-                    <span style={{ fontSize: 13, color: "#64748b" }}>
-                      /{stats.total}
-                    </span>
-                  }
-                  valueStyle={{ fontSize: 24, fontWeight: 800, color: "#f59e0b" }}
-                  prefix={<FileImageOutlined style={{ color: "#f59e0b" }} />}
-                />
-                <div style={{ fontSize: 11, color: "#b45309", marginTop: 2 }}>
-                  {stats.totalDocsCount} files uploaded
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={12} sm={8} lg={4}>
-              <Card
-                bordered={false}
-                style={{
-                  boxShadow: quickFilter === "BANK_LINKED" ? "0 4px 12px rgba(6, 182, 212, 0.25)" : "0 1px 3px rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  borderLeft: "4px solid #06b6d4",
-                  border: quickFilter === "BANK_LINKED" ? "2px solid #06b6d4" : undefined,
-                  cursor: "pointer",
-                }}
-                bodyStyle={{ padding: 14 }}
-                onClick={() => setQuickFilter(quickFilter === "BANK_LINKED" ? "ALL" : "BANK_LINKED")}
-              >
-                <Statistic
-                  title={
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      Bank Linked
-                    </span>
-                  }
-                  value={stats.bankCount}
-                  suffix={
-                    <span style={{ fontSize: 13, color: "#64748b" }}>
-                      /{stats.total}
-                    </span>
-                  }
-                  valueStyle={{ fontSize: 24, fontWeight: 800, color: "#06b6d4" }}
-                  prefix={<BankOutlined style={{ color: "#06b6d4" }} />}
-                />
-                <div style={{ fontSize: 11, color: "#0891b2", marginTop: 2 }}>
-                  Account & IFSC verified
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={12} sm={8} lg={4}>
-              <Card
-                bordered={false}
-                style={{
-                  boxShadow: quickFilter === "NOMINEE_ADDED" ? "0 4px 12px rgba(139, 92, 246, 0.25)" : "0 1px 3px rgba(0,0,0,0.08)",
-                  borderRadius: 10,
-                  borderLeft: "4px solid #8b5cf6",
-                  border: quickFilter === "NOMINEE_ADDED" ? "2px solid #8b5cf6" : undefined,
-                  cursor: "pointer",
-                }}
-                bodyStyle={{ padding: 14 }}
-                onClick={() => setQuickFilter(quickFilter === "NOMINEE_ADDED" ? "ALL" : "NOMINEE_ADDED")}
-              >
-                <Statistic
-                  title={
-                    <span style={{ fontSize: 12, fontWeight: 600, color: "#475569" }}>
-                      Nominee Registered
-                    </span>
-                  }
-                  value={stats.nomineeCount}
-                  suffix={
-                    <span style={{ fontSize: 13, color: "#64748b" }}>
-                      /{stats.total}
-                    </span>
-                  }
-                  valueStyle={{ fontSize: 24, fontWeight: 800, color: "#8b5cf6" }}
-                  prefix={<UserOutlined style={{ color: "#8b5cf6" }} />}
-                />
-                <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 2 }}>
-                  Nominee details present
-                </div>
-              </Card>
-            </Col>
-          </Row>
-
           {/* Main Card with Filters & Table */}
           <Card
             bordered={false}
@@ -1700,85 +1593,49 @@ const BorrowersList = () => {
           >
             {/* Search and Filters Bar */}
             <div className="d-flex flex-wrap align-items-center gap-2 mb-3 pb-3 border-bottom">
-              <Input
-                placeholder="Search name, ID, phone, PAN, bank, city..."
-                prefix={<SearchOutlined style={{ color: "#9ca3af" }} />}
-                style={{ width: 280 }}
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                allowClear
-              />
-
-              <Select
-                value={docFilter}
-                onChange={(val) => {
-                  setDocFilter(val);
-                  setCurrentPage(1);
-                }}
-                style={{ width: 170 }}
-              >
-                <Option value="ALL">All Documents</Option>
-                <Option value="WITH_DOCS">Has Documents</Option>
-                <Option value="NO_DOCS">No Documents</Option>
-                <Option value="AADHAR">Has Aadhaar</Option>
-                <Option value="PAN">Has PAN Card</Option>
-                <Option value="CHEQUELEAF">Has Cheque Leaf</Option>
-                <Option value="MULTIPLE">2+ Documents</Option>
-              </Select>
-
-              <Select
-                value={bankFilter}
-                onChange={(val) => {
-                  setBankFilter(val);
-                  setCurrentPage(1);
-                }}
-                style={{ width: 160 }}
-              >
-                <Option value="ALL">All Bank Status</Option>
-                <Option value="HAS_BANK">Bank Linked</Option>
-                <Option value="NO_BANK">Missing Bank</Option>
-              </Select>
-
-              <Select
-                value={nomineeFilter}
-                onChange={(val) => {
-                  setNomineeFilter(val);
-                  setCurrentPage(1);
-                }}
-                style={{ width: 160 }}
-              >
-                <Option value="ALL">All Nominees</Option>
-                <Option value="HAS_NOMINEE">Nominee Added</Option>
-                <Option value="NO_NOMINEE">No Nominee</Option>
-              </Select>
-
-              {availableStates.length > 0 && (
+              {/* Breakdown Search: Dropdown (borrowerId | name | mobileNumber) + Input + Search Button */}
+              <Space.Compact style={{ flexShrink: 0 }}>
                 <Select
-                  value={stateFilter}
-                  onChange={(val) => {
-                    setStateFilter(val);
-                    setCurrentPage(1);
-                  }}
-                  style={{ width: 150 }}
+                  value={searchType}
+                  onChange={handleSearchTypeChange}
+                  style={{ width: 145 }}
                 >
-                  <Option value="ALL">All States</Option>
-                  {availableStates.map((st) => (
-                    <Option key={st} value={st}>
-                      {st}
-                    </Option>
-                  ))}
+                  <Option value="borrowerId">Borrower ID</Option>
+                  <Option value="name">Name</Option>
+                  <Option value="mobileNumber">Mobile Number</Option>
                 </Select>
-              )}
+                <Input
+                  placeholder={
+                    searchType === "borrowerId"
+                      ? "Enter Borrower ID (e.g. 69957)"
+                      : searchType === "name"
+                      ? "Enter Name (e.g. Ravi)"
+                      : "Enter Mobile (e.g. 868654986)"
+                  }
+                  value={searchValue}
+                  onChange={handleSearchInputChange}
+                  onPressEnter={handleSearch}
+                  style={{ width: 220 }}
+                  allowClear
+                />
+                <Button
+                  type="primary"
+                  icon={<SearchOutlined />}
+                  onClick={handleSearch}
+                  loading={loading}
+                >
+                  Search
+                </Button>
+              </Space.Compact>
 
-              {(searchQuery ||
+              {(appliedSearch ||
+                searchValue ||
                 docFilter !== "ALL" ||
                 bankFilter !== "ALL" ||
                 nomineeFilter !== "ALL" ||
                 stateFilter !== "ALL" ||
-                statusFilter !== "ALL") && (
+                statusFilter !== "ALL" ||
+                quickFilter !== "ALL") && (
                 <Button
                   type="dashed"
                   icon={<ClearOutlined />}
@@ -1794,6 +1651,38 @@ const BorrowersList = () => {
                 <strong>{borrowers.length}</strong> borrowers
               </div>
             </div>
+
+            {/* Active search banner if search filter applied */}
+            {appliedSearch && (
+              <div className="mb-3 d-flex align-items-center gap-2 flex-wrap">
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Active Search:
+                </Text>
+                <Tag
+                  color="blue"
+                  closable
+                  onClose={handleClearSearch}
+                  style={{ padding: "3px 10px", fontSize: 12, borderRadius: 4 }}
+                >
+                  <span>
+                    {appliedSearch.type === "borrowerId"
+                      ? "Borrower ID"
+                      : appliedSearch.type === "name"
+                      ? "Name"
+                      : "Mobile Number"}
+                  </span>
+                  : <strong>{appliedSearch.value}</strong>
+                </Tag>
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={handleClearSearch}
+                  style={{ padding: 0, fontSize: 12, color: "#ef4444" }}
+                >
+                  Clear search
+                </Button>
+              </div>
+            )}
 
             {/* Borrowers Table */}
             <Table
@@ -1812,9 +1701,29 @@ const BorrowersList = () => {
                     <Empty
                       description={
                         <div>
-                          <h6>No borrower records found on Page {currentPage}</h6>
+                          <h6>
+                            {appliedSearch
+                              ? `No borrower records found matching ${
+                                  appliedSearch.type === "borrowerId"
+                                    ? "Borrower ID"
+                                    : appliedSearch.type === "name"
+                                    ? "Name"
+                                    : "Mobile Number"
+                                }: "${appliedSearch.value}"`
+                              : `No borrower records found on Page ${currentPage}`}
+                          </h6>
                           <div className="mt-3">
-                            {currentPage > 1 && (
+                            {appliedSearch && (
+                              <Button
+                                type="primary"
+                                icon={<ClearOutlined />}
+                                onClick={handleClearSearch}
+                                className="me-2"
+                              >
+                                Clear Search & Show All
+                              </Button>
+                            )}
+                            {currentPage > 1 && !appliedSearch && (
                               <Button
                                 type="primary"
                                 icon={<LeftOutlined />}
@@ -1844,72 +1753,87 @@ const BorrowersList = () => {
               }}
             />
 
-            {/* Server-Side Prev / Next Pagination Bar (No Total Count) */}
-            <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top flex-wrap gap-2">
-              <div className="d-flex align-items-center gap-3">
-                <span style={{ fontSize: 13, color: "#4b5563" }}>
-                  Page <strong className="text-primary">{currentPage}</strong> •{" "}
-                  Showing <strong>{filteredData.length}</strong> borrower{filteredData.length === 1 ? "" : "s"} on this page
-                </span>
+            {/* Pagination / Results summary bar */}
+            {!appliedSearch ? (
+              <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top flex-wrap gap-2">
+                <div className="d-flex align-items-center gap-3">
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>
+                    Page <strong className="text-primary">{currentPage}</strong> •{" "}
+                    Showing <strong>{filteredData.length}</strong> borrower{filteredData.length === 1 ? "" : "s"} on this page
+                  </span>
 
-                <div className="d-flex align-items-center gap-1">
-                  <span style={{ fontSize: 12, color: "#6b7280" }}>Per page:</span>
-                  <Select
-                    size="small"
-                    value={pageSize}
-                    onChange={handlePageSizeChange}
-                    style={{ width: 90 }}
+                  <div className="d-flex align-items-center gap-1">
+                    <span style={{ fontSize: 12, color: "#6b7280" }}>Per page:</span>
+                    <Select
+                      size="small"
+                      value={pageSize}
+                      onChange={handlePageSizeChange}
+                      style={{ width: 90 }}
+                    >
+                      <Option value={10}>10 / page</Option>
+                      <Option value={25}>25 / page</Option>
+                      <Option value={50}>50 / page</Option>
+                      <Option value={100}>100 / page</Option>
+                    </Select>
+                  </div>
+                </div>
+
+                <Space>
+                  <Button
+                    icon={<LeftOutlined />}
+                    disabled={currentPage <= 1 || loading}
+                    onClick={handlePrev}
                   >
-                    <Option value={10}>10 / page</Option>
-                    <Option value={25}>25 / page</Option>
-                    <Option value={50}>50 / page</Option>
-                    <Option value={100}>100 / page</Option>
-                  </Select>
-                </div>
+                    Previous
+                  </Button>
+
+                  <div
+                    style={{
+                      background: "#eff6ff",
+                      color: "#1d4ed8",
+                      fontWeight: 700,
+                      borderRadius: 6,
+                      padding: "4px 14px",
+                      fontSize: 13,
+                      border: "1px solid #bfdbfe",
+                    }}
+                  >
+                    Page {currentPage}
+                  </div>
+
+                  <Button
+                    type="primary"
+                    disabled={loading || (borrowers.length === 0 && currentPage > 1)}
+                    onClick={handleNext}
+                    style={{
+                      backgroundColor:
+                        loading || (borrowers.length === 0 && currentPage > 1)
+                          ? undefined
+                          : "#3d5ee1",
+                      borderColor:
+                        loading || (borrowers.length === 0 && currentPage > 1)
+                          ? undefined
+                          : "#3d5ee1",
+                    }}
+                  >
+                    Next <RightOutlined />
+                  </Button>
+                </Space>
               </div>
-
-              <Space>
+            ) : (
+              <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top flex-wrap gap-2">
+                <span style={{ fontSize: 13, color: "#4b5563" }}>
+                  Search Results: <strong>{filteredData.length}</strong> borrower{filteredData.length === 1 ? "" : "s"} found
+                </span>
                 <Button
-                  icon={<LeftOutlined />}
-                  disabled={currentPage <= 1 || loading}
-                  onClick={handlePrev}
+                  icon={<ClearOutlined />}
+                  onClick={handleClearSearch}
+                  size="small"
                 >
-                  Previous
+                  Clear Search & View All Pages
                 </Button>
-
-                <div
-                  style={{
-                    background: "#eff6ff",
-                    color: "#1d4ed8",
-                    fontWeight: 700,
-                    borderRadius: 6,
-                    padding: "4px 14px",
-                    fontSize: 13,
-                    border: "1px solid #bfdbfe",
-                  }}
-                >
-                  Page {currentPage}
-                </div>
-
-                <Button
-                  type="primary"
-                  disabled={loading || (borrowers.length === 0 && currentPage > 1)}
-                  onClick={handleNext}
-                  style={{
-                    backgroundColor:
-                      loading || (borrowers.length === 0 && currentPage > 1)
-                        ? undefined
-                        : "#3d5ee1",
-                    borderColor:
-                      loading || (borrowers.length === 0 && currentPage > 1)
-                        ? undefined
-                        : "#3d5ee1",
-                  }}
-                >
-                  Next <RightOutlined />
-                </Button>
-              </Space>
-            </div>
+              </div>
+            )}
           </Card>
         </div>
       </div>

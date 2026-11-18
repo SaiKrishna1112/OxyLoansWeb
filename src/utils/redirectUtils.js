@@ -62,15 +62,23 @@ export const isAuthOrExcludedPath = (pathname) => {
   if (!clean || clean === "/" || clean === "") return true;
 
   const excludedPrefixes = [
+    // Auth & Onboarding
     "/login",
     "/loginotp",
     "/admlogin",
     "/partnerlogin",
     "/whatsapplogin",
+    "/whatapplog",
     "/register",
     "/borrower_register",
+    "/borrower-register",
+    "/borrowerregister",
+    "/instant-register",
     "/partnerregister",
     "/register_active_proceed",
+    "/register-step2-test",
+    "/dark-login",
+    "/dark-signup",
     "/usertype",
     "/oxyintro",
     "/forgotpassword",
@@ -78,12 +86,112 @@ export const isAuthOrExcludedPath = (pathname) => {
     "/forgotpassword3",
     "/whatsappuser",
     "/whatappuser",
+    "/otplogin",
+    "/glogin-test",
+    "/signup",
+
+    // Landing & Public Marketing / Static Screens
+    "/landing",
+    "/home",
+    "/team",
+    "/management",
+    "/team-management",
+    "/our-team",
+    "/advisory-team",
+    "/advisory-board",
+    "/advisory",
+    "/our-advisory-team",
+    "/blogs",
+    "/blog",
+    "/faqs",
+    "/faq",
+    "/lender-faq",
+    "/borrower-faq",
+    "/lender-faqs",
+    "/borrower-faqs",
+    "/how-it-works",
+    "/howitworks",
+    "/rbi-directions",
+    "/rbidirections",
+    "/transparency",
+    "/transparency-and-disclosure-requirements",
+    "/transparency-and-disclosures",
+    "/know-your-earnings",
+    "/knowyourearnings",
+    "/know-my-earnings",
+    "/know-your-tax",
+    "/knowyourtax",
+    "/know-your-fees",
+    "/knowyourfees",
+    "/know-your-fee",
+    "/knowyourfee",
+    "/contact-us",
+    "/contactus",
+    "/contact",
+    "/privacy-policy",
+    "/privacypolicy",
+    "/terms-and-conditions",
+    "/terms",
+    "/terms-of-use",
+    "/grievance-redressal-mechanism",
+    "/grievances-redressal-mechanism",
+    "/grievance-redressal",
+    "/grievances-redressal",
+    "/grievance",
+    "/grievances",
+    "/latest-egm-notice",
+    "/latestegmnotice",
+    "/latest-egm",
+    "/latestegm",
+    "/egm-notice",
+    "/loan-performance",
+    "/loanperformance",
+    "/loan-performance-details",
+    "/travel-loans",
+    "/travelloans",
+    "/travel-loan",
+    "/travelloan",
+    "/motor-loans",
+    "/motorloans",
+    "/motor-loan",
+    "/motorloan",
+    "/personal-loans",
+    "/personalloans",
+    "/personal-loan",
+    "/personalloan",
+    "/sme-loans",
+    "/smeloans",
+    "/sme-loan",
+    "/smeloan",
+    "/international-business-expansion-loans",
+    "/international-business-expansion",
+    "/international-business-loans",
+    "/business-loans",
+    "/businessloans",
+    "/business-loan",
+    "/businessloan",
     "/testimonials",
     "/top-lenders",
+    "/why-lend",
+    "/why-lend-at-oxyloans",
+    "/why-borrow",
+    "/why-borrow-at-oxyloans",
     "/escrowdeals",
-    "/regularescrowdeals",
-    "/signup"
+    "/regularescrowdeals"
   ];
+
+  if (
+    clean === "/lender" ||
+    clean === "/lenders" ||
+    clean.startsWith("/lender?") ||
+    clean.startsWith("/lenders?") ||
+    clean === "/borrower" ||
+    clean === "/borrowers" ||
+    clean.startsWith("/borrower?") ||
+    clean.startsWith("/borrowers?")
+  ) {
+    return true;
+  }
 
   if (
     excludedPrefixes.some(
@@ -102,7 +210,19 @@ export const isAuthOrExcludedPath = (pathname) => {
     clean.includes("whatsappuser") ||
     clean.includes("whatappuser") ||
     clean.includes("esign") ||
-    clean.includes("enach")
+    clean.includes("enach") ||
+    clean.includes("landing") ||
+    clean.includes("team-management") ||
+    clean.includes("advisory") ||
+    clean.includes("faq") ||
+    clean.includes("how-it-works") ||
+    clean.includes("howitworks") ||
+    clean.includes("transparency") ||
+    clean.includes("rbi-direction") ||
+    clean.includes("contact") ||
+    clean.includes("privacy-policy") ||
+    clean.includes("terms") ||
+    clean.includes("grievance")
   ) {
     return true;
   }
@@ -137,11 +257,20 @@ export const normalizeRole = (role) => {
  * @param {string} role 
  * @returns {string}
  */
-export const getDefaultDashboardForRole = (role) => {
+export const getDefaultDashboardForRole = (role, userId = null) => {
   const norm = normalizeRole(role);
+  const resolvedId =
+    userId ||
+    getItemSafely("sessionStorage", "userId") ||
+    getItemSafely("localStorage", "userId");
+
   if (norm === "ADMIN") return "/oxyloansadmindashboard";
-  if (norm === "LENDER") return "/ai/portfolio";
+  if (norm === "LENDER") return resolvedId ? `/lenderAIDashboard/${resolvedId}` : "/ai/portfolio";
   if (norm === "PARTNER") return "/patnerdashboard";
+  if (norm === "BORROWER") {
+    if (isInstantLoanBorrower(resolvedId)) return "/instant-borrower-dashboard";
+    return "/borrowerDashboard";
+  }
   return "/borrowerDashboard";
 };
 
@@ -241,6 +370,8 @@ export const getRoleFromPath = (pathname) => {
   // Lender routes
   if (
     clean.includes("lender") ||
+    clean.startsWith("/deal-consent") ||
+    clean.startsWith("/dealconsent") ||
     clean === "/dashboard" ||
     clean.startsWith("/ai/portfolio") ||
     clean.startsWith("/ai/plans") ||
@@ -307,15 +438,23 @@ export const isUrlCompatibleWithRole = (savedUrl, userRole) => {
   if (!savedUrl || isAuthOrExcludedPath(savedUrl)) return false;
   
   const pathRole = getRoleFromPath(savedUrl);
-  if (!pathRole) {
-    // Generic protected page (e.g., /notifications, /profile)
-    return true;
-  }
-
   const normTarget = normalizeRole(userRole);
   if (!normTarget) return false;
 
-  return pathRole === normTarget;
+  if (pathRole) {
+    return pathRole === normTarget;
+  }
+
+  // If pathRole is null, ONLY allow explicit generic protected user routes
+  const clean = savedUrl.split("?")[0].split("#")[0].trim().toLowerCase();
+  const allowedGenericProtected = [
+    "/notifications",
+    "/profile",
+    "/userprofile",
+    "/myprofile"
+  ];
+
+  return allowedGenericProtected.some((p) => clean === p || clean.startsWith(p + "/"));
 };
 
 /**
@@ -333,44 +472,7 @@ export const clearLastVisitedUrls = () => {
   }
 };
 
-// Preserve last visited URL across localStorage.clear() calls (e.g. during logout)
-if (typeof window !== "undefined" && window.localStorage) {
-  const originalClear = Storage.prototype.clear;
-  Storage.prototype.clear = function () {
-    let savedGlobalUrl = null;
-    let savedGlobalRole = null;
-    const roleUrls = {};
-
-    try {
-      savedGlobalUrl = this.getItem(LAST_VISITED_URL_KEY);
-      savedGlobalRole = this.getItem(LAST_VISITED_ROLE_KEY);
-      ["BORROWER", "LENDER", "ADMIN", "PARTNER"].forEach((r) => {
-        const val = this.getItem(`${LAST_VISITED_URL_KEY}_${r}`);
-        if (val) roleUrls[r] = val;
-      });
-    } catch (e) {
-      // ignore
-    }
-
-    originalClear.call(this);
-
-    try {
-      if (savedGlobalUrl && !isAuthOrExcludedPath(savedGlobalUrl)) {
-        this.setItem(LAST_VISITED_URL_KEY, savedGlobalUrl);
-        if (savedGlobalRole) {
-          this.setItem(LAST_VISITED_ROLE_KEY, savedGlobalRole);
-        }
-      }
-      Object.keys(roleUrls).forEach((r) => {
-        if (roleUrls[r] && !isAuthOrExcludedPath(roleUrls[r])) {
-          this.setItem(`${LAST_VISITED_URL_KEY}_${r}`, roleUrls[r]);
-        }
-      });
-    } catch (e) {
-      // ignore
-    }
-  };
-}
+// Note: Storage.prototype.clear is kept clean so that logout completely resets sessions and redirect targets.
 
 /**
  * Saves the current path as the last visited URL if it is a valid process/step page.
@@ -379,6 +481,14 @@ if (typeof window !== "undefined" && window.localStorage) {
  */
 export const saveLastVisitedUrl = (pathname, search = "") => {
   if (!pathname || isAuthOrExcludedPath(pathname)) return;
+
+  // IMPORTANT: Only save last visited URL for authenticated sessions!
+  // Unauthenticated guests browsing landing or marketing pages must NEVER set redirect targets.
+  const hasAuth = !!(
+    getItemSafely("sessionStorage", "accessToken") ||
+    getItemSafely("localStorage", "accessToken")
+  );
+  if (!hasAuth) return;
 
   const fullUrl = pathname + (search || "");
   let activeRole =
@@ -396,16 +506,56 @@ export const saveLastVisitedUrl = (pathname, search = "") => {
 };
 
 /**
- * Checks if a given userId corresponds to the instant loan borrower (#41682).
+ * Checks if a given user is designated or navigating within the instant loan flow.
  * @param {string|number|null} userId 
  * @returns {boolean}
  */
 export const isInstantLoanBorrower = (userId = null) => {
-  const resolvedId =
-    userId ||
-    getItemSafely("sessionStorage", "userId") ||
-    getItemSafely("localStorage", "userId");
-  return String(resolvedId || "").trim() === "41682";
+  // 1. Persistent flow flag stored during registration or tester entry
+  if (
+    getItemSafely("localStorage", "oxy_flow_type") === "INSTANT_LOAN" ||
+    getItemSafely("sessionStorage", "oxy_flow_type") === "INSTANT_LOAN" ||
+    getItemSafely("localStorage", "isInstantLoanUser") === "true" ||
+    getItemSafely("sessionStorage", "isInstantLoanUser") === "true"
+  ) {
+    return true;
+  }
+
+  // 3. Dynamic check on current browser window URL (e.g. ?type=instant or ?flow=instant)
+  if (typeof window !== "undefined" && window.location) {
+    try {
+      const search = window.location.search || "";
+      const pathname = (window.location.pathname || "").toLowerCase();
+      const params = new URLSearchParams(search);
+      const flowParam = (
+        params.get("type") ||
+        params.get("flow") ||
+        params.get("flowType") ||
+        params.get("mode") ||
+        ""
+      ).toLowerCase();
+
+      if (
+        flowParam === "instant" ||
+        flowParam === "instant_loan" ||
+        flowParam === "instantloan" ||
+        flowParam === "instant-loan" ||
+        pathname.includes("instant-borrower") ||
+        pathname.includes("instant-loan") ||
+        pathname.includes("instant-register")
+      ) {
+        setItemSafely("localStorage", "oxy_flow_type", "INSTANT_LOAN");
+        setItemSafely("sessionStorage", "oxy_flow_type", "INSTANT_LOAN");
+        setItemSafely("localStorage", "isInstantLoanUser", "true");
+        setItemSafely("sessionStorage", "isInstantLoanUser", "true");
+        return true;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  return false;
 };
 
 /**

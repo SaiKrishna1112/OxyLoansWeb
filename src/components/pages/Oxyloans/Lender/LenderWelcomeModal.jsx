@@ -49,11 +49,17 @@ export const isLenderOnly = () => {
       "/top-lenders",
       "/testimonials",
       "/escrowdeals",
-      "/regularescrowdeals"
+      "/regularescrowdeals",
+      "/deal-consent",
+      "/dealconsent",
+      "/landing",
+      "/home"
     ];
     if (
       pathname === "/" ||
       pathname === "" ||
+      pathname.startsWith("/deal-consent") ||
+      pathname.startsWith("/dealconsent") ||
       publicPages.some((p) => pathname === p || pathname.startsWith(p + "/"))
     ) {
       return false;
@@ -135,7 +141,7 @@ export const isLenderOnly = () => {
  */
 const LenderWelcomeModal = ({
   forceOpen = false,
-  autoOpen = true,
+  autoOpen = false,
   storageKey = DEFAULT_DISMISS_KEY,
   onClose,
 }) => {
@@ -146,11 +152,7 @@ const LenderWelcomeModal = ({
 
   // Check display conditions
   useEffect(() => {
-    // If not a lender, never open automatically
-    if (!forceOpen && !isLenderOnly()) {
-      return;
-    }
-
+    // Never auto-open on login or page load unless explicitly forced via prop
     if (forceOpen) {
       setIsOpen(true);
       return;
@@ -166,21 +168,8 @@ const LenderWelcomeModal = ({
       searchParams.get("anniversary") === "true" ||
       searchParams.get("anniversary") === "1";
 
-    if (hasQueryOverride) {
+    if (hasQueryOverride && isLenderOnly()) {
       setIsOpen(true);
-      return;
-    }
-
-    // Check if already dismissed in this session
-    const isDismissed = sessionStorage.getItem(storageKey) === "1";
-    if (!isDismissed) {
-      // Delay slightly for smooth page entrance transition
-      const timer = setTimeout(() => {
-        if (isLenderOnly()) {
-          setIsOpen(true);
-        }
-      }, 450);
-      return () => clearTimeout(timer);
     }
   }, [forceOpen, autoOpen, storageKey, location.pathname]);
 

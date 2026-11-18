@@ -176,14 +176,14 @@ const BorrowerSidebar = (props) => {
                           : ""
                       }`}
                     >
-                      <Link to="/borrower/instant-loan/41682" className="d-flex align-items-center">
+                      <Link to={currentUserId ? `/borrower/instant-loan/${currentUserId}` : "/borrower/instant-loan"} className="d-flex align-items-center">
                         <i className="fa-solid fa-bolt text-warning"></i>
                         <span> Instant Loan Flow </span>
                         <span
                           className="badge bg-primary text-white ms-auto"
                           style={{ fontSize: "10px", padding: "2px 6px" }}
                         >
-                          #41682
+                          Instant
                         </span>
                       </Link>
                     </li>

@@ -11,7 +11,6 @@ import Footer from "../../../../../Footer/Footer";
 import CreditScoreGauge from "../components/CreditScoreGauge";
 import CreditScoreModal from "../components/CreditScoreModal";
 import {
-  RAW_SAMPLE_RESPONSE,
   parseCreditReportData,
   getCachedCreditReport,
   setCachedCreditReport,
@@ -19,7 +18,7 @@ import {
   maskAccountNumber,
   getScoreTier,
 } from "../components/creditReportUtils";
-import { getUserDetails } from "../../../../../HttpRequest/afterlogin";
+import { getUserDetails, getBorrowerCreditReport, getUserId } from "../../../../../HttpRequest/afterlogin";
 
 import "../redesign.css";
 
@@ -29,7 +28,7 @@ const CreditReport = () => {
   // State
   const [reportData, setReportData] = useState(() => {
     const cached = getCachedCreditReport();
-    return parseCreditReportData(cached || RAW_SAMPLE_RESPONSE);
+    return cached ? parseCreditReportData(cached) : null;
   });
   const [userDetails, setUserDetails] = useState(null);
   const [showFetchModal, setShowFetchModal] = useState(false);
@@ -37,13 +36,48 @@ const CreditReport = () => {
   const [searchAccountQuery, setSearchAccountQuery] = useState("");
   const [expandedAccountSeq, setExpandedAccountSeq] = useState("1"); // Auto-expand first account
 
-  // Load borrower details for pre-filling modal if available
+  // Load borrower details and stored CIBIL credit report via paysprint/credit-report/{borrowerId}
   useEffect(() => {
     document.body.classList.add("oxy-redesign-active");
+    const uId = getUserId();
+    if (uId) {
+      getBorrowerCreditReport(uId)
+        .then((res) => {
+          const cData = res?.data?.data || res?.data;
+          if (cData) {
+            const parsed = parseCreditReportData(cData);
+            if (parsed && parsed.score > 0) {
+              setReportData(parsed);
+              setCachedCreditReport(cData);
+            } else {
+              setReportData(null);
+            }
+          } else {
+            setReportData(null);
+          }
+        })
+        .catch(() => {});
+    }
+
     getUserDetails()
       .then((res) => {
         if (res?.data) {
           setUserDetails(res.data);
+          const borrowerId = res.data.userId || res.data.borrowerId;
+          if (borrowerId && String(borrowerId) !== String(uId)) {
+            getBorrowerCreditReport(borrowerId)
+              .then((res) => {
+                const cData = res?.data?.data || res?.data;
+                if (cData) {
+                  const parsed = parseCreditReportData(cData);
+                  if (parsed && parsed.score > 0) {
+                    setReportData(parsed);
+                    setCachedCreditReport(cData);
+                  }
+                }
+              })
+              .catch(() => {});
+          }
         }
       })
       .catch(() => {});
@@ -98,7 +132,7 @@ const CreditReport = () => {
     window.print();
   };
 
-  const scoreTier = reportData?.scoreTier || getScoreTier(802);
+  const scoreTier = reportData?.scoreTier || getScoreTier(reportData?.score || 650);
 
   return (
     <div className="main-wrapper">
@@ -125,7 +159,7 @@ const CreditReport = () => {
               </div>
               <h3 className="fw-bold mb-0 text-dark">Credit Bureau Report & Health</h3>
               <p className="text-muted small mb-0">
-                Verified CIR bureau data powered by Oxyloans & VerifyA2Z Engine • Order: #{reportData?.reportOrderNumber || "2989093135"}
+                Verified CIR bureau data powered by Oxyloans & VerifyA2Z Engine • Order: #{reportData?.reportOrderNumber || "N/A"}
               </p>
             </div>
 
@@ -152,6 +186,28 @@ const CreditReport = () => {
             </div>
           </div>
 
+          {!reportData ? (
+            <div className="oxy-card p-5 text-center mb-4 border-0 shadow-sm" style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8faff 100%)" }}>
+              <div className="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style={{ width: 80, height: 80, background: "#f0f4ff", color: "#0040e0" }}>
+                <i className="fa-solid fa-file-circle-exclamation fa-3x" />
+              </div>
+              <h4 className="fw-bold text-dark mb-2">No Credit Bureau Report Found</h4>
+              <p className="text-muted mx-auto mb-4" style={{ maxWidth: 540 }}>
+                No active credit bureau CIR report is currently on record for borrower ID <strong>#{userDetails?.userId || getUserId()}</strong>.
+                You can generate your live CRIF/CIBIL credit bureau report instantly to unlock verified loan matchmaking.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary px-4 py-2 rounded-3 shadow-sm d-inline-flex align-items-center gap-2"
+                style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
+                onClick={() => setShowFetchModal(true)}
+              >
+                <i className="fa-solid fa-arrows-rotate" />
+                <span>Fetch / Pull Live Credit Bureau Report</span>
+              </button>
+            </div>
+          ) : (
+            <>
           {/* 1. HERO CREDIT HEALTH BANNER */}
           <div className="oxy-card p-4 mb-4 border-0 shadow-sm" style={{ background: "linear-gradient(135deg, #ffffff 0%, #f8faff 100%)" }}>
             <div className="row align-items-center g-4">
@@ -159,7 +215,7 @@ const CreditReport = () => {
               {/* Gauge Column */}
               <div className="col-lg-5 col-xl-4 text-center border-lg-end">
                 <div className="py-2">
-                  <CreditScoreGauge score={reportData?.score || 802} size={250} />
+                  <CreditScoreGauge score={reportData?.score || 0} size={250} />
                   
                   <div className="mt-2 text-center">
                     <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-1 rounded-pill fw-bold small">
@@ -181,10 +237,10 @@ const CreditReport = () => {
                       <div>
                         <span className="text-muted small text-uppercase fw-bold letter-spacing-1">Credit Bureau Profile</span>
                         <h4 className="fw-bold text-dark mb-0">
-                          {reportData?.personal?.name || "BALIJEPALLI NARENDRA"}
+                          {reportData?.personal?.name || userDetails?.name || userDetails?.firstName || "Borrower"}
                         </h4>
                         <span className="text-muted small">
-                          PAN: <strong className="text-dark">{reportData?.personal?.pan || "CDBPB2737H"}</strong> • DOB: {reportData?.personal?.dob || "1994-08-08"} ({reportData?.personal?.age || 32} Yrs)
+                          PAN: <strong className="text-dark">{reportData?.personal?.pan || userDetails?.pan || userDetails?.panNumber || "—"}</strong> • DOB: {reportData?.personal?.dob || userDetails?.dob || "—"} ({reportData?.personal?.age || userDetails?.age || "—"} Yrs)
                         </span>
                       </div>
                       <div className="text-end">
@@ -274,7 +330,10 @@ const CreditReport = () => {
                     </span>
                     <button
                       className="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold d-inline-flex align-items-center gap-1"
-                      onClick={() => navigate("/borrower/instant-loan/41682")}
+                      onClick={() => {
+                        const activeUid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+                        navigate(activeUid ? `/borrower/instant-loan/${activeUid}` : "/borrower/instant-loan");
+                      }}
                     >
                       Apply for Loan with this Score
                       <i className="fa-solid fa-arrow-right small"></i>
@@ -651,20 +710,20 @@ const CreditReport = () => {
                     <tbody>
                       <tr>
                         <td className="text-muted small py-2" style={{ width: "40%" }}>Full Legal Name</td>
-                        <td className="fw-bold text-dark py-2">{reportData?.personal?.name || "BALIJEPALLI NARENDRA"}</td>
+                        <td className="fw-bold text-dark py-2">{reportData?.personal?.name || userDetails?.name || userDetails?.firstName || "Borrower"}</td>
                       </tr>
                       <tr>
                         <td className="text-muted small py-2">Permanent Account Number (PAN)</td>
-                        <td className="fw-bold text-dark py-2">{reportData?.personal?.pan || "CDBPB2737H"}</td>
+                        <td className="fw-bold text-dark py-2">{reportData?.personal?.pan || userDetails?.pan || userDetails?.panNumber || "—"}</td>
                       </tr>
                       <tr>
                         <td className="text-muted small py-2">Other Bureau ID</td>
-                        <td className="text-dark py-2">{reportData?.personal?.otherId || "60011901969107"}</td>
+                        <td className="text-dark py-2">{reportData?.personal?.otherId || "—"}</td>
                       </tr>
                       <tr>
                         <td className="text-muted small py-2">Date of Birth & Age</td>
                         <td className="text-dark py-2">
-                          {reportData?.personal?.dob || "1994-08-08"} ({reportData?.personal?.age || 32} Years, {reportData?.personal?.gender || "Male"})
+                          {reportData?.personal?.dob || userDetails?.dob || "—"} ({reportData?.personal?.age || userDetails?.age || "—"} Years, {reportData?.personal?.gender || userDetails?.gender || "—"})
                         </td>
                       </tr>
                       <tr>
@@ -779,12 +838,17 @@ const CreditReport = () => {
                 type="button"
                 className="btn btn-primary px-4 rounded-3 text-nowrap"
                 style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
-                onClick={() => navigate("/borrower/instant-loan/41682")}
+                onClick={() => {
+                  const activeUid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+                  navigate(activeUid ? `/borrower/instant-loan/${activeUid}` : "/borrower/instant-loan");
+                }}
               >
                 Apply for Loan Limit
               </button>
             </div>
           </div>
+            </>
+          )}
 
         </div>
       </div>

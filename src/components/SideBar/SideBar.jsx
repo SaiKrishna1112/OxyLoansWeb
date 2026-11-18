@@ -504,14 +504,14 @@ const Sidebar = (props) => {
                   </Link>
                   {isSideMenu == "P2PLoans" ? (
                     <ul style={{ display: "block" }}>
-                      <li>
+                      {/* <li>
                         <Link
                           to="/rate-confirmation-variance"
                           className={`${"/rate-confirmation-variance" === pathName ? "active" : ""}`}
                         >
                           Rate Confirmation & Variance
                         </Link>
-                      </li>
+                      </li> */}
                       <li>
                         <Link
                           to="/proximityLoans"

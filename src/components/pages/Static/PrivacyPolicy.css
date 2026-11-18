@@ -1,0 +1,520 @@
+/* ==========================================================================
+   PRIVACY POLICY CSS - OxyLoans
+   Exact match with user's provided specification and design system
+   ========================================================================== */
+
+.oxy-privacy-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. Hero Section */
+.oxy-privacy-hero {
+  background: linear-gradient(135deg, #07192f 0%, #0c2d48 100%);
+  color: #ffffff;
+  padding: 50px 24px 40px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid #237abf;
+}
+
+.oxy-privacy-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: 20%;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(35, 122, 191, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-privacy-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -40px;
+  right: 20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-privacy-hero-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.oxy-privacy-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(35, 122, 191, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.oxy-privacy-badge-top .badge-icon {
+  font-size: 13px;
+}
+
+.oxy-privacy-hero-title {
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+.oxy-privacy-hero-subhead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* 2. Main Content Section matching user HTML classes */
+.borrower-video-wrap {
+  padding: 50px 0 70px 0;
+  background-color: #f8fafc;
+  flex: 1;
+}
+
+.borrower-video-wrap .container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.borrower-head {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.borrower-head h2 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+}
+
+.oxy-privacy-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.oxy-privacy-divider::before,
+.oxy-privacy-divider::after {
+  content: "";
+  display: inline-block;
+  width: 50px;
+  height: 2px;
+  background-color: #237abf;
+}
+
+.oxy-privacy-divider .dot {
+  width: 8px;
+  height: 8px;
+  background-color: #00a65a;
+  border-radius: 50%;
+  margin: 0 8px;
+}
+
+/* Def-temp Blog Post Block */
+.def-temp.blog-posts-block.blog-post-inner {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  padding: 45px 50px;
+}
+
+.privacy-content-inner {
+  color: #334155;
+  font-size: 14.5px;
+  line-height: 1.75;
+}
+
+.privacy-header-box {
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.privacy-header-box h3 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0b1930;
+  margin: 0 0 10px 0;
+}
+
+.policy-dates {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.intro-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #237abf;
+  margin: 0;
+}
+
+/* RBI Statutory Notice Box */
+.rbi-statutory-notice {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 24px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.rbi-statutory-notice .notice-icon {
+  font-size: 24px;
+  color: #ef4444;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rbi-statutory-notice p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #991b1b;
+  margin: 0;
+}
+
+/* Tables styling as per user code */
+.table-data {
+  margin: 25px 0;
+}
+
+.table {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1rem;
+  background-color: transparent;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px 16px;
+  vertical-align: top;
+  border-top: 1px solid #dee2e6;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.table thead th {
+  background: #01539d; /* User's exact requested blue */
+  color: #ffffff;
+  vertical-align: middle;
+  border-bottom: 2px solid #003e77;
+  font-weight: bold;
+  font-size: 13.5px;
+}
+
+.table-striped > tbody > tr:nth-child(odd) > td,
+.table-striped > tbody > tr:nth-child(odd) > th {
+  background-color: #f8fafc;
+}
+
+.table-bordered {
+  border: 1px solid #dee2e6;
+}
+
+.table-list {
+  padding-left: 20px;
+  margin: 8px 0 0 0;
+}
+
+.table-list li {
+  margin-bottom: 4px;
+}
+
+.limit-sharing-row td {
+  background-color: #eff6ff !important;
+}
+
+/* Section Blocks */
+.policy-section-block {
+  margin: 30px 0;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.policy-section-block h4 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0b1930;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.2px;
+}
+
+.policy-section-block h5 {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 16px 0 8px 0;
+}
+
+.styled-bullets {
+  list-style: disc;
+  padding-left: 22px;
+  margin: 12px 0;
+}
+
+.styled-bullets li {
+  margin-bottom: 8px;
+  line-height: 1.65;
+}
+
+/* Grievance Contact Box */
+.grievance-contact-box {
+  background: #eff6ff;
+  border-left: 4px solid #237abf;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 20px 0;
+}
+
+.grievance-contact-box h5 {
+  margin: 0 0 6px 0;
+  color: #1e40af;
+  font-size: 14.5px;
+}
+
+.grievance-contact-box p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+/* Mobile Permissions Box */
+.mobile-permissions-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.mobile-perm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mobile-icon {
+  font-size: 28px;
+  color: #237abf;
+  flex-shrink: 0;
+}
+
+.mobile-perm-header h4 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+}
+
+.mobile-perm-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.mobile-perm-item {
+  margin-bottom: 18px;
+}
+
+.mobile-perm-item:last-child {
+  margin-bottom: 0;
+}
+
+.mobile-perm-item h5 {
+  color: #0b1930;
+  font-size: 15px;
+  margin: 0 0 6px 0;
+}
+
+.mobile-perm-item p {
+  font-size: 13.5px;
+  line-height: 1.65;
+  margin: 0 0 8px 0;
+}
+
+/* Loan Details Box */
+.loan-details-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.loan-details-box h4 {
+  color: #166534;
+}
+
+.tenure-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.spec-item {
+  background: #ffffff;
+  border: 1px solid #86efac;
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.spec-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: #15803d;
+  margin-top: 2px;
+}
+
+.rejection-rights-note {
+  font-size: 14px;
+  color: #166534;
+  margin: 12px 0 0 0;
+}
+
+/* Actions Footer */
+.privacy-actions-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.btn-privacy-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-print {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.btn-print:hover {
+  background: #f1f5f9;
+}
+
+.btn-terms {
+  background: #237abf;
+  color: #ffffff;
+}
+
+.btn-terms:hover {
+  background: #1b639e;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 991px) {
+  .tenure-specs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .def-temp.blog-posts-block.blog-post-inner {
+    padding: 24px 16px;
+  }
+
+  .oxy-privacy-hero-title {
+    font-size: 26px;
+  }
+
+  .privacy-header-box h3 {
+    font-size: 18px;
+  }
+
+  .tenure-specs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-actions-footer {
+    flex-direction: column;
+  }
+
+  .btn-privacy-action {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .oxy-header-wrapper,
+  .oxy-privacy-hero,
+  .privacy-actions-footer,
+  .oxy-landing-footer-wrapper {
+    display: none !important;
+  }
+
+  .borrower-video-wrap {
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .def-temp.blog-posts-block.blog-post-inner {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+}

@@ -35,6 +35,17 @@ const PRIMARY = "#3d5ee1";
 const LOAD_SIZE = 50;
 const PAGE_FETCH_SIZE = 1000;
 
+const formatCibilScore = (score) => {
+  if (score == null || score === "") return "N/A";
+  return score;
+};
+
+const formatEligibleAmount = (amount) => {
+  if (amount == null || amount === "") return "N/A";
+  const num = Number(amount);
+  return isNaN(num) ? String(amount) : `₹${num.toLocaleString("en-IN")}`;
+};
+
 // ── Custom Leaflet marker icons ───────────────────────────────────
 const borrowerIcon = new L.DivIcon({
   className: "",
@@ -332,6 +343,29 @@ const MapView = ({
                       <div
                         style={{
                           fontSize: 11,
+                          color: "#333",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                          marginBottom: 4,
+                        }}
+                      >
+                        <div>
+                          <span style={{ color: "#6c757d" }}>CIBIL Score: </span>
+                          <strong>
+                            {formatCibilScore(borrower.cibilScore ?? borrower.cibilscore ?? borrower.cibil)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: "#6c757d" }}>Eligible Amount: </span>
+                          <strong style={{ color: PRIMARY }}>
+                            {formatEligibleAmount(borrower.eligibleAmount ?? borrower.eligibleamount ?? borrower.borrowerEligibleAmount)}
+                          </strong>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
                           color: "#888",
                           borderTop: "1px solid #eee",
                           paddingTop: 4,
@@ -355,7 +389,7 @@ const MapView = ({
                         {borrower.borrowerName || `Borrower #${idx + 1}`}
                       </div>
                       <div
-                        style={{ fontSize: 12, color: "#666", marginBottom: 6 }}
+                        style={{ fontSize: 12, color: "#666", marginBottom: 4 }}
                       >
                         <i
                           className="fa fa-map-marker me-1"
@@ -364,6 +398,29 @@ const MapView = ({
                         {borrower.distance != null
                           ? `${Number(borrower.distance).toFixed(2)} km away`
                           : "Distance N/A"}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: "#333",
+                          marginBottom: 6,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                        }}
+                      >
+                        <div>
+                          <span className="text-muted">CIBIL Score: </span>
+                          <strong>
+                            {formatCibilScore(borrower.cibilScore ?? borrower.cibilscore ?? borrower.cibil)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-muted">Eligible Amount: </span>
+                          <strong style={{ color: PRIMARY }}>
+                            {formatEligibleAmount(borrower.eligibleAmount ?? borrower.eligibleamount ?? borrower.borrowerEligibleAmount)}
+                          </strong>
+                        </div>
                       </div>
                       <button
                         className="btn btn-sm w-100"
@@ -413,7 +470,8 @@ const MapView = ({
               Nearby Borrowers
             </h6>
             <small className="text-muted">
-              Explore and invest in loan opportunities from borrowers in your vicinity.
+              Discover and invest in eligible borrowers near you.
+              Only borrowers who meet the eligibility criteria are shown.
             </small>
           </div>
           <div style={{ flex: 1, overflowY: "auto", padding: 10 }}>
@@ -477,15 +535,31 @@ const MapView = ({
                         className="fw-semibold text-truncate"
                         style={{ fontSize: 13, color: "#1a1f36" }}
                       >
-                       BR{borrower.borrowerId || `Borrower #${idx + 1}`}
+                        BR{borrower.borrowerId || `Borrower #${idx + 1}`}
                       </div>
-                      <div style={{
+                      <div
+                        style={{
                           fontSize: 11,
-                          color: "#6c757d",
+                          color: "#555",
                           display: "flex",
-                          alignItems: "center",
-                          gap: 3,
-                        }}> </div>
+                          flexDirection: "column",
+                          gap: 2,
+                          margin: "2px 0",
+                        }}
+                      >
+                        <div>
+                          <span className="text-muted">CIBIL: </span>
+                          <strong>
+                            {formatCibilScore(borrower.cibilScore ?? borrower.cibilscore ?? borrower.cibil)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-muted">Eligible: </span>
+                          <strong style={{ color: PRIMARY }}>
+                            {formatEligibleAmount(borrower.eligibleAmount ?? borrower.eligibleamount ?? borrower.borrowerEligibleAmount)}
+                          </strong>
+                        </div>
+                      </div>
                       <div
                         style={{
                           fontSize: 11,
@@ -1275,11 +1349,11 @@ const ProximityLoans = () => {
                               setOfferErrors({ ...offerErrors, tenure: "" });
                             }}
                           >
-                            <option value="">Select</option>
-                            <option value="3">3</option>
-                            <option value="6">6</option>
-                            <option value="9">9</option>
-                            <option value="12">12</option>
+                            <option value="">Select Locking Period</option>
+                            <option value="6">6 Months (6M Lock-in)</option>
+                            <option value="12">12 Months (12M Lock-in)</option>
+                            <option value="3">3 Months</option>
+                            <option value="9">9 Months</option>
                           </select>
                         ) : (
                           <input
@@ -1793,6 +1867,16 @@ const ProximityLoans = () => {
                           [
                             "Work Experience",
                             p.workExperience ? `${p.workExperience} yrs` : null,
+                          ],
+                          [
+                            "CIBIL Score",
+                            p.cibilScore ?? p.cibilscore ?? p.cibil ?? selectedBorrower?.cibilScore ?? selectedBorrower?.cibilscore ?? selectedBorrower?.cibil ?? null,
+                          ],
+                          [
+                            "Eligible Amount",
+                            (p.eligibleAmount ?? p.eligibleamount ?? selectedBorrower?.eligibleAmount ?? selectedBorrower?.eligibleamount ?? selectedBorrower?.borrowerEligibleAmount) != null
+                              ? formatEligibleAmount(p.eligibleAmount ?? p.eligibleamount ?? selectedBorrower?.eligibleAmount ?? selectedBorrower?.eligibleamount ?? selectedBorrower?.borrowerEligibleAmount)
+                              : null,
                           ],
                           ["Address", p.address],
                           ["Permanent Address", p.permanentAddress],
@@ -2458,6 +2542,23 @@ const ProximityLoans = () => {
                                 ? `${Number(borrower.distance).toFixed(2)} km away`
                                 : "Distance N/A"}
                             </span>
+                          </div>
+                          <div
+                            className="d-flex align-items-center justify-content-between mt-3 pt-2 border-top"
+                            style={{ fontSize: 12 }}
+                          >
+                            <div>
+                              <span className="text-muted">CIBIL Score: </span>
+                              <strong>
+                                {formatCibilScore(borrower.cibilScore ?? borrower.cibilscore ?? borrower.cibil)}
+                              </strong>
+                            </div>
+                            <div>
+                              <span className="text-muted">Eligible Amount: </span>
+                              <strong style={{ color: PRIMARY }}>
+                                {formatEligibleAmount(borrower.eligibleAmount ?? borrower.eligibleamount ?? borrower.borrowerEligibleAmount)}
+                              </strong>
+                            </div>
                           </div>
                         </div>
                         <div className="card-footer d-flex gap-2">

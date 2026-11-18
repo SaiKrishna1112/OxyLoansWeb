@@ -1,0 +1,1038 @@
+/* ==========================================================================
+   BORROWER PAGE CSS - OxyLoans
+   ========================================================================== */
+
+.oxy-borrower-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --------------------------------------------------------------------------
+   Top Hero Section
+   -------------------------------------------------------------------------- */
+.oxy-borrower-hero {
+  background: linear-gradient(135deg, #07192f 0%, #0c335e 100%);
+  color: #ffffff;
+  padding: 60px 24px 50px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 3px solid #237abf;
+}
+
+.oxy-borrower-hero::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  left: 15%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(35, 122, 191, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-borrower-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -60px;
+  right: 15%;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-borrower-hero-inner {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.oxy-borrower-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(35, 122, 191, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.oxy-borrower-badge-top .badge-icon {
+  font-size: 13px;
+  color: #38bdf8;
+}
+
+.oxy-borrower-hero-title {
+  font-size: 38px;
+  font-weight: 900;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.oxy-borrower-hero-subhead {
+  font-size: 16px;
+  line-height: 1.65;
+  color: #cbd5e1;
+  margin: 0 0 32px 0;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.oxy-borrower-hero-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.oxy-borrower-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.oxy-borrower-btn.btn-hero-primary {
+  background: #237abf;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(35, 122, 191, 0.4);
+}
+
+.oxy-borrower-btn.btn-hero-primary:hover {
+  background: #1a629b;
+  transform: translateY(-2px);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(35, 122, 191, 0.5);
+}
+
+.oxy-borrower-btn.btn-hero-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.oxy-borrower-btn.btn-hero-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border-color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   Sub-badges & Dividers
+   -------------------------------------------------------------------------- */
+.oxy-borrower-sub-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #237abf;
+  background: #e0f2fe;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.oxy-borrower-divider {
+  width: 70px;
+  height: 3px;
+  background: #237abf;
+  position: relative;
+  margin: 10px 0 20px 0;
+  border-radius: 2px;
+}
+
+.oxy-borrower-divider.light {
+  background: #38bdf8;
+}
+
+.oxy-borrower-divider .dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.oxy-section-header-center {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.oxy-section-header-center h2 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Section 1: Borrower Overview & Video (borrower-video-wrap)
+   -------------------------------------------------------------------------- */
+.oxy-borrower-overview-section {
+  padding: 55px 0 60px 0;
+  background: #ffffff;
+}
+
+.oxy-borrower-head h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.oxy-borrower-video-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 36px;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.oxy-borrower-info-col {
+  flex: 1 1 520px;
+}
+
+.oxy-borrower-video-col {
+  flex: 1 1 480px;
+}
+
+.oxy-borrower-callout-card {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-left: 4px solid #10b981;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.callout-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.callout-text strong {
+  display: block;
+  font-size: 15px;
+  color: #065f46;
+  margin-bottom: 4px;
+}
+
+.callout-text p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #047857;
+  margin: 0;
+}
+
+.oxy-borrower-bullets-wrap {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin: 20px 0 24px 0;
+}
+
+.bullets-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 14px 0;
+}
+
+.oxy-borrower-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oxy-borrower-bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #1e293b;
+}
+
+.oxy-borrower-bullets li .check-ico {
+  color: #10b981;
+  font-size: 16px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.oxy-borrower-col-action {
+  margin-top: 10px;
+}
+
+.oxy-borrower-btn.btn-action-pill {
+  background: #237abf;
+  color: #ffffff;
+  padding: 11px 22px;
+  font-size: 13.5px;
+  border-radius: 24px;
+  box-shadow: 0 4px 12px rgba(35, 122, 191, 0.35);
+}
+
+.oxy-borrower-btn.btn-action-pill:hover {
+  background: #1a629b;
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+/* Video Card Styling */
+.oxy-video-card-container {
+  background: #0f172a;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+  border: 1px solid #334155;
+}
+
+.oxy-video-header-bar {
+  background: #1e293b;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #334155;
+}
+
+.oxy-video-header-bar .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.oxy-video-header-bar .dot.red {
+  background: #ef4444;
+}
+
+.oxy-video-header-bar .dot.yellow {
+  background: #f59e0b;
+}
+
+.oxy-video-header-bar .dot.green {
+  background: #10b981;
+}
+
+.oxy-video-header-bar .title {
+  margin-left: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.oxy-video-wrapper {
+  position: relative;
+  width: 100%;
+  background: #000;
+  padding-top: 56.25%; /* 16:9 Aspect Ratio */
+}
+
+.oxy-html5-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  outline: none;
+}
+
+.oxy-video-caption {
+  padding: 12px 18px;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid #334155;
+}
+
+.oxy-video-caption .caption-icon {
+  color: #38bdf8;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Section 2: Why Borrow at Oxyloans (why-borrow-wrap borrower-wraps)
+   -------------------------------------------------------------------------- */
+.oxy-why-borrow-section {
+  padding: 60px 0 65px 0;
+  background: #f1f5f9;
+}
+
+.oxy-why-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+}
+
+.oxy-why-col {
+  flex: 1 1 320px;
+  max-width: 380px;
+}
+
+.oxy-why-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e2e8f0;
+  height: 100%;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.oxy-why-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+  border-color: #237abf;
+}
+
+.oxy-card-figure-wrap {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border: 2px dashed #bfdbfe;
+}
+
+.oxy-why-card figure {
+  margin: 0;
+}
+
+.oxy-why-card figure img {
+  max-width: 52px;
+  max-height: 52px;
+  object-fit: contain;
+}
+
+.oxy-why-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  line-height: 1.35;
+}
+
+.oxy-why-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #64748b;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Section 3: Trusted Partner & Loan Products (trusted-partners-wrap)
+   -------------------------------------------------------------------------- */
+.oxy-trusted-section {
+  padding: 60px 0;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.oxy-trust-headline {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.oxy-trust-motto-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #10b981;
+  background: #ecfdf5;
+  padding: 4px 14px;
+  border-radius: 14px;
+  margin-bottom: 10px;
+}
+
+.oxy-trust-headline p em {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  font-style: normal;
+  display: block;
+}
+
+.oxy-loan-products-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.oxy-loan-product-col {
+  height: 100%;
+}
+
+.oxy-loan-product-card {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 28px 20px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.oxy-loan-product-card:hover {
+  transform: translateY(-5px);
+  border-color: #237abf;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(35, 122, 191, 0.12);
+}
+
+.step-tag-badge {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: #0f172a;
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.step-figure {
+  margin: 10px 0 14px 0;
+}
+
+.step-figure img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+
+.step-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.step-desc {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
+  margin: 0 0 14px 0;
+  flex: 1;
+}
+
+.learn-more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #237abf;
+  transition: all 0.2s ease;
+}
+
+.oxy-loan-product-card:hover .learn-more-link {
+  color: #1a629b;
+  gap: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   Section 4: Borrowers Eligibility (eligible-borrower-wrap)
+   -------------------------------------------------------------------------- */
+.oxy-borrower-eligibility-section {
+  background-size: cover;
+  background-position: center;
+  background-attachment: scroll;
+  position: relative;
+  color: #ffffff;
+}
+
+.oxy-eligibility-overlay {
+  background: linear-gradient(135deg, rgba(7, 25, 47, 0.94) 0%, rgba(12, 51, 94, 0.92) 100%);
+  padding: 65px 0 70px 0;
+}
+
+.oxy-eligibility-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eligibility-badge-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  padding: 5px 14px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+}
+
+.oxy-eligibility-header h2 {
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+}
+
+.eligibility-intro {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.oxy-borrower-page .oxy-eligibility-content,
+.oxy-borrower-page .eligibility-content {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  height: auto !important;
+}
+
+.oxy-borrower-page .oxy-eligibility-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.oxy-borrower-page .oxy-eligibility-card {
+  background: rgba(15, 23, 42, 0.82) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 14px;
+  padding: 22px 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.oxy-borrower-page .oxy-eligibility-card:hover {
+  background: rgba(15, 23, 42, 0.94) !important;
+  border-color: #38bdf8 !important;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.card-num-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #237abf 0%, #1a629b 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(35, 122, 191, 0.4);
+}
+
+.card-body-content {
+  flex: 1;
+}
+
+.eligibility-item-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 4px 0;
+}
+
+.eligibility-item-main {
+  font-size: 13.5px;
+  color: #94a3b8;
+  margin: 0 0 8px 0;
+}
+
+.eligibility-item-docs {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.doc-label {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.doc-value {
+  color: #f1f5f9;
+}
+
+.oxy-eligibility-footer-note {
+  margin-top: 32px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.oxy-eligibility-footer-note .shield-icon {
+  color: #10b981;
+  font-size: 15px;
+}
+
+/* --------------------------------------------------------------------------
+   Section 5: Borrowers Testimonials (borrower-testimonials)
+   -------------------------------------------------------------------------- */
+.oxy-testimonials-section {
+  padding: 65px 0 70px 0;
+  background: #f8fafc;
+}
+
+.oxy-testimonials-head {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto 40px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.oxy-testimonials-head h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.testimonials-subtext {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0;
+}
+
+.oxy-borrower-page .oxy-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+  align-items: stretch;
+}
+
+.oxy-borrower-page .oxy-testimonial-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px 24px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.oxy-borrower-page .oxy-testimonial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
+  border-color: #237abf;
+}
+
+.testi-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.gleoon-img {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #237abf;
+  flex-shrink: 0;
+  background: #f1f5f9;
+}
+
+.gleoon-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gleoon-details {
+  flex: 1;
+}
+
+.testi-author-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.testi-author-role {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #237abf;
+  background: #eff6ff;
+  padding: 2px 8px;
+  border-radius: 8px;
+}
+
+.quote-icon-decor {
+  font-size: 24px;
+  color: #cbd5e1;
+  opacity: 0.6;
+}
+
+.testi-card-quote {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #475569;
+  font-style: italic;
+  position: relative;
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Section 6: Call To Action Banner
+   -------------------------------------------------------------------------- */
+.oxy-borrower-cta-banner {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0284c7 100%);
+  color: #ffffff;
+  padding: 48px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.oxy-cta-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.oxy-cta-content {
+  flex: 1 1 540px;
+}
+
+.oxy-cta-content h3 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  color: #ffffff;
+}
+
+.oxy-cta-content p {
+  font-size: 15px;
+  color: #e0f2fe;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.oxy-cta-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.oxy-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 26px;
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.oxy-cta-btn.btn-cta-primary {
+  background: #ffffff;
+  color: #1e3a8a;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.oxy-cta-btn.btn-cta-primary:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  color: #0c4a6e;
+}
+
+.oxy-cta-btn.btn-cta-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.oxy-cta-btn.btn-cta-secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints
+   -------------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .oxy-loan-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .oxy-borrower-page .oxy-eligibility-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .oxy-borrower-page .oxy-testimonials-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 991px) {
+  .oxy-borrower-video-row {
+    flex-direction: column-reverse;
+  }
+
+  .oxy-borrower-info-col,
+  .oxy-borrower-video-col {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .oxy-cta-inner {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .oxy-cta-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .oxy-borrower-hero {
+    padding: 42px 18px 36px 18px;
+  }
+
+  .oxy-borrower-hero-title {
+    font-size: 28px;
+  }
+
+  .oxy-borrower-hero-subhead {
+    font-size: 14px;
+  }
+
+  .oxy-section-header-center h2,
+  .oxy-borrower-head h2,
+  .oxy-eligibility-header h2,
+  .oxy-testimonials-head h2 {
+    font-size: 26px;
+  }
+
+  .oxy-trust-headline p em {
+    font-size: 20px;
+  }
+
+  .oxy-loan-products-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .oxy-why-col,
+  .oxy-testimonial-card {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .oxy-borrower-page .oxy-eligibility-cards-grid,
+  .oxy-borrower-page .oxy-testimonials-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

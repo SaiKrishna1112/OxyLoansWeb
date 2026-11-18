@@ -41,6 +41,7 @@ export default function BorrowerRegister() {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState("");
   const [utmSourceParam, setUtmSourceParam] = useState(null);
+  const [isInstantFlow, setIsInstantFlow] = useState(false);
 
   const [registrationField, setRegistrationField] = useState({
     email: "",
@@ -154,7 +155,7 @@ export default function BorrowerRegister() {
         referrerIderror: "",
         uniqueNumber: "0",
       }));
-      localStorage.setItem("uniqnumber", "0");
+      sessionStorage.setItem("uniqnumber", "0");
       return true;
     }
 
@@ -178,7 +179,7 @@ export default function BorrowerRegister() {
           uniqueNumber: fetchedUniqueNumber,
         }));
 
-        localStorage.setItem("uniqnumber", fetchedUniqueNumber);
+        sessionStorage.setItem("uniqnumber", fetchedUniqueNumber);
         return true;
       } else {
         const errMsg =
@@ -192,7 +193,7 @@ export default function BorrowerRegister() {
           uniqueNumber: "0",
         }));
 
-        localStorage.setItem("uniqnumber", "0");
+        sessionStorage.setItem("uniqnumber", "0");
         return false;
       }
     } catch (err) {
@@ -202,7 +203,7 @@ export default function BorrowerRegister() {
         uniqueNumber: "0",
       }));
 
-      localStorage.setItem("uniqnumber", "0");
+      sessionStorage.setItem("uniqnumber", "0");
       return false;
     }
   };
@@ -517,7 +518,7 @@ export default function BorrowerRegister() {
         localStorage.setItem("type", "Borrower");
         if (registrationField.referrerId !== 0 && registrationField.referrerId) {
           const finalUniq = registrationField.uniqueNumber || registrationField.referrerId;
-          localStorage.setItem("uniqnumber", finalUniq);
+          sessionStorage.setItem("uniqnumber", finalUniq);
         }
         setField(false);
         setError(null);
@@ -638,6 +639,15 @@ export default function BorrowerRegister() {
     const relationshipIdParam = searchParams.get("relationshipId");
     const utmSource = searchParams.get("utm");
     const studentIdParam = searchParams.get("studentId");
+    const flowParam = (searchParams.get("type") || searchParams.get("flow") || searchParams.get("flowType") || searchParams.get("mode") || "").toLowerCase();
+    const isInstant = flowParam === "instant" || flowParam === "instant_loan" || flowParam === "instantloan" || window.location.pathname.includes("instant");
+    if (isInstant) {
+      sessionStorage.setItem("oxy_flow_type", "INSTANT_LOAN");
+      localStorage.setItem("oxy_flow_type", "INSTANT_LOAN");
+      sessionStorage.setItem("isInstantLoanUser", "true");
+      localStorage.setItem("isInstantLoanUser", "true");
+      setIsInstantFlow(true);
+    }
     if (trackingIdParam) sessionStorage.setItem("trackingId", trackingIdParam);
     if (relationshipIdParam) sessionStorage.setItem("relationshipId", relationshipIdParam);
     if (utmSource) sessionStorage.setItem("utmSource", utmSource);
@@ -688,6 +698,12 @@ export default function BorrowerRegister() {
           <div className="lender-form-wrap">
             <div className="reg-header-row">
               <div className="reg-title-wrap">
+                {isInstantFlow && (
+                  <div className="d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill mb-2 shadow-xs" style={{ backgroundColor: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", fontSize: "12px", fontWeight: "700" }}>
+                    <i className="fa-solid fa-bolt text-warning me-1"></i>
+                    Instant Personal Loan Fast-Track Onboarding Active
+                  </div>
+                )}
                 <h2 className="reg-title">Register as a Borrower</h2>
                 <p className="reg-subtitle">
                   Get instant loan approval with minimal documentation and attractive rates.
@@ -1213,7 +1229,7 @@ export default function BorrowerRegister() {
                       An activation link has been sent to your registered e-mail. Please check your inbox and activate your OxyLoans account to start Borrowing.
                     </p>
                     <div className="reg-success-actions">
-                      <Link to="/login" className="reg-next-btn">
+                      <Link to={isInstantFlow ? "/loginotp?type=instant" : "/login"} className="reg-next-btn">
                         <span>Go to Login</span>
                         <span className="reg-btn-arrow">→</span>
                       </Link>

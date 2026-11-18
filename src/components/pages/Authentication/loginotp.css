@@ -36,6 +36,17 @@
   box-sizing: border-box;
 }
 
+/* Modifier when statutory RBI disclaimer marquee ticker is present at the top */
+.loginotp-page.has-disclaimer {
+  padding-top: calc(32px + 12px);
+  padding-bottom: 12px;
+}
+
+.loginotp-page.has-disclaimer .loginotp-two-cards-wrap {
+  height: min(670px, calc(100vh - 60px));
+  max-height: min(670px, calc(100vh - 60px));
+}
+
 /* ==========================================================================
    LEFT CARD (Hero Artwork Card with Fixed Aspect Ratio - NEVER Stretches)
    ========================================================================== */
@@ -987,6 +998,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .loginotp-page.has-disclaimer {
+    padding-top: calc(30px + 18px);
+    padding-bottom: 24px;
   }
 
   .loginotp-two-cards-wrap {

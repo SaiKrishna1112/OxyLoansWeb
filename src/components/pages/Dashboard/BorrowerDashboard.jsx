@@ -1,3 +1,4 @@
+import { isInstantLoanBorrower } from "../../../utils/redirectUtils";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
@@ -204,12 +205,20 @@ const Dashboard = () => {
       let bankDoc = bankRes.status === "fulfilled" && bankRes.value?.status === 200 ? bankRes.value?.data : null;
       let payslipDoc = payslipRes.status === "fulfilled" && payslipRes.value?.status === 200 ? payslipRes.value?.data : null;
 
-      if (payslipDoc && Array.isArray(payslipDoc) && payslipDoc.length > 0) {
-        const latest = payslipDoc[payslipDoc.length - 1] || payslipDoc[0];
+      const payslipList = Array.isArray(payslipDoc?.data)
+        ? payslipDoc.data
+        : Array.isArray(payslipDoc)
+        ? payslipDoc
+        : (payslipDoc && typeof payslipDoc === "object" && (payslipDoc.payslipAnalysisId || payslipDoc.netSalary))
+        ? [payslipDoc]
+        : [];
+
+      if (payslipList.length > 0) {
+        const latest = payslipList[0];
         payslipDoc = {
           ...latest,
           downloadUrl: latest.downloadUrl || latest.documentUrl || latest.fileUrl || latest.url || latest.documentPath,
-          allPayslips: payslipDoc,
+          allPayslips: payslipList,
         };
       }
 
@@ -465,7 +474,7 @@ const Dashboard = () => {
               </div>
               <div className="mt-3 mt-md-0 d-flex gap-2" style={{ position: "relative", zIndex: 2 }}>
                 {isProfileEligible && eligibleInfo.amount > 0 && !hasActiveRequest ? (
-                  <Link to="/borrower/instant-loan/41682" className="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 text-decoration-none">
+                  <Link to={sessionStorage.getItem("userId") || localStorage.getItem("userId") ? `/borrower/instant-loan/${sessionStorage.getItem("userId") || localStorage.getItem("userId")}` : "/borrower/instant-loan"} className="btn btn-light text-primary fw-bold px-4 py-2 rounded-3 text-decoration-none">
                     Apply Now →
                   </Link>
                 ) : !isProfileEligible ? (
@@ -544,7 +553,10 @@ const Dashboard = () => {
                           className="oxy-btn-primary py-2 px-4" 
                           onClick={() => {
                             if (!isProfileEligible) navigate("/instant-borrower-profile");
-                            else if (!hasActiveRequest) navigate("/borrower/instant-loan/41682");
+                            else if (!hasActiveRequest) {
+                              const activeUid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+                              navigate(activeUid ? `/borrower/instant-loan/${activeUid}` : "/borrower/instant-loan");
+                            }
                             else if (loansData.apiData?.length > 0) navigate("/borrowerLoansInitiated");
                             else navigate("/borrowerLoansInitiated");
                           }}
@@ -601,23 +613,31 @@ const Dashboard = () => {
                       <i className="fa-solid fa-clock-rotate-left fa-xl text-warning opacity-50"></i>
                     </div>
 
-                    {/* <div className="p-3 rounded-3 border bg-white shadow-xs d-flex justify-content-between align-items-center" style={{ borderLeft: "4px solid #059669 !important" }}>
+                    {/* <div className="p-3 rounded-3 border bg-white shadow-xs d-flex justify-content-between align-items-center" style={{ borderLeft: "4px solid #059669" }}>
                       <div>
                         <div className="d-flex align-items-center gap-2 mb-1">
-                          <span className="text-muted small">Credit Bureau Score</span>
-                          <span className="badge bg-success bg-opacity-10 text-success" style={{ fontSize: "10px" }}>Verified</span>
+                          <span className="text-muted small">OxyScore &amp; Credit Health</span>
+                          {(profileDetails?.profileScore || profileDetails?.oxyScore) ? (
+                            <span className="badge bg-success bg-opacity-10 text-success" style={{ fontSize: "10px" }}>Active</span>
+                          ) : (
+                            <span className="badge bg-secondary bg-opacity-10 text-secondary" style={{ fontSize: "10px" }}>Verified</span>
+                          )}
                         </div>
                         <div className="d-flex align-items-baseline gap-2">
-                          <span className="fw-bold text-success fs-5">802</span>
-                          <span className="text-muted small">/ 900 • Prime+</span>
+                          <span className="fw-bold text-success fs-5">
+                            {profileDetails?.profileScore || profileDetails?.oxyScore || profileDetails?.cibilScore || "—"}
+                          </span>
+                          <span className="text-muted small">
+                            {profileDetails?.cibilScore ? `• CIBIL ${profileDetails.cibilScore}` : "/ 1000"}
+                          </span>
                         </div>
                       </div>
                       <Link
-                        to="/borrower-credit-report"
+                        to="/my-oxyscore"
                         className="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 text-decoration-none"
                         style={{ fontSize: "12px" }}
                       >
-                        View Report →
+                        View OxyScore &rarr;
                       </Link>
                     </div> */}
                   </div>

@@ -52,6 +52,7 @@ import LoadingState from "../components/LoadingState";
 import KYCModal from "../components/KYCModal";
 import CreditScoreModal from "../components/CreditScoreModal";
 import { getCachedCreditReport, parseCreditReportData } from "../components/creditReportUtils";
+import { calculateOxyScore } from "../components/instantLoan/instantLoanCalculations";
 import "../redesign.css";
 import { Button } from "antd";
 import {
@@ -329,6 +330,13 @@ const Profile = () => {
       return null;
     }
   });
+
+  const liveOxyScore = useMemo(() => {
+    return calculateOxyScore(profileData, profileData.cibilScore || null, {
+      payslipVerification,
+      verifiedSalary: profileData.salary || profileData.monthlySalary,
+    });
+  }, [profileData, payslipVerification]);
 
   const documentNames = {
   pan: "PAN Card",
@@ -3228,7 +3236,10 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           </div>
                           <div className="col-6">
                             <span className="text-muted d-block small">OxyScore</span>
-                            <span className="fw-bold text-success" style={{ fontSize: "15px" }}>{profileData.profileScore || "—"}</span>
+                            <span className="fw-bold text-success" style={{ fontSize: "15px" }}>
+                              {profileData.profileScore || profileData.oxyScore || liveOxyScore.score}
+                              <small className="text-muted fw-normal ms-1">({liveOxyScore.label})</small>
+                            </span>
                           </div>
                         </div>
 

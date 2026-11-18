@@ -3,15 +3,23 @@ import { Navigate } from "react-router-dom";
 import { isInstantLoanBorrower } from "../../../../utils/redirectUtils";
 
 /**
- * Route guard for pages exclusive to Instant Loan flow (borrower ID 41682).
- * Normal borrowers are safely redirected to the standard /borrowerDashboard.
+ * Route guard for pages in Instant Loan flow.
+ * Accessible for any authenticated borrower testing or using Instant Loan.
  */
 export const InstantLoanGuard = ({ element: Component }) => {
   const currentUserId =
     sessionStorage.getItem("userId") || localStorage.getItem("userId");
 
-  if (!isInstantLoanBorrower(currentUserId)) {
-    return <Navigate to="/borrowerDashboard" replace />;
+  // In sandbox / testing, mark active session as instant loan flow
+  if (currentUserId) {
+    try {
+      sessionStorage.setItem("oxy_flow_type", "INSTANT_LOAN");
+      localStorage.setItem("oxy_flow_type", "INSTANT_LOAN");
+      sessionStorage.setItem("isInstantLoanUser", "true");
+      localStorage.setItem("isInstantLoanUser", "true");
+    } catch (e) {
+      // ignore
+    }
   }
 
   return Component;
@@ -19,7 +27,7 @@ export const InstantLoanGuard = ({ element: Component }) => {
 
 /**
  * Switch route for /borrowerDashboard:
- * - If borrower is 41682: redirects to /instant-borrower-dashboard.
+ * - If borrower is in instant loan flow: redirects to /instant-borrower-dashboard or /borrower/instant-loan/:id.
  * - If normal borrower: renders the original / standard BorrowerDashboard.
  */
 export const BorrowerDashboardSwitch = ({
@@ -30,7 +38,7 @@ export const BorrowerDashboardSwitch = ({
     sessionStorage.getItem("userId") || localStorage.getItem("userId");
 
   if (isInstantLoanBorrower(currentUserId)) {
-    return <Navigate to="/instant-borrower-dashboard" replace />;
+    return <Navigate to={currentUserId ? `/borrower/instant-loan/${currentUserId}` : "/instant-borrower-dashboard"} replace />;
   }
 
   return standardElement;
@@ -38,7 +46,7 @@ export const BorrowerDashboardSwitch = ({
 
 /**
  * Switch route for /borrowerProfile:
- * - If borrower is 41682: redirects to /instant-borrower-profile.
+ * - If borrower is in instant loan flow: redirects to /instant-borrower-profile.
  * - If normal borrower: renders the original / standard BorrowerProfile.
  */
 export const BorrowerProfileSwitch = ({
@@ -57,8 +65,8 @@ export const BorrowerProfileSwitch = ({
 
 /**
  * Guard for Borrower Profile:
- * - If borrower 41682 hasn't completed all steps yet (currentStep < 7 and !isCompleted),
- *   redirects them to /instant-borrower-dashboard so they complete the flow first.
+ * - If borrower hasn't completed all steps yet (currentStep < 7 and !isCompleted),
+ *   redirects them to Instant Loan Flow so they complete the flow first.
  * - Once completed, allows viewing profile with unlocked sidebar.
  */
 export const InstantLoanProfileGuard = ({ element: Component }) => {
@@ -82,7 +90,25 @@ export const InstantLoanProfileGuard = ({ element: Component }) => {
   }
 
   // Flow is in progress -> redirect to Instant Loan Flow
-  return <Navigate to="/instant-borrower-dashboard" replace />;
+  return <Navigate to={currentUserId ? `/borrower/instant-loan/${currentUserId}` : "/instant-borrower-dashboard"} replace />;
+};
+
+/**
+ * Switch route for /borrowerLoansInitiated:
+ * - If borrower is in instant loan flow: redirects to /borrower/instant-loan/:id.
+ * - If normal borrower: renders standard BorrowerLoansInitiated.
+ */
+export const BorrowerLoansInitiatedSwitch = ({
+  standardElement,
+}) => {
+  const currentUserId =
+    sessionStorage.getItem("userId") || localStorage.getItem("userId");
+
+  if (isInstantLoanBorrower(currentUserId)) {
+    return <Navigate to={currentUserId ? `/borrower/instant-loan/${currentUserId}` : "/borrower/instant-loan"} replace />;
+  }
+
+  return standardElement;
 };
 
 export default InstantLoanGuard;

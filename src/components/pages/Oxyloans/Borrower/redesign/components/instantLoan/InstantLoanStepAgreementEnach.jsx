@@ -11,7 +11,7 @@ import {
 const InstantLoanStepAgreementEnach = ({
   selectedOffer,
   profileData,
-  applicationId = "41682",
+  applicationId = "",
   onComplete,
   onBack,
 }) => {
@@ -232,7 +232,7 @@ const InstantLoanStepAgreementEnach = ({
             {showOtpInput && !esignDone && (
               <div className="p-3 bg-white rounded-3 border mb-3 shadow-xs">
                 <label className="form-label small fw-bold text-dark mb-1">
-                  Enter 6-Digit Aadhaar OTP (Demo: 123456)
+                  Enter 6-Digit Aadhaar OTP
                 </label>
                 <div className="d-flex gap-2">
                   <input

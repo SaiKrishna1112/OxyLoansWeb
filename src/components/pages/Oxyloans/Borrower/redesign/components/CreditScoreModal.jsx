@@ -94,6 +94,7 @@ const CreditScoreModal = ({
       dateOfBirth: formData.dateOfBirth.trim(),
       address: formData.address.trim(),
       pincode: formData.pincode.trim(),
+      borrowerId: initialData.borrowerId || initialData.id || null,
     };
 
     // Progression timer for smooth production-grade feedback

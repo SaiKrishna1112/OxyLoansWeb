@@ -2065,3 +2065,309 @@ body.instant-flow-no-sidebar .sidebar {
 .btn i:not(:last-child) {
   margin-right: 6px;
 }
+
+
+/* ==========================================================================
+   COMPREHENSIVE MOBILE VIEW OPTIMIZATIONS (Tablet, Mobile, Small Screen)
+   Provides fluid, touch-optimized, mobile-app native experience for Steps 1-9
+   ========================================================================== */
+
+/* 1. Global Viewport & Container Adjustments */
+@media (max-width: 991.98px) {
+  .instant-flow-page-wrapper {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+  }
+  
+  .instant-flow-page-wrapper > .content {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    padding-top: 14px !important;
+    padding-bottom: 70px !important;
+  }
+
+  .fintech-card {
+    padding: 20px 18px !important;
+    border-radius: 14px !important;
+  }
+
+  .fintech-hero-indigo {
+    padding: 22px 20px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Make sure step view enter has smooth transition */
+  .step-view-enter {
+    animation-duration: 0.22s !important;
+  }
+}
+
+/* 2. Mobile Viewport Adjustments (<= 767.98px - Phones & Phablets) */
+@media (max-width: 767.98px) {
+  /* Prevent horizontal page blowouts while allowing designated horizontal scrolls */
+  body.instant-flow-no-sidebar,
+  .instant-flow-page-wrapper {
+    overflow-x: hidden !important;
+  }
+
+  .instant-flow-page-wrapper > .content {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-top: 10px !important;
+    padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important; /* Space for mobile floating steps pill */
+  }
+
+  .fintech-card {
+    padding: 16px 14px !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .fintech-hero-indigo {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Responsive Typography: eliminate breaking numbers */
+  .display-5, .display-6, h1.display-6 {
+    font-size: 1.45rem !important;
+    line-height: 1.28 !important;
+    letter-spacing: -0.3px !important;
+  }
+
+  h2, .h2 {
+    font-size: 1.3rem !important;
+  }
+
+  h4, .h4 {
+    font-size: 1.12rem !important;
+  }
+
+  h5, .h5 {
+    font-size: 1.02rem !important;
+  }
+
+  .countdown-clock-hero {
+    font-size: 1.45rem !important;
+    padding: 8px 12px !important;
+    letter-spacing: 0.5px !important;
+    text-align: center;
+  }
+
+  /* Fluid SVG Gauges: strictly inside card boundaries */
+  .credit-score-gauge-svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Header Card Mobile Layout */
+  .instant-profile-header-card {
+    padding: 12px 12px !important;
+  }
+
+  .instant-profile-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    font-size: 14px !important;
+  }
+
+  /* Smooth Horizontal Scroll for Breadcrumbs */
+  .instant-breadcrumbs-scroll {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: 2px !important;
+    padding-top: 2px !important;
+  }
+  .instant-breadcrumbs-scroll::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Stepper Scroll Container on Mobile */
+  .instant-mobile-stepper-scroll {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .instant-mobile-stepper-scroll::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Preset Chips Bar: horizontal touch scroll */
+  .instant-preset-chips-scroll {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .instant-preset-chips-scroll::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .preset-chip-btn {
+    padding: 6px 14px !important;
+    font-size: 11.5px !important;
+    min-height: 34px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Loan Calibrator Stepper */
+  #loan-amount-calibrator {
+    text-align: center;
+  }
+
+  #loan-amount-calibrator .stepper-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+  }
+
+  /* Modern Range Slider on Touch Devices */
+  .fintech-slider {
+    height: 10px !important;
+    touch-action: pan-y !important;
+  }
+  .fintech-slider::-webkit-slider-thumb {
+    width: 26px !important;
+    height: 26px !important;
+    box-shadow: 0 2px 8px rgba(0, 64, 224, 0.45) !important;
+  }
+  .fintech-slider::-moz-range-thumb {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  /* Repayment Plan Cards */
+  .repayment-plan-card {
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .repayment-plan-card h2 {
+    font-size: 1.6rem !important;
+  }
+
+  /* Cashfree Payment Selector */
+  .upi-method-btn {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    min-height: 52px !important;
+  }
+
+  /* Tables: responsive touch scroll without vertical column squish */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 10px !important;
+    overflow-x: auto !important;
+  }
+
+  .table-responsive > table {
+    min-width: 520px;
+  }
+
+  /* Breakout Modal Drawer on Mobile */
+  .steps-sidebar-modal-drawer {
+    width: 320px !important;
+    max-width: 86vw !important;
+  }
+
+  .instant-modal-tabs-scroll {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .instant-modal-tabs-scroll::-webkit-scrollbar {
+    display: none !important;
+  }
+  .instant-modal-tabs-scroll .btn {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Form Labels & Inputs Touch Sizing (prevent iOS Safari zoom with 16px font) */
+  .form-control, .form-select {
+    font-size: 16px !important;
+    min-height: 46px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Full-Width Mobile CTA Buttons (Easy thumb tap) */
+  .w-mobile-100 {
+    width: 100% !important;
+    min-width: unset !important;
+    justify-content: center !important;
+  }
+
+  /* Banking seals */
+  .banking-seal {
+    padding: 4px 8px !important;
+    font-size: 10.5px !important;
+  }
+
+  /* Floating Steps Navigator Pill Button (Thumb-accessible bottom right) */
+  .instant-floating-steps-btn {
+    position: fixed !important;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 16px !important;
+    z-index: 1045 !important;
+    padding: 10px 18px !important;
+    font-size: 12px !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 10px 25px rgba(0, 64, 224, 0.42) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  }
+  .instant-floating-steps-btn:active {
+    transform: scale(0.95) !important;
+  }
+}
+
+/* 3. Extra-Small Screen Adjustments (<= 480px - Compact Phones like iPhone SE) */
+@media (max-width: 480px) {
+  .instant-flow-page-wrapper > .content {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  .fintech-card {
+    padding: 14px 11px !important;
+    border-radius: 10px !important;
+  }
+
+  .fintech-hero-indigo {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .display-6, h1.display-6 {
+    font-size: 1.3rem !important;
+  }
+
+  .repayment-plan-card h2 {
+    font-size: 1.45rem !important;
+  }
+
+  .repayment-feature-tag {
+    font-size: 0.68rem !important;
+    padding: 3px 7px !important;
+  }
+
+  .card-data-row {
+    font-size: 11px !important;
+  }
+
+  .btn {
+    font-size: 13px !important;
+  }
+}

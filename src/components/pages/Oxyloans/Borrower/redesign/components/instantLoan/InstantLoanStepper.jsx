@@ -512,7 +512,7 @@ const InstantLoanStepper = ({
         </div>
 
         {/* Horizontal Mobile Step Scroll */}
-        <div className="d-flex align-items-center justify-content-between overflow-x-auto py-1 gap-2">
+        <div className="d-flex align-items-center overflow-x-auto py-1 gap-2 instant-mobile-stepper-scroll" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
           {STEPS.map((s) => {
             const isDone = highestStep > s.id;
             const isCurrent = currentStep === s.id;
@@ -522,7 +522,7 @@ const InstantLoanStepper = ({
               <div
                 key={s.id}
                 className={`d-flex flex-column align-items-center text-center ${isClickable ? "cursor-pointer" : ""}`}
-                style={{ minWidth: "48px", flex: 1 }}
+                style={{ minWidth: "50px", flexShrink: 0 }}
                 onClick={() => {
                   if (isClickable && onStepClick) onStepClick(s.id);
                 }}

@@ -9,7 +9,6 @@ import "../Oxyloans/Lender/table.css";
 import FloatingAssistant from "../../FloatingAssistant"
 import logo from "../../../assets/img/avtarimage.png"
 import { formatAmountWithCommas, amountToWords } from '../../../utils/formatAmount';
-import { openLenderWelcomeModal } from "../Oxyloans/Lender/LenderWelcomeModal";
 
 import {
   getDashboardInvestment,
@@ -559,7 +558,7 @@ const getFinancialYear = () => {
                             gap: "6px",
                           }}
                         >
-                          <button
+                          {/* <button
                             type="button"
                             onClick={openLenderWelcomeModal}
                             style={{
@@ -578,7 +577,7 @@ const getFinancialYear = () => {
                             title="View 10 Years of OxyLoans Anniversary Note"
                           >
                             🎉 10 Years of OxyLoans
-                          </button>
+                          </button> */}
                           <Link to="/todaydeal">
                             <Tag
                               style={{

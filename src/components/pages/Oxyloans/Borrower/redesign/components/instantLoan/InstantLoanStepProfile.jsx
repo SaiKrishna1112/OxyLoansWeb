@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import Swal from "sweetalert2";
 import "./instantLoan.css";
 import { formatINR } from "../creditReportUtils";
@@ -6,6 +7,7 @@ import {
   updateBorrowerProfile,
   normalizeDobToInput,
 } from "./instantLoanApi";
+import { base_url } from "../../../../../../HttpRequest/afterlogin";
 
 /**
  * InstantLoanStepProfile
@@ -17,34 +19,35 @@ const InstantLoanStepProfile = ({
   onNext,
   maxReachedStep = 1,
   onReturnToOffers,
+  oxyScore,
 }) => {
   const initialMaritalStatus = initialData.maritalStatus || "Single";
   const [formData, setFormData] = useState({
-    name: initialData.name || initialData.firstName || "DHARMAPURI SAI KRISHNA",
-    email: initialData.email || "somethingspecialday@gmail.com",
-    mobile: initialData.mobile || initialData.mobileNumber || "7702443666",
-    whatsAppNumber: initialData.whatsAppNumber || initialData.mobile || "918125861874",
+    name: initialData.name || initialData.firstName || "",
+    email: initialData.email || "",
+    mobile: initialData.mobile || initialData.mobileNumber || "",
+    whatsAppNumber: initialData.whatsAppNumber || initialData.mobile || "",
     gender: initialData.gender || "Male",
-    panNumber: initialData.panNumber || initialData.documentId || "JUXPK2964M",
-    dateOfBirth: normalizeDobToInput(initialData.dateOfBirth || initialData.dob) || "1999-11-08",
-    fatherName: initialData.fatherName || "Satya",
+    panNumber: initialData.panNumber || initialData.documentId || "",
+    dateOfBirth: normalizeDobToInput(initialData.dateOfBirth || initialData.dob) || "",
+    fatherName: initialData.fatherName || "",
     motherName: initialData.motherName || "",
     maritalStatus: initialMaritalStatus,
     spouseName: initialMaritalStatus === "Married" ? (initialData.spouseName || "") : "",
     spouseDob: initialMaritalStatus === "Married" ? (initialData.spouseDob || "") : "",
-    address: initialData.address || initialData.permanentAddress || "Hyderabad",
-    locality: initialData.locality || "Tirumalagiri",
-    city: initialData.city || "Hyderabad",
-    state: initialData.state || "Telangana",
-    pincode: initialData.pincode || initialData.pinCode || "500085",
-    monthlySalary: initialData.monthlySalary || initialData.salary || "25000",
+    address: initialData.address || initialData.permanentAddress || "",
+    locality: initialData.locality || "",
+    city: initialData.city || "",
+    state: initialData.state || "",
+    pincode: initialData.pincode || initialData.pinCode || "",
+    monthlySalary: initialData.monthlySalary || initialData.salary || "",
     employmentType: initialData.employmentType || initialData.employment || "SALARIED",
-    companyName: initialData.companyName || "oxyloans",
-    designation: initialData.designation || "Software Engineer",
-    workExperience: initialData.workExperience || "2",
-    officeAddress: initialData.officeAddress || "Plot 104, OxyLoans Office, Hyderabad",
-    officeMailId: initialData.officeMailId || "somethingspecialday@gmail.com",
-    officeLandLine: initialData.officeLandLine || "04048592301",
+    companyName: initialData.companyName || "",
+    designation: initialData.designation || "",
+    workExperience: initialData.workExperience || "",
+    officeAddress: initialData.officeAddress || "",
+    officeMailId: initialData.officeMailId || "",
+    officeLandLine: initialData.officeLandLine || "",
   });
 
   const [errors, setErrors] = useState({});
@@ -252,9 +255,9 @@ const InstantLoanStepProfile = ({
     // 8. PAN Number
     const cleanPan = formData.panNumber.trim().toUpperCase();
     if (!cleanPan || !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
-      newErrors.panNumber = "Please enter a valid 10-character Indian PAN (e.g. JUXPK2964M).";
+      newErrors.panNumber = "Please enter a valid 10-character Indian PAN (e.g. ABCDE1234F).";
       setErrors(newErrors);
-      setErrorMessage("Please enter a valid 10-character Indian PAN (e.g. JUXPK2964M).");
+      setErrorMessage("Please enter a valid 10-character Indian PAN (e.g. ABCDE1234F).");
       scrollToField("panNumberInput");
       return;
     }
@@ -280,7 +283,7 @@ const InstantLoanStepProfile = ({
     setErrors({});
 
     try {
-      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
 
       const saveResult = await updateBorrowerProfile({
         userId: Number(uId),
@@ -293,6 +296,24 @@ const InstantLoanStepProfile = ({
 
       if (!saveResult.success && saveResult.error && !saveResult.isMock) {
         throw new Error(saveResult.error);
+      }
+
+      // After saving the profile, hit savingGoogleCordinates API
+      try {
+        await axios.post(
+          `${base_url}savingGoogleCordinates`,
+          {
+            userId: String(uId),
+          },
+          {
+            headers: {
+              accessToken: sessionStorage.getItem("accessToken") || localStorage.getItem("accessToken"),
+            },
+          }
+        );
+      } catch (coordErr) {
+        // Silent background call - distance calculations
+        console.log("savingGoogleCordinates api failed", coordErr);
       }
 
       Swal.fire({
@@ -376,7 +397,7 @@ const InstantLoanStepProfile = ({
             <div>
               <strong className="d-block">Your Profile & KYC Details Are Completed & Verified</strong>
               <span>
-                All basic personal details, address, income, and CIR credit health (802) are verified. You can update any fields below or return directly to your loan offers.
+                All basic personal details, address, income, and {oxyScore ? `OxyScore (${oxyScore.score} • ${oxyScore.label})` : "CIR credit health"} are verified. You can update any fields below or return directly to your loan offers.
               </span>
             </div>
           </div>
@@ -430,11 +451,26 @@ const InstantLoanStepProfile = ({
         </div>
 
         <div className="text-md-end">
-          <span className="badge badge-fintech-white-translucent rounded-pill px-3 py-1 small">
-            90% of Monthly Salary ({formatINR(salaryNum)})
-          </span>
+          <div className="d-flex flex-wrap gap-2 justify-content-md-end align-items-center">
+            <span className="badge badge-fintech-white-translucent rounded-pill px-3 py-1 small">
+              90% of Monthly Salary ({formatINR(salaryNum)})
+            </span>
+            {oxyScore && (
+              <span
+                className="badge rounded-pill px-2.5 py-1 small fw-bold d-inline-flex align-items-center gap-1.5"
+                style={{
+                  backgroundColor: oxyScore.badgeBg,
+                  color: oxyScore.color,
+                  border: `1px solid ${oxyScore.badgeBorder}`,
+                }}
+              >
+                <i className="fa-solid fa-gauge-high"></i>
+                <span>OxyScore: <strong>{oxyScore.score}</strong></span>
+              </span>
+            )}
+          </div>
           <div className="text-white text-opacity-75 small mt-1" style={{ fontSize: "11px" }}>
-            *Income will be cross-verified via Bank Statement & Payslip in Step 2
+            *Income verified via Bank Statement & Payslip
           </div>
         </div>
       </div>
@@ -465,7 +501,7 @@ const InstantLoanStepProfile = ({
                 value={formData.name}
                 onChange={handleFormChange}
                 className={`form-control instant-form-control border-start-0 rounded-end-3 ${errors.name ? "is-invalid border-danger" : ""}`}
-                placeholder="e.g. DHARMAPURI SAI KRISHNA"
+                placeholder="Enter full name as per PAN"
                 required
               />
             </div>
@@ -494,7 +530,7 @@ const InstantLoanStepProfile = ({
                 value={formData.email}
                 onChange={handleFormChange}
                 className={`form-control instant-form-control border-start-0 rounded-end-3 ${errors.email ? "is-invalid border-danger" : ""}`}
-                placeholder="e.g. somethingspecialday@gmail.com"
+                placeholder="name@example.com"
                 required
               />
             </div>
@@ -616,7 +652,7 @@ const InstantLoanStepProfile = ({
                 value={formData.fatherName}
                 onChange={handleFormChange}
                 className={`form-control instant-form-control border-start-0 rounded-end-3 ${errors.fatherName ? "is-invalid border-danger" : ""}`}
-                placeholder="Father's full name (e.g. Satya)"
+                placeholder="Father's full name"
                 required
               />
             </div>
@@ -672,7 +708,7 @@ const InstantLoanStepProfile = ({
                 onChange={handleFormChange}
                 maxLength="10"
                 className={`form-control instant-form-control border-start-0 rounded-end-3 text-uppercase fw-bold letter-spacing-1 ${errors.panNumber ? "is-invalid border-danger" : ""}`}
-                placeholder="JUXPK2964M"
+                placeholder="ABCDE1234F"
                 required
               />
             </div>
@@ -958,7 +994,7 @@ const InstantLoanStepProfile = ({
               value={formData.officeMailId}
               onChange={handleFormChange}
               className="form-control instant-form-control"
-              placeholder="e.g. somethingspecialday@gmail.com"
+              placeholder="name@example.com"
             />
           </div>
 
@@ -1002,7 +1038,7 @@ const InstantLoanStepProfile = ({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn btn-primary px-4 py-2 rounded-3 fw-bold text-white shadow-sm d-flex align-items-center gap-2"
+          className="btn btn-primary px-4 py-2 rounded-3 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 w-mobile-100"
           style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
         >
           {isSubmitting ? (

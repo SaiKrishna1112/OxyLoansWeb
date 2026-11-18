@@ -2664,7 +2664,7 @@ export const getBorrowerDocumentsList = async (payload = { pageNo: 1, pageSize: 
   const token = getToken();
   const requestPayload =
     typeof payload === "object" && payload !== null
-      ? { pageNo: 1, pageSize: 100, ...payload }
+      ? payload
       : { pageNo: Number(payload) || 1, pageSize: 100 };
 
   try {

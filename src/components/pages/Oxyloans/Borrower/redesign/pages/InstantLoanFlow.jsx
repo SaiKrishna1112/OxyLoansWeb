@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import BorrowerHeader from "../../../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../../../SideBar/BorrowerSidebar";
 import Footer from "../../../../../Footer/Footer";
-import { getUserDetails } from "../../../../../HttpRequest/afterlogin";
+import { getUserDetails, getBorrowerRequestAmount, getListOfBorrowerLoansInitiated } from "../../../../../HttpRequest/afterlogin";
 
 import InstantLoanStepper, { STEPS } from "../components/instantLoan/InstantLoanStepper";
 import InstantLoanStepProfile from "../components/instantLoan/InstantLoanStepProfile";
@@ -29,12 +29,13 @@ import {
 import Swal from "sweetalert2";
 import CreditScoreGauge from "../components/CreditScoreGauge";
 import { formatINR } from "../components/creditReportUtils";
+import { calculateOxyScore } from "../components/instantLoan/instantLoanCalculations";
 import "../redesign.css";
 
 const InstantLoanFlow = () => {
   const { id } = useParams();
   const sessionUid =
-    sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+    sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
   const applicationId = id || sessionUid;
 
   // Single Point of View Tab State
@@ -59,34 +60,35 @@ const InstantLoanFlow = () => {
   // Computed: Sidebar and profile are unlocked only after all steps are completed
   const isAllStepsCompleted = currentStep >= 9 || Boolean(isCompleted);
 
+
   const [profileData, setProfileData] = useState({
-    name: "DHARMAPURI SAI KRISHNA",
-    firstName: "DHARMAPURI SAI KRISHNA",
+    name: "",
+    firstName: "",
     lastName: "",
-    mobile: "7702443666",
-    whatsAppNumber: "918125861874",
-    email: "somethingspecialday@gmail.com",
-    gender: "Male",
-    panNumber: "JUXPK2964M",
-    dateOfBirth: "1999-11-08",
-    fatherName: "Satya",
+    mobile: "",
+    whatsAppNumber: "",
+    email: "",
+    gender: "",
+    panNumber: "",
+    dateOfBirth: "",
+    fatherName: "",
     motherName: "",
     maritalStatus: "Single",
     spouseName: "",
     spouseDob: "",
-    address: "Hyderabad",
-    locality: "Tirumalagiri",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500085",
-    monthlySalary: "35000",
+    address: "",
+    locality: "",
+    city: "",
+    state: "",
+    pincode: "",
+    monthlySalary: "",
     employmentType: "SALARIED",
-    companyName: "SRS FINTECH LABS PVT LTD",
-    designation: "Software Engineer",
-    workExperience: "2",
-    officeAddress: "Plot 104, OxyLoans Office, Hyderabad",
-    officeMailId: "somethingspecialday@gmail.com",
-    officeLandLine: "04048592301",
+    companyName: "",
+    designation: "",
+    workExperience: "",
+    officeAddress: "",
+    officeMailId: "",
+    officeLandLine: "",
   });
 
   const [feePayment, setFeePayment] = useState(null);
@@ -94,9 +96,18 @@ const InstantLoanFlow = () => {
   const [bankData, setBankData] = useState(null);
   const [payslipVerification, setPayslipVerification] = useState(null);
   const [bankStatementVerification, setBankStatementVerification] = useState(null);
-  const [verifiedSalary, setVerifiedSalary] = useState(35000);
+  const [verifiedSalary, setVerifiedSalary] = useState(0);
   const [isWaitingForLender, setIsWaitingForLender] = useState(false);
   const [lenderSigned, setLenderSigned] = useState(false);
+
+  // Dynamic OxyScore based on borrower profile details, verified income, and bureau CIR
+  const oxyScore = useMemo(() => {
+    return calculateOxyScore(profileData, verificationResult?.score || null, {
+      payslipVerification,
+      bankStatementVerification,
+      verifiedSalary,
+    });
+  }, [profileData, verificationResult, payslipVerification, bankStatementVerification, verifiedSalary]);
 
   // Manage body classes for no-sidebar distraction-free layout during in-progress flow
   useEffect(() => {
@@ -166,80 +177,55 @@ const InstantLoanFlow = () => {
       .then((res) => {
         if (res?.data) {
           const d = res.data;
-          const cleanName = d.firstName ? `${d.firstName} ${d.lastName || ""}`.trim() : "DHARMAPURI SAI KRISHNA";
-          const cleanAddress = (d.address || d.permanentAddress || "Hyderabad")
+          const cleanName = d.firstName ? `${d.firstName} ${d.lastName || ""}`.trim() : (d.name || "");
+          const cleanAddress = (d.address || d.permanentAddress || "")
             .replace(/\\n/g, "")
             .replace(/,\s*$/, "")
-            .trim() || "Hyderabad";
-          const cleanDob = normalizeDobToInput(d.dob || d.dateOfBirth) || "1999-11-08";
+            .trim();
+          const cleanDob = normalizeDobToInput(d.dob || d.dateOfBirth) || "";
 
-          setProfileData((prev) => {
-            const isMock = !prev.name || prev.name.includes("BALIJEPALLI") || prev.panNumber === "CDBPB2737H";
-            return {
-              ...prev,
-              name: isMock ? cleanName : (prev.name || cleanName),
-              firstName: isMock ? (d.firstName || cleanName) : (prev.firstName || d.firstName),
-              lastName: isMock ? (d.lastName || "") : (prev.lastName || d.lastName || ""),
-              mobile: isMock ? (d.mobileNumber || d.mobile || "7702443666") : (prev.mobile || d.mobileNumber),
-              whatsAppNumber: isMock ? (d.whatsAppNumber || d.mobileNumber || "918125861874") : (prev.whatsAppNumber || d.whatsAppNumber),
-              email: isMock ? (d.email || "somethingspecialday@gmail.com") : (prev.email || d.email),
-              gender: (d.gender && d.gender.trim()) || prev.gender || "Male",
-              panNumber: isMock ? (d.panNumber || "JUXPK2964M") : (prev.panNumber || d.panNumber),
-              dateOfBirth: isMock ? cleanDob : (prev.dateOfBirth || cleanDob),
-              fatherName: isMock ? (d.fatherName || "Satya") : (prev.fatherName || d.fatherName),
-              motherName: prev.motherName || d.motherName || "",
-              maritalStatus: prev.maritalStatus || d.maritalStatus || "Single",
-              spouseName: prev.spouseName || d.spouseName || "",
-              spouseDob: prev.spouseDob || d.spouseDob || "",
-              address: isMock ? cleanAddress : (prev.address || cleanAddress),
-              locality: isMock ? (d.locality || "Tirumalagiri") : (prev.locality || d.locality),
-              city: isMock ? (d.city || "Hyderabad") : (prev.city || d.city),
-              state: isMock ? (d.state || "Telangana") : (prev.state || d.state),
-              pincode: isMock ? (d.pinCode || d.pincode || "500085") : (prev.pincode || d.pinCode),
-              monthlySalary: isMock ? (d.salary || d.salaryNew || 25000) : (prev.monthlySalary || d.salary),
-              employmentType: d.employment || d.employmentType || prev.employmentType || "SALARIED",
-              companyName: isMock ? (d.companyName || "oxyloans") : (prev.companyName || d.companyName),
-              designation: prev.designation || d.designation || "Software Engineer",
-              workExperience: isMock ? (d.workExperience || "2") : (prev.workExperience || d.workExperience || "2"),
-              officeAddress: prev.officeAddress || d.officeAddress || "Plot 104, OxyLoans Office, Hyderabad",
-              officeMailId: prev.officeMailId || d.officeMailId || "somethingspecialday@gmail.com",
-              officeLandLine: prev.officeLandLine || d.officeLandLine || "",
-            };
-          });
-
-          // Check if profile is complete
-          const hasCompleteProfile = Boolean(
-            (d.panNumber || "JUXPK2964M") &&
-            (d.firstName || d.name) &&
-            (d.mobileNumber || d.mobile) &&
-            (d.address || d.permanentAddress)
-          );
-
-          // If profile details are completed and user is sitting at Step 1 (without a manually selected past step),
-          // auto-advance them directly to Step 5 (Choose Loan Offer) so they are not forced through profile details again!
-          if (hasCompleteProfile) {
-            setCurrentStep((prevStep) => {
-              if (prevStep === 1 && (!savedStep || savedStep === 1)) {
-                maxReachedStepRef.current = Math.max(maxReachedStepRef.current, 5);
-                currentStepRef.current = 5;
-                saveInstantLoanStorage(applicationId, { currentStep: 5 });
-                return 5;
-              }
-              return prevStep;
-            });
-          }
+          setProfileData((prev) => ({
+            ...prev,
+            name: cleanName || prev.name || "",
+            firstName: d.firstName || prev.firstName || cleanName || "",
+            lastName: d.lastName || prev.lastName || "",
+            mobile: d.mobileNumber || d.mobile || prev.mobile || "",
+            whatsAppNumber: d.whatsAppNumber || d.mobileNumber || prev.whatsAppNumber || "",
+            email: d.email || prev.email || "",
+            gender: (d.gender && d.gender.trim()) || prev.gender || "Male",
+            panNumber: d.panNumber || prev.panNumber || "",
+            dateOfBirth: cleanDob || prev.dateOfBirth || "",
+            fatherName: d.fatherName || prev.fatherName || "",
+            motherName: prev.motherName || d.motherName || "",
+            maritalStatus: prev.maritalStatus || d.maritalStatus || "Single",
+            spouseName: prev.spouseName || d.spouseName || "",
+            spouseDob: prev.spouseDob || d.spouseDob || "",
+            address: cleanAddress || prev.address || "",
+            locality: d.locality || prev.locality || "",
+            city: d.city || prev.city || "",
+            state: d.state || prev.state || "",
+            pincode: d.pinCode || d.pincode || prev.pincode || "",
+            monthlySalary: d.salary || d.salaryNew || prev.monthlySalary || "",
+            employmentType: d.employment || d.employmentType || prev.employmentType || "SALARIED",
+            companyName: d.companyName || prev.companyName || "",
+            designation: prev.designation || d.designation || "",
+            workExperience: d.workExperience || prev.workExperience || "",
+            officeAddress: prev.officeAddress || d.officeAddress || "",
+            officeMailId: prev.officeMailId || d.officeMailId || "",
+            officeLandLine: prev.officeLandLine || d.officeLandLine || "",
+          }));
 
           // Pre-populate bankData from profile if available
           if (d.accountNumber || d.bankName) {
             setBankData((prevBank) => {
-              if (prevBank?.accountNumber && prevBank.accountNumber !== "34209820038") return prevBank;
+              if (prevBank?.accountNumber) return prevBank;
               return {
-                accountHolderName: cleanName || "DHARMAPURI SAI KRISHNA",
-                bankName: d.bankName || "STATE BANK OF INDIA",
-                accountNumber: d.accountNumber || "34209820038",
-                confirmAccountNumber: d.accountNumber || "34209820038",
-                ifscCode: d.ifscCode || "SBIN0008505",
-                branchName: d.branchName || "MUKUNDAPURAM",
+                accountHolderName: cleanName || "",
+                bankName: d.bankName || "",
+                accountNumber: d.accountNumber || "",
+                confirmAccountNumber: d.accountNumber || "",
+                ifscCode: d.ifscCode || "",
+                branchName: d.branchName || "",
                 accountType: "SAVINGS",
               };
             });
@@ -247,6 +233,61 @@ const InstantLoanFlow = () => {
         }
       })
       .catch((e) => console.warn("Failed to fetch live profile data:", e));
+
+    // Intelligently resume the borrower at their actual current active step from live OxyLoans backend
+    const targetBorrowerId = applicationId || sessionUid;
+
+    Promise.allSettled([
+      getListOfBorrowerLoansInitiated(targetBorrowerId),
+      getBorrowerRequestAmount(targetBorrowerId),
+    ]).then(([loansRes, reqRes]) => {
+      let activeBackendStep = 1;
+
+      // 1. Check if lender proposals/offers exist in the marketplace
+      if (loansRes.status === "fulfilled" && Array.isArray(loansRes.value?.data) && loansRes.value.data.length > 0) {
+        const activeOffers = loansRes.value.data;
+        const latestOffer = activeOffers[0];
+        setSelectedOffer((prev) => prev || latestOffer);
+
+        const hasEsigned = activeOffers.some((o) => Boolean(o.borrowerEsigned));
+        const hasEnachDone = activeOffers.some((o) => Boolean(o.enachCompleted) || o.mandateStatus === "ACTIVE");
+        const hasExecuted = activeOffers.some((o) => {
+          const st = String(o.loanStatus || "").toUpperCase();
+          return st === "EXECUTED" || st === "LOANEXECUTED" || st === "DISBURSED";
+        });
+
+        if (hasExecuted || (hasEnachDone && hasEsigned)) {
+          activeBackendStep = 9; // Step 9: Disbursal Tracker
+        } else if (hasEsigned && !hasEnachDone) {
+          activeBackendStep = 8; // Step 8: eNACH Mandate Setup
+        } else {
+          activeBackendStep = 6; // Step 6: Offers Received from Lenders
+        }
+      } 
+      // 2. Check if an active loan request is already live in the P2P market awaiting lender offers
+      else if (reqRes.status === "fulfilled" && Array.isArray(reqRes.value?.data) && reqRes.value.data.length > 0) {
+        const latestReq = [...reqRes.value.data].sort((a, b) => Number(b?.id || 0) - Number(a?.id || 0))[0];
+        const st = String(latestReq?.loanRequestStatus || "").toUpperCase();
+        if (st && st !== "CLOSED") {
+          setSelectedOffer((prev) => prev || latestReq);
+          activeBackendStep = 6; // Loan request live in market -> Step 6: Lender Offers
+        }
+      }
+
+      // If backend indicates active progress, unlock steps and resume user at their active step
+      if (activeBackendStep > 1) {
+        maxReachedStepRef.current = Math.max(maxReachedStepRef.current, activeBackendStep);
+        setCurrentStep((prevStep) => {
+          // If no stored step exists or sitting at Step 1, resume at active step
+          if (!savedStep || savedStep === 1 || prevStep === 1) {
+            currentStepRef.current = activeBackendStep;
+            saveInstantLoanStorage(applicationId, { currentStep: activeBackendStep });
+            return activeBackendStep;
+          }
+          return prevStep;
+        });
+      }
+    }).catch((e) => console.warn("Notice checking live borrower step progression in InstantLoanFlow:", e));
   }, [applicationId]);
 
   // Save changes to storage safely merging existing state and preserving highest step
@@ -279,9 +320,8 @@ const InstantLoanFlow = () => {
   // Step 1 Complete (Personal Profile Saved)
   const handleProfileComplete = (data) => {
     setProfileData(data);
-    // When profile details are completed, advance directly to Step 5 (Choose Loan Offer)
-    // or to the highest reached step so borrower is not trapped in Step 1
-    const targetStep = Math.max(5, maxReachedStepRef.current);
+    // Advance to Step 2: Income Verification
+    const targetStep = 2;
     maxReachedStepRef.current = targetStep;
     currentStepRef.current = targetStep;
     setCurrentStep(targetStep);
@@ -353,6 +393,15 @@ const InstantLoanFlow = () => {
 
   // Step 3 Complete (Fee Paid & References Saved)
   const handleFeePaymentSuccess = (payment) => {
+    if (!payment?.paymentId && !payment?.orderId) {
+      Swal.fire({
+        icon: "error",
+        title: "Payment Required",
+        text: "Cannot proceed to Credit Bureau Verification without a confirmed payment transaction.",
+        confirmButtonColor: "#0040e0",
+      });
+      return;
+    }
     setFeePayment(payment);
     if (payment?.ref1 && payment?.ref2) {
       setProfileData((prev) => ({
@@ -475,95 +524,128 @@ const InstantLoanFlow = () => {
         <div className="content container-fluid px-3 px-md-4 py-3" style={{ backgroundColor: "var(--oxy-background)" }}>
           <div className="fintech-shell fintech-shell-fullscreen">
             {/* 1. Production-Grade Executive Command Bar: Borrower Profile Bar */}
-            <div className="card border-0 shadow-sm rounded-4 mb-3 bg-white p-3 border">
-              <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <div className="d-flex align-items-center gap-3">
+            <div className="card border-0 shadow-sm rounded-4 mb-3 bg-white p-2.5 p-md-3 border instant-profile-header-card">
+              <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 gap-md-3">
+                <div className="d-flex align-items-center gap-2.5 gap-md-3 flex-grow-1 overflow-hidden">
                   <div
-                    className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-xs"
-                    style={{ width: "46px", height: "46px", minWidth: "46px", background: "#0a2540", fontSize: "16px" }}
+                    className="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-xs instant-profile-avatar"
+                    style={{ width: "42px", height: "42px", minWidth: "42px", background: "#0a2540", fontSize: "15px" }}
                   >
                     {profileData.name
                       ? profileData.name.split(" ").filter(Boolean).map((n) => n[0]).slice(0, 2).join("").toUpperCase()
                       : "DS"}
                   </div>
-                  <div>
-                    <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
-                      <h5 className="fw-bold mb-0 text-dark">
-                        {profileData.name || "DHARMAPURI SAI KRISHNA"}
+                  <div className="overflow-hidden flex-grow-1">
+                    <div className="d-flex flex-wrap align-items-center gap-1.5 gap-md-2 mb-0.5">
+                      <h5 className="fw-bold mb-0 text-dark fs-6 fs-md-5 text-truncate" style={{ maxWidth: "220px" }}>
+                        {profileData.name || "Borrower"}
                       </h5>
-                      <span className="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2.5 py-1 small fw-semibold">
-                        <i className="fa-solid fa-circle-check me-1.5.5.5"></i> KYC Verified
+                      <span className="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2 py-0.5 small fw-semibold d-none d-md-inline-flex">
+                        <i className="fa-solid fa-circle-check me-1"></i> KYC
                       </span>
-                      <span className="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 small fw-semibold">
-                        <i className="fa-solid fa-building-columns me-1.5.5.5"></i> Bank Verified
+                      <span className="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 small fw-semibold d-none d-md-inline-flex">
+                        <i className="fa-solid fa-building-columns me-1"></i> Bank
                       </span>
-                      <span className="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-2.5 py-1 small fw-semibold">
-                        <i className="fa-solid fa-circle-check me-1.5.5.5"></i> Payslip Verified
+                      <span
+                        className="badge rounded-pill px-2 py-0.5 small fw-bold d-inline-flex align-items-center gap-1 shadow-2xs"
+                        style={{
+                          backgroundColor: oxyScore.badgeBg,
+                          color: oxyScore.color,
+                          border: `1px solid ${oxyScore.badgeBorder}`,
+                          fontSize: "11px",
+                        }}
+                      >
+                        <i className="fa-solid fa-gauge-high"></i>
+                        <span>OxyScore: <strong>{oxyScore.score}</strong></span>
                       </span>
                     </div>
-                    <div className="d-flex flex-wrap align-items-center gap-2 text-muted small" style={{ fontSize: "12px" }}>
+                    <div className="d-flex flex-wrap align-items-center gap-2 text-muted small" style={{ fontSize: "11px" }}>
                       <span>
-                        Monthly Salary: <strong>₹{Number(verifiedSalary || profileData.monthlySalary || 35000).toLocaleString("en-IN")}/mo</strong>
+                        Salary: <strong>₹{Number(verifiedSalary || profileData.monthlySalary || 0).toLocaleString("en-IN")}/mo</strong>
                       </span>
                       <span className="text-muted opacity-50">|</span>
                       <span className="text-success fw-bold">
-                        Pre-Approved Limit: ₹{(Math.round(Number(verifiedSalary || profileData.monthlySalary || 35000) * 0.9)).toLocaleString("en-IN")}
+                        Pre-Approved: ₹{(Math.round(Number(verifiedSalary || profileData.monthlySalary || 0) * 0.9)).toLocaleString("en-IN")}
                       </span>
-                      <span className="text-muted opacity-50">|</span>
-                      <span>Borrower ID: <strong>#41682</strong> (Prime+ Tier)</span>
+                      <span className="text-muted opacity-50 d-none d-sm-inline">|</span>
+                      <span className="d-none d-sm-inline">Borrower: <strong>#{applicationId || sessionUid || ""}</strong></span>
                     </div>
                   </div>
                 </div>
 
-                <div className="d-flex align-items-center gap-2">
+                <div className="d-flex align-items-center gap-1.5 gap-md-2 ms-auto ms-md-0 flex-shrink-0">
+                  {/* Quick Journey Drawer Trigger for Mobile */}
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-primary bg-white rounded-pill px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 shadow-2xs"
+                    className="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs d-lg-none"
+                    onClick={() => setShowStepsModal(true)}
+                    style={{ fontSize: "11.5px" }}
+                    title="View All Journey Steps"
+                  >
+                    <i className="fa-solid fa-list-check text-primary"></i>
+                    <span>Steps ({currentStep}/7)</span>
+                    <i className="fa-solid fa-chevron-down opacity-50" style={{ fontSize: "9px" }}></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-primary bg-white rounded-pill px-2.5 px-md-3 py-1 fw-semibold d-flex align-items-center gap-1 shadow-2xs"
                     onClick={handleResetFlow}
                     title="Clear draft and start fresh"
+                    style={{ fontSize: "11.5px" }}
                   >
-                    <i className="fa-solid fa-rotate-left me-1.5 me-1.5 me-1.5"></i>
-                    <span>Restart Journey</span>
+                    <i className="fa-solid fa-rotate-left"></i>
+                    <span className="d-none d-sm-inline">Restart</span>
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Horizontal Step Breadcrumbs Bar */}
-            <div className="card border-0 shadow-sm rounded-4 mb-3 bg-white px-4 py-2.5 border">
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 text-muted small" style={{ fontSize: "12px" }}>
-                {[
-                  { id: 1, label: "Loan Application" },
-                  { id: 2, label: "Document Verification" },
-                  { id: 3, label: "Credit Health (802)" },
-                  { id: 4, label: "Disbursal & Escrow" },
-                  { id: 5, label: "Choose Loan Offer" },
-                  { id: 6, label: "Review & Submit" },
-                ].map((s, idx) => {
+            <div className="card border-0 shadow-sm rounded-4 mb-3 bg-white px-2.5 px-md-4 py-2 border">
+              <div
+                className="instant-breadcrumbs-scroll d-flex align-items-center flex-nowrap gap-2 text-muted small overflow-x-auto py-1"
+                style={{ fontSize: "12px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+              >
+                {STEPS.map((s, idx) => {
                   const isActive = currentStep === s.id;
                   const isPast = currentStep > s.id;
-                  const isUnlocked = s.id <= Math.max(maxReachedStepRef.current, currentStep);
+                  const isFeePaid = Boolean(feePayment?.paymentId || selectedOffer);
+                  const isUnlocked = s.id <= Math.max(maxReachedStepRef.current, currentStep) && (s.id <= 3 || isFeePaid);
                   return (
                     <React.Fragment key={s.id}>
                       <div
-                        className={`d-flex align-items-center gap-2 ${isUnlocked && !isActive ? "cursor-pointer" : ""}`}
+                        className={`d-flex align-items-center gap-1.5 flex-shrink-0 ${isUnlocked && !isActive ? "cursor-pointer" : ""}`}
                         onClick={() => {
-                          if (isUnlocked) setCurrentStep(s.id);
+                          if (isUnlocked) {
+                          if (s.id > 3 && !feePayment?.paymentId && !selectedOffer) {
+                            Swal.fire({
+                              icon: "warning",
+                              title: "Payment Required",
+                              text: "Please complete the Platform Assessment Fee (₹150) in Step 3 to proceed.",
+                              confirmButtonColor: "#0040e0",
+                            });
+                            return;
+                          }
+                          setCurrentStep(s.id);
+                        }
                         }}
                         style={isActive ? {
                           background: "#0040e0",
                           color: "#ffffff",
-                          padding: "5px 14px",
+                          padding: "4px 12px",
                           borderRadius: "9999px",
                           fontWeight: "700"
-                        } : {}}
+                        } : {
+                          padding: "4px 8px",
+                        }}
                       >
                         <span
                           className="rounded-circle d-flex align-items-center justify-content-center"
                           style={{
-                            width: "22px",
-                            height: "22px",
-                            fontSize: "11px",
+                            width: "20px",
+                            height: "20px",
+                            fontSize: "10.5px",
                             fontWeight: "700",
                             background: isActive ? "#ffffff" : isUnlocked ? "#0a2540" : "#94a3b8",
                             color: isActive ? "#0040e0" : "#ffffff",
@@ -575,8 +657,8 @@ const InstantLoanFlow = () => {
                           {s.label}
                         </span>
                       </div>
-                      {idx < 5 && (
-                        <i className="fa-solid fa-chevron-right text-muted opacity-40 mx-1" style={{ fontSize: "10px" }}></i>
+                      {idx < STEPS.length - 1 && (
+                        <i className="fa-solid fa-chevron-right text-muted opacity-40 mx-0.5 flex-shrink-0" style={{ fontSize: "9px" }}></i>
                       )}
                     </React.Fragment>
                   );
@@ -604,8 +686,8 @@ const InstantLoanFlow = () => {
                     <h4 className="fw-bold text-dark mb-1">Live Credit Bureau & CIR Profile</h4>
                     <p className="text-muted small mb-0">
                       Real-time credit health and underwriting telemetry for{" "}
-                      <strong>{profileData.name || "DHARMAPURI SAI KRISHNA"}</strong> (PAN:{" "}
-                      {profileData.panNumber || "JUXPK2964M"}).
+                      <strong>{profileData.name || "Borrower"}</strong> (PAN:{" "}
+                      {profileData.panNumber || "—"}).
                     </p>
                   </div>
 
@@ -620,7 +702,7 @@ const InstantLoanFlow = () => {
 
                 <div className="row g-4 align-items-center mb-4">
                   <div className="col-lg-4 text-center border-lg-end">
-                    <CreditScoreGauge score={verificationResult?.score || 802} size={230} />
+                    <CreditScoreGauge score={verificationResult?.score || 0} size={230} />
                     <div className="mt-3">
                       <span
                         className="badge rounded-pill px-3 py-1 small fw-bold"
@@ -715,20 +797,41 @@ const InstantLoanFlow = () => {
                     <div className="steps-sidebar-modal-drawer">
                       <InstantLoanStepper
                         currentStep={currentStep}
-                        maxReachedStep={maxReachedStepRef.current}
+                        maxReachedStep={(!feePayment?.paymentId && !selectedOffer) ? Math.min(3, maxReachedStepRef.current) : maxReachedStepRef.current}
                         isWaitingForLender={isWaitingForLender}
                         isModalMode={true}
                         onClose={() => setShowStepsModal(false)}
                         onStepClick={(stepId) => {
                           if (stepId <= Math.max(maxReachedStepRef.current, currentStep)) {
-                            setCurrentStep(stepId);
-                            setShowStepsModal(false);
+                          if (stepId > 3 && !feePayment?.paymentId && !selectedOffer) {
+                            Swal.fire({
+                              icon: "warning",
+                              title: "Payment Required",
+                              text: "Please complete the Platform Assessment Fee (₹150) in Step 3 to proceed.",
+                              confirmButtonColor: "#0040e0",
+                            });
+                            return;
                           }
+                          setCurrentStep(stepId);
+                          setShowStepsModal(false);
+                        }
                         }}
                       />
                     </div>
                   </div>
                 )}
+
+                {/* Floating Steps Navigator Button for Mobile Devices */}
+                <button
+                  type="button"
+                  className="instant-floating-steps-btn d-lg-none"
+                  onClick={() => setShowStepsModal(true)}
+                  aria-label="View Application Journey Steps"
+                >
+                  <i className="fa-solid fa-list-check"></i>
+                  <span>Step {currentStep} of {STEPS.length}</span>
+                  <i className="fa-solid fa-chevron-up ms-1 small"></i>
+                </button>
 
                 <div className="row g-4 align-items-start">
                   {/* Step Content Body - Full Width Executive Widescreen Canvas */}
@@ -746,8 +849,9 @@ const InstantLoanFlow = () => {
                         <InstantLoanStepProfile
                           initialData={profileData}
                           onNext={handleProfileComplete}
-                          maxReachedStep={maxReachedStepRef.current}
+                          maxReachedStep={(!feePayment?.paymentId && !selectedOffer) ? Math.min(3, maxReachedStepRef.current) : maxReachedStepRef.current}
                           onReturnToOffers={() => setCurrentStep(5)}
+                          oxyScore={oxyScore}
                         />
                       ) : currentStep === 2 ? (
                         <InstantLoanStepIncomeVerification
@@ -768,17 +872,39 @@ const InstantLoanFlow = () => {
                           onBack={() => setCurrentStep(2)}
                         />
                       ) : currentStep === 4 ? (
-                        <InstantLoanStepBureauVerification
-                          profileData={profileData}
-                          onVerificationComplete={handleBureauComplete}
-                          onNotEligible={handleNotEligible}
-                        />
+                        (!feePayment?.paymentId && !selectedOffer) ? (
+                          <div className="fintech-card p-5 text-center">
+                            <div className="rounded-circle bg-warning bg-opacity-10 text-warning d-inline-flex align-items-center justify-content-center p-3 mb-3" style={{ width: "64px", height: "64px" }}>
+                              <i className="fa-solid fa-lock fs-3"></i>
+                            </div>
+                            <h4 className="fw-bold text-dark mb-2">Platform Assessment Fee Required</h4>
+                            <p className="text-muted small mx-auto mb-4" style={{ maxWidth: "480px" }}>
+                              To initiate the live Credit Bureau pull and KYC underwriting checks, payment of the ₹150 platform assessment fee must be successfully completed.
+                            </p>
+                            <button
+                              type="button"
+                              className="btn btn-primary px-4 py-2.5 rounded-pill fw-bold shadow-sm"
+                              style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
+                              onClick={() => setCurrentStep(3)}
+                            >
+                              <i className="fa-solid fa-arrow-left me-1.5"></i> Return to Step 3 &amp; Pay Fee
+                            </button>
+                          </div>
+                        ) : (
+                          <InstantLoanStepBureauVerification
+                            profileData={profileData}
+                            onVerificationComplete={handleBureauComplete}
+                            onNotEligible={handleNotEligible}
+                            oxyScore={oxyScore}
+                          />
+                        )
                       ) : currentStep === 5 ? (
                         <InstantLoanStepOfferSelection
                           profileData={profileData}
                           payslipVerification={payslipVerification}
                           bankStatementVerification={bankStatementVerification}
-                          creditScore={verificationResult?.score || 802}
+                          creditScore={verificationResult?.score || null}
+                          oxyScore={oxyScore}
                           onOfferSelected={handleOfferSelected}
                           onProceedToOffers={handleProceedToOffers}
                           onProceedToEsign={handleProceedToEsign}
@@ -793,8 +919,16 @@ const InstantLoanFlow = () => {
                           profileData={profileData}
                           selectedOffer={selectedOffer}
                           applicationId={applicationId}
+                          bankData={bankData}
                           onProceedToEsign={handleProceedToEsign}
                           onProceedToEnach={handleProceedToEnach}
+                          onProceedToDisbursal={() => {
+                            const nextStep = 9;
+                            maxReachedStepRef.current = Math.max(maxReachedStepRef.current, nextStep);
+                            currentStepRef.current = nextStep;
+                            setCurrentStep(nextStep);
+                            syncState({ currentStep: nextStep });
+                          }}
                           onBack={() => setCurrentStep(5)}
                         />
                       ) : currentStep === 7 ? (

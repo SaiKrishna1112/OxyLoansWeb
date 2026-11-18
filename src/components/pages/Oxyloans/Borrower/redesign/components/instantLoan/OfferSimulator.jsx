@@ -21,7 +21,7 @@ const OfferSimulator = ({ underwritingResult, rules, onSelectOffer }) => {
 
   // Local interactive slider state
   const [sliderAmount, setSliderAmount] = useState(optimalCandidate?.amount || 50000);
-  const [sliderTenure, setSliderTenure] = useState(optimalCandidate?.tenure || 6);
+  const [sliderTenure, setSliderTenure] = useState(6); // Default 6 Months Lock-in
 
   // Live calculation for currently dragged slider state
   const liveCandidate = useMemo(() => {
@@ -141,9 +141,14 @@ const OfferSimulator = ({ underwritingResult, rules, onSelectOffer }) => {
 
               {/* Selector 2: Tenure */}
               <div className="mb-4">
-                <label className="fw-bold text-dark mb-2 d-block">Simulated Tenure Period</label>
+                <label className="fw-bold text-dark mb-2 d-block">Simulated Locking Period / Tenure</label>
                 <div className="d-flex flex-wrap gap-2">
-                  {[1, 3, 6, 9, 12, 18, 24].map((t) => (
+                  {[
+                    { t: 1, label: "⚡ 1M (30 Days)" },
+                    { t: 3, label: "⚡ 3 Months (Starter)" },
+                    { t: 6, label: "🔒 6M Lock-in (Post 1st Repayment)" },
+                    { t: 12, label: "🔒 12M Lock-in (Post 6M Loan)" },
+                  ].map(({ t, label }) => (
                     <button
                       key={t}
                       type="button"
@@ -152,7 +157,7 @@ const OfferSimulator = ({ underwritingResult, rules, onSelectOffer }) => {
                       }`}
                       onClick={() => setSliderTenure(t)}
                     >
-                      {t === 1 ? "1M (Bullet)" : `${t} Months`}
+                      {label}
                     </button>
                   ))}
                 </div>

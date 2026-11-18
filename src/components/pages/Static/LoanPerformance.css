@@ -1,0 +1,408 @@
+/* ==========================================================================
+   LOAN PERFORMANCE DETAILS CSS - OxyLoans
+   Exact visual match with user's provided screen specification
+   ========================================================================== */
+
+.oxy-loan-perf-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-loan-perf-main {
+  flex: 1;
+  background-color: #ffffff;
+  padding: 50px 20px 90px 20px;
+}
+
+.oxy-loan-perf-card {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Green Header Title */
+.oxy-loan-perf-title {
+  color: #5c9b45;
+  font-size: 32px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 10px 0;
+  text-align: center;
+  font-family: inherit;
+}
+
+/* Subtitle verbatim from screenshot */
+.oxy-loan-perf-subtitle {
+  font-size: 16px;
+  color: #777777;
+  font-weight: 400;
+  text-align: center;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* Cyan swirl decorative divider */
+.oxy-title-divider-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.oxy-title-divider-img {
+  max-width: 312px;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Controls Bar */
+.oxy-perf-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.oxy-perf-left-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.oxy-perf-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.oxy-perf-search-box .search-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.oxy-perf-search-box input {
+  height: 36px;
+  padding: 0 32px 0 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #334155;
+  background: #ffffff;
+  min-width: 260px;
+  transition: all 0.2s ease;
+}
+
+.oxy-perf-search-box input:focus {
+  outline: none;
+  border-color: #237abf;
+  box-shadow: 0 0 0 3px rgba(35, 122, 191, 0.15);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.search-clear-btn:hover {
+  color: #334155;
+}
+
+.oxy-perf-csv-btn {
+  height: 36px;
+  padding: 0 16px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.oxy-perf-csv-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Exact --Sort by-- Dropdown Matching Screenshot */
+.oxy-perf-sort-box {
+  display: flex;
+  align-items: center;
+}
+
+.oxy-perf-sort-select {
+  height: 34px;
+  min-width: 150px;
+  border: 1px solid #475569;
+  border-radius: 2px;
+  background-color: #ffffff;
+  color: #1e293b;
+  font-size: 13px;
+  padding: 4px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.oxy-perf-sort-select:focus {
+  border-color: #237abf;
+}
+
+/* Table Wrap */
+.oxy-perf-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-top: 1px solid #dee2e6;
+  margin-bottom: 20px;
+}
+
+.oxy-perf-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 15px;
+}
+
+/* Table Headers */
+.oxy-perf-table thead th {
+  background-color: #ffffff;
+  color: #222222;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 16px 10px;
+  text-align: center;
+  vertical-align: bottom;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.oxy-perf-table th span {
+  display: block;
+}
+
+.oxy-perf-table th .th-sub {
+  margin-top: 2px;
+}
+
+.oxy-perf-table .col-sno {
+  width: 7%;
+}
+.oxy-perf-table .col-borrower {
+  width: 15%;
+}
+.oxy-perf-table .col-lender {
+  width: 15%;
+}
+.oxy-perf-table .col-amount {
+  width: 14%;
+}
+.oxy-perf-table .col-roi {
+  width: 11%;
+}
+.oxy-perf-table .col-duration {
+  width: 12%;
+}
+.oxy-perf-table .col-status {
+  width: 26%;
+}
+
+/* Zebra Striping Matching User's Screenshot Exactly */
+/* Odd rows: #dddddd, Even rows: #ffffff */
+.oxy-perf-table tbody tr:nth-child(odd) {
+  background-color: #dddddd;
+}
+
+.oxy-perf-table tbody tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+.oxy-perf-table tbody tr:hover {
+  filter: brightness(0.97);
+}
+
+.oxy-perf-table tbody td {
+  padding: 16px 10px;
+  vertical-align: middle;
+  text-align: center;
+  font-size: 15px;
+  color: #333333;
+}
+
+.cell-sno {
+  font-weight: 400;
+}
+
+.cell-borrower,
+.cell-lender {
+  font-weight: 400;
+  font-family: inherit;
+}
+
+.cell-amount {
+  font-weight: 400;
+}
+
+.cell-roi,
+.cell-duration {
+  font-weight: 400;
+}
+
+/* Loan Status Styling Matching Screenshot */
+.cell-status {
+  font-weight: 600;
+}
+
+.cell-status.status-paid {
+  color: #2e7d32;
+  font-weight: 700;
+}
+
+.cell-status.status-ontime {
+  color: #0284c7;
+  font-weight: 700;
+}
+
+.cell-status.status-new {
+  color: #475569;
+  font-weight: 600;
+}
+
+.cell-status.status-defaulter {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.no-records-cell {
+  padding: 40px !important;
+  color: #64748b;
+  font-size: 15px;
+  background-color: #ffffff !important;
+}
+
+/* Pagination Bar */
+.oxy-perf-pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.oxy-perf-entries-info {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.oxy-perf-entries-info strong {
+  color: #1e293b;
+}
+
+.oxy-perf-page-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pag-btn {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pag-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.pag-btn.active {
+  background: #5c9b45;
+  border-color: #5c9b45;
+  color: #ffffff;
+}
+
+.pag-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.oxy-perf-pagesize-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.oxy-perf-pagesize-box select {
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .oxy-loan-perf-title {
+    font-size: 24px;
+  }
+  .oxy-loan-perf-subtitle {
+    font-size: 14px;
+  }
+  .oxy-perf-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .oxy-perf-left-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .oxy-perf-search-box input {
+    min-width: 100%;
+  }
+  .oxy-perf-sort-box {
+    justify-content: flex-end;
+  }
+  .oxy-perf-pagination-bar {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+}

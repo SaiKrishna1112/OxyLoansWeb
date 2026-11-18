@@ -1,0 +1,1342 @@
+/* ==========================================================================
+   LANDING HEADER CSS - OxyLoans (P2P NBFC)
+   Modular, standalone component matching present landing page styling
+   ========================================================================== */
+
+/* Fixed Top Disclaimer Ticker Offset & Solid Blue Foundation */
+.oxy-header-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: #237abf;
+}
+
+.oxy-header-wrapper.has-disclaimer {
+  padding-top: 26px;
+}
+
+@media (max-width: 860px) {
+  .oxy-header-wrapper.has-disclaimer {
+    padding-top: 30px;
+  }
+}
+
+/* Dynamic Luminous Scroll Progress Indicator */
+.oxy-landing-scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #237abf 0%, #00b4d8 35%, #10b981 70%, #689f38 100%);
+  z-index: 1006;
+  transition: width 0.12s ease-out;
+  box-shadow: 0 0 8px rgba(0, 180, 216, 0.6);
+  pointer-events: none;
+}
+
+.oxy-header-wrapper.has-disclaimer .oxy-landing-scroll-progress {
+  top: 26px;
+}
+
+@media (max-width: 860px) {
+  .oxy-header-wrapper.has-disclaimer .oxy-landing-scroll-progress {
+    top: 30px;
+  }
+}
+
+/* Floating Social Media Dock (Left Edge) */
+.oxy-landing-social-dock {
+  position: fixed;
+  left: 0;
+  top: 38%;
+  transform: translateY(-50%);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.oxy-landing-social-dock a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.oxy-landing-social-dock a:hover {
+  width: 42px;
+  padding-left: 6px;
+}
+
+.oxy-landing-social-dock .soc-fb { background-color: #3b5998; }
+.oxy-landing-social-dock .soc-tw { background-color: #1da1f2; }
+.oxy-landing-social-dock .soc-li { background-color: #0077b5; }
+.oxy-landing-social-dock .soc-yt { background-color: #cd201f; }
+.oxy-landing-social-dock .soc-wa { background-color: #25d366; }
+
+@media (max-width: 640px) {
+  .oxy-landing-social-dock {
+    display: none;
+  }
+}
+
+/* Top Blue Strip */
+.oxy-landing-top-blue-strip {
+  background-color: #237abf;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  z-index: 60;
+}
+
+.oxy-landing-top-blue-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.oxy-landing-top-blue-left {
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+
+.oxy-landing-top-blue-right {
+  letter-spacing: 0.5px;
+}
+
+/* Main Navbar */
+.oxy-landing-main-navbar {
+  width: 100%;
+  padding: 12px 0 14px 0;
+  position: relative;
+  z-index: 50;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 0;
+  background: linear-gradient(180deg, rgba(8, 26, 51, 0.94) 0%, rgba(6, 20, 40, 0.90) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Standalone variant (for non-hero pages like FAQ, Privacy, Terms) */
+.oxy-landing-main-navbar.standalone-nav {
+  background: rgba(11, 25, 48, 0.96);
+  border-bottom: 2px solid #237abf;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Fixed Placeholder when navbar becomes fixed to prevent content jumps */
+.oxy-landing-navbar-placeholder {
+  height: 75px;
+  width: 100%;
+}
+
+/* Scrolled / Fixed Navbar State */
+.oxy-landing-main-navbar.scrolled {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 10px 0;
+  margin-bottom: 0;
+  background: rgba(11, 25, 48, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 2px solid #237abf;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  z-index: 1001;
+  animation: slideNavDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oxy-header-wrapper.has-disclaimer .oxy-landing-main-navbar.scrolled {
+  top: 26px;
+}
+
+@media (max-width: 860px) {
+  .oxy-header-wrapper.has-disclaimer .oxy-landing-main-navbar.scrolled {
+    top: 30px;
+  }
+}
+
+@keyframes slideNavDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.oxy-landing-navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Brand */
+.oxy-landing-navbar-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-landing-logo-link {
+  display: inline-block;
+  line-height: 1;
+}
+
+.oxy-landing-nav-logo {
+  height: 38px;
+  width: auto;
+  display: block;
+}
+
+.oxy-landing-trade-name {
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  color: #94a3b8;
+  font-weight: 700;
+  margin-top: 3px;
+  text-transform: uppercase;
+}
+
+/* Nav Menu */
+.oxy-landing-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+/* Dropdown Container */
+.oxy-nav-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.oxy-nav-link {
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.oxy-nav-link:hover,
+.oxy-nav-link.active {
+  color: #38bdf8;
+}
+
+.oxy-nav-link.has-dropdown::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  margin-left: 4px;
+  vertical-align: middle;
+  transition: transform 0.2s ease;
+}
+
+.oxy-nav-dropdown-wrap.open .oxy-nav-link.has-dropdown::after {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menus */
+.oxy-nav-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 285px;
+  max-height: min(480px, calc(100vh - 120px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  background: #ffffff;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  padding: 8px 0;
+  display: none;
+  flex-direction: column;
+  z-index: 200;
+  border-top: 3px solid #237abf;
+
+  /* Modern W3C Standard Scrollbar for Firefox & compliant browsers */
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* Custom Scrollbar for Chrome, Edge, Safari */
+.oxy-nav-dropdown-menu::-webkit-scrollbar {
+  width: 7px;
+}
+
+.oxy-nav-dropdown-menu::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+  margin: 6px 2px;
+}
+
+.oxy-nav-dropdown-menu::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+.oxy-nav-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #237abf;
+}
+
+.oxy-nav-dropdown-menu::-webkit-scrollbar-thumb:active {
+  background: #1a5c91;
+}
+
+.oxy-nav-dropdown-wrap.open .oxy-nav-dropdown-menu {
+  display: flex;
+  animation: dropFadeIn 0.2s ease;
+}
+
+@keyframes dropFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.oxy-nav-dropdown-menu.green-dropdown {
+  border-top-color: #689f38;
+}
+
+.oxy-nav-dropdown-menu.blue-dropdown {
+  border-top-color: #0284c7;
+}
+
+.oxy-nav-dropdown-menu.orange-dropdown {
+  border-top-color: #d97706;
+}
+
+.oxy-dropdown-category-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  padding: 8px 16px 4px 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 4px;
+}
+
+.oxy-dropdown-category-title:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+.oxy-dropdown-item {
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+}
+
+.oxy-dropdown-item:hover {
+  background: #f8fafc;
+  color: #0284c7;
+  padding-left: 20px;
+}
+
+/* ==========================================================================
+   MULTI-TIER RESOURCES MEGA DROPDOWN (Main Name -> Submenu -> Its Submenu)
+   ========================================================================== */
+
+.oxy-nav-dropdown-menu.oxy-resources-mega-dropdown {
+  min-width: 630px;
+  max-width: 660px;
+  min-height: 400px;
+  max-height: 450px;
+  overflow: hidden;
+  padding: 0;
+  display: none;
+  flex-direction: row;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-top: 3px solid #0284c7;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08);
+  z-index: 1050;
+}
+
+.oxy-nav-dropdown-wrap.open .oxy-nav-dropdown-menu.oxy-resources-mega-dropdown {
+  display: flex;
+  animation: dropFadeInCenter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropFadeInCenter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* 1. Left Column: Submenu Categories ("Limit Names") */
+.oxy-resources-category-list {
+  width: 230px;
+  min-width: 230px;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oxy-resources-category-header {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  padding: 6px 10px 8px 10px;
+  text-transform: uppercase;
+}
+
+.oxy-resources-cat-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid #edf2f7;
+}
+
+.oxy-cat-footer-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #475569;
+  background: #ffffff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.oxy-cat-footer-dot {
+  width: 6px;
+  height: 6px;
+  min-width: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.oxy-resource-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+  width: 100%;
+  position: relative;
+}
+
+.oxy-resource-cat-item:hover {
+  background: #edf2f7;
+  color: #0284c7;
+}
+
+.oxy-resource-cat-item.active {
+  background: #ffffff;
+  color: #0284c7;
+  font-weight: 700;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.oxy-cat-icon-wrap {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: #e0f2fe;
+  color: #0284c7;
+  transition: all 0.18s ease;
+}
+
+.oxy-resource-cat-item.active .oxy-cat-icon-wrap {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.oxy-cat-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-cat-title {
+  font-size: 13px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oxy-cat-badge {
+  font-size: 10.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: 1px;
+}
+
+.oxy-resource-cat-item.active .oxy-cat-badge {
+  color: #0284c7;
+}
+
+.oxy-cat-arrow {
+  font-size: 11px;
+  color: #94a3b8;
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.oxy-resource-cat-item.active .oxy-cat-arrow {
+  color: #0284c7;
+  transform: translateX(2px);
+}
+
+/* 2. Right Column: Its Submenu (Child Items Grid) */
+.oxy-resources-items-pane {
+  flex: 1;
+  background: #ffffff;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 450px;
+}
+
+.oxy-resources-items-header {
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.oxy-items-header-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #0284c7;
+  letter-spacing: 0.8px;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.oxy-items-header-desc {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.oxy-resources-items-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.oxy-resource-sub-item {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  background: transparent;
+  transition: all 0.16s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.oxy-resource-sub-item:hover {
+  background: #f0f9ff;
+  border-color: #e0f2fe;
+  transform: translateX(3px);
+}
+
+.oxy-sub-item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-sub-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.oxy-resource-sub-item:hover .oxy-sub-item-name {
+  color: #0284c7;
+}
+
+.oxy-sub-item-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.external-icon {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* CTA Buttons in Nav */
+.oxy-nav-link.btn-join-today {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.25s ease;
+}
+
+.oxy-nav-link.btn-join-today:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.45);
+  color: #ffffff;
+}
+
+.oxy-nav-separator {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 300;
+}
+
+.oxy-nav-link.btn-login {
+  color: #ffffff;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.oxy-nav-link.btn-login:hover {
+  color: #38bdf8;
+}
+
+.oxy-nav-icon-link {
+  color: #ffffff;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.oxy-nav-icon-link:hover {
+  color: #38bdf8;
+  transform: scale(1.15);
+}
+
+.nav-icon {
+  font-size: 14px;
+}
+
+/* Responsive Navbar & Mobile Navigation */
+.oxy-mobile-actions-cluster {
+  display: none;
+}
+
+.oxy-mobile-drawer-backdrop {
+  display: none;
+}
+
+.oxy-mobile-drawer {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .oxy-landing-nav-menu {
+    gap: 16px;
+  }
+  .oxy-nav-link {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 991px) {
+  /* Hide horizontal desktop nav */
+  .oxy-landing-nav-menu {
+    display: none !important;
+  }
+
+  .oxy-landing-navbar-container {
+    padding: 0 16px;
+  }
+
+  .oxy-landing-nav-logo {
+    height: 32px;
+  }
+
+  .oxy-landing-trade-name {
+    font-size: 7.5px;
+    letter-spacing: 0.4px;
+  }
+
+  /* Show mobile quick action + hamburger button */
+  .oxy-mobile-actions-cluster {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Quick action pill button */
+  .oxy-mobile-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .oxy-mobile-pill-btn.join {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+  }
+
+  .oxy-mobile-pill-btn.dashboard {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  }
+
+  .oxy-mobile-pill-btn:active {
+    transform: scale(0.96);
+  }
+
+  .pill-icon {
+    font-size: 12px;
+  }
+
+  /* Hamburger toggle button */
+  .oxy-mobile-hamburger-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    padding: 0;
+  }
+
+  .oxy-mobile-hamburger-btn:hover,
+  .oxy-mobile-hamburger-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #38bdf8;
+  }
+
+  /* Backdrop */
+  .oxy-mobile-drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 8, 18, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1040;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .oxy-mobile-drawer-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Slide-Out Drawer */
+  .oxy-mobile-drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(88vw, 360px);
+    height: 100vh;
+    background: #0b1a2e;
+    z-index: 1050;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
+
+  .oxy-mobile-drawer.open {
+    transform: translateX(0);
+  }
+
+  /* Drawer Header */
+  .oxy-mobile-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: rgba(6, 17, 33, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .oxy-mobile-drawer-brand {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .oxy-mobile-drawer-logo {
+    height: 30px;
+    width: auto;
+    display: block;
+  }
+
+  .oxy-mobile-drawer-sub {
+    font-size: 8px;
+    color: #38bdf8;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    margin-top: 2px;
+  }
+
+  .oxy-mobile-drawer-close {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .oxy-mobile-drawer-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  /* Auth & Action Hero Card */
+  .oxy-mobile-auth-card {
+    margin: 16px;
+    background: linear-gradient(135deg, rgba(30, 58, 95, 0.6) 0%, rgba(15, 33, 58, 0.8) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .auth-guest-pitch {
+    margin-bottom: 12px;
+  }
+
+  .pitch-tag {
+    font-size: 9px;
+    font-weight: 800;
+    color: #38bdf8;
+    letter-spacing: 0.8px;
+    display: inline-block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .pitch-heading {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .oxy-mobile-auth-logged {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .oxy-mobile-user-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #e2e8f0;
+  }
+
+  .oxy-mobile-user-status .user-icon {
+    font-size: 26px;
+    color: #38bdf8;
+  }
+
+  .status-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .status-role {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .oxy-mobile-auth-btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .oxy-mobile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-join-mobile,
+  .btn-dash {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  .btn-login-mobile {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .btn-logout {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+  }
+
+  .btn-logout:hover {
+    background: #ef4444;
+    color: #ffffff;
+  }
+
+  /* Navigation List */
+  .oxy-mobile-nav-list {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+    gap: 4px;
+  }
+
+  .oxy-mobile-nav-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .oxy-mobile-nav-trigger,
+  .oxy-mobile-nav-link {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 8px;
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-decoration: none;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.2s ease, background 0.2s ease;
+    border-radius: 6px;
+  }
+
+  .oxy-mobile-nav-trigger:hover,
+  .oxy-mobile-nav-link:hover,
+  .oxy-mobile-nav-link.active {
+    color: #38bdf8;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .trigger-left,
+  .link-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-group-icon {
+    font-size: 16px;
+    color: #94a3b8;
+  }
+
+  .icon-green {
+    color: #10b981;
+  }
+
+  .icon-blue {
+    color: #38bdf8;
+  }
+
+  .trigger-arrow {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .mobile-link-badge {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+  }
+
+  .mobile-link-badge.green {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+
+  .mobile-link-badge.blue {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+  }
+
+  /* Accordion Body */
+  .oxy-mobile-accordion-body {
+    background: rgba(5, 14, 26, 0.6);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: mobileDropFade 0.2s ease;
+  }
+
+  @keyframes mobileDropFade {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .oxy-mobile-sublink {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .oxy-mobile-sublink.btn-sublink {
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    width: 100%;
+    font-family: inherit;
+  }
+
+  .oxy-mobile-sublink:hover {
+    color: #ffffff;
+    background: rgba(56, 189, 248, 0.12);
+  }
+
+  .sublink-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #38bdf8;
+    margin-top: 7px;
+    flex-shrink: 0;
+  }
+
+  .sublink-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sublink-title {
+    color: #f1f5f9;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .sublink-desc {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 1px;
+  }
+
+  .ext-icon {
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  /* Resource Grouped Categories */
+  .oxy-mobile-resource-category {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .oxy-mobile-resource-category:last-child {
+    border-bottom: none;
+  }
+
+  .oxy-mobile-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #38bdf8;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+  }
+
+  .oxy-mobile-cat-items {
+    display: flex;
+    flex-direction: column;
+    padding-left: 6px;
+  }
+
+  /* Support & Helpline Dock */
+  .oxy-mobile-drawer-support {
+    margin-top: auto;
+    padding: 20px 16px;
+    background: rgba(4, 12, 24, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .support-section-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .support-buttons-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .oxy-mobile-support-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .oxy-mobile-support-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .oxy-mobile-support-btn.call .sup-icon {
+    color: #38bdf8;
+  }
+
+  .oxy-mobile-support-btn.mail .sup-icon {
+    color: #f59e0b;
+  }
+
+  .oxy-mobile-support-btn.whatsapp .sup-icon {
+    color: #25d366;
+  }
+
+  .sup-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sup-name {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .sup-detail {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .oxy-mobile-social-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .oxy-mobile-social-row a {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .oxy-mobile-social-row a:hover {
+    background: #0284c7;
+    transform: translateY(-2px);
+  }
+
+  .oxy-mobile-drawer-footer {
+    text-align: center;
+    font-size: 10px;
+    color: #64748b;
+    line-height: 1.4;
+  }
+
+  .oxy-mobile-drawer-footer p {
+    margin: 0;
+  }
+
+  .oxy-mobile-drawer-footer .rbi-cert {
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+}
+
+.oxy-header-logout-btn {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  padding: 8px 0 !important;
+  outline: none;
+}
+
+.oxy-header-logout-btn:hover {
+  color: #ef4444 !important;
+}

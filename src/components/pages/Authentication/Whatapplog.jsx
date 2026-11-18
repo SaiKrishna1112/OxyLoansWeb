@@ -24,6 +24,7 @@ import { toastrError, toastrSuccess } from "../Base UI Elements/Toast";
 import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import Whatappuser from "./Whatappuser";
 import VersionBadge from "./VersionBadge";
+import LoginDisclaimerTicker from "./LoginDisclaimerTicker";
 import "./loginotp.css";
 
 const CountrySelectWithCallingCode = ({
@@ -458,7 +459,8 @@ const Whatapplog = () => {
           </div>
         </div>
       ) : (
-        <div className="loginotp-page">
+        <div className="loginotp-page has-disclaimer">
+          <LoginDisclaimerTicker />
           <div className="loginotp-two-cards-wrap">
             {/* Left Card - Hero Artwork with Micro-Animations */}
             <div className="loginotp-left-card">

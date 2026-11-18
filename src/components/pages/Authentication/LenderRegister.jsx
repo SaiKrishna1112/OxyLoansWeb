@@ -155,7 +155,7 @@ export default function LenderRegister() {
         referrerIderror: "",
         uniqueNumber: "0",
       }));
-      localStorage.setItem("uniqnumber", "0");
+      sessionStorage.setItem("uniqnumber", "0");
       return true;
     }
 
@@ -171,15 +171,14 @@ export default function LenderRegister() {
         const fetchedUniqueNumber =
           response?.data?.uniqueNumber ||
           (typeof response?.data === "string" ? response.data : val);
-
         setRegistrationField((prev) => ({
           ...prev,
           referrerIderror: "",
           uniqueNumber: fetchedUniqueNumber,
         }));
-
-        localStorage.setItem("uniqnumber", fetchedUniqueNumber);
-        return true;
+        sessionStorage.setItem("uniqnumber", fetchedUniqueNumber);
+        console.log("Referrer ID validated successfully:", val, "Unique Number:", sessionStorage.getItem("uniqnumber"));
+        return true; // valid
       } else {
         const errMsg =
           response?.response?.data?.errorMessage ||
@@ -191,8 +190,8 @@ export default function LenderRegister() {
           referrerIderror: errMsg,
           uniqueNumber: "0",
         }));
-
-        localStorage.setItem("uniqnumber", "0");
+        console.log("Referrer ID validation failed:", val, "Error:", errMsg);
+        sessionStorage.setItem("uniqnumber", "0");
         return false;
       }
     } catch (err) {
@@ -202,7 +201,7 @@ export default function LenderRegister() {
         uniqueNumber: "0",
       }));
 
-      localStorage.setItem("uniqnumber", "0");
+      sessionStorage.setItem("uniqnumber", "0");
       return false;
     }
   };

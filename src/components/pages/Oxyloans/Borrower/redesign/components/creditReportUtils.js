@@ -1,295 +1,8 @@
 // Utilities, mock fallback data, and parser for Credit Report integration (PaySprint / VerifyA2Z bureau)
 
-export const RAW_SAMPLE_RESPONSE = {
-  success: true,
-  httpStatus: 200,
-  tokenUsed: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0aW1lc3RhbXAiOjE3OTA5MjQ4MjEsInBhcnRuZXJJZCI6IkNPUlAwMDAwMjY4MCIsInJlcWlkIjozOTA5OTgyMjZ9.v8isXl68yVsYgwkqGL52Ka_c323Zk3sESr1YxMmcInA",
-  requestUrl: "https://api.verifya2z.com/api/v1/verification/credit_report_checker",
-  rawResponse: JSON.stringify({
-    statuscode: 200,
-    status: true,
-    message: "Credit Report fetched successfully",
-    reference_id: 196843658,
-    data: {
-      cCRResponse: {
-        status: "1",
-        reportOrderNumber: "2989093135",
-        cIRReportDataLst: [
-          {
-            cIRReportData: {
-              iDAndContactInfo: {
-                personalInfo: {
-                  name: {
-                    fullName: "DHARMAPURI SAI KRISHNA",
-                    firstName: "DHARMAPURI",
-                    middleName: "SAI KRISHNA"
-                  },
-                  dateOfBirth: "1999-11-08",
-                  gender: "Male",
-                  age: { age: "27" },
-                  totalIncome: "25000"
-                },
-                identityInfo: {
-                  pANId: [{ seq: "1", reportedDate: "2026-09-23", idNumber: "JUXPK2964M" }],
-                  otherId: [{ seq: "1", reportedDate: "2026-06-30", idNumber: "60011901969107" }]
-                },
-                addressInfo: [
-                  { seq: "1", reportedDate: "2026-09-23", address: "TIRUMALAGIRI HYDERABAD TELANGANA", state: "TS", postal: "500085", type: "Permanent" },
-                  { seq: "2", reportedDate: "2026-09-23", address: "OXYLOANS HYDERABAD TELANGANA", state: "TS", postal: "500085", type: "Office" }
-                ],
-                phoneInfo: [
-                  { seq: "1", typeCode: "M", reportedDate: "2026-09-23", number: "7702443666" },
-                  { seq: "2", typeCode: "M", reportedDate: "2026-06-30", number: "918125861874" }
-                ],
-                emailAddressInfo: [
-                  { seq: "1", reportedDate: "2026-02-01", emailAddress: "SOMETHINGSPECIALDAY@GMAIL.COM" }
-                ]
-              },
-              retailAccountsSummary: {
-                noOfAccounts: "7",
-                noOfActiveAccounts: "1",
-                noOfWriteOffs: "0",
-                totalPastDue: "0.00",
-                mostSevereStatusWithIn24Months: "Non-Delnqt",
-                singleHighestCredit: "150467.00",
-                singleHighestSanctionAmount: "0.00",
-                totalHighCredit: "150467.00",
-                averageOpenBalance: "125586.00",
-                singleHighestBalance: "125586.00",
-                noOfPastDueAccounts: "0",
-                noOfZeroBalanceAccounts: "0",
-                recentAccount: "Credit Card on 10-03-2022",
-                oldestAccount: "Credit Card on 14-12-2018",
-                totalBalanceAmount: "125586.00",
-                totalSanctionAmount: "0.00",
-                totalCreditLimit: "156000.0",
-                totalMonthlyPaymentAmount: "0.00"
-              },
-              scoreDetails: [
-                {
-                  type: "ERS",
-                  version: "4.0",
-                  name: "ERS4.0",
-                  value: "802",
-                  scoringElements: [
-                    { type: "RES", seq: "1", code: "703", description: "Total Utilization" },
-                    { type: "RES", seq: "2", code: "704", description: "Credit Card Utilization" },
-                    { type: "RES", seq: "3", code: "702", description: "Total Credit Exposure" }
-                  ]
-                }
-              ],
-              retailAccountDetails: [
-                {
-                  seq: "1",
-                  accountNumber: "0252965746111987943",
-                  institution: "SBI CARDS AND PAYMENT SERVICES LIMITED",
-                  accountType: "Credit Card",
-                  ownershipType: "Individual",
-                  balance: "125586",
-                  pastDueAmount: "0",
-                  open: "Yes",
-                  highCredit: "150467",
-                  lastPaymentDate: "2026-09-23",
-                  dateReported: "2026-09-23",
-                  dateOpened: "2022-03-10",
-                  termFrequency: "Monthly",
-                  creditLimit: "156000",
-                  accountStatus: "Current Account",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "09-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "08-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "07-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "06-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "05-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "04-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "03-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "02-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "01-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "12-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "11-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "10-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "09-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "08-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" }
-                  ]
-                },
-                {
-                  seq: "2",
-                  accountNumber: "9406455010135272",
-                  institution: "Kotak Mahindra Bank Ltd",
-                  accountType: "Credit Card",
-                  ownershipType: "Individual",
-                  balance: "89883",
-                  pastDueAmount: "0",
-                  lastPayment: "107516",
-                  open: "No",
-                  highCredit: "161856",
-                  lastPaymentDate: "2026-09-03",
-                  dateReported: "2026-09-23",
-                  dateOpened: "2019-12-10",
-                  dateClosed: "2021-03-31",
-                  termFrequency: "Monthly",
-                  creditLimit: "162000",
-                  accountStatus: "Current Account",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "09-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "08-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "07-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "06-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "05-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "04-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "03-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "02-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "01-26", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "12-25", paymentStatus: "*", suitFiledStatus: "*", assetClassificationStatus: "*" }
-                  ]
-                },
-                {
-                  seq: "3",
-                  accountNumber: "7280514346111996607",
-                  institution: "SBI CARDS AND PAYMENT SERVICES LIMITED",
-                  accountType: "Credit Card",
-                  ownershipType: "Individual",
-                  balance: "0",
-                  pastDueAmount: "0",
-                  open: "No",
-                  highCredit: "75339",
-                  lastPaymentDate: "2025-06-18",
-                  dateReported: "2025-08-30",
-                  dateOpened: "2022-03-10",
-                  dateClosed: "2025-07-09",
-                  reason: "Closed Account",
-                  termFrequency: "Monthly",
-                  creditLimit: "0",
-                  accountStatus: "Closed Account",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "08-25", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "07-25", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "06-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "05-25", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" }
-                  ]
-                },
-                {
-                  seq: "4",
-                  accountNumber: "9406151000648776",
-                  institution: "Kotak Mahindra Bank Ltd",
-                  accountType: "Credit Card",
-                  ownershipType: "Individual",
-                  balance: "0",
-                  pastDueAmount: "0",
-                  open: "No",
-                  highCredit: "8284",
-                  lastPaymentDate: "2021-01-04",
-                  dateReported: "2025-04-22",
-                  dateOpened: "2019-12-10",
-                  dateClosed: "2021-10-21",
-                  termFrequency: "Monthly",
-                  accountStatus: "Closed Account",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "04-25", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "10-21", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "*" }
-                  ]
-                },
-                {
-                  seq: "5",
-                  accountNumber: "9406150005334457",
-                  institution: "Kotak Mahindra Bank Ltd",
-                  accountType: "Credit Card",
-                  ownershipType: "Individual",
-                  balance: "0",
-                  pastDueAmount: "0",
-                  open: "No",
-                  highCredit: "2662",
-                  lastPaymentDate: "2020-10-04",
-                  dateReported: "2025-04-22",
-                  dateOpened: "2019-12-10",
-                  dateClosed: "2021-10-21",
-                  termFrequency: "Monthly",
-                  accountStatus: "Closed Account",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "04-25", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "*" }
-                  ]
-                },
-                {
-                  seq: "6",
-                  accountNumber: "0001014550015442292",
-                  institution: "HDFC Bank Limited",
-                  accountType: "Credit Card",
-                  ownershipType: "Individual",
-                  balance: "0",
-                  open: "No",
-                  highCredit: "55550",
-                  lastPaymentDate: "2022-01-29",
-                  dateReported: "2023-07-01",
-                  dateOpened: "2018-12-14",
-                  dateClosed: "2023-03-01",
-                  reason: "Closed Account",
-                  creditLimit: "150000",
-                  accountStatus: "Closed Account",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "07-23", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "*" },
-                    { key: "03-23", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "*" }
-                  ]
-                },
-                {
-                  seq: "7",
-                  accountNumber: "6439810",
-                  institution: "HDFC Bank Limited",
-                  accountType: "Personal Loan",
-                  ownershipType: "Individual",
-                  balance: "0",
-                  pastDueAmount: "0",
-                  lastPayment: "3523",
-                  open: "No",
-                  sanctionAmount: "100000",
-                  lastPaymentDate: "2022-05-07",
-                  dateReported: "2022-05-31",
-                  dateOpened: "2019-05-16",
-                  dateClosed: "2022-05-07",
-                  reason: "Closed Account",
-                  termFrequency: "Monthly",
-                  accountStatus: "Closed Account",
-                  assetClassification: "Standard",
-                  source: "INDIVIDUAL",
-                  history48Months: [
-                    { key: "05-22", paymentStatus: "CLSD", suitFiledStatus: "*", assetClassificationStatus: "STD" },
-                    { key: "04-22", paymentStatus: "000", suitFiledStatus: "*", assetClassificationStatus: "STD" }
-                  ]
-                }
-              ],
-              enquirySummary: {
-                purpose: "ALL",
-                total: "0",
-                past30Days: "0",
-                past12Months: "0",
-                past24Months: "0"
-              },
-              otherKeyInd: {
-                ageOfOldestTrade: "94",
-                numberOfOpenTrades: "1",
-                allLinesEVERWritten: "0.00",
-                allLinesEVERWrittenIn9Months: "0",
-                allLinesEVERWrittenIn6Months: "0"
-              },
-              recentActivities: {
-                accountsDeliquent: "0",
-                accountsOpened: "0",
-                totalInquiries: "0",
-                accountsUpdated: "2"
-              }
-            }
-          }
-        ]
-      }
-    }
-  }),
-  message: "Credit Report fetched successfully"
-};
+// Dummy credit report sample removed - genuine API response required
+export const RAW_SAMPLE_RESPONSE = null;
+
 
 /**
  * Format Indian Rupee currency
@@ -371,7 +84,19 @@ export const maskAccountNumber = (accNo) => {
 export const parseCreditReportData = (apiResponse) => {
   if (!apiResponse) return null;
 
-  let raw = apiResponse?.rawResponse || apiResponse;
+  // Handle explicit API response where no report is found:
+  // e.g. { id: null, borrowerId: 68506, success: false, httpStatus: 0, rawResponse: null, message: "No credit report found for borrowerId 68506" }
+  if (
+    apiResponse.success === false ||
+    apiResponse.httpStatus === 0 ||
+    (typeof apiResponse.message === "string" && apiResponse.message.toLowerCase().includes("no credit report"))
+  ) {
+    if (!apiResponse.rawResponse && !apiResponse.data?.cCRResponse && !apiResponse.cCRResponse) {
+      return null;
+    }
+  }
+
+  let raw = apiResponse?.rawResponse || apiResponse?.data || apiResponse;
   if (typeof raw === "string") {
     try {
       raw = JSON.parse(raw);
@@ -380,17 +105,37 @@ export const parseCreditReportData = (apiResponse) => {
     }
   }
 
+  if (raw && typeof raw === "object") {
+    if (
+      (raw.success === false || raw.httpStatus === 0 || (typeof raw.message === "string" && raw.message.toLowerCase().includes("no credit report"))) &&
+      !raw.rawResponse &&
+      !raw.cCRResponse &&
+      !raw.data?.cCRResponse
+    ) {
+      return null;
+    }
+  }
+
   // Find cIRReportData
-  const cCRResponse = raw?.data?.cCRResponse || raw?.cCRResponse || apiResponse?.data?.cCRResponse;
-  const reportOrderNumber = cCRResponse?.reportOrderNumber || raw?.reference_id || "";
+  const cCRResponse = raw?.data?.cCRResponse || raw?.cCRResponse || apiResponse?.data?.cCRResponse || (raw?.cIRReportDataLst ? raw : null);
+  const reportOrderNumber = cCRResponse?.reportOrderNumber || raw?.reference_id || apiResponse?.reference_id || "";
   const referenceId = raw?.reference_id || apiResponse?.reference_id || "";
 
-  const reportList = cCRResponse?.cIRReportDataLst || [];
-  const cIRData = reportList[0]?.cIRReportData || {};
+  const reportList = cCRResponse?.cIRReportDataLst || raw?.cIRReportDataLst || (cCRResponse?.cIRReportData ? [cCRResponse] : []);
+  const cIRData = reportList[0]?.cIRReportData || reportList[0] || cCRResponse?.cIRReportData || {};
 
-  const scoreDetails = cIRData?.scoreDetails || [];
+  const scoreDetails = cIRData?.scoreDetails || raw?.scoreDetails || [];
   const primaryScoreObj = scoreDetails[0] || {};
-  const scoreValue = Number(primaryScoreObj?.value || 0);
+  let scoreValue = Number(primaryScoreObj?.value || 0);
+  if (!scoreValue) {
+    scoreValue = Number(raw?.cibilScore || raw?.score || apiResponse?.cibilScore || apiResponse?.score || apiResponse?.creditScore || 0);
+  }
+
+  const retailAccountsList = cIRData?.retailAccountDetails || [];
+  const pInfo = cIRData?.iDAndContactInfo?.personalInfo || {};
+  if (!scoreValue && retailAccountsList.length === 0 && !pInfo?.name?.fullName && !pInfo?.name?.firstName && !apiResponse?.fullName) {
+    return null;
+  }
 
   const personalInfo = cIRData?.iDAndContactInfo?.personalInfo || {};
   const identityInfo = cIRData?.iDAndContactInfo?.identityInfo || {};

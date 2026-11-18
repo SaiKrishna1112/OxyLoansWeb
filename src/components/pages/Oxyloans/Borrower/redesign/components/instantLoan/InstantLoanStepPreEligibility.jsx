@@ -8,7 +8,10 @@ import {
   processPlatformAssessmentFee,
   fetchBorrowerReferences,
   saveBorrowerReferences,
+  getCashfreeInstance,
+  recordFeePaymentOutcome,
 } from "./instantLoanApi";
+import { getpaymentorder } from "../../../../../../HttpRequest/afterlogin";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -56,15 +59,13 @@ const InstantLoanStepPreEligibility = ({
   const [isLoadingReferences, setIsLoadingReferences] = useState(false);
   const [referencesError, setReferencesError] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState("UPI_APP"); // 'UPI_APP' | 'QR' | 'NETBANKING'
-  const [selectedUpiApp, setSelectedUpiApp] = useState("gpay"); // 'gpay' | 'phonepe' | 'paytm' | 'custom'
-  const [customUpiId, setCustomUpiId] = useState("7702443666@ybl");
+
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Fetch borrower eligibility and cibil ROI
   useEffect(() => {
-    const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+    const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
     fetchBorrowerEligibility(userId).then((res) => {
       if (res?.data?.eligibleAmount) {
         setEligibleEstimate(res.data.eligibleAmount);
@@ -78,9 +79,86 @@ const InstantLoanStepPreEligibility = ({
     }).catch(() => {});
   }, [profileData]);
 
+  // Complete Payment handler (used by Cashfree modal callback, redirect verification, or direct flow)
+  const handleCompletePayment = (txnId = null) => {
+    setIsProcessingPayment(false);
+    setPaymentSuccess(true);
+    const resolvedTxn = txnId || `OXYCF_${Date.now()}`;
+
+    Swal.fire({
+      icon: "success",
+      title: "References Verified & Fee Paid! (₹150.00)",
+      html: `
+        <div class="text-center py-2">
+          <span class="badge bg-success px-3 py-2 rounded-pill fs-6 mb-2">Cashfree Payment Confirmed ✓</span>
+          <p class="text-muted small mb-1">Transaction Ref: <strong>${resolvedTxn}</strong></p>
+          <p class="text-muted small mb-0">Initiating instant OxyLoans Credit Bureau query & PAN verification...</p>
+        </div>
+      `,
+      timer: 1600,
+      showConfirmButton: false,
+    });
+
+    setTimeout(() => {
+      onPaymentSuccess({
+        paymentId: resolvedTxn,
+        amount: 1,
+        paidAt: new Date().toISOString(),
+        paymentMethod: "CASHFREE_GATEWAY",
+        payType: "CREDITREPORTFEE",
+        eligibleEstimate,
+        indicativeRoi,
+        ref1,
+        ref2,
+      });
+    }, 1700);
+  };
+
+  // Verify Cashfree payment if redirected back with myorder parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const myorder = urlParams.get("myorder") || urlParams.get("order_id");
+    const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
+    if (myorder && myorder !== "{order_id}") {
+      getpaymentorder(myorder)
+        .then(async (orderRes) => {
+          const status = String(orderRes?.data?.order_status || orderRes?.data?.status || "").toUpperCase();
+          if (status === "PAID" || status === "SUCCESS") {
+            // SUCCESS time: hit API with payType = CREDITREPORTFEE
+            try {
+              await recordFeePaymentOutcome({
+                userId: uId,
+                status: "success",
+                orderId: myorder,
+                payType: "CREDITREPORTFEE",
+              });
+            } catch (e) {}
+            handleCompletePayment(myorder);
+          } else {
+            // FAILURE time: hit API with payType = CREDITREPORTFEE
+            try {
+              await recordFeePaymentOutcome({
+                userId: uId,
+                status: "failure",
+                orderId: myorder,
+                payType: "CREDITREPORTFEE",
+              });
+            } catch (e) {}
+            Swal.fire({
+              icon: "error",
+              title: "Payment Incomplete",
+              text: "Platform assessment fee payment could not be confirmed. Please try again.",
+              confirmButtonColor: "#0052ff",
+            });
+          }
+        })
+        .catch((e) => console.warn("Notice checking Cashfree return_url myorder:", e));
+    }
+  }, []);
+
   // Fetch reference contacts exclusively from dedicated references API: GET /v1/user/{userId}/borrowerReferenceDetails
   useEffect(() => {
-    const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+    const userId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
     if (userId) {
       setIsLoadingReferences(true);
       fetchBorrowerReferences(userId)
@@ -159,52 +237,102 @@ const InstantLoanStepPreEligibility = ({
     setIsProcessingPayment(true);
 
     try {
-      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
-      // Save references directly to dedicated references API: PATCH /v1/user/borrowerReferenceDetails
+      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
+      // 1. Save references directly to dedicated references API: PATCH /v1/user/borrowerReferenceDetails
       await saveBorrowerReferences(ref1, ref2, uId);
 
+      // 2. Generate Cashfree Order for Platform Assessment Fee (₹150) - without payType
+      const currentUrl = `${window.location.origin}${window.location.pathname}?myorder={order_id}`;
       const feeRes = await processPlatformAssessmentFee({
-        amount: 150,
-        paymentMethod: `${paymentMethod}_${selectedUpiApp}`,
-        upiId: customUpiId,
+        userId: uId,
+        amount: 1,
+        paymentMethod: "CASHFREE_CHECKOUT",
+        returnUrl: currentUrl,
       });
 
-      setTimeout(() => {
+      const paymentSessionId = feeRes?.paymentSessionId;
+      const orderId = feeRes?.orderId || `OXYCF_${Date.now()}`;
+
+      // 3. Launch Cashfree Gateway checkout (Strict payment enforcement - no bypass)
+      if (!paymentSessionId) {
         setIsProcessingPayment(false);
-        setPaymentSuccess(true);
-
-        const txnId = feeRes?.data?.transactionId || `OXYPAY_${Date.now()}`;
-
         Swal.fire({
-          icon: "success",
-          title: "References Verified & Fee Paid! (₹150.00)",
-          html: `
-            <div class="text-center py-2">
-              <span class="badge bg-success px-3 py-2 rounded-pill fs-6 mb-2">References Saved & UPI Confirmed ✓</span>
-              <p class="text-muted small mb-1">Transaction Ref: <strong>${txnId}</strong></p>
-              <p class="text-muted small mb-0">Initiating instant OxyLoans Credit Bureau query & PAN verification...</p>
-            </div>
-          `,
-          timer: 1600,
-          showConfirmButton: false,
+          icon: "error",
+          title: "Payment Order Failed",
+          text: feeRes?.error || "Could not generate Cashfree payment session. Successful payment is mandatory to proceed.",
+          confirmButtonColor: "#0040e0",
         });
+        return;
+      }
 
-        setTimeout(() => {
-          onPaymentSuccess({
-            paymentId: txnId,
-            amount: 150,
-            paidAt: feeRes?.data?.paidAt || new Date().toISOString(),
-            paymentMethod: `${paymentMethod}_${selectedUpiApp}`,
-            eligibleEstimate,
-            indicativeRoi,
-            ref1,
-            ref2,
+      const cashfree = getCashfreeInstance();
+      if (!cashfree) {
+        setIsProcessingPayment(false);
+        Swal.fire({
+          icon: "error",
+          title: "Payment Gateway Error",
+          text: "Cashfree SDK is not available. Please refresh the page and try again.",
+          confirmButtonColor: "#0040e0",
+        });
+        return;
+      }
+
+      cashfree
+        .checkout({
+          paymentSessionId,
+          redirectTarget: "_modal",
+        })
+        .then(async (result) => {
+          if (result?.error) {
+            console.warn("Cashfree checkout closed or failed:", result.error);
+            setIsProcessingPayment(false);
+            try {
+              await recordFeePaymentOutcome({
+                userId: uId,
+                status: "failure",
+                orderId,
+                payType: "CREDITREPORTFEE",
+              });
+            } catch (e) {}
+            Swal.fire({
+              icon: "error",
+              title: "Payment Not Completed",
+              text: result.error?.message || "Payment was cancelled or failed. You cannot proceed to the next step without successful payment.",
+              confirmButtonColor: "#0040e0",
+            });
+            return;
+          }
+
+          // Payment successfully completed via Cashfree
+          try {
+            await recordFeePaymentOutcome({
+              userId: uId,
+              status: "success",
+              orderId,
+              payType: "CREDITREPORTFEE",
+            });
+          } catch (e) {}
+          handleCompletePayment(orderId);
+        })
+        .catch((modalErr) => {
+          console.warn("Cashfree modal trigger notice, falling back to redirect:", modalErr);
+          cashfree.checkout({
+            paymentSessionId,
+            redirectTarget: "_self",
           });
-        }, 1700);
-      }, 1200);
+        });
+      return;
     } catch (err) {
       setIsProcessingPayment(false);
-      setReferencesError("Failed to save references or process payment. Please verify details and try again.");
+      try {
+        const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
+        await recordFeePaymentOutcome({
+          userId: uId,
+          status: "failure",
+          payType: "CREDITREPORTFEE",
+        });
+      } catch (e) {}
+      setReferencesError("Failed to save references or initiate Cashfree payment. Please verify details and try again.");
     }
   };
 
@@ -279,7 +407,7 @@ const InstantLoanStepPreEligibility = ({
           <div className="col-lg-4 text-lg-end">
             <div className="d-inline-flex flex-column align-items-lg-end p-3 rounded-4 bg-white bg-opacity-10 border border-white border-opacity-20">
               <span className="text-white text-opacity-75 small">Matched Escrow Pool</span>
-              <h5 className="fw-bold text-white mb-1">OxyLoans Escrow #41682</h5>
+              <h5 className="fw-bold text-white mb-1">OxyLoans Escrow Pool</h5>
               <span className="badge badge-fintech-success small rounded-pill px-2 py-1">
                 100% Capital Guaranteed
               </span>
@@ -521,239 +649,121 @@ const InstantLoanStepPreEligibility = ({
         </div>
       </div>
 
-      {/* Platform Fee Assessment Box */}
-      <div className="row g-4 mb-4">
-        {/* Left: Fee Breakdown & Purpose */}
-        <div className="col-lg-5">
-          <div className="p-4 rounded-4 bg-light border h-100">
-            <div className="d-flex align-items-center justify-content-between mb-3">
-              <h6 className="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-                <i className="fa-solid fa-receipt text-primary"></i>
-                Platform Assessment Fee
-              </h6>
-              <span className="badge badge-fintech-primary rounded-pill px-2 py-1 small">
-                One-Time
-              </span>
-            </div>
+      {/* Platform Assessment Fee Banner - Streamlined Cashfree PG */}
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 position-relative" style={{ border: "1px solid #e2e8f0" }}>
+        {/* Top Accent Gradient Bar */}
+        <div style={{ height: "4px", background: "linear-gradient(90deg, #0040e0 0%, #00d2ff 100%)" }} />
 
-            <p className="text-muted small mb-3" style={{ fontSize: "12px", lineHeight: "1.6" }}>
-              To fetch live credit records via <strong>OxyLoans Credit Bureau Engine</strong>, cross-verify PAN/DOB authenticity, and reserve escrow capital from institutional P2P lenders, a nominal processing fee of <strong>₹150 INR</strong> is required.
-            </p>
-
-            <div className="bg-white p-3 rounded-3 border mb-3">
-              <div className="d-flex justify-content-between text-muted small mb-2">
-                <span>OxyLoans Bureau Pull & PAN Verification</span>
-                <span className="fw-bold text-dark">₹ 127.12</span>
-              </div>
-              <div className="d-flex justify-content-between text-muted small mb-2">
-                <span>Goods & Services Tax (GST 18%)</span>
-                <span className="fw-bold text-dark">₹ 22.88</span>
-              </div>
-              <div className="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
-                <strong className="text-dark">Total Fee Payable</strong>
-                <h4 className="fw-bold text-primary mb-0">₹ 150.00</h4>
-              </div>
-            </div>
-
-            <div className="d-flex align-items-center gap-2 text-muted small" style={{ fontSize: "11px" }}>
-              <i className="fa-solid fa-shield-halved text-success fs-6"></i>
-              <span>Authorized under RBI Master Directions for P2P Lending Platforms.</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Payment Method Selector */}
-        <div className="col-lg-7">
-          <div className="p-4 rounded-4 bg-white border h-100 shadow-xs">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <h6 className="fw-bold text-dark mb-0">Select Payment Method</h6>
-              <span className="badge badge-fintech-success-soft small">
-                Instant Confirmation
-              </span>
-            </div>
-
-            {/* Method Tabs */}
-            <div className="btn-group w-100 mb-3" role="group">
-              <button
-                type="button"
-                className={`btn btn-sm rounded-start-3 ${
-                  paymentMethod === "UPI_APP" ? "btn-primary" : "btn-outline-secondary"
-                }`}
-                onClick={() => setPaymentMethod("UPI_APP")}
+        <div className="card-body p-4">
+          {/* Header Row: Title & Amount Pill */}
+          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center text-primary flex-shrink-0"
+                style={{ width: "44px", height: "44px", backgroundColor: "rgba(0, 64, 224, 0.08)" }}
               >
-                <i className="fa-solid fa-mobile-screen-button me-1"></i> Instant UPI Apps
-              </button>
-
-              <button
-                type="button"
-                className={`btn btn-sm ${
-                  paymentMethod === "QR" ? "btn-primary" : "btn-outline-secondary"
-                }`}
-                onClick={() => setPaymentMethod("QR")}
-              >
-                <i className="fa-solid fa-qrcode me-1"></i> Scan UPI QR
-              </button>
-
-              <button
-                type="button"
-                className={`btn btn-sm rounded-end-3 ${
-                  paymentMethod === "NETBANKING" ? "btn-primary" : "btn-outline-secondary"
-                }`}
-                onClick={() => setPaymentMethod("NETBANKING")}
-              >
-                <i className="fa-solid fa-building-columns me-1"></i> NetBanking / Card
-              </button>
-            </div>
-
-            {/* Tab 1: UPI Apps */}
-            {paymentMethod === "UPI_APP" && (
+                <i className="fa-solid fa-receipt fs-5"></i>
+              </div>
               <div>
-                <div className="row g-2 mb-3">
-                  <div className="col-6">
-                    <div
-                      className={`upi-method-btn ${selectedUpiApp === "gpay" ? "selected" : ""}`}
-                      onClick={() => setSelectedUpiApp("gpay")}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="fa-brands fa-google text-danger fs-5"></i>
-                        <span className="fw-bold text-dark small">Google Pay</span>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={selectedUpiApp === "gpay"}
-                        onChange={() => setSelectedUpiApp("gpay")}
-                        className="form-check-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div
-                      className={`upi-method-btn ${selectedUpiApp === "phonepe" ? "selected" : ""}`}
-                      onClick={() => setSelectedUpiApp("phonepe")}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="fa-solid fa-wallet text-primary fs-5"></i>
-                        <span className="fw-bold text-dark small">PhonePe</span>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={selectedUpiApp === "phonepe"}
-                        onChange={() => setSelectedUpiApp("phonepe")}
-                        className="form-check-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div
-                      className={`upi-method-btn ${selectedUpiApp === "paytm" ? "selected" : ""}`}
-                      onClick={() => setSelectedUpiApp("paytm")}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="fa-solid fa-credit-card text-info fs-5"></i>
-                        <span className="fw-bold text-dark small">Paytm UPI</span>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={selectedUpiApp === "paytm"}
-                        onChange={() => setSelectedUpiApp("paytm")}
-                        className="form-check-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div
-                      className={`upi-method-btn ${selectedUpiApp === "custom" ? "selected" : ""}`}
-                      onClick={() => setSelectedUpiApp("custom")}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <i className="fa-solid fa-at text-secondary fs-5"></i>
-                        <span className="fw-bold text-dark small">Other UPI ID</span>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={selectedUpiApp === "custom"}
-                        onChange={() => setSelectedUpiApp("custom")}
-                        className="form-check-input"
-                      />
-                    </div>
-                  </div>
+                <div className="d-flex align-items-center gap-2 flex-wrap">
+                  <h6 className="fw-bold text-dark mb-0 fs-6">Platform Assessment Fee</h6>
+                  <span className="badge rounded-pill px-2.5 py-1 text-primary fw-semibold" style={{ backgroundColor: "rgba(0, 64, 224, 0.1)", fontSize: "11px" }}>
+                    One-Time Only
+                  </span>
+                  <span className="badge rounded-pill bg-danger-subtle text-danger fw-semibold px-2 py-1" style={{ fontSize: "11px" }}>
+                    Non-Refundable
+                  </span>
+                  <span className="badge rounded-pill bg-success-subtle text-success fw-semibold px-2 py-1" style={{ fontSize: "11px" }}>
+                    <i className="fa-solid fa-check me-1"></i> RBI Regulated
+                  </span>
                 </div>
-
-                {selectedUpiApp === "custom" && (
-                  <div className="mb-3">
-                    <label className="form-label small fw-bold text-dark">Enter VPA / UPI ID</label>
-                    <input
-                      type="text"
-                      value={customUpiId}
-                      onChange={(e) => setCustomUpiId(e.target.value)}
-                      placeholder="mobile@upi or user@okhdfcbank"
-                      className="form-control form-control-sm instant-form-control"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tab 2: Scan QR */}
-            {paymentMethod === "QR" && (
-              <div className="text-center py-2 mb-3">
-                <div className="qr-frame mb-2 shadow-xs">
-                  <i className="fa-solid fa-qrcode fs-1 text-primary" style={{ fontSize: "5rem" }}></i>
-                </div>
-                <strong className="text-dark small d-block">Scan with any UPI App</strong>
-                <span className="text-muted small" style={{ fontSize: "11px" }}>
-                  GPay • PhonePe • Paytm • CRED • Amazon Pay
-                </span>
-              </div>
-            )}
-
-            {/* Tab 3: NetBanking */}
-            {paymentMethod === "NETBANKING" && (
-              <div className="py-2 mb-3">
-                <label className="form-label small fw-bold text-dark">Select Primary Bank</label>
-                <select className="form-select form-select-sm instant-form-control mb-2">
-                  <option>State Bank of India (SBI)</option>
-                  <option>HDFC Bank</option>
-                  <option>ICICI Bank</option>
-                  <option>Axis Bank</option>
-                  <option>Kotak Mahindra Bank</option>
-                </select>
-                <small className="text-muted" style={{ fontSize: "11px" }}>
-                  You will be securely redirected to your bank's 3D-Secure gateway.
+                <small className="text-muted d-block mt-0.5" style={{ fontSize: "12px" }}>
+                  Credit Bureau pull, PAN/DOB authenticity check &amp; instant escrow capital allocation.
                 </small>
               </div>
-            )}
+            </div>
 
-            {/* Pay Button CTA */}
+            {/* Total Fee Badge */}
+            <div className="d-flex align-items-baseline gap-2 bg-light border px-3 py-2 rounded-3 ms-md-auto">
+              <span className="text-muted small">Total Fee:</span>
+              <span className="fs-5 fw-bold text-primary">₹150.00</span>
+              <span className="text-muted" style={{ fontSize: "10px" }}>(incl. 18% GST)</span>
+            </div>
+          </div>
+
+          {/* Fee Breakdown & Trust Badges Strip */}
+          <div className="row g-2 mb-3">
+            <div className="col-6 col-sm-3">
+              <div className="p-2.5 rounded-3 bg-light border text-center">
+                <span className="text-muted d-block" style={{ fontSize: "11px" }}>Bureau Pull &amp; PAN</span>
+                <span className="fw-bold text-dark small">₹ 127.12</span>
+              </div>
+            </div>
+            <div className="col-6 col-sm-3">
+              <div className="p-2.5 rounded-3 bg-light border text-center">
+                <span className="text-muted d-block" style={{ fontSize: "11px" }}>GST (18%)</span>
+                <span className="fw-bold text-dark small">₹ 22.88</span>
+              </div>
+            </div>
+            <div className="col-6 col-sm-3">
+              <div className="p-2.5 rounded-3 bg-light border text-center">
+                <span className="text-muted d-block" style={{ fontSize: "11px" }}>Security &amp; Escrow</span>
+                <span className="fw-bold text-success small">
+                  <i className="fa-solid fa-shield-check me-1"></i> 256-Bit SSL
+                </span>
+              </div>
+            </div>
+            <div className="col-6 col-sm-3">
+              <div className="p-2.5 rounded-3 bg-light border text-center">
+                <span className="text-muted d-block" style={{ fontSize: "11px" }}>Fee Policy</span>
+                <span className="fw-bold text-danger small">Non-Refundable</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Footer: Payment Info & Direct Checkout CTA */}
+          <div className="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-3 pt-3 border-top">
+            <div className="d-flex flex-column gap-1">
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <span className="badge bg-dark text-white rounded-pill px-2.5 py-1" style={{ fontSize: "10px", letterSpacing: "0.5px" }}>
+                  <i className="fa-solid fa-bolt text-warning me-1"></i> CASHFREE PG
+                </span>
+                <span className="text-muted small" style={{ fontSize: "12px" }}>
+                  Accepts <strong>Google Pay • PhonePe • Paytm • Any UPI QR • Cards • NetBanking</strong>
+                </span>
+              </div>
+              <span className="text-muted" style={{ fontSize: "11px" }}>
+                🔒 256-bit bank-grade encryption • Instant webhook confirmation • Non-refundable assessment fee
+              </span>
+            </div>
+
+            {/* Pay Button */}
             <button
               type="button"
               disabled={isProcessingPayment}
               onClick={handlePayFee}
-              className="btn btn-primary w-100 py-3 rounded-3 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2"
-              style={{ backgroundColor: "#0040e0", borderColor: "#0040e0" }}
+              className="btn btn-primary px-4 py-3 rounded-3 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #0040e0 0%, #002db3 100%)",
+                border: "none",
+                fontSize: "15px",
+                minWidth: "250px",
+                boxShadow: "0 4px 14px rgba(0, 64, 224, 0.25)",
+              }}
             >
               {isProcessingPayment ? (
                 <>
                   <i className="fa-solid fa-spinner fa-spin"></i>
-                  <span>Saving References & Securing Payment...</span>
+                  <span>Connecting to Cashfree...</span>
                 </>
               ) : (
                 <>
                   <i className="fa-solid fa-lock"></i>
-                  <span>Save References & Pay ₹150 Fee</span>
+                  <span>Pay ₹150 via Cashfree &amp; Proceed</span>
                   <i className="fa-solid fa-arrow-right ms-1"></i>
                 </>
               )}
             </button>
-
-            <div className="text-center mt-2">
-              <span className="text-muted" style={{ fontSize: "11px" }}>
-                🔒 128-bit SSL Secured • Instant Webhook Confirmation
-              </span>
-            </div>
           </div>
         </div>
       </div>

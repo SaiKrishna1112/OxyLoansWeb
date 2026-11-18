@@ -10,7 +10,7 @@ import {
 const InstantLoanStepAgreementSign = ({
   selectedOffer,
   profileData = {},
-  applicationId = "41682",
+  applicationId = "",
   onComplete,
   onBack,
 }) => {
@@ -41,7 +41,7 @@ const InstantLoanStepAgreementSign = ({
       Swal.fire({
         icon: "warning",
         title: "OTP Required",
-        text: "Please enter the 6-digit Aadhaar OTP (Demo: 123456).",
+        text: "Please enter the 6-digit Aadhaar OTP sent to your registered mobile number.",
         confirmButtonColor: "#0040e0",
       });
       return;
@@ -179,7 +179,7 @@ const InstantLoanStepAgreementSign = ({
 
                 <div className="mb-2">
                   <strong className="text-dark d-block">PARTIES:</strong>
-                  <div>1. <strong>Borrower:</strong> {profileData.name || "DHARMAPURI SAI KRISHNA"} (Borrower ID: #{profileData.userId || "41682"})</div>
+                  <div>1. <strong>Borrower:</strong> {profileData.name || "Borrower"} (Borrower ID: #{profileData.userId || applicationId || ""})</div>
                   <div>2. <strong>Peer Lender:</strong> {lenderName}</div>
                   <div>3. <strong>P2P Platform / Facilitator:</strong> OxyLoans (SRS Fintech Labs Pvt Ltd, RBI Regulated NBFC-P2P)</div>
                 </div>
@@ -260,7 +260,7 @@ const InstantLoanStepAgreementSign = ({
                   <div className="p-3 bg-light rounded-3 border mb-3">
                     <label className="form-label small fw-bold text-dark mb-1 d-flex justify-content-between">
                       <span>Enter 6-Digit Aadhaar OTP</span>
-                      <span className="text-muted" style={{ fontSize: "10.5px" }}>Demo OTP: 123456</span>
+                      <span className="text-muted" style={{ fontSize: "10.5px" }}>Sent to Aadhaar Mobile</span>
                     </label>
                     <div className="d-flex gap-2 mb-2">
                       <input

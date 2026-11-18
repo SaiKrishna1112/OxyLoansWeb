@@ -1,12 +1,35 @@
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes, useParams,useLocation } from "react-router-dom";
-import { saveLastVisitedUrl } from "./utils/redirectUtils";
+import { saveLastVisitedUrl, isInstantLoanBorrower } from "./utils/redirectUtils";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import PrivacyPolicy from "./components/pages/Static/PrivacyPolicy";
 import TermsOfService from "./components/pages/Static/TermsOfService";
+import FAQPage from "./components/pages/Static/FAQPage";
+import HowItWorks from "./components/pages/Static/HowItWorks";
+import RBIDirections from "./components/pages/Static/RBIDirections";
+import TransparencyDisclosures from "./components/pages/Static/TransparencyDisclosures";
+import KnowYourEarnings from "./components/pages/Static/KnowYourEarnings";
+import KnowYourTax from "./components/pages/Static/KnowYourTax";
+import KnowYourFees from "./components/pages/Static/KnowYourFees";
+import ContactUs from "./components/pages/Static/ContactUs";
+import TravelLoan from "./components/pages/Static/TravelLoan";
+import MotorLoan from "./components/pages/Static/MotorLoan";
+import InternationalBusinessExpansion from "./components/pages/Static/InternationalBusinessExpansion";
+import SMELoan from "./components/pages/Static/SMELoan";
+import PersonalLoan from "./components/pages/Static/PersonalLoan";
+import GrievanceRedressal from "./components/pages/Static/GrievanceRedressal";
+import LatestEGMNotice from "./components/pages/Static/LatestEGMNotice";
+import LoanPerformance from "./components/pages/Static/LoanPerformance";
+import TeamManagement from "./components/pages/Static/TeamManagement";
+import AdvisoryBoard from "./components/pages/Static/AdvisoryBoard";
+import BlogPage from "./components/pages/Static/BlogPage";
+import LenderPage from "./components/pages/Static/LenderPage";
+import BorrowerPage from "./components/pages/Static/BorrowerPage";
+import Landing from "./components/pages/Landing/Landing";
+import BabuzLanding from "./components/pages/BabuzLanding/BabuzLanding";
+import LoanEmiCalculator from "./components/pages/Static/LoanEmiCalculator";
 
 import EscrowDeals from "./components/pages/Oxyloans/Admin/Deals/EscrowDeals/EscrowDeals";
-import LenderWelcomeModal from "./components/pages/Oxyloans/Lender/LenderWelcomeModal";
 import LenderAIDashboard from "./components/pages/Oxyloans/Lender/AILenderPortfolio";
 import LenderAIPlanPage from "./components/pages/Dashboard/LenderAIPlanPage";
 import AISubscriptionSuccess from "./components/pages/Dashboard/AISubscriptionSuccess";
@@ -64,6 +87,7 @@ import BorrowerDocuments from "./components/pages/Oxyloans/Admin/borrowersapplic
 import BorrowersList from "./components/pages/Oxyloans/Admin/borrowersapplications/BorrowersList.jsx";
 import DisburseLoans from "./components/pages/Oxyloans/Lender/DisburseLoans";
 import LenderEsign from "./components/pages/Oxyloans/Lender/LenderEsign";
+import DealConsent from "./components/pages/Oxyloans/Lender/DealConsent";
 import MyclosedDeals from "./components/pages/Oxyloans/Lender/MyclosedDeals";
 import Mycontacts from "./components/pages/Oxyloans/Lender/Mycontacts";
 import MyEarnings from "./components/pages/Oxyloans/Lender/MyEarnings";
@@ -195,7 +219,7 @@ import RepaymentView from "./components/pages/Oxyloans/Borrower/RepaymentView.js
 import AgreementPage from "./components/pages/Oxyloans/Borrower/AgreementPage";
 import MyLoans from "./components/pages/Oxyloans/Borrower/MyLoans.jsx";
 
-// Instant Loan Redesign Flow (Dedicated for Borrower #41682)
+// Instant Loan Redesign Flow
 import InstantBorrowerDashboard from "./components/pages/Oxyloans/Borrower/redesign/pages/Dashboard.jsx";
 import InstantBorrowerProfile from "./components/pages/Oxyloans/Borrower/redesign/pages/Profile.jsx";
 import RedesignCreditReport from "./components/pages/Oxyloans/Borrower/redesign/pages/CreditReport.jsx";
@@ -212,6 +236,7 @@ import {
   InstantLoanProfileGuard,
   BorrowerDashboardSwitch,
   BorrowerProfileSwitch,
+  BorrowerLoansInitiatedSwitch,
 } from "./components/pages/Oxyloans/Borrower/InstantLoanRouteGuard.jsx";
 import RemoveCredentials from "./components/pages/Oxyloans/Admin/SUPERADMIN/RemoveCredentials.jsx";
 import AssignedUsersforCallers from "./components/pages/Oxyloans/Admin/AssignedUsersforCallers.jsx";
@@ -254,11 +279,25 @@ const PrivateRoute = ({ element }) =>
 
 const CatchAll = () => {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
-  const pt = localStorage.getItem("primaryType") || "";
-  if (pt === "ADMIN" || pt === "HELPDESKADMIN") return <Navigate to="/oxyloansadmindashboard" replace />;
-  if (pt === "LENDER") return <Navigate to="/dashboard" replace />;
+  const pt = (
+    localStorage.getItem("primaryType") ||
+    sessionStorage.getItem("primaryType") ||
+    ""
+  ).toUpperCase();
   const uid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
-  if (String(uid).trim() === "41682") return <Navigate to="/instant-borrower-dashboard" replace />;
+
+  if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(pt)) {
+    return <Navigate to="/oxyloansadmindashboard" replace />;
+  }
+  if (pt === "LENDER") {
+    return <Navigate to={uid ? `/lenderAIDashboard/${uid}` : "/ai/portfolio"} replace />;
+  }
+  if (pt === "PARTNER") {
+    return <Navigate to="/patnerdashboard" replace />;
+  }
+  if (isInstantLoanBorrower(uid)) {
+    return <Navigate to={uid ? `/borrower/instant-loan/${uid}` : "/instant-borrower-dashboard"} replace />;
+  }
   return <Navigate to="/borrowerDashboard" replace />;
 };
 
@@ -288,9 +327,98 @@ const AppRouter = () => {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <BrowserRouter>
       <NavigationTracker />
-      <LenderWelcomeModal />
       <Routes>
         {/* ===== PUBLIC ROUTES ===== */}
+        <Route path="/landing" element={<Landing />} />
+        <Route path="/landing-old" element={<Landing />} />
+        <Route path="/landing-new" element={<BabuzLanding />} />
+        <Route path="/home" element={<BabuzLanding />} />
+        <Route path="/faqs" element={<FAQPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/lender-faq" element={<FAQPage defaultCategory="lender" />} />
+        <Route path="/borrower-faq" element={<FAQPage defaultCategory="borrower" />} />
+        <Route path="/lender-faqs" element={<FAQPage defaultCategory="lender" />} />
+        <Route path="/borrower-faqs" element={<FAQPage defaultCategory="borrower" />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/howitworks" element={<HowItWorks />} />
+        <Route path="/rbi-directions" element={<RBIDirections />} />
+        <Route path="/rbidirections" element={<RBIDirections />} />
+        <Route path="/transparency" element={<TransparencyDisclosures />} />
+        <Route path="/transparency-and-disclosure-requirements" element={<TransparencyDisclosures />} />
+        <Route path="/transparency-and-disclosures" element={<TransparencyDisclosures />} />
+        <Route path="/know-your-earnings" element={<KnowYourEarnings />} />
+        <Route path="/knowyourearnings" element={<KnowYourEarnings />} />
+        <Route path="/know-my-earnings" element={<KnowYourEarnings />} />
+        <Route path="/know-your-tax" element={<KnowYourTax />} />
+        <Route path="/knowyourtax" element={<KnowYourTax />} />
+        <Route path="/know-your-fees" element={<KnowYourFees />} />
+        <Route path="/knowyourfees" element={<KnowYourFees />} />
+        <Route path="/know-your-fee" element={<KnowYourFees />} />
+        <Route path="/knowyourfee" element={<KnowYourFees />} />
+        <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="/contactus" element={<ContactUs />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/travel-loans" element={<TravelLoan />} />
+        <Route path="/travelloans" element={<TravelLoan />} />
+        <Route path="/travel-loan" element={<TravelLoan />} />
+        <Route path="/travelloan" element={<TravelLoan />} />
+        <Route path="/motor-loans" element={<MotorLoan />} />
+        <Route path="/motorloans" element={<MotorLoan />} />
+        <Route path="/motor-loan" element={<MotorLoan />} />
+        <Route path="/motorloan" element={<MotorLoan />} />
+        <Route path="/personal-loans" element={<PersonalLoan />} />
+        <Route path="/personalloans" element={<PersonalLoan />} />
+        <Route path="/personal-loan" element={<PersonalLoan />} />
+        <Route path="/personalloan" element={<PersonalLoan />} />
+        <Route path="/sme-loans" element={<SMELoan />} />
+        <Route path="/smeloans" element={<SMELoan />} />
+        <Route path="/sme-loan" element={<SMELoan />} />
+        <Route path="/smeloan" element={<SMELoan />} />
+        <Route path="/international-business-expansion-loans" element={<InternationalBusinessExpansion />} />
+        <Route path="/international-business-expansion" element={<InternationalBusinessExpansion />} />
+        <Route path="/international-business-loans" element={<InternationalBusinessExpansion />} />
+        <Route path="/business-loans" element={<InternationalBusinessExpansion />} />
+        <Route path="/businessloans" element={<InternationalBusinessExpansion />} />
+        <Route path="/business-loan" element={<InternationalBusinessExpansion />} />
+        <Route path="/businessloan" element={<InternationalBusinessExpansion />} />
+        <Route path="/grievance-redressal-mechanism" element={<GrievanceRedressal />} />
+        <Route path="/grievances-redressal-mechanism" element={<GrievanceRedressal />} />
+        <Route path="/grievance-redressal" element={<GrievanceRedressal />} />
+        <Route path="/grievances-redressal" element={<GrievanceRedressal />} />
+        <Route path="/grievance" element={<GrievanceRedressal />} />
+        <Route path="/grievances" element={<GrievanceRedressal />} />
+        <Route path="/latest-egm-notice" element={<LatestEGMNotice />} />
+        <Route path="/latestegmnotice" element={<LatestEGMNotice />} />
+        <Route path="/latest-egm" element={<LatestEGMNotice />} />
+        <Route path="/latestegm" element={<LatestEGMNotice />} />
+        <Route path="/egm-notice" element={<LatestEGMNotice />} />
+        <Route path="/loan-performance" element={<LoanPerformance />} />
+        <Route path="/loanperformance" element={<LoanPerformance />} />
+        <Route path="/loan-performance-details" element={<LoanPerformance />} />
+        <Route path="/team" element={<TeamManagement />} />
+        <Route path="/management" element={<TeamManagement />} />
+        <Route path="/team-management" element={<TeamManagement />} />
+        <Route path="/our-team" element={<TeamManagement />} />
+        <Route path="/advisory-team" element={<AdvisoryBoard />} />
+        <Route path="/advisory-board" element={<AdvisoryBoard />} />
+        <Route path="/advisory" element={<AdvisoryBoard />} />
+        <Route path="/our-advisory-team" element={<AdvisoryBoard />} />
+        <Route path="/blogs" element={<BlogPage />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/page/:pageNumber" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogPage />} />
+        <Route path="/lender" element={<LenderPage />} />
+        <Route path="/lenders" element={<LenderPage />} />
+        <Route path="/why-lend" element={<LenderPage />} />
+        <Route path="/why-lend-at-oxyloans" element={<LenderPage />} />
+        <Route path="/borrower" element={<BorrowerPage />} />
+        <Route path="/borrowers" element={<BorrowerPage />} />
+        <Route path="/why-borrow" element={<BorrowerPage />} />
+        <Route path="/why-borrow-at-oxyloans" element={<BorrowerPage />} />
+        <Route path="/emicalculator" element={<LoanEmiCalculator />} />
+        <Route path="/emi-calculator" element={<LoanEmiCalculator />} />
+        <Route path="/loan-emi-calculator" element={<LoanEmiCalculator />} />
+        <Route path="/calculator" element={<LoanEmiCalculator />} />
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Loginotp />} />
         {/* <Route path="/" element={<Login />} /> */}
@@ -303,6 +431,9 @@ const AppRouter = () => {
         <Route path="/register" element={<LenderRegister />} />
         <Route path="/userType" element={<UserType />} />
         <Route path="/borrower_register" element={<BorrowerRegister />} />
+        <Route path="/borrower-register" element={<BorrowerRegister />} />
+        <Route path="/borrowerRegister" element={<BorrowerRegister />} />
+        <Route path="/instant-register" element={<BorrowerRegister />} />
         <Route path="/register_active_proceed" element={<RegisterActiveProceed />} />
         <Route path="/register-step2-test" element={<RegisterStep2Dark />} />
         <Route path="/dark-login" element={<DarkLogin />} />
@@ -351,7 +482,7 @@ const AppRouter = () => {
         <Route path="/todaydeal" element={<Todaydeal />} />
         <Route path="/testdeals1" element={<Testdeal1 />} />
         <Route path="/viewCurrentDayDeals" element={<ViewCurrentDayDeals />} />
-        <Route path="/emicalculator" element={<Emicalculator />} />
+        <Route path="/lender-emicalculator" element={<Emicalculator />} />
         <Route path="/lenderAIDashboard" element={<LenderAIDashboard />} />
         <Route path="/lenderAIDashboard/:lenderId" element={<LenderAIDashboard />} />
         <Route path="/adminAIDashboard" element={<AdminAIDashboard />} />
@@ -418,6 +549,9 @@ const AppRouter = () => {
         <Route path="/lender_esign/:loanRequestId/:assignmentId" element={<LenderEsign />} />
         <Route path="/lender_esign/:loanRequestId" element={<LenderEsign />} />
         <Route path="/lender_esign/:loanRequestId/*" element={<LenderEsign />} />
+        <Route path="/deal-consent" element={<DealConsent />} />
+        <Route path="/dealConsent" element={<DealConsent />} />
+        <Route path="/dealconsent" element={<DealConsent />} />
         <Route path="/WalletToWallet" element={<WalletToWallet />} />
         <Route
           path="/withdrawalFromWallet"
@@ -470,7 +604,7 @@ const AppRouter = () => {
         <Route path="/todaydeal" element={<PrivateRoute element={<Todaydeal />} />} />
         <Route path="/testdeals1" element={<PrivateRoute element={<Testdeal1 />} />} />
         <Route path="/viewCurrentDayDeals" element={<PrivateRoute element={<ViewCurrentDayDeals />} />} />
-        <Route path="/emicalculator" element={<PrivateRoute element={<Emicalculator />} />} />
+        <Route path="/lender-emicalculator" element={<PrivateRoute element={<Emicalculator />} />} />
         <Route path="/configautoInvest" element={<PrivateRoute element={<ConfigautoInvest />} />} />
         <Route path="/membership" element={<PrivateRoute element={<Membership />} />} />
         <Route path="/referalEaringsMonthWise" element={<PrivateRoute element={<ReferalEaringsMonthWise />} />} />
@@ -562,7 +696,7 @@ const AppRouter = () => {
         <Route path="/borrowerLoanRequestCreate" element={<PrivateRoute element={<BorrowerLoanRequestCreate />} />} />
         <Route path="/borrowerRequestAmount" element={<PrivateRoute element={<BorrowerRequestAmount />} />} />
         <Route path="/borrower-loan-rejection-details" element={<PrivateRoute element={<BorrowerLoanRejectionDetails />} />} />
-        <Route path="/borrowerLoansInitiated" element={<PrivateRoute element={<BorrowerLoansInitiated />} />} />
+        <Route path="/borrowerLoansInitiated" element={<PrivateRoute element={<BorrowerLoansInitiatedSwitch standardElement={<BorrowerLoansInitiated />} />} />} />
         <Route path="/borrowerDisbursementAmount" element={<PrivateRoute element={<BorrowerDisbursementAmount />} />} />
         <Route path="/borrowerDisbursementInterestAmount/:borrowerId/:loanId/:id" element={<PrivateRoute element={<BorrowerDisbursementInterestAmount />} />} />
         <Route path="/nearbyleders" element={<PrivateRoute element={<BorrowerNearbyLendersPage />} />} />
@@ -638,7 +772,7 @@ const AppRouter = () => {
         <Route path="/borrower-emi-schedule" element={<PrivateRoute element={<BorrowerEmiSchedule />} />} />
         <Route path="/borrower-credit-report" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
         <Route path="/my-oxyscore" element={<PrivateRoute element={<BorrowerCreditReport />} />} />
-        {/* ===== INSTANT LOANS FLOW (EXCLUSIVE FOR BORROWER #41682) ===== */}
+        {/* ===== INSTANT LOANS FLOW ===== */}
         <Route path="/instant-borrower-dashboard" element={<PrivateRoute element={<InstantLoanGuard element={<InstantLoanFlow />} />} />} />
         <Route path="/instant-borrower-profile" element={<PrivateRoute element={<InstantLoanProfileGuard element={<InstantBorrowerProfile />} />} />} />
         <Route path="/instant-borrower-credit-report" element={<PrivateRoute element={<InstantLoanProfileGuard element={<RedesignCreditReport />} />} />} />
@@ -690,6 +824,7 @@ const AppRouter = () => {
 
         {/* Static pages */}
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
       </Routes>
     </BrowserRouter>

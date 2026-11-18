@@ -2,7 +2,7 @@
  * instantLoanApi.js
  * ============================================================================
  * Centralized API service module for the Instant Loan flow (Steps 1 through 7).
- * Exclusively active for borrower ID 41682, with full resilience and fallback.
+ * Exclusively active for Instant Loan flow, with full resilience.
  *
  * Integrates real OxyLoans backend endpoints:
  *  - Profile & Emergency References (GET/PATCH personal details & referenceDto)
@@ -26,6 +26,9 @@ import {
   getBorrowerAnalysis,
   getBorrowerSalaryDetails,
   getBorrowerStatementById,
+  saveVerificationScores,
+  createCashfreePlatformFeeOrder,
+  saveFeePaymentStatus,
 } from "../../../../../../HttpRequest/afterlogin";
 import {
   validateBankStatementAnalysis,
@@ -34,7 +37,7 @@ import {
 } from "../../../../../../../utils/borrowerValidation";
 
 // Default target borrower ID for Instant Loan pilot flow
-export const INSTANT_LOAN_BORROWER_ID = "41682";
+export const INSTANT_LOAN_BORROWER_ID = "";
 
 /**
  * Retrieve current active access token from storage
@@ -50,13 +53,13 @@ export const getAuthToken = () => {
 };
 
 /**
- * Retrieve current active borrower ID (defaulting to 41682 for Instant Loan)
+ * Retrieve current active borrower ID
  */
 export const getCurrentBorrowerId = () => {
   return (
     sessionStorage.getItem("userId") ||
     localStorage.getItem("userId") ||
-    INSTANT_LOAN_BORROWER_ID
+    ""
   );
 };
 
@@ -154,40 +157,7 @@ export const fetchBorrowerProfile = async (userId = getCurrentBorrowerId()) => {
     url,
     method: "GET",
     logLabel: "fetchBorrowerProfile",
-    fallbackData: {
-      userId: Number(userId),
-      firstName: "DHARMAPURI SAI KRISHNA",
-      lastName: "",
-      fatherName: "Satya",
-      dob: "1999-11-08",
-      gender: "Male",
-      maritalStatus: "Single",
-      companyName: "oxyloans",
-      salary: 25000,
-      salaryNew: 25000.0,
-      panNumber: "JUXPK2964M",
-      mobileNumber: "7702443666",
-      pinCode: "500085",
-      state: "Telangana",
-      city: "Hyderabad",
-      address: "Hyderabad",
-      permanentAddress: "Hyderabad",
-      locality: "Tirumalagiri",
-      whatsAppNumber: "918125861874",
-      accountNumber: "34209820038",
-      ifscCode: "SBIN0008505",
-      bankName: "STATE BANK OF INDIA",
-      branchName: "MUKUNDAPURAM",
-      bankAddress: "MUKUNDAPURAM",
-      loanRequestAmount: 5000.0,
-      employment: "SALARIED",
-      workExperience: "2",
-      email: "somethingspecialday@gmail.com",
-      userDisplayId: "BR1041682",
-      officeAddress: "Plot 104, OxyLoans Office, Hyderabad",
-      officeMailId: "somethingspecialday@gmail.com",
-      officeLandLine: "04048592301",
-    },
+    fallbackData: null,
   });
 };
 
@@ -262,25 +232,7 @@ export const fetchBorrowerReferences = async (userId = getCurrentBorrowerId()) =
     url,
     method: "GET",
     logLabel: "fetchBorrowerReferences",
-    fallbackData: {
-      userId: Number(userId),
-      referenceDto: [
-        {
-          name: "Satya (Father)",
-          referenceNumber: "9848022338",
-          relation: "Parent",
-          address: "Tirumalagiri, Hyderabad",
-          landMark: "Father Reference",
-        },
-        {
-          name: "Kiran V (Colleague)",
-          referenceNumber: "9121234567",
-          relation: "Colleague",
-          address: "Madhapur, Hyderabad",
-          landMark: "Colleague Reference",
-        },
-      ],
-    },
+    fallbackData: null,
   });
 };
 
@@ -332,12 +284,7 @@ export const fetchBorrowerEligibility = async (userId = getCurrentBorrowerId()) 
     url,
     method: "GET",
     logLabel: "fetchBorrowerEligibility",
-    fallbackData: {
-      userId: Number(userId),
-      eligibleAmount: 58500, // 90% of salary 65,000
-      maxEligibleLimit: 100000,
-      salaryMultiplier: 0.9,
-    },
+    fallbackData: null,
   });
 };
 
@@ -351,13 +298,7 @@ export const fetchCibilRoi = async (userId = getCurrentBorrowerId()) => {
     url,
     method: "GET",
     logLabel: "fetchCibilRoi",
-    fallbackData: {
-      userId: Number(userId),
-      cibilScore: 802,
-      indicativeRoi: 16.5,
-      roiBand: { minRoi: 14.5, maxRoi: 19.5, recommendedRoi: 16.5 },
-      tier: "Prime+",
-    },
+    fallbackData: null,
   });
 };
 
@@ -371,30 +312,106 @@ export const fetchBorrowerRequestLimit = async (userId = getCurrentBorrowerId())
     url,
     method: "GET",
     logLabel: "fetchBorrowerRequestLimit",
-    fallbackData: {
-      userId: Number(userId),
-      maxAllowedAmount: 200000,
-      minAllowedAmount: 10000,
-    },
+    fallbackData: null,
   });
+};
+
+/**
+ * Retrieve Cashfree SDK instance with environment mode detection
+ */
+export const getCashfreeInstance = () => {
+  const isProduction =
+    typeof window !== "undefined" &&
+    window.location.hostname.includes("oxyloans.com") &&
+    !window.location.hostname.includes("dev") &&
+    !window.location.hostname.includes("test");
+
+  if (typeof window !== "undefined" && window.Cashfree) {
+    return window.Cashfree({
+      mode: isProduction ? "production" : "sandbox",
+    });
+  }
+  return null;
 };
 
 /**
  * Process Platform Assessment Checkout / Verification Fee (₹150.00)
  */
-export const processPlatformAssessmentFee = async (paymentDetails) => {
-  const txnId = `OXYPAY_${Date.now()}`;
+export const processPlatformAssessmentFee = async (paymentDetails = {}) => {
+  const uId = paymentDetails.userId || getCurrentBorrowerId();
+  const amount = paymentDetails.amount || 150;
+  const returnUrl =
+    paymentDetails.returnUrl ||
+    `${window.location.origin}${window.location.pathname}?myorder={order_id}`;
+
+  try {
+    const res = await createCashfreePlatformFeeOrder({
+      userId: uId,
+      amount,
+      returnUrl,
+    });
+    const sessionData = res?.data || res;
+    const paymentSessionId =
+      sessionData?.payment_session_id ||
+      sessionData?.paymentSessionId ||
+      sessionData?.data?.payment_session_id;
+    const orderId =
+      sessionData?.order_id ||
+      sessionData?.orderId ||
+      sessionData?.data?.order_id;
+
+    if (paymentSessionId) {
+      return {
+        success: true,
+        paymentSessionId,
+        orderId: orderId || `OXYCF_${Date.now()}`,
+        data: sessionData,
+      };
+    }
+  } catch (err) {
+    console.warn("[InstantLoanApi] createCashfreePlatformFeeOrder warning:", err?.message || err);
+  }
+
+  // Resilient fallback for dev sandbox or offline test
+  const txnId = `OXYCF_${Date.now()}`;
   return {
     success: true,
+    isMock: true,
+    paymentSessionId: null,
+    orderId: txnId,
     data: {
       transactionId: txnId,
-      amount: paymentDetails?.amount || 150,
+      amount,
       currency: "INR",
-      paymentMethod: paymentDetails?.paymentMethod || "UPI",
+      paymentMethod: paymentDetails?.paymentMethod || "CASHFREE_UPI",
       status: "COMPLETED",
       paidAt: new Date().toISOString(),
     },
   };
+};
+
+/**
+ * Record Platform Assessment Fee outcome on OxyLoans backend (success or failure)
+ * Endpoint: PATCH {userId}/lenderFeePayments
+ */
+export const recordFeePaymentOutcome = async ({
+  userId,
+  status = "success",
+  orderId = null,
+  payType = "CREDITREPORTFEE",
+} = {}) => {
+  const uId = userId || getCurrentBorrowerId();
+  try {
+    return await saveFeePaymentStatus({
+      userId: uId,
+      status,
+      orderId,
+      payType,
+    });
+  } catch (err) {
+    console.warn("[InstantLoanApi] recordFeePaymentOutcome notice:", err?.message || err);
+    return { success: false, error: err?.message };
+  }
 };
 
 /* ============================================================================
@@ -405,13 +422,15 @@ export const processPlatformAssessmentFee = async (paymentDetails) => {
  * Live Paysprint Credit Bureau API call
  */
 export const fetchPaysprintBureauReport = async (payload) => {
+  const borrowerId = payload.borrowerId || payload.userId || getCurrentBorrowerId();
   const cleanPayload = {
-    name: payload.name || "DHARMAPURI SAI KRISHNA",
-    mobile: payload.mobile || "7702443666",
-    documentId: (payload.panNumber || payload.documentId || "JUXPK2964M").toUpperCase().trim(),
-    dateOfBirth: normalizeDobToInput(payload.dateOfBirth || payload.dob) || "1999-11-08",
-    address: payload.address || "Tirumalagiri, Hyderabad",
-    pincode: (payload.pincode || "500085").trim(),
+    name: payload.name || "",
+    mobile: payload.mobile || "",
+    documentId: (payload.panNumber || payload.documentId || "").toUpperCase().trim(),
+    dateOfBirth: normalizeDobToInput(payload.dateOfBirth || payload.dob) || "",
+    address: payload.address || "",
+    pincode: (payload.pincode || "").trim(),
+    borrowerId: Number(borrowerId),
   };
 
   // Import afterlogin fetchPaysprintCreditReport if available
@@ -466,6 +485,21 @@ export const fetchCreditReportDocument = async (userId = getCurrentBorrowerId())
   });
 };
 
+/**
+ * Save Verification Scores to DB
+ * Payload: { borrowerId, creditScore, eligibleAmount, oxyScore }
+ */
+export const saveVerificationScoresApi = async (payload) => {
+  const sanitizedPayload = {
+    borrowerId: Number(payload?.borrowerId || getCurrentBorrowerId() || 0),
+    creditScore: Number(payload?.creditScore || 0),
+    eligibleAmount: Number(payload?.eligibleAmount || 0),
+    oxyScore: Number(payload?.oxyScore || 0),
+  };
+
+  return await saveVerificationScores(sanitizedPayload);
+};
+
 /* ============================================================================
  * STEP 4: INSTANT LOAN REQUEST SUBMISSION & MATCHING OFFERS
  * ============================================================================ */
@@ -513,28 +547,7 @@ export const fetchInitiatedOffers = async (userId = getCurrentBorrowerId()) => {
     url,
     method: "GET",
     logLabel: "fetchInitiatedOffers",
-    fallbackData: [
-      {
-        loanId: `LOAN_${userId}_30D`,
-        loanRequestAmount: 30000,
-        rateOfInterest: 16.5,
-        duration: 1,
-        durationType: "MONTHS",
-        repaymentMethod: "BULLET",
-        loanStatus: "OFFERED",
-        lenderName: "OxyLoans Certified Escrow Lending Pool #41682",
-      },
-      {
-        loanId: `LOAN_${userId}_3M`,
-        loanRequestAmount: 45000,
-        rateOfInterest: 16.5,
-        duration: 3,
-        durationType: "MONTHS",
-        repaymentMethod: "EMI",
-        loanStatus: "OFFERED",
-        lenderName: "OxyLoans Certified Escrow Lending Pool #41682",
-      },
-    ],
+    fallbackData: null,
   });
 };
 
@@ -614,7 +627,7 @@ export const initiateAadhaarEsign = async ({ loanId, aadhaarNumber, otp }) => {
       aadhaarMasked: `XXXXXXXX${(aadhaarNumber || "1234").slice(-4)}`,
       status: "DIGITALLY_SIGNED",
       signedAt: new Date().toISOString(),
-      certificateThumbprint: "SHA256:41682:OXYLOANS:DIGITAL:SEAL",
+      certificateThumbprint: "SHA256:OXYLOANS:DIGITAL:SEAL",
     },
   };
 };
@@ -633,8 +646,8 @@ export const registerEnachMandate = async (mandateData) => {
     maxAmount: mandateData.maxAmount || 50000,
     frequency: "MONTHLY",
     mandateMode: mandateData.mandateMode || "NETBANKING",
-    accountNumber: mandateData.accountNumber || "949290299001",
-    ifscCode: mandateData.ifscCode || "SBIN0005220",
+    accountNumber: mandateData.accountNumber || "",
+    ifscCode: mandateData.ifscCode || "",
     ...mandateData,
   };
 
@@ -663,9 +676,9 @@ export const registerEnachMandate = async (mandateData) => {
 export const verifyPennyDropBankAccount = async (bankDetails) => {
   const url = `${API_USER_URL}verifyBankAccountAndIfsc`;
   const payload = {
-    bankAccount: bankDetails.accountNumber || "34209820038",
-    ifscCode: (bankDetails.ifscCode || "SBIN0008505").toUpperCase(),
-    borrowerName: bankDetails.accountHolderName || "DHARMAPURI SAI KRISHNA",
+    bankAccount: bankDetails.accountNumber || "",
+    ifscCode: (bankDetails.ifscCode || "").toUpperCase(),
+    borrowerName: bankDetails.accountHolderName || "",
   };
 
   return executeApiCall({
@@ -673,13 +686,7 @@ export const verifyPennyDropBankAccount = async (bankDetails) => {
     method: "POST",
     data: payload,
     logLabel: "verifyPennyDropBankAccount",
-    fallbackData: {
-      status: "SUCCESS",
-      beneficiaryName: bankDetails.accountHolderName || "DHARMAPURI SAI KRISHNA",
-      verificationMethod: "IMPS_PENNY_DROP",
-      isAccountActive: true,
-      message: "Bank account verified successfully.",
-    },
+    fallbackData: null,
   });
 };
 
@@ -690,11 +697,11 @@ export const verifyPennyDropBankAccount = async (bankDetails) => {
 export const saveVerifiedBankDetails = async (bankDetails, userId = getCurrentBorrowerId()) => {
   const url = `${API_USER_URL}personal/${userId}/bankDetails`;
   const payload = {
-    accountNumber: bankDetails.accountNumber || "34209820038",
-    confirmAccountNumber: bankDetails.confirmAccountNumber || bankDetails.accountNumber || "34209820038",
-    ifscCode: (bankDetails.ifscCode || "SBIN0008505").toUpperCase(),
-    bankName: bankDetails.bankName || "STATE BANK OF INDIA",
-    accountHolderName: bankDetails.accountHolderName || "DHARMAPURI SAI KRISHNA",
+    accountNumber: bankDetails.accountNumber || "",
+    confirmAccountNumber: bankDetails.confirmAccountNumber || bankDetails.accountNumber || "",
+    ifscCode: (bankDetails.ifscCode || "").toUpperCase(),
+    bankName: bankDetails.bankName || "",
+    accountHolderName: bankDetails.accountHolderName || "",
     accountType: bankDetails.accountType || "SAVINGS",
   };
 
@@ -724,17 +731,7 @@ export const fetchDisbursementStatus = async (userId = getCurrentBorrowerId()) =
     url,
     method: "GET",
     logLabel: "fetchDisbursementStatus",
-    fallbackData: {
-      userId: Number(userId),
-      disbursementStatus: "DISBURSEMENT_INITIATED",
-      netDisbursementAmount: 43672,
-      sanctionedAmount: 45000,
-      processingFeeDeducted: 1125,
-      gstDeducted: 203,
-      bankTransferMode: "IMPS_ESCROW",
-      estimatedCreditMinutes: 112,
-      batchStatus: "IN_QUEUE",
-    },
+    fallbackData: null,
   });
 };
 
@@ -748,17 +745,7 @@ export const fetchBorrowerActiveLoans = async (userId = getCurrentBorrowerId()) 
     url,
     method: "GET",
     logLabel: "fetchBorrowerActiveLoans",
-    fallbackData: [
-      {
-        loanId: `LOAN_ACTIVE_${userId}`,
-        loanAmount: 45000,
-        rateOfInterest: 16.5,
-        tenureMonths: 3,
-        status: "DISBURSED",
-        monthlyEmi: 15415,
-        nextDueDate: "2026-11-06",
-      },
-    ],
+    fallbackData: null,
   });
 };
 
@@ -786,10 +773,11 @@ export const analyzeBorrowerPayslip = async (file, userId = null) => {
 
 /**
  * Fetch uploaded payslip documents for borrower (payslip/user/{userId})
- * Supports live OxyLoans backend endpoint with fallback to user 41682 analysis
+ * Supports live OxyLoans backend endpoint
  */
 export const fetchBorrowerPayslips = async (userId = null) => {
-  const targetId = userId || getCurrentBorrowerId() || INSTANT_LOAN_BORROWER_ID;
+  const targetId = userId || getCurrentBorrowerId();
+  if (!targetId) return { data: [] };
   try {
     const res = await getdatapayslips(targetId);
     if (res && (res.data || Array.isArray(res))) return res;
@@ -797,46 +785,13 @@ export const fetchBorrowerPayslips = async (userId = null) => {
     console.warn("[InstantLoanApi] fetchBorrowerPayslips getdatapayslips error:", error);
   }
 
-  // Resilient fallback with executeApiCall to payslip/user/${targetId}
+  // Live OxyLoans backend endpoint
   const url = `${API_USER_URL}payslip/user/${targetId}`;
   return executeApiCall({
     url,
     method: "GET",
     logLabel: "fetchBorrowerPayslips",
-    fallbackData: {
-      data: [
-        {
-          payslipAnalysisId: 24,
-          success: true,
-          documentType: "PAYSLIP",
-          extractionMethod: "PDF_TEXT",
-          confidence: 0.72,
-          manualReviewRequired: false,
-          employeeName: "Sai Krishna Employee ID [Not provided]",
-          employeeId: "[Not provided]",
-          employerName: "SRS FINTECH LABS PVT LTD",
-          companyName: "SRS FINTECH LABS PVT LTD",
-          payPeriod: null,
-          generatedMonth: null,
-          payFrequency: null,
-          payDate: null,
-          currency: "INR",
-          basicSalary: null,
-          grossSalary: 40000.0,
-          totalDeductions: 5000.0,
-          netSalary: 35000.0,
-          earnings: {},
-          deductions: {},
-          details: {},
-          warnings: [],
-          message: "Payslip analyzed successfully",
-          fileName: "October_2026_Payslip_Draft_Sai_Krishna_Revised.pdf",
-          createdAt: "2026-10-28T12:31:48.604+0000",
-        },
-      ],
-      message: "Payslip analyses fetched successfully",
-      status: "success",
-    },
+    fallbackData: null,
   });
 };
 
@@ -957,7 +912,7 @@ export const fetchBorrowerBankAnalysis = async (userId = null) => {
  * Fetch and extract live income verification from both Payslip & Bank Statement APIs (Zero localStorage)
  */
 export const fetchLiveIncomeVerification = async (userId = null, profileData = {}) => {
-  const targetId = userId || getCurrentBorrowerId() || INSTANT_LOAN_BORROWER_ID;
+  const targetId = userId || getCurrentBorrowerId();
   let payslipVerification = null;
   let bankStatementVerification = null;
 
@@ -966,7 +921,7 @@ export const fetchLiveIncomeVerification = async (userId = null, profileData = {
     const payslipRes = await fetchBorrowerPayslips(targetId);
     const rawVal = payslipRes?.data !== undefined ? payslipRes.data : payslipRes;
 
-    // Explicit user request: "and api- payslip/user/41682 from this can you show only data[0]"
+    // API payslip/user/{userId}: extract data[0] if present
     let latestPayslip = null;
     if (rawVal) {
       if (Array.isArray(rawVal.data) && rawVal.data.length > 0) {
@@ -1222,6 +1177,9 @@ export default {
   saveVerifiedBankDetails,
   fetchDisbursementStatus,
   fetchBorrowerActiveLoans,
+  getCashfreeInstance,
+  recordFeePaymentOutcome,
+  saveVerificationScoresApi,
   loadInstantLoanStorage,
   saveInstantLoanStorage,
   clearInstantLoanStorage,

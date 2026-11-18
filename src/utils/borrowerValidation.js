@@ -493,6 +493,37 @@ export const normalizeNomineeDetails = (nominee) => {
 };
 
 /**
+ * Checks whether a KYC document is actually uploaded (has a valid URL/file/document data).
+ * Rejects null, undefined, error payloads, and non-document identifiers.
+ */
+export const isKycDocUploaded = (doc) => {
+  if (!doc) return false;
+  if (typeof doc === "string") {
+    const s = doc.trim();
+    if (!s || s === "null" || s === "undefined" || s.startsWith("{")) return false;
+    return s.startsWith("http") || s.startsWith("/") || s.includes(".") || s.length > 20;
+  }
+  if (typeof doc === "object") {
+    if (doc.errorCode || doc.errorMessage || doc.error) return false;
+    const url =
+      doc.downloadUrl ||
+      doc.documentUrl ||
+      doc.fileUrl ||
+      doc.documentPath ||
+      doc.document ||
+      doc.fileUri ||
+      doc.url;
+    if (url && typeof url === "string" && url.trim().length > 0 && url !== "null" && url !== "undefined") {
+      return true;
+    }
+    if (doc.payslipAnalysisId || doc.statementId) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
  * Calculates Borrower Profile Completeness Percentage (0 - 100%)
  * Rule: Profile completeness must be at least 90% to raise a loan request.
  *
@@ -567,8 +598,8 @@ export const calculateBorrowerProfileCompleteness = (
     profile.panVerified === true ||
     profile.panStatus?.toUpperCase() === "VERIFIED" ||
     profile.isPanVerified ||
-    profile.kycDocs?.PanCard?.downloadUrl ||
-    profile.kycDocs?.PanCard ||
+    isKycDocUploaded(profile.kycDocs?.PanCard) ||
+    isKycDocUploaded(profile.panDoc) ||
     (typeof window !== "undefined" && sessionStorage.getItem("isPanVerified") === "true")
   );
   const hasPan = Boolean(
@@ -726,30 +757,40 @@ export const calculateBorrowerProfileCompleteness = (
   addBreakdownItem("Nominee Details", 10, nomEarned, hasNomineeName && hasNomineeContact, "Nominee Name, Relation & Mobile");
 
   // 7. KYC & Verification Documents (15%)
-  // Check Aadhaar (5%), Current Payslip (5%), Bank Statement (5%)
+  // Check Identity / Aadhaar Document (5%), Income / Current Payslip (5%), Banking / Bank Statement (5%)
   const docs = profile.kycDocs || {};
   const hasAadhaar = Boolean(
-    profile.kycStatus === true ||
-    profile.aadharNumber ||
-    profile.aadharDoc ||
-    profile.aadhar ||
-    docs.aadhar?.downloadUrl ||
-    docs.aadhar?.documentName ||
-    docs.aadhar ||
-    docs.Aadhar ||
-    docs.AADHAR
+    isKycDocUploaded(docs.aadhar) ||
+    isKycDocUploaded(docs.Aadhar) ||
+    isKycDocUploaded(docs.AADHAR) ||
+    isKycDocUploaded(docs.Passport) ||
+    isKycDocUploaded(docs.DRIVINGLICENCE) ||
+    isKycDocUploaded(docs.VOTERID) ||
+    isKycDocUploaded(profile.aadharDoc) ||
+    isKycDocUploaded(profile.aadharDocument)
   );
   if (hasAadhaar) score += 5;
   else missing.push("Aadhaar Card Document");
-  addBreakdownItem("Aadhaar Document", 5, hasAadhaar ? 5 : 0, hasAadhaar, "Aadhaar Card / Number");
+  addBreakdownItem("Aadhaar Document", 5, hasAadhaar ? 5 : 0, hasAadhaar, "Aadhaar Card Document");
 
   const isStudent = category === "STUDENT";
-  const hasPayslip = Boolean(
-    profile.kycStatus === true ||
-    (isStudent
-      ? docs.universityOfferLetter?.downloadUrl || docs.feeReceipt?.downloadUrl || docs.universityOfferLetter || docs.feeReceipt || profile.universityName
-      : docs.paySlips?.downloadUrl || docs.paySlips?.documentName || docs.paySlips || docs.PAYSLIPS || profile.paySlips?.downloadUrl || profile.paySlips || profile.payslipVerification?.verified)
-  );
+  const hasPayslip = isStudent
+    ? Boolean(
+        isKycDocUploaded(docs.universityOfferLetter) ||
+        isKycDocUploaded(docs.feeReceipt) ||
+        isKycDocUploaded(docs.inter) ||
+        isKycDocUploaded(docs.tenth) ||
+        isKycDocUploaded(docs.graduation) ||
+        isKycDocUploaded(profile.offerLetterDoc) ||
+        isKycDocUploaded(profile.feeReceiptDoc)
+      )
+    : Boolean(
+        isKycDocUploaded(docs.paySlips) ||
+        isKycDocUploaded(docs.PAYSLIPS) ||
+        isKycDocUploaded(profile.paySlips) ||
+        isKycDocUploaded(profile.payslipDoc) ||
+        Boolean(profile.payslipVerification?.verified && profile.payslipVerification?.fileName)
+      );
   if (hasPayslip) score += 5;
   else missing.push(isStudent ? "University Offer Letter / Fee Receipt" : "Current Payslip");
   addBreakdownItem(
@@ -761,17 +802,11 @@ export const calculateBorrowerProfileCompleteness = (
   );
 
   const hasBankStatement = Boolean(
-    profile.kycStatus === true ||
-    docs.bankStatement?.downloadUrl ||
-    docs.bankStatement?.documentName ||
-    docs.bankStatement ||
-    docs.BANKSTATEMENT ||
-    profile.bankStatement?.downloadUrl ||
-    profile.bankStatement ||
-    profile.salaryVerification?.isMatch ||
-    profile.bankAnalysisData ||
-    profile.borrowerSalaryData?.monthlyAmount > 0 ||
-    profile.bankDetailsInfo === true
+    isKycDocUploaded(docs.bankStatement) ||
+    isKycDocUploaded(docs.BANKSTATEMENT) ||
+    isKycDocUploaded(profile.bankStatement) ||
+    isKycDocUploaded(profile.bankStatementDoc) ||
+    Boolean(profile.bankAnalysisData?.statementId || profile.bankAnalysisData?.id)
   );
   if (hasBankStatement) score += 5;
   else missing.push("Bank Statement Document");

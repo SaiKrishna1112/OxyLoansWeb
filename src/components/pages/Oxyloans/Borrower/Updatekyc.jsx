@@ -1,3 +1,4 @@
+import BASE_URL from "../../../../config";
 import React, { useEffect, useState } from "react";
 import BorrowerHeader from "../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../SideBar/BorrowerSidebar";
@@ -63,7 +64,7 @@ const Updatekyc = () => {
 
         try {
             // Define the API URL dynamically
-            const apiUrl = `http://ec2-15-207-239-145.ap-south-1.compute.amazonaws.com:8080/oxyloans/v1/user/${formData.userId}/${formData.oxyScore}/${formData.commentId}/${formData.passwordLogin}/uploadCreditReport`;
+            const apiUrl = `${BASE_URL}/v1/user/${formData.userId}/${formData.oxyScore}/${formData.commentId}/${formData.passwordLogin}/uploadCreditReport`;
 
             // Create FormData object
             const uploadFormData = new FormData();

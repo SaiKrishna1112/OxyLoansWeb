@@ -55,3 +55,40 @@
   gap: 6px;
   margin-bottom: 6px;
 }
+
+/* ==========================================================================
+   Global Custom Scrollbar Styling ("All scroll have their own style")
+   ========================================================================== */
+
+/* W3C Standard (Firefox 64+, Chrome 121+, Safari 17.2+) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+/* WebKit-based browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+  border: 2px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #237abf;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #1a5c91;
+}
+

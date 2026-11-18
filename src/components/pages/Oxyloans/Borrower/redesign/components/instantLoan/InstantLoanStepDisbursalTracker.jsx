@@ -5,7 +5,7 @@ import { formatINR, maskAccountNumber } from "../creditReportUtils";
 import { fetchDisbursementStatus } from "./instantLoanApi";
 
 const InstantLoanStepDisbursalTracker = ({
-  applicationId = "41682",
+  applicationId = "",
   selectedOffer,
   profileData,
   bankData,
@@ -16,8 +16,8 @@ const InstantLoanStepDisbursalTracker = ({
   const principal = selectedOffer?.principal || 22500;
   const defaultNet = selectedOffer?.netDisbursal || Math.round(principal * 0.97);
   const [netDisbursal, setNetDisbursal] = useState(defaultNet);
-  const accNo = bankData?.accountNumber || profileData?.accountNumber || "34209820038";
-  const bankName = bankData?.bankName || profileData?.bankName || "STATE BANK OF INDIA";
+  const accNo = bankData?.accountNumber || profileData?.accountNumber || "";
+  const bankName = bankData?.bankName || profileData?.bankName || "Verified Bank Account";
 
   // Simulated countdown timer (1 hr 52 mins)
   const [secondsLeft, setSecondsLeft] = useState(6720);

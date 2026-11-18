@@ -22,16 +22,16 @@ const COMMON_BANKS = [
 const InstantLoanStepBankDetails = ({
   profileData,
   selectedOffer,
-  applicationId = "41682",
+  applicationId = "",
   onBankVerified,
   onBack,
 }) => {
   const [bankData, setBankData] = useState({
-    accountHolderName: profileData?.name || "DHARMAPURI SAI KRISHNA",
-    bankName: profileData?.bankName || "STATE BANK OF INDIA",
-    accountNumber: profileData?.accountNumber || "34209820038",
-    confirmAccountNumber: profileData?.accountNumber || "34209820038",
-    ifscCode: profileData?.ifscCode || "SBIN0008505",
+    accountHolderName: profileData?.name || "",
+    bankName: profileData?.bankName || "",
+    accountNumber: profileData?.accountNumber || "",
+    confirmAccountNumber: profileData?.accountNumber || "",
+    ifscCode: profileData?.ifscCode || "",
     accountType: "SAVINGS",
   });
 
@@ -204,7 +204,7 @@ const InstantLoanStepBankDetails = ({
           <div className="bank-metallic-card">
             <div className="d-flex justify-content-between align-items-center mb-4">
               <span className="fw-bold letter-spacing-1 text-white small">
-                {(bankData.bankName || "STATE BANK OF INDIA").toUpperCase()}
+                {(bankData.bankName || "BANK ACCOUNT").toUpperCase()}
               </span>
               <span className="badge badge-fintech-white-translucent rounded-pill px-2 py-1 small" style={{ fontSize: "10px" }}>
                 DIRECT DEPOSIT

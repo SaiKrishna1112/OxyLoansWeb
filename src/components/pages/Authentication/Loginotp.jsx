@@ -15,6 +15,7 @@ import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import Swal from "sweetalert2";
 import { handleStep2PendingFromLogin } from "./step2Handler";
 import VersionBadge from "./VersionBadge";
+import LoginDisclaimerTicker from "./LoginDisclaimerTicker";
 import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
@@ -80,9 +81,13 @@ const Loginotp = () => {
         if (saveLoginSession(loginRes)) {
           toastrSuccess("Google login successful!");
           const role = loginRes.data?.primaryType;
-          if (role === "LENDER") history("/lenderAIDashboard/" + loginRes.data.id);
-          else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) history("/oxyloansadmindashboard");
-          else history("/borrowerDashboard");
+          const defaultPath =
+            role === "LENDER"
+              ? "/lenderAIDashboard/" + loginRes.data.id
+              : ["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)
+                ? "/oxyloansadmindashboard"
+                : "/borrowerDashboard";
+          history(getPostLoginRedirectUrl(defaultPath, role, loginRes.data.id));
         }
       } else if (status === "STEP2_PENDING") {
         // Registration incomplete — redirect to step 2 with fresh timestamp
@@ -207,7 +212,7 @@ const Loginotp = () => {
           setGoogleModal(null);
         }
         const role = retriveresponse.data.primaryType;
-        let defaultPath = "/borrowerDashboard/admin$";
+        let defaultPath = "/borrowerDashboard";
         if (role === "LENDER") {
           defaultPath = "/lenderAIDashboard/" + retriveresponse.data.id;
         } else if (["ADMIN", "HELPDESKADMIN", "SUPERADMIN", "PRIMARYADMIN"].includes(role)) {
@@ -404,7 +409,8 @@ const Loginotp = () => {
   };
 
   return (
-    <div className="loginotp-page">
+    <div className="loginotp-page has-disclaimer">
+      <LoginDisclaimerTicker />
       <div className="loginotp-two-cards-wrap">
         {/* Left Card - Hero Artwork with Dynamic Micro-Animations */}
         <div className="loginotp-left-card">

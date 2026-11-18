@@ -13,6 +13,7 @@ import {
 import "../redesign.css";
 
 const MarketplaceEnach = () => {
+  const isInstant = isInstantLoanBorrower();
   const { loanRequestId, assignmentId: routeAssignmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -373,7 +374,7 @@ const MarketplaceEnach = () => {
                       <i className="fa-solid fa-ban me-1"></i>
                       Cancel Mandate
                     </button> */}
-                    <Link to="/borrowerLoansInitiated" className="oxy-btn-secondary">
+                    <Link to={isInstant ? (sessionStorage.getItem("userId") || localStorage.getItem("userId") ? `/borrower/instant-loan/${sessionStorage.getItem("userId") || localStorage.getItem("userId")}` : "/borrower/instant-loan") : "/borrowerLoansInitiated"} className="oxy-btn-secondary">
                       Go Back
                     </Link>
                   </div>
@@ -436,7 +437,10 @@ const MarketplaceEnach = () => {
                   <div className="d-flex justify-content-center gap-3">
                     <button
                       className="oxy-btn-primary"
-                      onClick={() => navigate("/borrowerDashboard")}
+                      onClick={() => {
+                        const activeUid = sessionStorage.getItem("userId") || localStorage.getItem("userId");
+                        navigate(isInstant ? (activeUid ? `/borrower/instant-loan/${activeUid}` : "/borrower/instant-loan") : "/borrowerDashboard");
+                      }}
                     >
                       <i className="fa-solid fa-house me-2"></i>
                       Go to Dashboard

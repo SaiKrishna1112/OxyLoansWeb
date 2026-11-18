@@ -14,6 +14,7 @@ import { WarningBackendApi } from "../Base UI Elements/SweetAlert";
 import { getPostLoginRedirectUrl } from "../../../utils/redirectUtils";
 import { handleStep2PendingFromLogin } from "./step2Handler";
 import VersionBadge from "./VersionBadge";
+import LoginDisclaimerTicker from "./LoginDisclaimerTicker";
 import "./loginotp.css";
 
 const cleanGoogleLoginError = (msg) => {
@@ -183,7 +184,8 @@ const Login = () => {
   };
 
   return (
-    <div className="loginotp-page">
+    <div className="loginotp-page has-disclaimer">
+      <LoginDisclaimerTicker />
       <div className="loginotp-two-cards-wrap">
         {/* Left Card - Hero Artwork with Micro-Animations */}
         <div className="loginotp-left-card">

@@ -2636,6 +2636,39 @@ export const knowisalredyrequested = () => {
 //   );
 //   return res;
 // };
+/**
+ * Create Cashfree Order for Platform Assessment Fee (₹150)
+ * Endpoint: POST cashfreeOrderForReact
+ * Payload: { orderAmount, userId, dealId, return_url, lenderFeePayments, paidFrom }
+ */
+export const createCashfreePlatformFeeOrder = async ({
+  userId = null,
+  amount = 150,
+  returnUrl = null,
+} = {}) => {
+  const token = getToken();
+  const uId = userId || getUserId();
+  const currentUrl = returnUrl || `${window.location.origin}${window.location.pathname}?myorder={order_id}`;
+
+  const payload = {
+    orderAmount: amount,
+    userId: uId,
+    dealId: 0,
+    return_url: currentUrl,
+    lenderFeePayments: "PLATFORM_ASSESSMENT_FEE",
+    paidFrom: "WEB",
+  };
+
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "cashfreeOrderForReact",
+    "POST",
+    token,
+    payload
+  );
+  return response;
+};
+
 export const getpaymentorder = (myorder) => {
   const token = getToken();
   const userId = getUserId();
@@ -2648,21 +2681,63 @@ export const getpaymentorder = (myorder) => {
   return res;
 };
 
-export const handellenderFeePaymentsapi = (data) => {
+export const handellenderFeePaymentsapi = (data, payType = null) => {
   const token = getToken();
   const userId = getUserId();
   console.log(data);
 
-  console.log(data.data.customer_details.customer_id);
-  console.log(data.data.order_status);
+  const customerId =
+    data?.data?.customer_details?.customer_id ||
+    data?.customer_details?.customer_id ||
+    data?.userId ||
+    userId;
+  const orderStatus =
+    data?.data?.order_status ||
+    data?.order_status ||
+    data?.status ||
+    "";
+  const isPaid =
+    orderStatus === "PAID" ||
+    data?.payuStatus === "success" ||
+    data?.status === "success";
+
+  const resolvedPayType = payType || data?.payType || data?.data?.payType || "CREDITREPORTFEE";
+
   const postData = {
-    comments: "LENDER FEE",
-    payuTransactionNumber: data.data.customer_details.customer_id,
-    payuStatus: data.data.order_status === "PAID" ? "success" : "",
+    comments: data?.comments || (resolvedPayType === "CREDITREPORTFEE" ? "PLATFORM ASSESSMENT FEE" : "LENDER FEE"),
+    payuTransactionNumber: customerId,
+    payuStatus: isPaid ? "success" : "failure",
+    payType: (resolvedPayType === "CREDITREPORTFEE" ? "CREDITREPORTFEE" : null),
   };
   const res = handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${data.data.customer_details.customer_id}/lenderFeePayments`,
+    `${customerId}/lenderFeePayments`,
+    "PATCH",
+    token,
+    postData
+  );
+  return res;
+};
+
+export const saveFeePaymentStatus = async ({
+  userId = null,
+  status = "success",
+  payType = "CREDITREPORTFEE",
+  comments = "PLATFORM ASSESSMENT FEE",
+  orderId = null,
+} = {}) => {
+  const token = getToken();
+  const uId = userId || getUserId();
+  const postData = {
+    comments,
+    payuTransactionNumber: String(uId),
+    payuStatus: status === "success" ? "success" : "failure",
+    payType: payType || "CREDITREPORTFEE",
+    ...(orderId ? { orderId } : {}),
+  };
+  const res = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    `${uId}/lenderFeePayments`,
     "PATCH",
     token,
     postData
@@ -3007,9 +3082,9 @@ export const editloanNewRequestHold = async (status) => {
 //   return res;
 // };
 
-export const getBorrowerRequestAmount = async () => {
+export const getBorrowerRequestAmount = async (borrowerId = null) => {
   const token = getToken();
-  const userId = getUserId();
+  const userId = borrowerId || getUserId();
   const requestedBorrowerId = userId;
 
   const response = await handleApiRequestAfterLoginService(
@@ -3021,10 +3096,10 @@ export const getBorrowerRequestAmount = async () => {
   return response;
 };
 
-export const getListOfBorrowerLoansInitiated = async () => {
+export const getListOfBorrowerLoansInitiated = async (borrowerId = null) => {
   const token = getToken();
-  const userId = getUserId();
-  const requestedBorrowerId =   userId;
+  const userId = borrowerId || getUserId();
+  const requestedBorrowerId = userId;
 
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
@@ -4849,55 +4924,35 @@ export const getBorrowerReportPdfUser = async (id) => {
   }
 };
 
-export const getBorrowerCreditReport = async (id) => {
-  const userId = getUserId();
+/**
+ * Get Borrower's Stored CIBIL / Credit Report via PaySprint
+ * Used in place of hitting new report checker every time
+ * Endpoint: GET paysprint/credit-report/{borrowerId}
+ */
+export const getBorrowerCreditReport = async (borrowerId) => {
   const token = getToken();
+  const targetId = borrowerId || getUserId();
   const response = await handleApiRequestAfterLoginService(
     API_BASE_URL,
-    `${id}/adminCreditReport`,
+    `paysprint/credit-report/${targetId}`,
     "GET",
     token
   );
   return response;
 };
 
+export const getPaysprintCreditReport = getBorrowerCreditReport;
+
 export const fetchPaysprintCreditReport = async (payload) => {
   const token = getToken();
-
-  return (
-    {
-    "success": true,
-    "httpStatus": 200,
-    "tokenUsed": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0aW1lc3RhbXAiOjE3OTA5MjQ4MjEsInBhcnRuZXJJZCI6IkNPUlAwMDAwMjY4MCIsInJlcWlkIjozOTA5OTgyMjZ9.v8isXl68yVsYgwkqGL52Ka_c323Zk3sESr1YxMmcInA",
-    "requestUrl": "https://api.verifya2z.com/api/v1/verification/credit_report_checker",
-    "rawResponse": "{\"statuscode\":200,\"status\":true,\"message\":\"Credit Report fetched successfully\",\"reference_id\":196843658,\"data\":{\"cCRResponse\":{\"status\":\"1\",\"cIRReportDataLst\":[{\"cIRReportData\":{\"iDAndContactInfo\":{\"personalInfo\":{\"name\":{\"fullName\":\"BALIJEPALLI NARENDRA \",\"firstName\":\"BALIJEPALLI \",\"middleName\":\"NARENDRA \"},\"dateOfBirth\":\"1994-08-08\",\"gender\":\"Male\",\"age\":{\"age\":\"32\"},\"totalIncome\":\"\"},\"identityInfo\":{\"pANId\":[{\"seq\":\"1\",\"reportedDate\":\"2026-09-23\",\"idNumber\":\"CDBPB2737H\"}],\"otherId\":[{\"seq\":\"1\",\"reportedDate\":\"2026-06-30\",\"idNumber\":\"60011901969107\"}]},\"addressInfo\":[{\"seq\":\"1\",\"reportedDate\":\"2026-09-23\",\"address\":\"4-15-124-2 BHARATH PET 8THLANE AMARAVATHI ROAD  GUNTUR GUNTUR\",\"state\":\"AP\",\"postal\":\"522002\",\"type\":\"Permanent\"},{\"seq\":\"2\",\"reportedDate\":\"2026-09-23\",\"address\":\"SRS FINTECH LABS PVT LTD  CCO2 BLOCK  C HINDU FORTUNE FIELDS 9TH PHASE ANNEXE HYDERABAD\",\"state\":\"AP\",\"postal\":\"500085\",\"type\":\"Office\"},{\"seq\":\"3\",\"reportedDate\":\"2026-09-23\",\"address\":\"PLOT NO 287 MIG\/2 KAHI PHOSE 9 KUKADPALLY  NEAR FORUM MALL HYDERABAD\",\"state\":\"TS\",\"postal\":\"500072\",\"type\":\"Office\"},{\"seq\":\"4\",\"reportedDate\":\"2026-09-23\",\"address\":\"SAI MSDHAV BOYS HOSTEL 155A ADDAGUTTA  NEAR JNTU HYDERABAD\",\"state\":\"TS\",\"postal\":\"500090\",\"type\":\"Primary\"},{\"seq\":\"5\",\"reportedDate\":\"2021-03-31\",\"address\":\"4-15-124-2 BHARATH PET 8THLANE AMARAVATHI ROAD  GUNTUR GUNTUR\",\"state\":\"AP\",\"postal\":\"522002\",\"type\":\"Permanent\"}],\"phoneInfo\":[{\"seq\":\"1\",\"typeCode\":\"H\",\"reportedDate\":\"2020-02-29\",\"number\":\"00522002\"},{\"seq\":\"2\",\"typeCode\":\"M\",\"reportedDate\":\"2026-09-23\",\"number\":\"09492902990\"},{\"seq\":\"3\",\"typeCode\":\"M\",\"reportedDate\":\"2023-02-01\",\"number\":\"9966888825\"},{\"seq\":\"4\",\"typeCode\":\"T\",\"reportedDate\":\"2026-06-30\",\"number\":\"9492902990\"},{\"seq\":\"5\",\"typeCode\":\"T\",\"reportedDate\":\"2023-04-01\",\"number\":\"00522002\"}],\"emailAddressInfo\":[{\"seq\":\"1\",\"reportedDate\":\"2023-02-01\",\"emailAddress\":\"NARENDRA@OXYLOANS.COM\"}]},\"retailAccountDetails\":[{\"seq\":\"1\",\"accountNumber\":\"0252965746111987943\",\"institution\":\"SBI CARDS AND PAYMENT SERVICES LIMITED\",\"accountType\":\"Credit Card\",\"ownershipType\":\"Individual\",\"balance\":\"125586\",\"pastDueAmount\":\"0\",\"open\":\"Yes\",\"highCredit\":\"150467\",\"lastPaymentDate\":\"2026-09-23\",\"dateReported\":\"2026-09-23\",\"dateOpened\":\"2022-03-10\",\"termFrequency\":\"Monthly\",\"creditLimit\":\"156000\",\"accountStatus\":\"Current Account\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"09-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"}],\"lastPayment\":\"\",\"writeOffAmount\":\"\",\"assetClassification\":\"\",\"dateClosed\":\"\",\"reason\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"},{\"seq\":\"2\",\"accountNumber\":\"9406455010135272\",\"institution\":\"Kotak Mahindra Bank Ltd\",\"accountType\":\"Credit Card\",\"ownershipType\":\"Individual\",\"balance\":\"89883\",\"pastDueAmount\":\"0\",\"lastPayment\":\"107516\",\"open\":\"No\",\"highCredit\":\"161856\",\"lastPaymentDate\":\"2026-09-03\",\"dateReported\":\"2026-09-23\",\"dateOpened\":\"2019-12-10\",\"dateClosed\":\"2021-03-31\",\"termFrequency\":\"Monthly\",\"creditLimit\":\"162000\",\"accountStatus\":\"Current Account\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"09-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-26\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"}],\"writeOffAmount\":\"\",\"assetClassification\":\"\",\"reason\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"},{\"seq\":\"3\",\"accountNumber\":\"7280514346111996607\",\"institution\":\"SBI CARDS AND PAYMENT SERVICES LIMITED\",\"accountType\":\"Credit Card\",\"ownershipType\":\"Individual\",\"balance\":\"0\",\"pastDueAmount\":\"0\",\"open\":\"No\",\"highCredit\":\"75339\",\"lastPaymentDate\":\"2025-06-18\",\"dateReported\":\"2025-08-30\",\"dateOpened\":\"2022-03-10\",\"dateClosed\":\"2025-07-09\",\"reason\":\"Closed Account\",\"termFrequency\":\"Monthly\",\"creditLimit\":\"0\",\"accountStatus\":\"Closed Account\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"08-25\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-25\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-25\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-24\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"}],\"lastPayment\":\"\",\"writeOffAmount\":\"\",\"assetClassification\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"},{\"seq\":\"4\",\"accountNumber\":\"9406151000648776\",\"institution\":\"Kotak Mahindra Bank Ltd\",\"accountType\":\"Credit Card\",\"ownershipType\":\"Individual\",\"balance\":\"0\",\"pastDueAmount\":\"0\",\"open\":\"No\",\"highCredit\":\"8284\",\"lastPaymentDate\":\"2021-01-04\",\"dateReported\":\"2025-04-22\",\"dateOpened\":\"2019-12-10\",\"dateClosed\":\"2021-10-21\",\"termFrequency\":\"Monthly\",\"accountStatus\":\"Closed Account\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"04-25\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-21\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"}],\"lastPayment\":\"\",\"writeOffAmount\":\"\",\"creditLimit\":\"\",\"assetClassification\":\"\",\"reason\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"},{\"seq\":\"5\",\"accountNumber\":\"9406150005334457\",\"institution\":\"Kotak Mahindra Bank Ltd\",\"accountType\":\"Credit Card\",\"ownershipType\":\"Individual\",\"balance\":\"0\",\"pastDueAmount\":\"0\",\"open\":\"No\",\"highCredit\":\"2662\",\"lastPaymentDate\":\"2020-10-04\",\"dateReported\":\"2025-04-22\",\"dateOpened\":\"2019-12-10\",\"dateClosed\":\"2021-10-21\",\"termFrequency\":\"Monthly\",\"accountStatus\":\"Closed Account\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"04-25\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-25\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-24\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-23\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-21\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-21\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"}],\"lastPayment\":\"\",\"writeOffAmount\":\"\",\"creditLimit\":\"\",\"assetClassification\":\"\",\"reason\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"},{\"seq\":\"6\",\"accountNumber\":\"0001014550015442292\",\"institution\":\"HDFC Bank Limited\",\"accountType\":\"Credit Card\",\"ownershipType\":\"Individual\",\"balance\":\"0\",\"open\":\"No\",\"highCredit\":\"55550\",\"lastPaymentDate\":\"2022-01-29\",\"dateReported\":\"2023-07-01\",\"dateOpened\":\"2018-12-14\",\"dateClosed\":\"2023-03-01\",\"reason\":\"Closed Account\",\"creditLimit\":\"150000\",\"accountStatus\":\"Closed Account\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"07-23\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-23\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-23\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-23\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-23\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-22\",\"paymentStatus\":\"*\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"07-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"06-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"05-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"04-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"03-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"02-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"01-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"12-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"11-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"10-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"09-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"},{\"key\":\"08-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"*\"}],\"pastDueAmount\":\"\",\"lastPayment\":\"\",\"writeOffAmount\":\"\",\"termFrequency\":\"\",\"assetClassification\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"},{\"seq\":\"7\",\"accountNumber\":\"6439810\",\"institution\":\"HDFC Bank Limited\",\"accountType\":\"Personal Loan\",\"ownershipType\":\"Individual\",\"balance\":\"0\",\"pastDueAmount\":\"0\",\"lastPayment\":\"3523\",\"open\":\"No\",\"sanctionAmount\":\"100000\",\"lastPaymentDate\":\"2022-05-07\",\"dateReported\":\"2022-05-31\",\"dateOpened\":\"2019-05-16\",\"dateClosed\":\"2022-05-07\",\"reason\":\"Closed Account\",\"termFrequency\":\"Monthly\",\"accountStatus\":\"Closed Account\",\"assetClassification\":\"Standard\",\"source\":\"INDIVIDUAL\",\"history48Months\":[{\"key\":\"05-22\",\"paymentStatus\":\"CLSD\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"04-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"03-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"02-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"01-22\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"12-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"11-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"10-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"09-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"08-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"07-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"06-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"05-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"04-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"03-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"02-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"01-21\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"12-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"11-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"10-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"09-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"08-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"07-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"06-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"05-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"04-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"03-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"02-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"01-20\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"12-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"11-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"10-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"09-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"08-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"07-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"06-19\",\"paymentStatus\":\"000\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"},{\"key\":\"05-19\",\"paymentStatus\":\"NEW\",\"suitFiledStatus\":\"*\",\"assetClassificationStatus\":\"STD\"}],\"writeOffAmount\":\"\",\"highCredit\":\"\",\"creditLimit\":\"\",\"interestRate\":\"\",\"repaymentTenure\":\"\",\"installmentAmount\":\"\",\"collateralValue\":\"\",\"collateralType\":\"\"}],\"retailAccountsSummary\":{\"noOfAccounts\":\"7\",\"noOfActiveAccounts\":\"1\",\"noOfWriteOffs\":\"0\",\"totalPastDue\":\"0.00\",\"mostSevereStatusWithIn24Months\":\"Non-Delnqt\",\"singleHighestCredit\":\"150467.00\",\"singleHighestSanctionAmount\":\"0.00\",\"totalHighCredit\":\"150467.00\",\"averageOpenBalance\":\"125586.00\",\"singleHighestBalance\":\"125586.00\",\"noOfPastDueAccounts\":\"0\",\"noOfZeroBalanceAccounts\":\"0\",\"recentAccount\":\"Credit Card on 10-03-2022\",\"oldestAccount\":\"Credit Card on 14-12-2018\",\"totalBalanceAmount\":\"125586.00\",\"totalSanctionAmount\":\"0.00\",\"totalCreditLimit\":\"156000.0\",\"totalMonthlyPaymentAmount\":\"0.00\"},\"scoreDetails\":[{\"type\":\"ERS\",\"version\":\"4.0\",\"name\":\"ERS4.0\",\"value\":\"802\",\"scoringElements\":[{\"type\":\"RES\",\"seq\":\"1\",\"code\":\"703\",\"description\":\"Total Utilization\"},{\"type\":\"RES\",\"seq\":\"2\",\"code\":\"704\",\"description\":\"Credit Card Utilization\"},{\"type\":\"RES\",\"seq\":\"3\",\"code\":\"702\",\"description\":\"Total Credit Exposure\"}]}],\"enquirySummary\":{\"purpose\":\"ALL\",\"total\":\"0\",\"past30Days\":\"0\",\"past12Months\":\"0\",\"past24Months\":\"0\"},\"otherKeyInd\":{\"ageOfOldestTrade\":\"94\",\"numberOfOpenTrades\":\"1\",\"allLinesEVERWritten\":\"0.00\",\"allLinesEVERWrittenIn9Months\":\"0\",\"allLinesEVERWrittenIn6Months\":\"0\"},\"recentActivities\":{\"accountsDeliquent\":\"0\",\"accountsOpened\":\"0\",\"totalInquiries\":\"0\",\"accountsUpdated\":\"2\"}}}]},\"reportOrderNumber\":\"2989093135\"}}",
-    "message": "Credit Report fetched successfully"
-}
-  )
-  try {
-    const response = await handleApiRequestAfterLoginService(
-      API_BASE_URL,
-      "paysprint/credit-report-checker12",
-      "POST",
-      token,
-      payload
-    );
-    if (response) return response;
-  } catch (error) {
-    console.warn("handleApiRequestAfterLoginService credit report error:", error);
-  }
-
-  return await axios.post(
-    `${API_BASE_URL}paysprint/credit-report-checker12`,
-    payload,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        accessToken: token,
-      },
-    }
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "paysprint/credit-report-checker",
+    "POST",
+    token,
+    payload
   );
+  return response;
 };
 
 /**
@@ -4932,7 +4987,7 @@ export const getBorrowerDocumentsList = async (payload = { pageNo: 1, pageSize: 
   const token = getToken();
   const requestPayload =
     typeof payload === "object" && payload !== null
-      ? { pageNo: 1, pageSize: 100, ...payload }
+      ? payload
       : { pageNo: Number(payload) || 1, pageSize: 100 };
 
   try {
@@ -4955,4 +5010,21 @@ export const getBorrowerDocumentsList = async (payload = { pageNo: 1, pageSize: 
     }
     throw error;
   }
+};
+
+/**
+ * Save Verification Scores (Borrower credit score, oxyScore, eligibleAmount)
+ * Endpoint: POST saveVerificationScores
+ * Payload: { borrowerId, creditScore, eligibleAmount, oxyScore }
+ */
+export const saveVerificationScores = async (payload) => {
+  const token = getToken();
+  const response = await handleApiRequestAfterLoginService(
+    API_BASE_URL,
+    "saveVerificationScores",
+    "POST",
+    token,
+    payload
+  );
+  return response;
 };

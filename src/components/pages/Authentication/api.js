@@ -292,7 +292,7 @@ export const vaildateotp = async (
       }
 
       if (studentId) {
-        params.studentId = studentId;
+        params.studentfdid = studentId;
       }
 
       const response = await axios.post(

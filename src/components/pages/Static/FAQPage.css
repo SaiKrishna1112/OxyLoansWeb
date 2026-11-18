@@ -1,0 +1,1469 @@
+/* ==========================================================================
+   OXYLOANS FAQ SCREEN (REDESIGNED 2026)
+   Matches user specification & uploaded screenshot:
+   - Untouched Header
+   - Vibrant 3D Accent Hero with Pill Search Bar
+   - Horizontal Filter Pills Bar
+   - 2-Column Grid: 300px Left Sidebar + Right Accordion Cards
+   - All Collapsed by Default on Screen Open
+   - Pixel-perfect Weightage Table & Badges
+   ========================================================================== */
+
+.oxy-faq-page {
+  min-height: 100vh;
+  background-color: #f4f7fb;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+
+.faq-container-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   1. Hero Banner (Vibrant Electric Blue with 3D Motion & Animator Effects)
+   ========================================================================== */
+.oxy-faq-hero-v2 {
+  background: linear-gradient(135deg, #1877f2 0%, #1565c0 45%, #0d47a1 100%);
+  color: #ffffff;
+  padding: 55px 24px 60px 24px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(13, 71, 161, 0.25);
+  perspective: 1000px;
+}
+
+/* Dynamic Luminous Ambient Orbs with Breathing Motion */
+.hero-motion-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.light-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(50px);
+}
+
+.light-orb.orb-1 {
+  top: -90px;
+  left: 15%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(56, 189, 248, 0.12) 50%, transparent 70%);
+  animation: auroraBreathe1 8s ease-in-out infinite alternate;
+}
+
+.light-orb.orb-2 {
+  bottom: -80px;
+  right: 18%;
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, rgba(13, 71, 161, 0.15) 50%, transparent 70%);
+  animation: auroraBreathe2 9s ease-in-out infinite alternate;
+}
+
+.light-sweep {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+  transform: skewX(-25deg);
+  animation: sweepLight 8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+@keyframes auroraBreathe1 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate3d(30px, 20px, 0) scale(1.22);
+    opacity: 1;
+  }
+}
+
+@keyframes auroraBreathe2 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate3d(-35px, -25px, 0) scale(1.28);
+    opacity: 0.95;
+  }
+}
+
+@keyframes sweepLight {
+  0% {
+    left: -100%;
+  }
+  40%, 100% {
+    left: 200%;
+  }
+}
+
+/* Center Content & Staggered Motion Entrance */
+.oxy-faq-hero-center {
+  max-width: 780px;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  margin: 0 auto;
+}
+
+.animate-title {
+  font-size: 38px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.6px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  animation: heroTitleEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-subhead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.94);
+  max-width: 720px;
+  margin: 0 auto 30px auto;
+  font-weight: 400;
+  animation: heroSubheadEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+@keyframes heroTitleEntrance {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -22px, 0) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes heroSubheadEntrance {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Interactive Pill Search Bar with Motion Halo */
+.oxy-faq-search-wrapper {
+  position: relative;
+  max-width: 680px;
+  margin: 0 auto;
+  border-radius: 50px;
+  box-shadow: 0 8px 24px rgba(13, 71, 161, 0.3);
+  animation: heroSearchEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.oxy-faq-search-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(13, 71, 161, 0.4), 0 0 0 2px rgba(56, 189, 248, 0.35);
+}
+
+@keyframes heroSearchEntrance {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.faq-search-glass-icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 17px;
+  pointer-events: none;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.oxy-faq-search-wrapper:focus-within .faq-search-glass-icon {
+  color: #0284c7;
+  transform: translateY(-50%) scale(1.15) rotate(-8deg);
+}
+
+.faq-search-input-pill {
+  width: 100%;
+  padding: 16px 24px 16px 54px;
+  border-radius: 50px;
+  border: 2px solid transparent;
+  outline: none;
+  background: #ffffff;
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 500;
+  box-sizing: border-box;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.faq-search-input-pill:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.4), 0 12px 28px rgba(13, 71, 161, 0.3);
+}
+
+.faq-search-input-pill::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* 3D Decorative Floating Graphics Container */
+.faq-hero-decor {
+  position: absolute;
+  top: 50%;
+  pointer-events: auto;
+  z-index: 2;
+  will-change: transform;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.left-decor {
+  left: 3%;
+  margin-top: -70px;
+}
+
+.right-decor {
+  right: 3%;
+  margin-top: -65px;
+}
+
+/* ── Left 3D Animated Floating Clipboard ─────────────────────────────────── */
+.decor-clipboard {
+  position: relative;
+  width: 124px;
+  height: 144px;
+  background: linear-gradient(145deg, #ffffff 0%, #e0f2fe 100%);
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(255, 255, 255, 0.6) inset;
+  padding: 24px 14px 14px 14px;
+  box-sizing: border-box;
+  transform: rotate(-10deg);
+  cursor: pointer;
+  transform-origin: center center;
+  animation: floatClipboard 5.5s ease-in-out infinite alternate;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  overflow: hidden;
+}
+
+.decor-clipboard:hover {
+  transform: rotate(-5deg) scale(1.08) translate3d(0, -6px, 0);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.32), 0 0 0 2px rgba(56, 189, 248, 0.6);
+}
+
+/* Floating Animation */
+@keyframes floatClipboard {
+  0% {
+    transform: translate3d(0, -10px, 0) rotate(-7deg);
+  }
+  50% {
+    transform: translate3d(0, 4px, 0) rotate(-10deg);
+  }
+  100% {
+    transform: translate3d(0, 10px, 0) rotate(-12deg);
+  }
+}
+
+/* Clipboard Metallic Shine Glint */
+.clipboard-shine-glint {
+  position: absolute;
+  top: -60%;
+  left: -80%;
+  width: 50%;
+  height: 220%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+  transform: rotate(30deg);
+  animation: shineGlint 6s infinite ease-in-out 1s;
+  pointer-events: none;
+}
+
+@keyframes shineGlint {
+  0%, 65% {
+    left: -80%;
+  }
+  85%, 100% {
+    left: 180%;
+  }
+}
+
+.clipboard-header {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 20px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clip-pin {
+  width: 18px;
+  height: 6px;
+  background: #ffffff;
+  border-radius: 4px;
+}
+
+.clipboard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-check {
+  width: 14px;
+  height: 14px;
+  background: #0284c7;
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.check-row.row-1 .mini-check {
+  animation: checkPulse 4s infinite ease-in-out 0.2s;
+}
+
+.check-row.row-2 .mini-check {
+  animation: checkPulse 4s infinite ease-in-out 0.7s;
+}
+
+.check-row.row-3 .mini-check {
+  animation: checkPulse 4s infinite ease-in-out 1.2s;
+}
+
+@keyframes checkPulse {
+  0%, 80%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3);
+  }
+  15% {
+    transform: scale(1.22);
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+  }
+}
+
+.mini-check::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  width: 3px;
+  height: 6px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.mini-line {
+  height: 6px;
+  background: #cbd5e1;
+  border-radius: 3px;
+  flex: 1;
+}
+
+.mini-line.short {
+  max-width: 45px;
+}
+
+/* 3D Animated Gold Rupee Coins */
+.decor-coin {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #facc15 0%, #eab308 55%, #ca8a04 100%);
+  color: #713f12;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24), 0 2px 4px rgba(255, 255, 255, 0.6) inset;
+  border: 2px solid #fef08a;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.coin-shine {
+  position: absolute;
+  top: -60%;
+  left: -80%;
+  width: 50%;
+  height: 220%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.65) 50%, transparent 100%);
+  transform: rotate(35deg);
+  animation: coinShimmer 3.8s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes coinShimmer {
+  0%, 70% {
+    left: -80%;
+  }
+  90%, 100% {
+    left: 180%;
+  }
+}
+
+.coin-1 {
+  width: 44px;
+  height: 44px;
+  font-size: 21px;
+  bottom: -15px;
+  right: -10px;
+  z-index: 2;
+  animation: floatCoin1 4.2s ease-in-out infinite alternate;
+}
+
+.coin-2 {
+  width: 36px;
+  height: 36px;
+  font-size: 17px;
+  bottom: -8px;
+  right: 24px;
+  z-index: 1;
+  animation: floatCoin2 4.8s ease-in-out infinite alternate 0.5s;
+}
+
+.decor-coin:hover {
+  transform: scale(1.18) rotate(15deg);
+  box-shadow: 0 12px 24px rgba(234, 179, 8, 0.45);
+}
+
+@keyframes floatCoin1 {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(12deg);
+  }
+  100% {
+    transform: translate3d(-3px, -8px, 0) rotate(6deg);
+  }
+}
+
+@keyframes floatCoin2 {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-6deg);
+  }
+  100% {
+    transform: translate3d(4px, -6px, 0) rotate(8deg);
+  }
+}
+
+/* ── Right 3D Animated Floating Speech Bubble & Twinkling Sparkles ─────────── */
+.decor-bubble {
+  position: relative;
+  width: 140px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: floatBubble 5s ease-in-out infinite alternate 0.4s;
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.decor-bubble:hover {
+  transform: rotate(4deg) scale(1.1) translate3d(0, -6px, 0);
+}
+
+@keyframes floatBubble {
+  0% {
+    transform: translate3d(0, -8px, 0) rotate(5deg);
+  }
+  50% {
+    transform: translate3d(0, 3px, 0) rotate(8deg);
+  }
+  100% {
+    transform: translate3d(0, 10px, 0) rotate(10deg);
+  }
+}
+
+.bubble-card {
+  position: relative;
+  background: linear-gradient(145deg, #38bdf8 0%, #0284c7 100%);
+  border-radius: 20px;
+  padding: 16px 24px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(255, 255, 255, 0.4) inset;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.bubble-card::after {
+  content: "";
+  position: absolute;
+  bottom: -12px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 14px solid #0284c7;
+}
+
+.bubble-bold {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Pulsing Badge on Top of Bubble */
+.bubble-sub.pulse-badge {
+  position: absolute;
+  top: -14px;
+  right: -8px;
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  color: #713f12;
+  font-size: 16px;
+  font-weight: 900;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18), 0 0 0 2px #ffffff;
+  animation: badgePop 3s cubic-bezier(0.34, 1.56, 0.64, 1) infinite;
+}
+
+@keyframes badgePop {
+  0%, 75%, 100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(1.22) rotate(-8deg);
+  }
+  25% {
+    transform: scale(1.1) rotate(6deg);
+  }
+}
+
+/* Twinkling & Rotating Sparkles */
+.sparkle {
+  position: absolute;
+  background: #facc15;
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+  filter: drop-shadow(0 0 6px rgba(250, 204, 21, 0.8));
+}
+
+.sp-1.twinkle-1 {
+  width: 24px;
+  height: 24px;
+  top: -14px;
+  left: -8px;
+  animation: spinTwinkle 3.2s infinite ease-in-out;
+}
+
+.sp-2.twinkle-2 {
+  width: 18px;
+  height: 18px;
+  bottom: -6px;
+  right: -12px;
+  animation: spinTwinkle 2.8s infinite ease-in-out 0.9s;
+}
+
+.sp-3.twinkle-3 {
+  width: 14px;
+  height: 14px;
+  top: 15px;
+  right: -24px;
+  animation: spinTwinkle 3.6s infinite ease-in-out 1.5s;
+}
+
+.sp-4.twinkle-4 {
+  width: 12px;
+  height: 12px;
+  bottom: 25px;
+  left: -18px;
+  animation: spinTwinkle 4s infinite ease-in-out 2.1s;
+}
+
+@keyframes spinTwinkle {
+  0% {
+    transform: rotate(0deg) scale(0.85);
+    opacity: 0.6;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.25);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(360deg) scale(0.85);
+    opacity: 0.6;
+  }
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .light-orb.orb-1,
+  .light-orb.orb-2,
+  .light-sweep,
+  .animate-title,
+  .animate-subhead,
+  .oxy-faq-search-wrapper,
+  .decor-clipboard,
+  .clipboard-shine-glint,
+  .check-row .mini-check,
+  .coin-shine,
+  .coin-1,
+  .coin-2,
+  .decor-bubble,
+  .bubble-sub.pulse-badge,
+  .sparkle {
+    animation: none !important;
+    transition: none !important;
+  }
+  .faq-hero-decor {
+    transition: none !important;
+  }
+}
+
+.bubble-card {
+  position: relative;
+  background: linear-gradient(145deg, #38bdf8, #0284c7);
+  border-radius: 20px;
+  padding: 16px 22px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+
+.bubble-card::after {
+  content: "";
+  position: absolute;
+  bottom: -12px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border-left: 12px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 14px solid #0284c7;
+}
+
+.bubble-sub {
+  position: absolute;
+  top: -14px;
+  right: -8px;
+  background: #facc15;
+  color: #713f12;
+  font-size: 16px;
+  font-weight: 900;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.bubble-bold {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.sparkle {
+  position: absolute;
+  background: #facc15;
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+}
+
+.sp-1 {
+  width: 22px;
+  height: 22px;
+  top: -10px;
+  left: 0;
+  animation: pulseSparkle 2.5s infinite ease-in-out;
+}
+
+.sp-2 {
+  width: 16px;
+  height: 16px;
+  bottom: 0;
+  right: -10px;
+  animation: pulseSparkle 3s infinite ease-in-out 0.8s;
+}
+
+@keyframes pulseSparkle {
+  0%, 100% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+/* ==========================================================================
+   2. Horizontal Filter Pills Bar
+   ========================================================================== */
+.oxy-faq-pills-bar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 16px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.pills-flex {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.pills-flex::-webkit-scrollbar {
+  display: none;
+}
+
+.faq-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 30px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.faq-pill-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.faq-pill-btn.active {
+  background: #1877f2;
+  color: #ffffff;
+  border-color: #1877f2;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+}
+
+.faq-pill-btn .pill-icon {
+  font-size: 14px;
+}
+
+/* ==========================================================================
+   3. Main Body & 2-Column Grid Layout
+   ========================================================================== */
+.oxy-faq-body-wrap {
+  flex: 1;
+  padding: 30px 0 60px 0;
+}
+
+.faq-grid-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Left Sidebar (300px) ─────────────────────────────────────────────────── */
+.faq-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.faq-side-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  padding: 22px;
+  box-sizing: border-box;
+}
+
+.side-card-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.2px;
+}
+
+.side-card-title.text-center {
+  text-align: center;
+}
+
+/* Card 1: Categories List */
+.side-cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.side-cat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.side-cat-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.side-cat-btn.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  border-left: 3px solid #1d4ed8;
+}
+
+.cat-btn-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cat-icon {
+  font-size: 15px;
+  color: #64748b;
+}
+
+.side-cat-btn.active .cat-icon {
+  color: #1d4ed8;
+}
+
+.cat-count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.cat-count-badge.active {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Card 2: Still need help? */
+.card-support {
+  text-align: center;
+  padding-top: 26px;
+}
+
+.support-head-icon {
+  width: 52px;
+  height: 52px;
+  background: #eff6ff;
+  color: #1877f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 14px auto;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.15);
+}
+
+.support-card-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.btn-side-contact {
+  display: block;
+  width: 100%;
+  background: #1877f2;
+  color: #ffffff;
+  padding: 11px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.25);
+  margin-bottom: 18px;
+  box-sizing: border-box;
+}
+
+.btn-side-contact:hover {
+  background: #0d62d9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(24, 119, 242, 0.35);
+}
+
+.support-contact-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contact-item:hover {
+  color: #1877f2;
+}
+
+.contact-item .c-icon {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* Card 3: Lend or Borrow with Confidence */
+.card-confidence {
+  text-align: center;
+}
+
+.confidence-icon-box {
+  margin: 0 auto 12px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confidence-graphic {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 10px;
+}
+
+.coin-sign {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #facc15, #ca8a04);
+  color: #713f12;
+  font-size: 20px;
+  font-weight: 900;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  border: 2px solid #fef08a;
+}
+
+.bar-graph {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.bar {
+  width: 8px;
+  background: #38bdf8;
+  border-radius: 3px;
+}
+
+.bar.b1 { height: 16px; background: #93c5fd; }
+.bar.b2 { height: 26px; background: #60a5fa; }
+.bar.b3 { height: 38px; background: #2563eb; }
+
+.confidence-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+  margin: 0 0 16px 0;
+}
+
+.confidence-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.confidence-check-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.chk-icon {
+  color: #10b981;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.btn-side-get-started {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #e0f2fe;
+  color: #0284c7;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-side-get-started:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.arr-icon {
+  font-size: 12px;
+}
+
+/* ── Right Content Column (Accordion Cards) ───────────────────────────────── */
+.faq-content-main {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Toolbar */
+.faq-content-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 2px;
+}
+
+.showing-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-expand-collapse {
+  background: transparent;
+  border: none;
+  color: #1877f2;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-expand-collapse:hover {
+  background: #eff6ff;
+  color: #0d47a1;
+}
+
+.action-ico {
+  font-size: 11px;
+}
+
+/* Accordion Items List */
+.faq-accordion-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-accordion-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.faq-accordion-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.faq-accordion-item.open {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.08);
+}
+
+/* Accordion Header */
+.faq-accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  outline: none;
+  gap: 14px;
+  transition: background 0.15s ease;
+}
+
+.faq-accordion-header:hover {
+  background: #f8fafc;
+}
+
+.faq-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Category Badge Pills */
+.faq-type-pill {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-lender {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.badge-borrower {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.badge-kyc {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.badge-tax {
+  background: #f3e8ff;
+  color: #9333ea;
+}
+
+.faq-question-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+  letter-spacing: -0.15px;
+}
+
+.faq-header-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.faq-toggle-chevron {
+  font-size: 14px;
+  color: #1877f2;
+  transition: transform 0.25s ease;
+}
+
+.faq-toggle-chevron.open {
+  color: #0284c7;
+}
+
+/* Accordion Body */
+.faq-accordion-body {
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+  padding: 20px 22px;
+  animation: faqFadeSlide 0.25s ease-out;
+}
+
+@keyframes faqFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.faq-answer-inner {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #334155;
+}
+
+.faq-answer-inner p {
+  margin: 0 0 12px 0;
+}
+
+.faq-answer-inner p:last-child {
+  margin-bottom: 0;
+}
+
+.faq-answer-inner ul {
+  margin: 10px 0 10px 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.faq-answer-inner li {
+  line-height: 1.6;
+}
+
+/* Weightage Table (Matching user's screenshot exactly) */
+.faq-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin: 16px 0 10px 0;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+.faq-weightage-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.faq-weightage-table thead th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 18px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: none;
+}
+
+.faq-weightage-table thead th:last-child {
+  text-align: center;
+}
+
+.faq-weightage-table tbody td {
+  padding: 10px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+  background: #ffffff;
+}
+
+.faq-weightage-table tbody td:last-child {
+  text-align: center;
+  font-weight: 600;
+}
+
+.faq-weightage-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Total Row Highlight */
+.faq-weightage-table tr.table-total-row td {
+  background: #fef08a !important;
+  color: #713f12;
+  font-weight: 800;
+  border-top: 2px solid #eab308;
+}
+
+/* Empty State */
+.faq-empty-state {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 45px 24px;
+  text-align: center;
+}
+
+.faq-empty-state h4 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.faq-empty-state p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-reset-filter {
+  background: #1877f2;
+  color: #ffffff;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-reset-filter:hover {
+  background: #0d62d9;
+}
+
+/* ==========================================================================
+   4. Responsive Adjustments
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .faq-grid-layout {
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 991px) {
+  .faq-hero-decor {
+    display: none;
+  }
+
+  .oxy-faq-title-main {
+    font-size: 32px;
+  }
+
+  .faq-grid-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .faq-sidebar {
+    order: 2;
+    margin-top: 20px;
+  }
+
+  .faq-content-main {
+    order: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  .oxy-faq-hero-v2 {
+    padding: 40px 16px 45px 16px;
+  }
+
+  .oxy-faq-title-main {
+    font-size: 26px;
+  }
+
+  .oxy-faq-subhead-main {
+    font-size: 14px;
+    margin-bottom: 22px;
+  }
+
+  .faq-search-input-pill {
+    padding: 13px 18px 13px 44px;
+    font-size: 14px;
+  }
+
+  .faq-search-glass-icon {
+    left: 16px;
+    font-size: 15px;
+  }
+
+  .faq-accordion-header {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .faq-header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .faq-question-heading {
+    font-size: 14px;
+  }
+
+  .faq-accordion-body {
+    padding: 16px;
+  }
+
+  .showing-count {
+    font-size: 13px;
+  }
+}

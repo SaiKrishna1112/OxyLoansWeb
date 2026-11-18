@@ -69,7 +69,7 @@ const InstantLoanStepIncomeVerification = ({
 
   // Load live income verification from backend API directly on mount if not already present
   useEffect(() => {
-    const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+    const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
     fetchLiveIncomeVerification(uId, profileData)
       .then((incRes) => {
         if (incRes?.payslipVerification) {
@@ -186,7 +186,7 @@ const InstantLoanStepIncomeVerification = ({
     setIsAnalyzingPayslip(true);
 
     try {
-      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
       const borrowerFirstName = borrowerName.trim().split(/\s+/)[0] || "";
       const declaredCompany = companyName.trim();
 
@@ -339,7 +339,7 @@ const InstantLoanStepIncomeVerification = ({
     setIsAnalyzingBank(true);
 
     try {
-      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "41682";
+      const uId = sessionStorage.getItem("userId") || localStorage.getItem("userId") || "";
       const borrowerFirstName = borrowerName.trim().split(/\s+/)[0] || "";
 
       const analyzeRes = await analyzeBankStatementDoc(selectedBankFile, activePass, uId);

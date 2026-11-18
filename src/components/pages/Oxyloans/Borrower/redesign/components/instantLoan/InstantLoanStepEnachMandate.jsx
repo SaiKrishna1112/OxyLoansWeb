@@ -8,7 +8,7 @@ const InstantLoanStepEnachMandate = ({
   selectedOffer,
   profileData = {},
   bankData = null,
-  applicationId = "41682",
+  applicationId = "",
   onComplete,
   onBack,
 }) => {
@@ -20,10 +20,10 @@ const InstantLoanStepEnachMandate = ({
   const emiAmount = selectedOffer?.monthlyEmi || selectedOffer?.emi || selectedOffer?.totalPayable || 10772;
   const maxCap = Math.round(emiAmount * 1.5);
 
-  const bankName = bankData?.bankName || "STATE BANK OF INDIA";
-  const accountNumber = bankData?.accountNumber || "34209820038";
-  const ifscCode = bankData?.ifscCode || "SBIN0008505";
-  const maskedAccount = `••••••••${accountNumber.slice(-4)}`;
+  const bankName = bankData?.bankName || profileData?.bankName || "Verified Bank";
+  const accountNumber = bankData?.accountNumber || profileData?.accountNumber || "";
+  const ifscCode = bankData?.ifscCode || profileData?.ifscCode || "";
+  const maskedAccount = accountNumber ? `••••••••${accountNumber.slice(-4)}` : "••••••••";
 
   const handleSetupEnach = async () => {
     if (!termsAgreed) {
@@ -154,7 +154,7 @@ const InstantLoanStepEnachMandate = ({
                       A/C: <span className="fw-bold text-dark">{maskedAccount}</span> • IFSC: <span className="fw-bold text-dark">{ifscCode}</span>
                     </div>
                     <div className="text-muted small" style={{ fontSize: "11px" }}>
-                      Holder: <strong>{profileData.name || "DHARMAPURI SAI KRISHNA"}</strong>
+                      Holder: <strong>{profileData.name || "Borrower"}</strong>
                     </div>
                   </div>
                   <div>

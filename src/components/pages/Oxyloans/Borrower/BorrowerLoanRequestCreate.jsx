@@ -118,8 +118,16 @@ const BorrowerLoanRequestCreate = () => {
               ? panDocRes.value?.data
               : null;
 
-          if (payslipDoc && Array.isArray(payslipDoc) && payslipDoc.length > 0) {
-            const latest = payslipDoc[payslipDoc.length - 1] || payslipDoc[0];
+          const payslipList = Array.isArray(payslipDoc?.data)
+            ? payslipDoc.data
+            : Array.isArray(payslipDoc)
+            ? payslipDoc
+            : (payslipDoc && typeof payslipDoc === "object" && (payslipDoc.payslipAnalysisId || payslipDoc.netSalary))
+            ? [payslipDoc]
+            : [];
+
+          if (payslipList.length > 0) {
+            const latest = payslipList[0];
             payslipDoc = {
               ...latest,
               downloadUrl:
@@ -128,7 +136,7 @@ const BorrowerLoanRequestCreate = () => {
                 latest.fileUrl ||
                 latest.url ||
                 latest.documentPath,
-              allPayslips: payslipDoc,
+              allPayslips: payslipList,
             };
           }
 

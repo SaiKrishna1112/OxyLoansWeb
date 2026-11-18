@@ -9,7 +9,6 @@ import { getToken, getUserId, getLenderFyReport } from "../../../HttpRequest/aft
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { RichMessage, FormattedText, SuggestedFollowup, TopicBadge } from "../../../ChatDrawer";
-import { openLenderWelcomeModal } from "./LenderWelcomeModal";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -1829,7 +1828,7 @@ const LenderPortfolioDashboard = () => {
               <h3 className="page-title">My Investment Portfolio</h3>
               <p className="text-muted mb-0">AI-powered personal wealth summary</p>
             </div>
-            <button
+            {/* <button
               type="button"
               className="btn btn-sm d-flex align-items-center gap-2"
               onClick={openLenderWelcomeModal}
@@ -1846,7 +1845,7 @@ const LenderPortfolioDashboard = () => {
               title="View 10 Years of OxyLoans Anniversary Note"
             >
               🎉 10 Years of OxyLoans
-            </button>
+            </button> */}
           </div>
 
           {loading && (

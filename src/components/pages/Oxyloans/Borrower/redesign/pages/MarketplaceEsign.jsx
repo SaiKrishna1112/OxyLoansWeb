@@ -4,10 +4,12 @@ import Swal from "sweetalert2";
 import BorrowerHeader from "../../../../../Header/BorrowerHeader";
 import BorrowerSidebar from "../../../../../SideBar/BorrowerSidebar";
 import Footer from "../../../../../Footer/Footer";
-import { startCashfreeEsign, completeCashfreeEsign,getListOfBorrowerLoansInitiated  } from "../../../../../HttpRequest/afterlogin";
+import { startCashfreeEsign, completeCashfreeEsign, getListOfBorrowerLoansInitiated } from "../../../../../HttpRequest/afterlogin";
+import { isInstantLoanBorrower } from "../../../../../../utils/redirectUtils";
 import "../redesign.css";
 
 const MarketplaceEsign = () => {
+  const isInstant = isInstantLoanBorrower();
   const { loanRequestId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

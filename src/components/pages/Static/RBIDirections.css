@@ -1,0 +1,589 @@
+/* ==========================================================================
+   RBI DIRECTIONS SCREEN CSS - OxyLoans
+   Matching requested HTML specification and design system
+   ========================================================================== */
+.oxy-rbi-directions-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hero Section */
+.oxy-rbi-hero {
+  background: linear-gradient(135deg, #0b1930 0%, #061428 100%);
+  color: #ffffff;
+  padding: 55px 24px 45px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid #237abf;
+}
+
+.oxy-rbi-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: 20%;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(35, 122, 191, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-rbi-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -40px;
+  right: 18%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-rbi-hero-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.oxy-rbi-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(35, 122, 191, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.oxy-rbi-badge-top .badge-icon {
+  font-size: 13px;
+}
+
+.oxy-rbi-hero-title {
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0 0 14px 0;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+.oxy-rbi-hero-subhead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  max-width: 760px;
+  margin: 0 auto 30px auto;
+}
+
+/* Compliance Fast Highlights Row */
+.oxy-rbi-highlights-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.rbi-highlight-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.rbi-highlight-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hl-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.hl-icon.hl-gold { color: #f59e0b; }
+.hl-icon.hl-blue { color: #38bdf8; }
+.hl-icon.hl-green { color: #10b981; }
+.hl-icon.hl-purple { color: #a855f7; }
+
+.hl-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.hl-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+}
+
+.hl-desc {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   USER SPECIFICATION CLASSES: .borrower-video-wrap & .rbiguideLines
+   ========================================================================== */
+.borrower-video-wrap {
+  background: #ffffff;
+  padding: 60px 0 70px 0;
+  width: 100%;
+}
+
+.borrower-video-wrap .container {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.borrower-head {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.borrower-head h2 {
+  font-size: 32px;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.oxy-rbi-divider {
+  position: relative;
+  width: 90px;
+  height: 2px;
+  background: #cbd5e1;
+  margin: 14px auto 0 auto;
+}
+
+.oxy-rbi-divider .dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #237abf;
+}
+
+/* Post Container */
+.def-temp.blog-posts-block.blog-post-inner {
+  width: 100%;
+}
+
+.rbiguideLines {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 40px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
+}
+
+/* Registration Status Banner */
+.rbi-status-banner {
+  background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
+  border: 1px solid #86efac;
+  border-left: 5px solid #10b981;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-banner-icon {
+  font-size: 32px;
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.rbi-status-banner h3 {
+  font-size: 19px;
+  line-height: 1.5;
+  color: #065f46;
+  margin: 0;
+  font-weight: 700;
+}
+
+.rbi-status-banner h3 b {
+  color: #047857;
+  font-weight: 900;
+}
+
+.rbi-lead-text {
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: #334155;
+  margin-bottom: 25px;
+}
+
+.rbi-section-subtitle-wrap {
+  margin: 25px 0 20px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.rbi-section-subtitle-wrap span {
+  font-size: 16.5px;
+  color: #0f172a;
+}
+
+/* Content Groups */
+.rbi-content-group {
+  margin: 30px 0;
+  padding: 22px 24px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.rbi-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 16px 0;
+}
+
+.group-heading-icon {
+  color: #237abf;
+  font-size: 16px;
+}
+
+.rbi-guideline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rbi-guideline-list li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: #334155;
+}
+
+.rbi-guideline-list li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #237abf;
+}
+
+/* Permitted vs Prohibited Scope Table */
+.rbi-scope-table-wrap {
+  margin: 35px 0;
+}
+
+.rbi-table-title {
+  margin-bottom: 14px;
+}
+
+.rbi-table-title h4 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.rbi-table-title .table-caption {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.rbi-table-responsive {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.rbi-activities-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.rbi-activities-table th {
+  padding: 16px 20px;
+  text-align: left;
+  border: 1px solid #cbd5e1;
+}
+
+.th-permitted {
+  background: #ecfdf5;
+  border-bottom: 3px solid #10b981 !important;
+}
+
+.th-prohibited {
+  background: #fef2f2;
+  border-bottom: 3px solid #ef4444 !important;
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.th-permitted .th-content {
+  color: #065f46;
+}
+
+.th-prohibited .th-content {
+  color: #991b1b;
+}
+
+.th-icon.icon-check {
+  color: #10b981;
+  font-size: 18px;
+}
+
+.th-icon.icon-cross {
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.rbi-activities-table td {
+  vertical-align: top;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+}
+
+.td-permitted {
+  background: #ffffff;
+  width: 50%;
+}
+
+.td-prohibited {
+  background: #fafaf9;
+  width: 50%;
+}
+
+.scope-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.scope-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #1e293b;
+}
+
+.scope-list .item-icon {
+  flex-shrink: 0;
+  margin-top: 3px;
+  font-size: 14px;
+}
+
+.list-permitted .item-icon {
+  color: #10b981;
+}
+
+.list-prohibited .item-icon {
+  color: #ef4444;
+}
+
+/* Actions Bar at bottom of guidelines */
+.rbi-actions-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.btn-rbi-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-rbi-print {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-rbi-print:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-rbi-faqs {
+  background: transparent;
+  color: #0284c7;
+  border: none;
+}
+
+.btn-rbi-faqs:hover {
+  color: #0369a1;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   BOTTOM CTA SECTION
+   ========================================================================== */
+.oxy-rbi-cta-banner {
+  background: #f8fafc;
+  padding: 0 0 65px 0;
+}
+
+.rbi-cta-card {
+  background: linear-gradient(135deg, #0b1930 0%, #1e2631 100%);
+  border-radius: 16px;
+  padding: 40px 30px;
+  text-align: center;
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(11, 25, 48, 0.25);
+  max-width: 1060px;
+  margin: 0 auto;
+}
+
+.rbi-cta-card h2 {
+  font-size: 28px;
+  font-weight: 900;
+  margin: 0 0 10px 0;
+  color: #ffffff;
+}
+
+.rbi-cta-card p {
+  font-size: 15px;
+  color: #cbd5e1;
+  max-width: 640px;
+  margin: 0 auto 26px auto;
+  line-height: 1.5;
+}
+
+.rbi-cta-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   RESPONSIVE & PRINT MEDIA QUERIES
+   ========================================================================== */
+@media (max-width: 991px) {
+  .oxy-rbi-highlights-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .oxy-rbi-hero-title {
+    font-size: 26px;
+  }
+
+  .borrower-head h2 {
+    font-size: 26px;
+  }
+
+  .rbiguideLines {
+    padding: 24px 18px;
+  }
+
+  .rbi-status-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .rbi-status-banner h3 {
+    font-size: 17px;
+  }
+
+  .oxy-rbi-highlights-row {
+    grid-template-columns: 1fr;
+  }
+
+  .rbi-activities-table th,
+  .rbi-activities-table td {
+    display: block;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .rbi-activities-table tr {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media print {
+  .oxy-header-wrapper,
+  .oxy-landing-footer-wrapper,
+  .rbi-actions-footer,
+  .oxy-rbi-cta-banner {
+    display: none !important;
+  }
+
+  .oxy-rbi-directions-page {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .rbiguideLines {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}

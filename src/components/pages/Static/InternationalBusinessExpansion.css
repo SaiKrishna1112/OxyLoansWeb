@@ -1,0 +1,420 @@
+/* ==========================================================================
+   INTERNATIONAL BUSINESS EXPANSION LOANS CSS - OxyLoans
+   Exact match with user's provided specification and design system
+   ========================================================================== */
+
+.oxy-expansion-loan-page {
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333333;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. Hero Section */
+.oxy-expansion-hero {
+  background: linear-gradient(135deg, #07192f 0%, #0c2d48 100%);
+  color: #ffffff;
+  padding: 50px 24px 40px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid #237abf;
+}
+
+.oxy-expansion-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: 20%;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(35, 122, 191, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-expansion-hero-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.oxy-expansion-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(35, 122, 191, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.oxy-expansion-badge-top .badge-icon {
+  font-size: 13px;
+}
+
+.oxy-expansion-hero-title {
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+.oxy-expansion-hero-subhead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* 2. Borrower Video Wrap Section (business-exp-wrap) */
+.borrower-video-wrap.business-exp-wrap {
+  padding: 60px 0 50px 0;
+  background-color: #ffffff;
+}
+
+.borrower-video-wrap .container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.borrower-head {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.borrower-head h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.5px;
+}
+
+.oxy-title-divider-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 10px auto 25px auto;
+}
+
+.oxy-title-divider-img {
+  max-width: 312px;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Invest Lender Cards Row */
+.invest-lender-row {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin: 0 auto;
+}
+
+.invest-card-col {
+  flex: 0 0 calc(50% - 20px);
+  max-width: 480px;
+  box-sizing: border-box;
+}
+
+.invest-lender {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 35px 30px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.invest-lender:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.09);
+}
+
+.invest-lender span {
+  width: 90px;
+  height: 90px;
+  background: #f0f7fc;
+  border: 2px solid #e1effa;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.invest-lender span img {
+  max-width: 55px;
+  max-height: 55px;
+  object-fit: contain;
+}
+
+.invest-lender h5 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+}
+
+.invest-lender .btn2 {
+  display: inline-block;
+  background-color: #2875b5;
+  color: #ffffff;
+  padding: 11px 28px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  margin-bottom: 24px;
+}
+
+.invest-lender .btn2:hover {
+  background-color: #206095;
+  box-shadow: 0 4px 14px rgba(40, 117, 181, 0.35);
+  transform: translateY(-1px);
+}
+
+.invest-desc {
+  width: 100%;
+  text-align: left;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 18px;
+}
+
+.invest-desc ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.invest-desc li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.invest-desc li::before {
+  content: "✔";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #00a65a;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* 3. Agreement Wrap Section */
+.agreement-wrap {
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 60px 0;
+  text-align: center;
+}
+
+.agreement-wrap h2 {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px 0;
+}
+
+.agreement-subhead {
+  font-size: 15px;
+  color: #64748b;
+  max-width: 650px;
+  margin: 0 auto 35px auto;
+  line-height: 1.6;
+}
+
+.agreement-block {
+  max-width: 780px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.agreement-block figure {
+  margin: 0;
+}
+
+.agreement-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+
+/* 4. Islamic Loans / Expansion Narrative Details */
+.expansion-details-wrap {
+  padding: 60px 0 80px 0;
+  background-color: #ffffff;
+}
+
+.islamic-loans {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.islamic-list {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #2875b5;
+  border-radius: 10px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.islamic-list h6 {
+  font-size: 19px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.islamic-list p {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: #475569;
+  margin: 0 0 14px 0;
+}
+
+.islamic-list p:last-child {
+  margin-bottom: 0;
+}
+
+.islamic-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.islamic-checklist li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #334155;
+}
+
+.islamic-checklist li::before {
+  content: "✔";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  color: #00a65a;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.contact-list-item {
+  border-left-color: #00a65a;
+}
+
+.expansion-contact-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-expansion-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #2875b5;
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.btn-expansion-contact:hover {
+  background: #206095;
+  color: #ffffff;
+}
+
+.btn-expansion-apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.btn-expansion-apply:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .oxy-expansion-hero-title {
+    font-size: 25px;
+  }
+
+  .invest-card-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .islamic-list {
+    padding: 20px 20px;
+  }
+
+  .islamic-list h6 {
+    font-size: 17px;
+  }
+
+  .agreement-wrap h2 {
+    font-size: 24px;
+  }
+}

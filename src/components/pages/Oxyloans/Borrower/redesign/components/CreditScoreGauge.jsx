@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { getScoreTier } from "./creditReportUtils";
 
-const CreditScoreGauge = ({ score = 802, size = 260, animated = true }) => {
-  const [displayScore, setDisplayScore] = useState(animated ? 300 : score);
-  const tier = getScoreTier(score);
+const CreditScoreGauge = ({ score = null, size = 260, animated = true }) => {
+  const [displayScore, setDisplayScore] = useState(animated ? (score || 300) : (score || 0));
+  const tier = getScoreTier(score || 0);
 
   useEffect(() => {
     if (!animated) {
-      setDisplayScore(score);
+      setDisplayScore(score || 0);
       return;
     }
-    const targetScore = Math.max(300, Math.min(900, score || 802));
+    const targetScore = Math.max(300, Math.min(900, score || 300));
     const duration = 1200; // ms
     const startTime = performance.now();
 

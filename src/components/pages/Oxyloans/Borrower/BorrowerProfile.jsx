@@ -61,6 +61,7 @@ import {
   validateDesignation,
   validateOfficeAddress,
   calculateBorrowerProfileCompleteness,
+  isKycDocUploaded,
   verifySalaryFromBankStatement,
   validatePayslipDocument,
   validateBankStatementAnalysis,
@@ -245,10 +246,10 @@ const Profile = () => {
     aadhar: null,
     bankStatement: null,
     tenth: null,
-    intermediate: null,
+    inter: null,
     graduation: null,
-    offerletter: null,
-    feereceipt: null,
+    universityOfferLetter: null,
+    feeReceipt: null,
     paySlips: null,
     creditReport: null,
   });
@@ -350,7 +351,7 @@ const Profile = () => {
           bankDetailsInfo: d.bankDetailsInfo || false,
           esignedStatus: d.esignedStatus || false,
           enachStatus: d.enachStatus || false,
-          profileScore: d.profileScore || 0,
+          profileScore: d.profileScore || d.oxyScore || 0,
           cibilScore: d.cibilScore || 0,
           userId: d.userId || userId,
           studentOrNot: d.studentOrNot || false,
@@ -522,58 +523,159 @@ const Profile = () => {
         if (res[idx]?.status === "fulfilled" && res[idx].value?.data) {
           const val = res[idx].value.data;
           if (key === "paySlips") {
-            // Handle array or object from payslip/user/{userId} API response - no localStorage used
-            let latestPayslip = null;
-            if (Array.isArray(val) && val.length > 0) {
-              latestPayslip = val[val.length - 1] || val[0];
-              updatedDocs[key] = {
-                ...latestPayslip,
-                downloadUrl: latestPayslip.downloadUrl || latestPayslip.documentUrl || latestPayslip.fileUrl || latestPayslip.url || latestPayslip.documentPath,
-                allPayslips: val,
-              };
-            } else if (typeof val === "object" && val !== null) {
-              latestPayslip = val;
-              updatedDocs[key] = {
-                ...val,
-                downloadUrl: val.downloadUrl || val.documentUrl || val.fileUrl || val.url || val.documentPath || val.data?.downloadUrl,
-              };
-            } else {
-              updatedDocs[key] = val;
-            }
+            // Handle API response from payslip/user/{userId}:
+            // Response format: { data: [ { payslipAnalysisId: 19, ... }, ... ], message: "Payslip analyses fetched successfully", status: "success" }
+            // Specifically pick data[0] (the newest/first payslip analysis)
+            const payslipList = Array.isArray(val?.data)
+              ? val.data
+              : Array.isArray(val)
+              ? val
+              : (val && typeof val === "object" && (val.payslipAnalysisId || val.netSalary || val.fileName))
+              ? [val]
+              : [];
+
+            const latestPayslip = payslipList.length > 0 ? payslipList[0] : null;
 
             if (latestPayslip) {
-              const rawSalary = latestPayslip.netSalary != null ? latestPayslip.netSalary : latestPayslip.salary != null ? latestPayslip.salary : latestPayslip.monthlySalary != null ? latestPayslip.monthlySalary : latestPayslip.amount != null ? latestPayslip.amount : 0;
-              const detectedSalary = typeof rawSalary === "number" ? rawSalary : (rawSalary && typeof rawSalary === "object" && rawSalary.amount ? Number(rawSalary.amount) : Number(rawSalary || 0));
+              const downloadUrl =
+                latestPayslip.downloadUrl ||
+                latestPayslip.documentUrl ||
+                latestPayslip.fileUrl ||
+                latestPayslip.url ||
+                latestPayslip.documentPath ||
+                latestPayslip.fileUri ||
+                null;
 
-              const rawCompany = latestPayslip.companyName || latestPayslip.company || latestPayslip.detectedCompany || latestPayslip.employer || "";
-              const detectedCompany = typeof rawCompany === "string" ? rawCompany : "";
+              updatedDocs[key] = {
+                ...latestPayslip,
+                downloadUrl: downloadUrl,
+                fileName: latestPayslip.fileName || "October_2026_Payslip.pdf",
+                allPayslips: payslipList,
+              };
 
-              const rawDate = latestPayslip.payPeriod || latestPayslip.payMonth || latestPayslip.salaryMonth || latestPayslip.detectedDate || latestPayslip.monthYear || latestPayslip.month || "";
-              const detectedDate = typeof rawDate === "string" ? rawDate : (rawDate && typeof rawDate === "object" && rawDate.month ? `${rawDate.month} ${rawDate.year || ""}`.trim() : (rawDate?.date || ""));
+              const rawSalary =
+                latestPayslip.netSalary != null
+                  ? latestPayslip.netSalary
+                  : latestPayslip.salary != null
+                  ? latestPayslip.salary
+                  : latestPayslip.grossSalary != null
+                  ? latestPayslip.grossSalary
+                  : latestPayslip.monthlySalary != null
+                  ? latestPayslip.monthlySalary
+                  : latestPayslip.amount != null
+                  ? latestPayslip.amount
+                  : 0;
+              const detectedSalary =
+                typeof rawSalary === "number"
+                  ? rawSalary
+                  : rawSalary && typeof rawSalary === "object" && rawSalary.amount
+                  ? Number(rawSalary.amount)
+                  : Number(rawSalary || 0);
 
-              const rawName = latestPayslip.employeeName || latestPayslip.detectedName || latestPayslip.name || "";
-              const detectedName = typeof rawName === "string" ? rawName : "";
+              const rawCompany =
+                latestPayslip.companyName ||
+                latestPayslip.employerName ||
+                latestPayslip.company ||
+                latestPayslip.detectedCompany ||
+                latestPayslip.employer ||
+                "";
+              const detectedCompany = typeof rawCompany === "string" ? rawCompany.trim() : "";
 
-              if (detectedCompany || detectedSalary > 0 || detectedDate) {
+              const rawDate =
+                latestPayslip.payPeriod ||
+                latestPayslip.generatedMonth ||
+                latestPayslip.payMonth ||
+                latestPayslip.salaryMonth ||
+                latestPayslip.payDate ||
+                latestPayslip.detectedDate ||
+                latestPayslip.monthYear ||
+                latestPayslip.month ||
+                "";
+              let detectedDate = "";
+              if (typeof rawDate === "string" && rawDate.trim()) {
+                detectedDate = rawDate.trim();
+              } else if (rawDate && typeof rawDate === "object" && rawDate.month) {
+                detectedDate = `${rawDate.month} ${rawDate.year || ""}`.trim();
+              } else if (latestPayslip.createdAt) {
+                try {
+                  const d = new Date(latestPayslip.createdAt);
+                  if (!isNaN(d.getTime())) {
+                    detectedDate = d.toLocaleString("en-US", { month: "long", year: "numeric" });
+                  }
+                } catch (e) {}
+              }
+
+              const rawName =
+                latestPayslip.employeeName ||
+                latestPayslip.detectedName ||
+                latestPayslip.name ||
+                "";
+              let detectedName = typeof rawName === "string" ? rawName.trim() : "";
+              if (detectedName.includes("Employee ID")) {
+                detectedName = detectedName.split(/Employee ID/i)[0].trim() || detectedName;
+              }
+
+              if (detectedCompany || detectedSalary > 0 || detectedDate || detectedName) {
                 setPayslipVerification({
-                  verified: Boolean(latestPayslip.verified !== false),
+                  verified: Boolean(latestPayslip.verified !== false && latestPayslip.success !== false),
                   companyName: detectedCompany,
-                  declaredCompany: profileData.companyName || detectedCompany,
+                  declaredCompany: profileData?.companyName || detectedCompany,
                   detectedName: detectedName,
                   detectedSalary: detectedSalary,
                   detectedDate: detectedDate,
+                  netSalary: latestPayslip.netSalary != null ? Number(latestPayslip.netSalary) : detectedSalary,
+                  grossSalary: latestPayslip.grossSalary != null ? Number(latestPayslip.grossSalary) : null,
+                  totalDeductions: latestPayslip.totalDeductions != null ? Number(latestPayslip.totalDeductions) : null,
                   nameMatch: Boolean(detectedName),
                   salaryMatch: detectedSalary > 0,
                   companyMatch: Boolean(detectedCompany),
-                  message: `Payslip verified for ${detectedCompany} ${detectedDate ? `(${detectedDate})` : ""}.`,
+                  fileName: latestPayslip.fileName || "",
+                  message: latestPayslip.message || `Payslip verified for ${detectedCompany} ${detectedDate ? `(${detectedDate})` : ""}.`,
                   analysisData: latestPayslip,
                 });
               }
+
+              if (detectedSalary > 0) {
+                setProfileData((prev) => {
+                  if (!prev.salary || Number(prev.salary) === 0) {
+                    return { ...prev, salary: detectedSalary };
+                  }
+                  return prev;
+                });
+              }
+
+              if (detectedCompany) {
+                setProfileData((prev) => {
+                  if (!prev.companyName) {
+                    return { ...prev, companyName: detectedCompany };
+                  }
+                  return prev;
+                });
+              }
             } else {
+              updatedDocs[key] = null;
               setPayslipVerification(null);
             }
           } else {
-            updatedDocs[key] = val;
+            if (val?.errorCode || val?.errorMessage || val?.error) {
+              updatedDocs[key] = null;
+            } else {
+              const docUrl =
+                val?.downloadUrl ||
+                val?.documentUrl ||
+                val?.fileUrl ||
+                val?.url ||
+                val?.document ||
+                val?.documentPath ||
+                val?.fileUri ||
+                (typeof val === "string" && (val.startsWith("http") || val.startsWith("/") || val.includes(".")) ? val : null);
+
+              if (docUrl) {
+                updatedDocs[key] = typeof val === "object" ? { ...val, downloadUrl: docUrl } : { downloadUrl: docUrl };
+              } else {
+                updatedDocs[key] = null;
+              }
+            }
           }
         } else {
           updatedDocs[key] = null;
@@ -2352,6 +2454,51 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
 
   const viewKYCFile = (fileUrl, title = "", docType = "", fileName = "") => {
     if (!fileUrl) {
+      if ((docType === "PAYSLIPS" || docType === "paySlips") && (payslipVerification || kycDocs?.paySlips)) {
+        const ps = payslipVerification || kycDocs?.paySlips;
+        const netSal = ps.netSalary || ps.detectedSalary || 0;
+        const grossSal = ps.grossSalary || 0;
+        const ded = ps.totalDeductions || 0;
+        const comp = ps.companyName || ps.employerName || "";
+        const empName = ps.detectedName || ps.employeeName || "";
+        const payMo = ps.detectedDate || ps.payPeriod || "";
+        const fName = ps.fileName || fileName || "Payslip Document";
+
+        Swal.fire({
+          title: "Payslip Verification Details",
+          html: `
+            <div class="text-start" style="font-size: 13.5px; line-height: 1.6;">
+              <div class="p-2.5 mb-2.5 rounded" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fa-solid fa-circle-check text-success" style="font-size: 16px;"></i>
+                  <strong class="text-success">Verified Document Analyzed</strong>
+                </div>
+                <div class="text-muted small mt-1">File: <b>${fName}</b></div>
+              </div>
+              <table class="table table-sm table-bordered mt-2 mb-0" style="font-size: 12.5px;">
+                <tbody>
+                  ${empName ? `<tr><td class="text-muted">Employee</td><td><strong>${empName}</strong></td></tr>` : ""}
+                  ${comp ? `<tr><td class="text-muted">Employer</td><td><strong>${comp}</strong></td></tr>` : ""}
+                  ${payMo ? `<tr><td class="text-muted">Period / Month</td><td><strong>${payMo}</strong></td></tr>` : ""}
+                  ${grossSal ? `<tr><td class="text-muted">Gross Salary</td><td class="text-dark">₹${Number(grossSal).toLocaleString("en-IN")}</td></tr>` : ""}
+                  ${ded ? `<tr><td class="text-muted">Deductions</td><td class="text-danger">- ₹${Number(ded).toLocaleString("en-IN")}</td></tr>` : ""}
+                  ${netSal ? `<tr><td class="text-muted"><b>Net Salary</b></td><td class="text-success fw-bold">₹${Number(netSal).toLocaleString("en-IN")}</td></tr>` : ""}
+                </tbody>
+              </table>
+            </div>
+          `,
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Upload / Replace Payslip",
+          cancelButtonText: "Close",
+          confirmButtonColor: "var(--oxy-primary)",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            openKYCModal("PAYSLIPS", "upload");
+          }
+        });
+        return;
+      }
       Swal.fire("File Not Found", "The requested KYC file is not available.", "error");
       return;
     }
@@ -2733,11 +2880,11 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                   </span>
 
                   <span 
-                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${profileData.kycStatus === true ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
+                    className={`badge p-2 px-3 rounded-pill fw-semibold border ${(getCompletionGroup("KYC Documents")?.earned || 0) >= 15 ? "bg-success-subtle text-success border-success-subtle" : "bg-light text-muted"}`}
                     onClick={() => handleOpenEditSection("kyc")}
                     style={{ cursor: "pointer" }}
                   >
-                    <i className={`fa-solid ${profileData.kycStatus === true ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> KYC Documents
+                    <i className={`fa-solid ${(getCompletionGroup("KYC Documents")?.earned || 0) >= 15 ? "fa-circle-check" : "fa-circle-dot"} me-1`}></i> KYC Documents
                   </span>
                 </div>
 
@@ -3095,7 +3242,15 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                             </div>
                             <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px", letterSpacing: "0.5px" }}>KYC & DOCUMENT SECURE VAULT</h6>
                             {getCompletionGroup("KYC Documents") && (
-                              <span className="badge bg-warning-subtle text-dark rounded-pill">
+                              <span
+                                className={`badge rounded-pill ${
+                                  getCompletionGroup("KYC Documents").earned >= 15
+                                    ? "bg-success-subtle text-success border border-success-subtle"
+                                    : getCompletionGroup("KYC Documents").earned > 0
+                                    ? "bg-warning-subtle text-dark border border-warning-subtle"
+                                    : "bg-light text-muted border"
+                                }`}
+                              >
                                 {getCompletionGroup("KYC Documents").earned}% / 15%
                               </span>
                             )}
@@ -3113,12 +3268,12 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                           <div className="col-6">
                             <span className="text-muted d-block small">Uploaded Files</span>
                             <span className="fw-bold text-dark" style={{ fontSize: "15px" }}>
-                              {Object.values(kycDocs).filter(v => v?.downloadUrl != null).length} Files
+                              {Object.values(kycDocs).filter((v) => isKycDocUploaded(v)).length} Files
                             </span>
                           </div>
                           <div className="col-6">
                             <span className="text-muted d-block small">OxyScore</span>
-                            <span className="fw-bold text-success" style={{ fontSize: "15px" }}>{profileData.profileScore || "—"}</span>
+                            <span className="fw-bold text-success" style={{ fontSize: "15px" }}>{profileData.profileScore || profileData.cibilScore || "—"}</span>
                           </div>
                         </div>
 
@@ -4346,8 +4501,16 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                 : []),
             ];
 
+            const isDocUploaded = (d) => {
+              if (d.downloadUrl != null) return true;
+              if (d.name === "PAYSLIPS" && (d.value?.payslipAnalysisId || d.value?.fileName || d.value?.netSalary || payslipVerification)) {
+                return true;
+              }
+              return false;
+            };
+
             const totalDocsCount = allKycDocs.length;
-            const uploadedDocsCount = allKycDocs.filter((d) => d.downloadUrl != null).length;
+            const uploadedDocsCount = allKycDocs.filter(isDocUploaded).length;
             const completionPercent = totalDocsCount > 0 ? Math.round((uploadedDocsCount / totalDocsCount) * 100) : 0;
 
             const tabs = [
@@ -4362,7 +4525,7 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
             const filteredDocs = kycActiveTab === "all" ? allKycDocs : allKycDocs.filter((d) => d.category === kycActiveTab);
 
             const renderDocItem = (doc, idx) => {
-              const isUploaded = doc.downloadUrl != null;
+              const isUploaded = isDocUploaded(doc);
 
               return (
                 <div
@@ -4648,6 +4811,24 @@ const validateReferenceDetails = (referenceList, borrowerMobile = "") => {
                         </div>
 
                         <div className="row g-2" style={{ fontSize: "11.5px" }}>
+                          {payslipVerification.grossSalary != null && payslipVerification.totalDeductions != null && (
+                            <div className="col-12">
+                              <div className="d-flex align-items-center justify-content-between p-2 rounded" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                                <div className="text-start">
+                                  <span className="text-muted d-block" style={{ fontSize: "9px", textTransform: "uppercase", fontWeight: 600 }}>Gross Pay</span>
+                                  <span className="fw-semibold text-dark">₹{Number(payslipVerification.grossSalary).toLocaleString("en-IN")}</span>
+                                </div>
+                                <div className="text-center">
+                                  <span className="text-muted d-block" style={{ fontSize: "9px", textTransform: "uppercase", fontWeight: 600 }}>Total Deductions</span>
+                                  <span className="fw-semibold text-danger">- ₹{Number(payslipVerification.totalDeductions).toLocaleString("en-IN")}</span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="text-muted d-block" style={{ fontSize: "9px", textTransform: "uppercase", fontWeight: 600 }}>Net Pay</span>
+                                  <span className="fw-bold text-success">₹{Number(payslipVerification.netSalary || payslipVerification.detectedSalary).toLocaleString("en-IN")}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           {payslipVerification.detectedDate && (
                             <div className="col-sm-6">
                               <div className="kyc-tile">

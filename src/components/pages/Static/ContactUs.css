@@ -1,0 +1,639 @@
+/* ==========================================================================
+   CONTACT US CSS - OxyLoans
+   Modern, responsive, pixel-perfect design system
+   ========================================================================== */
+
+.oxy-contact-page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. Hero Section */
+.oxy-contact-hero {
+  background: linear-gradient(135deg, #07192f 0%, #0c2d48 100%);
+  color: #ffffff;
+  padding: 50px 24px 45px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 2px solid #237abf;
+}
+
+.oxy-contact-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  left: 20%;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle, rgba(35, 122, 191, 0.28) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-contact-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -40px;
+  right: 20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.oxy-contact-hero-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.oxy-contact-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(35, 122, 191, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.oxy-contact-badge-top .badge-icon {
+  font-size: 13px;
+}
+
+.oxy-contact-hero-title {
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+  color: #ffffff;
+}
+
+.oxy-contact-hero-subhead {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  max-width: 720px;
+  margin: 0 auto 30px auto;
+}
+
+/* Quick Dock Cards */
+.contact-quick-dock {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.quick-dock-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.quick-dock-card:hover {
+  background: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.dock-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.phone-icon {
+  color: #38bdf8;
+}
+
+.mail-icon {
+  color: #fbbf24;
+}
+
+.wa-icon {
+  color: #22c55e;
+}
+
+.dock-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dock-val {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   2. Contact Form Section
+   ========================================================================== */
+.contact-form {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 60px 20px;
+  position: relative;
+}
+
+.contact-form::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(248, 250, 252, 0.93);
+  pointer-events: none;
+}
+
+.contact-form .container {
+  max-width: 960px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.contact-form-card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #0284c7;
+  padding: 40px 45px;
+}
+
+.contact-form-card h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0b1930;
+  text-align: center;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.3px;
+}
+
+.contact-form-subtitle {
+  font-size: 14.5px;
+  color: #64748b;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 32px auto;
+  line-height: 1.5;
+}
+
+/* Form Row & Columns */
+.contact-form-row {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.contact-form-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contact-form-col.left-col {
+  justify-content: flex-start;
+}
+
+.contact-form-col.right-col {
+  justify-content: space-between;
+}
+
+.contact-form-col .form-group {
+  width: 100%;
+}
+
+.contact-form-col .form-group.message-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-form-col .form-control {
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 15px;
+  color: #1e293b;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.contact-form-col .form-control:focus {
+  background-color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.contact-form-col .textarea-control {
+  resize: vertical;
+  min-height: 150px;
+  flex: 1;
+}
+
+.submit-group {
+  margin-top: 4px;
+}
+
+.btn-contact-submit {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 13px 36px;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.btn-contact-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.35);
+}
+
+.btn-contact-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Success Banner */
+.contact-success-banner {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #10b981;
+  border-radius: 10px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.success-icon {
+  font-size: 42px;
+  color: #10b981;
+}
+
+.contact-success-banner h4 {
+  font-size: 19px;
+  font-weight: 800;
+  color: #166534;
+  margin: 0;
+}
+
+.contact-success-banner p {
+  font-size: 14.5px;
+  color: #15803d;
+  margin: 0;
+  max-width: 500px;
+}
+
+.btn-send-another {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 20px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background 0.2s ease;
+}
+
+.btn-send-another:hover {
+  background: #059669;
+}
+
+/* ==========================================================================
+   3. Reach Us Section with 4-Column Map & Office Details
+   ========================================================================== */
+.reach-us-wrap {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 60px 20px 80px 20px;
+  position: relative;
+}
+
+.reach-us-wrap::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(248, 250, 252, 0.95);
+  pointer-events: none;
+}
+
+.reach-us-wrap .borrower-head {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.reach-us-wrap .borrower-head h2 {
+  font-size: 30px;
+  font-weight: 900;
+  color: #0b1930;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.3px;
+}
+
+.reach-us-wrap .borrower-head p {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0;
+}
+
+.contact-maps-block {
+  max-width: 1220px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+/* The 4-Column Grid */
+.maps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* Force 100% width on grid items, defeating any residual .col-* class rules */
+.map-col,
+.address-block {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Map Column Card */
+.map-col {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  min-height: 290px;
+  height: 100%;
+}
+
+.map-col iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 290px;
+  border: none;
+  display: block;
+}
+
+/* Address Column Card */
+.address-block {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px 22px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  min-height: 290px;
+  box-sizing: border-box;
+}
+
+.city-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.city-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #e0f2fe;
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.address h5 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0b1930;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.location-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 3px;
+}
+
+.location-badge.branch-badge {
+  color: #059669;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.address address {
+  font-style: normal;
+  margin: 0;
+}
+
+.company-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0b1930;
+  margin: 0 0 6px 0;
+  letter-spacing: 0.2px;
+}
+
+.address-lines {
+  font-style: normal;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #475569;
+  margin: 0;
+}
+
+.address-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-location-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0284c7;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  transition: all 0.2s ease;
+}
+
+.btn-location-action:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+.btn-location-action.secondary {
+  color: #475569;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.btn-location-action.secondary:hover {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.btn-action-icon {
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   Responsive Media Queries
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .maps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 991px) {
+  .contact-quick-dock {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .contact-form-card {
+    padding: 30px 24px;
+  }
+}
+
+@media (max-width: 767px) {
+  .oxy-contact-hero {
+    padding: 35px 16px;
+  }
+
+  .oxy-contact-hero-title {
+    font-size: 26px;
+  }
+
+  .contact-form {
+    padding: 40px 16px;
+  }
+
+  .contact-form-card {
+    padding: 24px 16px;
+  }
+
+  .contact-form-card h2 {
+    font-size: 24px;
+  }
+
+  .contact-form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .btn-contact-submit {
+    width: 100%;
+    text-align: center;
+  }
+
+  .reach-us-wrap {
+    padding: 40px 16px 60px 16px;
+  }
+
+  .reach-us-wrap .borrower-head h2 {
+    font-size: 24px;
+  }
+
+  .maps-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .map-col {
+    min-height: 240px;
+  }
+
+  .map-col iframe {
+    min-height: 240px;
+  }
+
+  .address-block {
+    min-height: auto;
+  }
+}

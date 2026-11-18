@@ -28,7 +28,7 @@ const LoanRequest = () => {
   const [consentItems, setConsentItems] = useState(new Array(BORROWER_CONSENTS.length).fill(false));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oxyscore, setOxyScore] = useState();
-  const [selectedTenure, setSelectedTenure] = useState(3);
+  const [selectedTenure, setSelectedTenure] = useState(3); // Default 3 Months starter for first-time requests
   
   const [eligibleAmount, setEligibleAmount] = useState({
     amount: null,
@@ -125,7 +125,7 @@ const LoanRequest = () => {
     evaluateProfileCompleteness();
     getUserDetails().then(res=>{
       if (res?.data) {
-        setOxyScore(res.data.profileScore || res.data.cibilScore);
+        setOxyScore(res.data.profileScore || res.data.oxyScore || res.data.cibilScore);
       }
     });
   }, [borrowerId]);
@@ -336,6 +336,8 @@ const LoanRequest = () => {
       const payload = {
         borrowerId: Number(borrowerId),
         requestAmount: normalizedAmount,
+        duration: selectedTenure,
+        durationType: "MONTHS",
       };
       const response = await submitBorrowerLoanRequest(payload);
       if (response?.status === 200 || response?.status === 201) {
@@ -587,17 +589,21 @@ const LoanRequest = () => {
                       <div className="p-3 mb-4 rounded-3 border bg-light">
                         <div className="d-flex justify-content-between align-items-center mb-3">
                           <span className="fw-bold text-dark small"><i className="fa-solid fa-calculator text-primary me-2" />Estimated EMI Calculator <span className="text-muted fw-normal" style={{ fontSize: "11px" }}>(ROI: {applicableRoi}% p.a. - Example Only)</span></span>
-                          {/* Tenure Pills */}
+                          {/* Tenure Graduation Pills: 3M Starter, 6M Lock-in, 12M Lock-in */}
                           <div className="btn-group btn-group-sm" role="group">
-                            {[3, 6, 12].map((months) => (
+                            {[
+                              { m: 3, label: "⚡ 3M Starter" },
+                              { m: 6, label: "🔒 6M Lock-in" },
+                              { m: 12, label: "🔒 12M Lock-in" },
+                            ].map(({ m, label }) => (
                               <button
-                                key={months}
+                                key={m}
                                 type="button"
-                                className={`btn ${selectedTenure === months ? "btn-primary" : "btn-outline-primary"}`}
-                                style={{ fontSize: "11px" }}
-                                onClick={() => setSelectedTenure(months)}
+                                className={`btn ${selectedTenure === m ? "btn-primary" : "btn-outline-primary"}`}
+                                style={{ fontSize: "11px", fontWeight: 600 }}
+                                onClick={() => setSelectedTenure(m)}
                               >
-                                {months} M
+                                {label}
                               </button>
                             ))}
                           </div>
@@ -613,8 +619,8 @@ const LoanRequest = () => {
                             <span className="fw-bold text-dark fs-6">{formatCurrency(estimatedEmiInfo.totalInterest)}</span>
                           </div>
                           <div className="col-4">
-                            <span className="text-muted d-block small" style={{ fontSize: "11px" }}>Tenure</span>
-                            <span className="fw-bold text-dark fs-6">{selectedTenure} Months</span>
+                            <span className="text-muted d-block small" style={{ fontSize: "11px" }}>Locking Period</span>
+                            <span className="fw-bold text-dark fs-6">🔒 {selectedTenure} Months</span>
                           </div>
                         </div>
                       </div>

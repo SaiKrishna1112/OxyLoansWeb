@@ -329,3 +329,124 @@ export const passwordupdated = async (
   );
   return response;
 };
+
+
+/**
+ * Public API to fetch encrypted API key for external secure calls.
+ * Endpoint: POST /v1/user/external/encrypt
+ * Returns: { encryptedData: string }
+ */
+export const getExternalEncryptedKey = async () => {
+  try {
+    const response = await axios({
+      method: "POST",
+      url: `${API_BASE_URL}external/encrypt`,
+      data: {},
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response;
+  } catch (error) {
+    return error?.response || error;
+  }
+};
+
+let cachedEncryptedApiKey = null;
+
+/**
+ * Resolves or fetches the encrypted API key.
+ * Caches in-memory to prevent redundant round-trips.
+ */
+export const getOrFetchEncryptedApiKey = async (forceRefresh = false) => {
+  if (!forceRefresh && cachedEncryptedApiKey) {
+    return cachedEncryptedApiKey;
+  }
+  try {
+    const res = await getExternalEncryptedKey();
+    const key =
+      res?.data?.encryptedData ||
+      res?.data?.key ||
+      res?.data?.apiKey ||
+      res?.data?.token ||
+      (typeof res?.data === "string" ? res.data : null);
+    if (key) {
+      cachedEncryptedApiKey = key;
+      return key;
+    }
+  } catch (err) {
+    console.error("Failed to fetch encrypted API key:", err);
+  }
+  return cachedEncryptedApiKey || "";
+};
+
+/**
+ * Public API to fetch deal consent details by token
+ * Endpoint: GET /dealConsentInfo?token=125
+ * Requires X-Api-Key header (obtained via /external/encrypt)
+ */
+export const getDealConsentInfo = async (token, apiKey = null) => {
+  try {
+    const resolvedKey = apiKey || (await getOrFetchEncryptedApiKey());
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (resolvedKey) {
+      headers["X-Api-Key"] = resolvedKey;
+    }
+    const response = await axios({
+      method: "GET",
+      url: `${API_BASE_URL}dealConsentInfo?token=${encodeURIComponent(token)}`,
+      headers,
+    });
+    return response;
+  } catch (error) {
+    return error?.response || error;
+  }
+};
+
+/**
+ * Public API to record deal consent choice (CONTINUE or WITHDRAW)
+ * Endpoint: recordDealConsent?token=125&choice=WITHDRAW
+ * Requires X-Api-Key header (obtained via /external/encrypt)
+ */
+export const recordDealConsent = async (token, choice, apiKey = null) => {
+  const queryStr = `token=${encodeURIComponent(token)}&choice=${encodeURIComponent(choice)}`;
+  try {
+    const resolvedKey = apiKey || (await getOrFetchEncryptedApiKey());
+    const headers = {
+      "Content-Type": "application/json",
+    };
+    if (resolvedKey) {
+      headers["X-Api-Key"] = resolvedKey;
+    }
+    const response = await axios({
+      method: "POST",
+      url: `${API_BASE_URL}recordDealConsent?${queryStr}`,
+      data: { token, choice },
+      headers,
+    });
+    return response;
+  } catch (error) {
+    if (error?.response?.status === 405) {
+      try {
+        const resolvedKey = apiKey || (await getOrFetchEncryptedApiKey());
+        const headers = {
+          "Content-Type": "application/json",
+        };
+        if (resolvedKey) {
+          headers["X-Api-Key"] = resolvedKey;
+        }
+        const getResp = await axios({
+          method: "GET",
+          url: `${API_BASE_URL}recordDealConsent?${queryStr}`,
+          headers,
+        });
+        return getResp;
+      } catch (getErr) {
+        return getErr?.response || getErr;
+      }
+    }
+    return error?.response || error;
+  }
+};

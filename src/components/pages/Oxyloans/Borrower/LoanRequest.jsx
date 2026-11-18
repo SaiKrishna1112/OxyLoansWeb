@@ -25,7 +25,7 @@ const LoanRequest = () => {
   const [newloandrequest, setnewloanrequest] = useState({
     loanamount: "",
     roi: "",
-    duration: "",
+    duration: "6", // Standard OxyLoans 6-Month locking period
     durationType: true,
     repayment: "",
     loanpurpose: "",
@@ -327,7 +327,9 @@ const LoanRequest = () => {
                               onChange={searchOnchange}
                             >
                               ""
-                              <option value="null">-- Duration --</option>
+                              <option value="null">-- Select Locking Period / Duration --</option>
+                              <option value="6">6 Months (Standard 6M Lock-in)</option>
+                              <option value="12">12 Months (Optimal 12M Lock-in)</option>
                               <option value="3">3</option>
                               <option value="4">4</option>
                               <option value="5">5</option>

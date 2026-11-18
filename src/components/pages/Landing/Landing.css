@@ -1,0 +1,2438 @@
+/* ==========================================================================
+   LANDING PAGE CSS - OxyLoans (P2P NBFC)
+   Pixel-perfect implementation of the original full-page landing design
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth !important;
+  scroll-padding-top: 105px;
+}
+
+.oxy-landing-page {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333333;
+  background-color: #ffffff;
+  overflow-x: hidden;
+  position: relative;
+}
+
+
+/* Header, disclaimer ticker, social dock, and navbar styles are modularly managed by LandingHeader.css */
+
+/* ==========================================================================
+   1. HERO & CAMPAIGNS SECTION (TOP)
+   ========================================================================== */
+.oxy-landing-hero-section {
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  position: relative;
+  padding: 35px 0 30px 0;
+  min-height: 520px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.oxy-landing-hero-container {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Hero Content Grid: Left Campaigns, Right Pitch */
+.oxy-landing-hero-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: flex-end;
+  gap: 30px;
+  min-height: 440px;
+  padding-bottom: 15px;
+}
+
+.oxy-landing-hero-left {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 15px;
+}
+
+.oxy-landing-campaigns-content {
+  color: #ffffff;
+  max-width: 440px;
+  width: 100%;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.oxy-landing-campaigns-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #ffffff;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.oxy-landing-campaigns-amount {
+  font-size: 22px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.oxy-landing-campaigns-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.oxy-landing-campaigns-links a {
+  color: rgba(255, 255, 255, 0.95);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.oxy-landing-campaigns-links a:hover {
+  color: #38bdf8;
+}
+
+.oxy-landing-campaigns-links span {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.oxy-landing-hero-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  text-align: right;
+  padding-top: 150px;
+  padding-bottom: 15px;
+  padding-right: 15px;
+}
+
+.oxy-landing-hero-question {
+  color: #ff8a65;
+  font-size: 13.5px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.oxy-landing-hero-headline {
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.15;
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.oxy-landing-hero-subhead {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 16px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.oxy-landing-rbi-badge {
+  display: inline-block;
+  background-color: #0090d0;
+  color: #ffffff !important;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 16px;
+  border-radius: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+.oxy-landing-rbi-badge:hover {
+  background-color: #0077b5;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   2. NUMBERS BAR & DUAL GATEWAY CARDS
+   ========================================================================== */
+.oxy-landing-stats-bar {
+  background: linear-gradient(135deg, #0070c0 0%, #0084dc 50%, #0099f7 100%);
+  color: #ffffff;
+  padding: 26px 0 30px 0;
+  box-shadow: 0 6px 20px rgba(0, 112, 192, 0.3);
+  position: relative;
+  z-index: 5;
+}
+
+.oxy-landing-stats-grid {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  text-align: center;
+  padding: 0 24px;
+}
+
+.oxy-landing-stat-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 16px;
+}
+
+.oxy-landing-stat-item:not(:last-child) {
+  border-right: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.oxy-landing-stat-value {
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  line-height: 1.15;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+}
+
+.oxy-landing-stat-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   IMPRESSIVE DUAL GATEWAY SECTION
+   ========================================================================== */
+.oxy-landing-dual-gateway-section {
+  padding: 48px 24px 36px 24px;
+  background: linear-gradient(180deg, #f4f7fb 0%, #ffffff 100%);
+  position: relative;
+}
+
+.oxy-landing-dual-gateway-container {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.oxy-gateway-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 32px 30px 28px 30px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease;
+  overflow: hidden;
+}
+
+.oxy-gateway-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+}
+
+.oxy-gateway-card.lender-theme::after {
+  background: linear-gradient(90deg, #0070c0, #0099f7);
+}
+
+.oxy-gateway-card.borrower-theme::after {
+  background: linear-gradient(90deg, #3d8b3d, #5cb85c);
+}
+
+.oxy-gateway-card:hover {
+  transform: translateY(-8px);
+}
+
+.oxy-gateway-card.lender-theme:hover {
+  box-shadow: 0 20px 42px rgba(0, 112, 192, 0.16);
+  border-color: #93c5fd;
+}
+
+.oxy-gateway-card.borrower-theme:hover {
+  box-shadow: 0 20px 42px rgba(92, 184, 92, 0.18);
+  border-color: #86efac;
+}
+
+.oxy-gateway-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.oxy-gateway-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.oxy-gateway-badge.lender-badge {
+  background: rgba(0, 112, 192, 0.08);
+  color: #0070c0;
+  border: 1px solid rgba(0, 112, 192, 0.22);
+}
+
+.oxy-gateway-badge.borrower-badge {
+  background: rgba(92, 184, 92, 0.1);
+  color: #2e7d32;
+  border: 1px solid rgba(92, 184, 92, 0.24);
+}
+
+.oxy-gateway-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.oxy-gateway-card:hover .oxy-gateway-icon-wrap {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.oxy-gateway-icon-wrap.lender-icon-bg {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  color: #0070c0;
+}
+
+.oxy-gateway-icon-wrap.borrower-icon-bg {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #16a34a;
+}
+
+.oxy-gateway-content {
+  margin-bottom: 24px;
+}
+
+.oxy-gateway-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.4px;
+  margin: 0 0 6px 0;
+}
+
+.oxy-gateway-highlight {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  margin-bottom: 10px;
+}
+
+.oxy-gateway-highlight.lender-highlight {
+  color: #0070c0;
+}
+
+.oxy-gateway-highlight.borrower-highlight {
+  color: #2e7d32;
+}
+
+.oxy-gateway-desc {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0 0 18px 0;
+}
+
+.oxy-gateway-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.oxy-gateway-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.oxy-gateway-card.lender-theme .feat-check {
+  color: #0070c0;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.oxy-gateway-card.borrower-theme .feat-check {
+  color: #5cb85c;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.oxy-gateway-footer {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.oxy-gateway-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 26px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.oxy-gateway-cta .cta-arrow {
+  transition: transform 0.25s ease;
+  font-size: 14px;
+}
+
+.oxy-gateway-cta:hover .cta-arrow {
+  transform: translateX(5px);
+}
+
+.oxy-gateway-cta.btn-lender {
+  background: linear-gradient(135deg, #0070c0 0%, #008ee6 100%);
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(0, 112, 192, 0.35);
+}
+
+.oxy-gateway-cta.btn-lender:hover {
+  background: linear-gradient(135deg, #005fa3 0%, #007ecf 100%);
+  box-shadow: 0 8px 24px rgba(0, 112, 192, 0.45);
+  transform: translateY(-2px);
+}
+
+.oxy-gateway-cta.btn-borrower {
+  background: linear-gradient(135deg, #449d44 0%, #5cb85c 100%);
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(92, 184, 92, 0.35);
+}
+
+.oxy-gateway-cta.btn-borrower:hover {
+  background: linear-gradient(135deg, #398439 0%, #4cae4c 100%);
+  box-shadow: 0 8px 24px rgba(92, 184, 92, 0.45);
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   3. MAKE A SMART MOVE. CHOOSE US.
+   ========================================================================== */
+.oxy-landing-smart-move-section {
+  padding: 45px 20px;
+  text-align: center;
+  background: #ffffff;
+}
+
+.oxy-landing-section-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1a202c;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+/* Signature Cyan Dot-Line Divider */
+.oxy-landing-divider-dotline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 35px auto;
+  max-width: 200px;
+}
+
+.oxy-landing-divider-dotline::before,
+.oxy-landing-divider-dotline::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background-color: #00b4d8;
+}
+
+.oxy-landing-divider-dotline .dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #00b4d8;
+  border-radius: 50%;
+  background: #ffffff;
+  margin: 0 8px;
+}
+
+.oxy-landing-features-grid {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+.oxy-landing-feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.oxy-landing-feature-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border: 2px solid #00b4d8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0077c8;
+  font-size: 26px;
+  margin-bottom: 14px;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.oxy-landing-feature-card:hover .oxy-landing-feature-icon-wrap {
+  background: #00b4d8;
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 180, 216, 0.3);
+}
+
+.oxy-landing-feature-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2d3748;
+  letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   4. PROVEN PROCESS PRODUCES RESULTS (HONEYCOMB & PROCESS OF LENDING)
+   ========================================================================== */
+.oxy-landing-process-section {
+  background: linear-gradient(135deg, #1e2631 0%, #161e27 50%, #0f172a 100%);
+  padding: 55px 20px 65px 20px;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+/* Ambient Radial Glows (No Background Images) */
+.oxy-landing-process-section::before {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 8%;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(89, 178, 63, 0.09) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.oxy-landing-process-section::after {
+  content: "";
+  position: absolute;
+  bottom: 10%;
+  right: 12%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(32, 121, 189, 0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Section Header */
+.oxy-process-header {
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.oxy-process-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin: 0 0 10px 0;
+}
+
+/* Green Signature Dot-Line Divider */
+.oxy-process-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 220px;
+}
+
+.oxy-process-divider::before,
+.oxy-process-divider::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background-color: #5cb85c;
+}
+
+.oxy-process-divider .dot {
+  width: 12px;
+  height: 12px;
+  border: 2.5px solid #5cb85c;
+  border-radius: 50%;
+  background: #1e2631;
+  margin: 0 8px;
+}
+
+/* Grid Layout: Left Hexagons & Right Pitch */
+.oxy-landing-process-grid {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Mobile Touch-Friendly Step Pills Navigator (Hidden on Desktop) */
+.oxy-process-mobile-nav {
+  display: none;
+}
+
+/* Hexagons Honeycomb Container */
+.oxy-landing-hexagons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: transparent;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.oxy-landing-hex-cluster-wrapper {
+  position: relative;
+  width: 420px;
+  height: 405px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.oxy-landing-hex-cluster {
+  position: relative;
+  width: 420px;
+  height: 405px;
+  margin: 0 auto;
+}
+
+/* Pure CSS Clip-Path Hexagons (Enlarged) */
+.oxy-hex-item {
+  position: absolute;
+  width: 136px;
+  height: 157px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 0.3s ease;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+  z-index: 2;
+  user-select: none;
+}
+
+.oxy-hex-item:hover {
+  transform: scale(1.08);
+  z-index: 8;
+  filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.55));
+}
+
+/* Selected Active Hexagon Glow & Scale */
+.oxy-hex-item.active {
+  transform: scale(1.12);
+  z-index: 10;
+}
+
+.oxy-hex-item.hex-green {
+  background: linear-gradient(135deg, #59b23f 0%, #4cae4c 100%);
+}
+
+.oxy-hex-item.hex-green.active {
+  filter: drop-shadow(0 0 18px rgba(89, 178, 63, 0.9)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.55));
+}
+
+.oxy-hex-item.hex-blue {
+  background: linear-gradient(135deg, #2079bd 0%, #0088e8 100%);
+}
+
+.oxy-hex-item.hex-blue.active {
+  filter: drop-shadow(0 0 18px rgba(32, 121, 189, 0.95)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.55));
+}
+
+.oxy-hex-item.hex-center {
+  background: #ffffff;
+  z-index: 3;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.3));
+}
+
+.oxy-hex-item.hex-center:hover {
+  transform: scale(1.06);
+}
+
+.oxy-hex-item.hex-center.active {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.95)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+}
+
+.oxy-hex-item .hex-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 10px;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.oxy-hex-item.hex-center .hex-content {
+  color: #1a202c;
+}
+
+.hex-center-logo {
+  max-width: 88px;
+  max-height: 48px;
+  object-fit: contain;
+  margin-bottom: 3px;
+}
+
+.hex-center-subtext {
+  font-size: 8px;
+  font-weight: 800;
+  color: #4b5563;
+  letter-spacing: 0.3px;
+}
+
+.oxy-hex-item .hex-icon {
+  font-size: 26px;
+  margin-bottom: 7px;
+  color: #ffffff;
+}
+
+.oxy-hex-item .hex-label {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.2px;
+  max-width: 98px;
+  color: #ffffff;
+}
+
+/* Symmetrical Tessellation Coordinates (Enlarged Geometry) */
+.hex-center {
+  left: 141px;
+  top: 122px;
+}
+
+.hex-top-left {
+  left: 70px;
+  top: 0px;
+}
+
+.hex-mid-left {
+  left: 0px;
+  top: 122px;
+}
+
+.hex-bot-left {
+  left: 70px;
+  top: 244px;
+}
+
+.hex-top-right {
+  left: 212px;
+  top: 0px;
+}
+
+.hex-mid-right {
+  left: 282px;
+  top: 122px;
+}
+
+.hex-bot-right {
+  left: 212px;
+  top: 244px;
+}
+
+/* Right Pitch: Pure Modern CSS with Silky Slide-In Animation */
+.oxy-landing-process-pitch {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 15px 10px 15px 30px;
+  background: transparent;
+  color: #ffffff;
+  min-height: 420px;
+}
+
+@keyframes oxySlideFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(42px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.oxy-process-slide-content {
+  animation: oxySlideFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.oxy-process-slide-header {
+  margin-bottom: 10px;
+}
+
+.oxy-process-node-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.oxy-process-node-badge.badge-green {
+  background: rgba(89, 178, 63, 0.15);
+  color: #84d761;
+  border: 1px solid rgba(89, 178, 63, 0.35);
+}
+
+.oxy-process-node-badge.badge-blue {
+  background: rgba(32, 121, 189, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(32, 121, 189, 0.45);
+}
+
+.oxy-process-node-badge.badge-gold {
+  background: rgba(234, 179, 8, 0.18);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+}
+
+.oxy-landing-process-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.oxy-landing-process-subtitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.oxy-landing-process-desc {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #e2e8f0;
+  max-width: 520px;
+  margin-bottom: 20px;
+}
+
+.oxy-process-highlights-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 26px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.oxy-process-highlights-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.oxy-process-highlights-list .feat-check-icon {
+  color: #5cb85c;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.oxy-landing-process-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.oxy-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff !important;
+}
+
+.oxy-pill-btn .pill-arrow {
+  font-size: 13px;
+  transition: transform 0.25s ease;
+}
+
+.oxy-pill-btn:hover .pill-arrow {
+  transform: translateX(4px);
+}
+
+.oxy-pill-btn.btn-blue {
+  background: linear-gradient(135deg, #1e70a9 0%, #2079bd 100%);
+  box-shadow: 0 4px 14px rgba(32, 121, 189, 0.4);
+}
+
+.oxy-pill-btn.btn-blue:hover {
+  background: linear-gradient(135deg, #175a89 0%, #1a6da9 100%);
+  box-shadow: 0 6px 18px rgba(32, 121, 189, 0.55);
+  transform: translateY(-2px);
+}
+
+.oxy-pill-btn.btn-green {
+  background: linear-gradient(135deg, #4ea342 0%, #589c49 100%);
+  box-shadow: 0 4px 14px rgba(88, 156, 73, 0.4);
+}
+
+.oxy-pill-btn.btn-green:hover {
+  background: linear-gradient(135deg, #3f8634 0%, #4a893d 100%);
+  box-shadow: 0 6px 18px rgba(88, 156, 73, 0.55);
+  transform: translateY(-2px);
+}
+
+.oxy-process-interactive-hint {
+  font-size: 12px;
+  color: #64748b;
+  letter-spacing: 0.2px;
+  margin-top: 6px;
+}
+
+/* ==========================================================================
+   5. QUICK LOANS. THE RIGHT WAY. (DUAL BLUE CARDS)
+   ========================================================================== */
+.oxy-landing-quick-loans-section {
+  padding: 50px 20px;
+  background: linear-gradient(rgba(10, 25, 47, 0.88), rgba(10, 25, 47, 0.88)),
+              url("../../../assets/img/login_hero_left.png") center/cover fixed;
+  color: #ffffff;
+  text-align: center;
+}
+
+.oxy-landing-quick-loans-section .oxy-landing-section-title {
+  color: #38bdf8;
+}
+
+.oxy-landing-cards-row {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  text-align: left;
+}
+
+.oxy-landing-blue-card {
+  border-radius: 8px;
+  padding: 30px 25px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.oxy-landing-blue-card.borrower-card-theme {
+  background: rgba(2, 132, 199, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.oxy-landing-blue-card.lender-card-theme {
+  background: rgba(3, 105, 161, 0.75);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.oxy-landing-card-icon {
+  font-size: 32px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.oxy-landing-card-heading {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.oxy-landing-card-btn {
+  background: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  margin-bottom: 20px;
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.borrower-card-theme .oxy-landing-card-btn {
+  color: #0284c7;
+}
+
+.borrower-card-theme .oxy-landing-card-btn:hover {
+  background: #e0f2fe;
+}
+
+.lender-card-theme .oxy-landing-card-btn {
+  color: #0369a1;
+}
+
+.lender-card-theme .oxy-landing-card-btn:hover {
+  background: #e0f2fe;
+}
+
+.oxy-landing-card-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #f0f9ff;
+  text-align: center;
+}
+
+.oxy-landing-card-list li {
+  margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   6. KNOWLEDGE CENTER
+   ========================================================================== */
+.oxy-landing-knowledge-section {
+  padding: 60px 20px;
+  background: #ffffff;
+  position: relative;
+}
+
+.oxy-landing-knowledge-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.oxy-landing-knowledge-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Green Wisdom / Brain Badge Matching Screenshot */
+.oxy-landing-knowledge-badge {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: rgba(92, 184, 92, 0.08);
+  border: 2px solid #5cb85c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 14px rgba(92, 184, 92, 0.15);
+}
+
+.oxy-landing-knowledge-badge:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(92, 184, 92, 0.25);
+}
+
+.kc-brain-icon {
+  font-size: 38px;
+  color: #5cb85c;
+}
+
+.oxy-landing-knowledge-left .oxy-landing-section-title {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1a202c;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px 0;
+}
+
+/* Right FAQ Items */
+.oxy-kc-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.oxy-kc-faq-group {
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.oxy-kc-faq-group:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.oxy-kc-faq-group.active {
+  border-color: #93c5fd;
+  box-shadow: 0 6px 18px rgba(35, 122, 191, 0.12);
+}
+
+.oxy-kc-faq-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: background 0.2s ease;
+  user-select: none;
+}
+
+.oxy-kc-faq-group.active .oxy-kc-faq-trigger {
+  background: #f0f7ff;
+}
+
+.oxy-kc-faq-trigger:hover {
+  background: #f1f5f9;
+}
+
+.oxy-kc-faq-trigger-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.kc-question-icon {
+  font-size: 22px;
+  color: #237abf;
+  flex-shrink: 0;
+}
+
+.kc-question-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.2px;
+}
+
+.oxy-kc-faq-group.active .kc-question-title {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.kc-chevron-icon {
+  font-size: 13px;
+  color: #94a3b8;
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.oxy-kc-faq-group.active .kc-chevron-icon {
+  transform: rotate(180deg);
+  color: #237abf;
+}
+
+/* Accordion Dropdown Content */
+.oxy-kc-faq-dropdown {
+  padding: 20px 24px 22px 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+  animation: oxySlideDown 0.25s ease;
+}
+
+.oxy-kc-qa-item:not(:last-child) {
+  padding-bottom: 14px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.qa-question {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qa-question::before {
+  content: "•";
+  color: #237abf;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.qa-answer {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0;
+  padding-left: 14px;
+}
+
+.qa-answer strong {
+  color: #0f172a;
+}
+
+/* Outlined Pill Buttons Matching Reference Image */
+.oxy-landing-knowledge-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.oxy-kc-outline-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 26px;
+  border-radius: 25px;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  transition: all 0.25s ease;
+}
+
+.oxy-kc-outline-pill .btn-arrow {
+  font-size: 12px;
+  transition: transform 0.25s ease;
+}
+
+.oxy-kc-outline-pill:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+.oxy-kc-outline-pill.btn-pill-blue {
+  border: 1.5px solid #237abf;
+  color: #237abf !important;
+}
+
+.oxy-kc-outline-pill.btn-pill-blue:hover {
+  background: #237abf;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(35, 122, 191, 0.3);
+  transform: translateY(-1px);
+}
+
+.oxy-kc-outline-pill.btn-pill-green {
+  border: 1.5px solid #5cb85c;
+  color: #5cb85c !important;
+}
+
+.oxy-kc-outline-pill.btn-pill-green:hover {
+  background: #5cb85c;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(92, 184, 92, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Corner View More Buttons Inside Expanded Cards */
+.oxy-kc-card-corner-wrap {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 6px;
+}
+
+.oxy-kc-card-corner-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.oxy-kc-card-corner-btn .corner-arrow {
+  font-size: 11px;
+  transition: transform 0.25s ease;
+}
+
+.oxy-kc-card-corner-btn:hover .corner-arrow {
+  transform: translateX(4px);
+}
+
+.oxy-kc-card-corner-btn.btn-corner-lender {
+  background: #e8f3fa;
+  color: #237abf !important;
+  border: 1px solid #93c5fd;
+}
+
+.oxy-kc-card-corner-btn.btn-corner-lender:hover {
+  background: #237abf;
+  color: #ffffff !important;
+  border-color: #237abf;
+  box-shadow: 0 4px 12px rgba(35, 122, 191, 0.25);
+  transform: translateY(-1px);
+}
+
+.oxy-kc-card-corner-btn.btn-corner-borrower {
+  background: #edf8ed;
+  color: #2e7d32 !important;
+  border: 1px solid #a7f3d0;
+}
+
+.oxy-kc-card-corner-btn.btn-corner-borrower:hover {
+  background: #5cb85c;
+  color: #ffffff !important;
+  border-color: #5cb85c;
+  box-shadow: 0 4px 12px rgba(92, 184, 92, 0.25);
+  transform: translateY(-1px);
+}
+
+.oxy-kc-outline-pill.btn-pill-viewmore {
+  border: 1.5px solid #0f172a;
+  color: #0f172a !important;
+  background: transparent;
+}
+
+.oxy-kc-outline-pill.btn-pill-viewmore:hover {
+  background: #0f172a;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   7. WORD FROM CEO & ABOUT SRS FINTECHLABS
+   ========================================================================== */
+.oxy-landing-about-section {
+  padding: 40px 24px 0 24px;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.oxy-landing-about-grid {
+  max-width: 1140px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 500px 1fr;
+  gap: 36px;
+  align-items: stretch;
+}
+
+/* Left: Word From CEO Box */
+.oxy-landing-ceo-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  height: 375px;
+  box-sizing: border-box;
+}
+
+/* Free-Standing Cutout Photo - anchored to bottom-right of CEO box */
+.oxy-ceo-photo-wrap {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 355px;
+  height: 375px;
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.oxy-landing-ceo-photo {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  object-position: bottom right;
+  display: block;
+}
+
+/* Mobile CEO Header (Hidden on Desktop) */
+.oxy-ceo-mobile-header {
+  display: none;
+}
+
+/* Left Info Stack - overlays the transparent left portion of the cutout */
+.oxy-ceo-left-stack {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 0 12px 12px;
+  z-index: 2;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+/* Header & Callout Pointer Line */
+.oxy-ceo-header-callout {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  pointer-events: auto;
+}
+
+.oxy-ceo-text-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-ceo-kicker {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  color: #c8933b;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.oxy-landing-ceo-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #c8933b;
+  margin: 0 0 2px 0;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.oxy-landing-ceo-name {
+  font-size: 14.5px;
+  color: #1e293b;
+  font-weight: 700;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+}
+
+.oxy-ceo-sub-role {
+  font-size: 11.5px;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.oxy-ceo-callout-svg {
+  flex-shrink: 0;
+  margin-bottom: 6px;
+}
+
+/* Bottom-Left Reach CEO */
+.oxy-landing-ceo-reach {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: 4px;
+  pointer-events: auto;
+}
+
+.oxy-landing-ceo-reach .reach-label {
+  font-size: 11.5px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.reach-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reach-email-pill,
+.reach-linkedin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.reach-btn-icon {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.reach-email-pill {
+  background: #f0f7ff;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+.reach-email-pill:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+}
+
+.reach-linkedin-pill {
+  background: #edf5fb;
+  color: #0a66c2;
+  border: 1px solid #bfdbfe;
+}
+
+.reach-linkedin-pill:hover {
+  background: #0a66c2;
+  color: #ffffff;
+  border-color: #0a66c2;
+  box-shadow: 0 2px 8px rgba(10, 102, 194, 0.25);
+}
+
+/* Right: About SRS Fintechlabs */
+.oxy-landing-about-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px 0 16px 0;
+  max-width: 580px;
+  margin: 0 auto;
+  justify-content: space-between;
+  height: 375px;
+  box-sizing: border-box;
+}
+
+.oxy-landing-about-title {
+  display: flex;
+  flex-direction: column;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1b75bb;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.5px;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+/* Green Divider with Center Node */
+.oxy-about-green-divider {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px 0;
+}
+
+.oxy-about-green-divider .green-line {
+  width: 90px;
+  height: 2px;
+  background: #689f38;
+}
+
+.oxy-about-green-divider .green-node {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oxy-landing-about-text {
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #64748b;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+/* Satisfied Customers Counter Row */
+.oxy-landing-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  justify-content: center;
+  margin-top: auto;
+  padding-bottom: 5px;
+}
+
+.oxy-landing-counter-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.oxy-counter-user-icon {
+  font-size: 34px;
+  color: #689f38;
+}
+
+.oxy-counter-label-stack {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.6px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Digit Boxes: White Box with Light Gray Border and Vibrant Blue Digits */
+.oxy-landing-digit-boxes {
+  display: flex;
+  gap: 8px;
+}
+
+.oxy-landing-digit-box {
+  width: 36px;
+  height: 44px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #0284c7;
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  user-select: none;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.oxy-landing-digit-box:hover {
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   8. SUCCESS STORIES & LENDER TESTIMONIALS
+   Modular spotlight styles are managed in LandingLenderStories.css
+   ========================================================================== */
+
+/* ==========================================================================
+   9. NEWSLETTER / LOAN OFFER BAR
+   ========================================================================== */
+.oxy-landing-newsletter-bar {
+  background: #ffffff;
+  padding: 25px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.oxy-landing-newsletter-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.oxy-landing-newsletter-title {
+  font-size: 15px;
+  font-weight: 700;
+  font-style: italic;
+  color: #ea580c;
+}
+
+.oxy-landing-newsletter-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-width: 440px;
+}
+
+.oxy-landing-newsletter-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+.oxy-landing-newsletter-input:focus {
+  border-color: #0284c7;
+}
+
+.oxy-landing-newsletter-btn {
+  background: #5cb85c;
+  color: #ffffff;
+  border: none;
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.oxy-landing-newsletter-btn:hover {
+  background: #4cae4c;
+}
+
+/* ==========================================================================
+   10. COMPREHENSIVE FOOTER & REGULATORY DISCLAIMER
+   ========================================================================== */
+.oxy-landing-footer {
+  background: #23272b;
+  color: #a0aec0;
+  padding: 45px 20px 20px 20px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.oxy-landing-footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.oxy-landing-footer-top {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 40px;
+  margin-bottom: 35px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.oxy-landing-footer-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-landing-footer-logo {
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.oxy-landing-footer-logo-img {
+  height: 36px;
+  width: auto;
+  max-width: 175px;
+  object-fit: contain;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.oxy-landing-footer-logo .green-accent {
+  color: #4caf50;
+}
+
+.oxy-landing-footer-cin {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 15px;
+}
+
+.oxy-landing-footer-links-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.oxy-landing-footer-links-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+}
+
+.oxy-landing-footer-links-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px 15px;
+}
+
+.oxy-landing-footer-links-grid a {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 11px;
+  transition: color 0.2s;
+}
+
+.oxy-landing-footer-links-grid a:hover {
+  color: #38bdf8;
+}
+
+/* Legal Disclaimers */
+.oxy-landing-disclaimer-box {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 25px;
+  font-size: 11px;
+  line-height: 1.65;
+  color: #94a3b8;
+}
+
+.oxy-landing-disclaimer-box h5 {
+  color: #e2e8f0;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.oxy-landing-disclaimer-box p {
+  margin-bottom: 12px;
+}
+
+.oxy-landing-disclaimer-box p:last-child {
+  margin-bottom: 0;
+}
+
+.oxy-landing-disclaimer-box strong {
+  color: #cbd5e1;
+}
+
+.oxy-landing-copyright {
+  text-align: center;
+  font-size: 11px;
+  color: #64748b;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES
+   ========================================================================== */
+@media (max-width: 991px) {
+  .oxy-landing-hero-section {
+    min-height: auto;
+    padding: 35px 0 45px 0;
+    background-position: 70% center;
+    position: relative;
+  }
+  .oxy-landing-hero-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(8, 26, 51, 0.88) 0%, rgba(6, 20, 40, 0.94) 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .oxy-landing-hero-container {
+    position: relative;
+    z-index: 2;
+  }
+  .oxy-landing-hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    min-height: auto;
+    gap: 20px;
+  }
+  .oxy-landing-hero-left {
+    align-items: center;
+    text-align: center;
+    padding-bottom: 0;
+  }
+  .oxy-landing-campaigns-content {
+    margin: 0 auto;
+  }
+  .oxy-landing-campaigns-links {
+    justify-content: center;
+  }
+  .oxy-landing-hero-right {
+    align-items: center;
+    text-align: center;
+    padding-top: 15px;
+    padding-right: 0;
+    margin: 0 auto;
+  }
+  .oxy-landing-hero-headline {
+    font-size: clamp(24px, 6vw, 32px);
+    line-height: 1.25;
+  }
+  .oxy-landing-dual-gateway-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .oxy-landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  /* Mobile Proven Process Navigation & Grid */
+  .oxy-process-mobile-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 16px 14px 16px;
+    margin-bottom: 8px;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+  }
+  .oxy-process-mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .oxy-process-pill-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: all 0.2s ease;
+  }
+  .oxy-process-pill-tab .tab-pill-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .oxy-process-pill-tab:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+  }
+  .oxy-process-pill-tab.active {
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+  }
+  .oxy-process-pill-tab.active.tab-all {
+    background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+    color: #0f172a;
+  }
+  .oxy-process-pill-tab.active.tab-lender {
+    background: linear-gradient(135deg, #59b23f 0%, #4cae4c 100%);
+  }
+  .oxy-process-pill-tab.active.tab-borrower {
+    background: linear-gradient(135deg, #2079bd 0%, #0088e8 100%);
+  }
+
+  .oxy-landing-process-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .oxy-landing-hexagons-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    padding: 10px 0;
+    overflow: visible;
+  }
+  .oxy-landing-hex-cluster-wrapper {
+    width: min(390px, calc(100vw - 32px));
+    height: calc(min(390px, calc(100vw - 32px)) * 0.9643);
+    margin: 0 auto;
+    position: relative;
+  }
+  .oxy-landing-hex-cluster {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 420px;
+    height: 405px;
+    transform: scale(calc(min(390px, calc(100vw - 32px)) / 420));
+    transform-origin: 0 0;
+    margin: 0;
+  }
+
+  .oxy-landing-process-pitch {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 16px;
+    padding: 22px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+    margin: 0 6px;
+    min-height: auto;
+    text-align: left;
+    align-items: stretch;
+  }
+  .oxy-landing-process-title {
+    font-size: 22px;
+    text-align: left;
+  }
+  .oxy-landing-process-subtitle {
+    font-size: 13.5px;
+    text-align: left;
+  }
+  .oxy-landing-process-desc {
+    font-size: 13px;
+    text-align: left;
+  }
+  .oxy-process-highlights-list {
+    text-align: left;
+    padding-left: 0;
+  }
+  .oxy-landing-process-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .oxy-landing-process-buttons .oxy-pill-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px;
+    font-size: 13px;
+  }
+
+  .oxy-landing-knowledge-grid,
+  .oxy-landing-about-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  /* Mobile Word From CEO Card */
+  .oxy-landing-ceo-box {
+    position: relative;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 22px 18px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+    pointer-events: auto;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+  .oxy-ceo-callout-svg,
+  .desktop-only,
+  .oxy-ceo-photo-wrap {
+    display: none !important;
+  }
+  .oxy-ceo-mobile-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .oxy-ceo-avatar-frame {
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 3px solid #ffffff;
+    box-shadow: 0 6px 18px rgba(35, 122, 191, 0.25), 0 0 0 2px #237abf;
+    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  }
+  .oxy-ceo-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+  .oxy-ceo-profile-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .oxy-ceo-profile-meta .oxy-ceo-kicker {
+    font-size: 10px;
+    font-weight: 800;
+    color: #c8933b;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .oxy-ceo-mobile-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.25;
+  }
+  .oxy-ceo-mobile-role {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    line-height: 1.35;
+  }
+  .oxy-ceo-left-stack {
+    position: static;
+    height: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    gap: 12px;
+  }
+  .oxy-ceo-header-callout {
+    display: none;
+  }
+  .oxy-landing-ceo-reach {
+    align-items: stretch;
+    padding-top: 4px;
+  }
+  .oxy-landing-ceo-reach .reach-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 6px;
+  }
+  .reach-actions-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .reach-email-pill,
+  .reach-linkedin-pill {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 16px;
+    font-size: 12.5px;
+  }
+  .oxy-landing-page.has-disclaimer-ticker {
+    padding-top: 30px;
+  }
+  .oxy-landing-main-navbar.scrolled {
+    top: 30px;
+  }
+  .oxy-landing-scroll-progress {
+    top: 30px;
+  }
+  .oxy-landing-counter-row {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .oxy-landing-knowledge-actions {
+    justify-content: center;
+  }
+
+  .oxy-landing-footer-top {
+    grid-template-columns: 1fr;
+  }
+  .oxy-landing-footer-links-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .oxy-landing-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  .oxy-landing-stat-item:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    padding-bottom: 12px;
+  }
+  .oxy-landing-dual-gateway-container,
+  .oxy-landing-dual-gateway,
+  .oxy-landing-cards-row {
+    grid-template-columns: 1fr;
+  }
+  .oxy-gateway-card {
+    padding: 24px 20px 22px 20px;
+  }
+  .oxy-gateway-title {
+    font-size: 22px;
+  }
+  .oxy-landing-hexagons-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 6px 0;
+    overflow: visible;
+  }
+  .oxy-landing-hex-cluster-wrapper {
+    --hex-w: min(350px, calc(100vw - 28px));
+    --hex-scale: calc(var(--hex-w) / 420);
+    width: min(350px, calc(100vw - 28px));
+    height: calc(min(350px, calc(100vw - 28px)) * 0.9643);
+    margin: 0 auto;
+    position: relative;
+  }
+  .oxy-landing-hex-cluster {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 420px;
+    height: 405px;
+    transform: scale(calc(min(350px, calc(100vw - 28px)) / 420));
+    transform-origin: 0 0;
+    margin: 0;
+  }
+  .oxy-landing-features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .oxy-landing-knowledge-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .oxy-kc-outline-pill {
+    justify-content: center;
+  }
+  .oxy-landing-green-nav-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+  .oxy-landing-social-dock {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   SMOOTH SCROLL, SECTION ANCHORS & BACK-TO-TOP BUTTON
+   ========================================================================== */
+
+/* Section Anchor Scroll Margins for Fixed Header Clearance */
+#proven-process,
+#quick-loans,
+#borrower-section,
+#lender-section,
+#knowledge-center,
+#about-section,
+#success-stories,
+#faqs {
+  scroll-margin-top: 105px;
+}
+
+/* Floating Smooth Back-To-Top Button */
+.oxy-back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #237abf 0%, #0284c7 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(35, 122, 191, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 998;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px) scale(0.9);
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s, box-shadow 0.3s ease;
+}
+
+.oxy-back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.oxy-back-to-top:hover {
+  background: linear-gradient(135deg, #1b6ca8 0%, #0369a1 100%);
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 0 12px 30px rgba(35, 122, 191, 0.6);
+}
+
+.oxy-back-to-top:active {
+  transform: translateY(0) scale(0.96);
+}
+
+/* ==========================================================================
+   SMOOTH SCROLL-REVEAL & RICH MICRO-ANIMATIONS
+   ========================================================================== */
+.oxy-reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.oxy-reveal-on-scroll.oxy-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Primary Action Buttons - Rich Shimmer Effect on Hover */
+.oxy-gateway-btn,
+.oxy-hero-btn.btn-green,
+.oxy-hero-btn.btn-blue,
+.oxy-nav-link.btn-join-today {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oxy-gateway-btn::after,
+.oxy-hero-btn::after,
+.oxy-nav-link.btn-join-today::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -75%;
+  width: 50%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  transition: none;
+}
+
+.oxy-gateway-btn:hover::after,
+.oxy-hero-btn:hover::after,
+.oxy-nav-link.btn-join-today:hover::after {
+  animation: oxyButtonShimmer 0.75s ease-out;
+}
+
+@keyframes oxyButtonShimmer {
+  0% {
+    left: -75%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+
+/* Subtle Card Hover Lift for Rich Look */
+.oxy-landing-stat-item,
+.oxy-landing-feature-card,
+.oxy-landing-testimonial-card,
+.oxy-kc-faq-group {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+
+.oxy-landing-stat-item:hover,
+.oxy-landing-feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+  .oxy-reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .oxy-gateway-btn:hover::after,
+  .oxy-hero-btn:hover::after,
+  .oxy-nav-link.btn-join-today:hover::after {
+    display: none;
+  }
+}
